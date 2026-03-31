@@ -19,6 +19,10 @@ if TYPE_CHECKING:  # pragma: no cover
 def create_generic_crew() -> "Crew":
     """Build a simple text-processing crew for end-to-end validation."""
     from crewai import Agent, Crew, Process, Task
+    from ..config import get_settings
+
+    settings = get_settings()
+    llm = settings.get_llm()
 
     agent = Agent(
         role="Text Processor",
@@ -26,6 +30,7 @@ def create_generic_crew() -> "Crew":
         backstory="You are an expert text processor with attention to detail.",
         verbose=True,
         allow_delegation=False,
+        llm=llm,
     )
 
     task = Task(

@@ -11,18 +11,16 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
-
     # Database
     "supabase>=2.10.0",
-
     # LLM
     "anthropic>=0.40.0",
     "openai>=1.58.0",
-
     # Utilities
     "python-dotenv>=1.0.0",
     "httpx>=0.28.0",
     "structlog>=24.4.0",
+    "litellm>=1.83.0",
 ]
 
 [project.optional-dependencies]
