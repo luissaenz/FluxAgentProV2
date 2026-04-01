@@ -38,6 +38,9 @@ def make_mock_client():
     table_mocks = {}
 
     def _make_chain(data=None):
+        """Helper to create a chainable mock that defaults to empty list data."""
+        if data is None:
+            data = []
         chain = MagicMock()
         # Default response object
         response = MagicMock()
