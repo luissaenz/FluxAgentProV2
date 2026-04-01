@@ -1,4 +1,7 @@
-"""EventStore — In-memory queue with transactional flush to ``domain_events``.
+"""EventStore — Append-only event store backed by Supabase.
+
+Phase 2 extension: adds append_sync() for direct synchronous writes
+(HITL flows that cannot use the queue+flush pattern).
 
 Events are appended synchronously during flow execution, then flushed in a
 single batch insert to guarantee atomicity.
@@ -12,7 +15,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 import logging
 
-from ..db.session import get_tenant_client
+from ..db.session import get_tenant_client, get_service_client
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +35,35 @@ class DomainEvent:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class EventStoreError(Exception):
+    """El Flow debe detenerse si se lanza este error (Regla R6)."""
+    pass
+
+
 class EventStore:
     """
     Append-only event store backed by Supabase.
 
-    Usage::
+    Supports two modes:
+    - Instance mode (Phase 1): append() to queue + flush() batch insert
+    - Static mode (Phase 2): append_sync() direct blocking write
+
+    Usage (Phase 1)::
 
         store = EventStore(org_id, user_id)
         store.append("flow", task_id, "flow.created", {"input": ...})
-        await store.flush()   # batch insert
+        await store.flush()
+
+    Usage (Phase 2 - HITL)::
+
+        EventStore.append_sync(
+            org_id=org_id,
+            aggregate_type="flow",
+            aggregate_id=task_id,
+            event_type="approval.requested",
+            payload={"description": description},
+            actor=f"flow:{flow_class.__name__}"
+        )
     """
 
     def __init__(self, org_id: str, user_id: Optional[str] = None) -> None:
@@ -49,7 +72,7 @@ class EventStore:
         self._queue: List[DomainEvent] = []
         self._sequence = 0
 
-    # ── public API ──────────────────────────────────────────────
+    # ── Instance API (Phase 1 — queue + flush) ─────────────────
 
     def append(
         self,
@@ -102,3 +125,67 @@ class EventStore:
         """Discard pending events without flushing."""
         self._queue.clear()
         self._sequence = 0
+
+    # ── Static API (Phase 2 — direct synchronous write) ─────────
+
+    @staticmethod
+    def append_sync(
+        org_id: str,
+        aggregate_type: str,
+        aggregate_id: str,
+        event_type: str,
+        payload: Dict[str, Any],
+        actor: Optional[str] = None,
+    ) -> None:
+        """
+        Escribir un evento inmutable de forma BLOQUEANTE.
+
+        Regla R6: EventStore.append_sync() es bloqueante.
+        El Flow no avanza al siguiente paso hasta confirmar el evento en DB.
+
+        Raises:
+            EventStoreError: Si no se puede escribir el evento.
+
+        Usage:
+            # Dentro de request_approval() o fuera del ciclo de vida del Flow
+            EventStore.append_sync(
+                org_id=self.state.org_id,
+                aggregate_type="flow",
+                aggregate_id=self.state.task_id,
+                event_type="approval.requested",
+                payload={"description": description},
+                actor=f"flow:{self.__class__.__name__}"
+            )
+        """
+        try:
+            svc = get_service_client()
+
+            # Obtener siguiente secuencia atómica (con FOR UPDATE)
+            seq_result = svc.rpc("next_event_sequence", {
+                "p_aggregate_type": aggregate_type,
+                "p_aggregate_id": aggregate_id
+            }).execute()
+
+            sequence = seq_result.data
+
+            # Insertar evento (append-only, RLS valida org_id)
+            svc.table("domain_events").insert({
+                "org_id": org_id,
+                "aggregate_type": aggregate_type,
+                "aggregate_id": aggregate_id,
+                "event_type": event_type,
+                "payload": payload,
+                "actor": actor or "system",
+                "sequence": sequence,
+            }).execute()
+
+            logger.debug(
+                "Event appended_sync: %s seq=%d agg=%s",
+                event_type, sequence, aggregate_id
+            )
+
+        except Exception as e:
+            logger.error("EventStore.append_sync failed: %s — %s", event_type, e)
+            raise EventStoreError(
+                f"EventStore write failed for event '{event_type}': {e}"
+            )
