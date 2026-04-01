@@ -10,12 +10,15 @@ from fastapi import FastAPI
 import logging
 
 # ── eager flow registration (import triggers @register_flow) ─────
-import src.flows.generic_flow  # noqa: F401
-import src.tools.builtin       # noqa: F401
+import src.flows.generic_flow   # noqa: F401
+import src.flows.architect_flow   # noqa: F401
+import src.tools.builtin        # noqa: F401
 
 from .routes.webhooks import router as webhooks_router
 from .routes.tasks import router as tasks_router
 from .routes.approvals import router as approvals_router
+from .routes.chat import router as chat_router
+from .routes.workflows import router as workflows_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,13 +31,27 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="FluxAgentPro-v2",
-    description="AI Agent Orchestration Engine — Phase 2 Governance",
-    version="2.0.0",
+    description="AI Agent Orchestration Engine — Phase 4 Conversational",
+    version="4.0.0",
 )
 
 app.include_router(webhooks_router)
 app.include_router(tasks_router)
 app.include_router(approvals_router)
+app.include_router(chat_router)
+app.include_router(workflows_router)
+
+
+@app.on_event("startup")
+async def startup():
+    """Cargar workflows generados previamente desde la DB."""
+    from src.flows.dynamic_flow import load_dynamic_flows_from_db
+
+    try:
+        count = load_dynamic_flows_from_db()
+        logger.info("Dynamic workflows loaded: %d", count)
+    except Exception as exc:
+        logger.warning("Could not load dynamic flows from DB: %s", exc)
 
 
 @app.get("/health")
