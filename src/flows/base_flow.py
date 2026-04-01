@@ -123,6 +123,16 @@ class BaseFlow(ABC):
         try:
             result = await self._run_crew()
 
+            # Phase 2: If the flow was paused for approval during _run_crew,
+            # we must NOT mark it as complete.
+            if self.state.status == FlowStatus.AWAITING_APPROVAL:
+                logger.info(
+                    "Flow %s paused for approval. Sequential execution stopped.",
+                    self.state.task_id
+                )
+                await self.persist_state()
+                return self.state
+
             # 5. Complete
             self.state.complete(result)
             await self.emit_event("flow.completed", {"result": result})
@@ -149,9 +159,11 @@ class BaseFlow(ABC):
                     "id": task_id,
                     "org_id": self.org_id,
                     "flow_type": self.__class__.__name__,
+                    "flow_id": task_id,
                     "status": "pending",
                     "payload": input_data,
                     "correlation_id": correlation_id,
+                    "max_retries": self.extra_kwargs.get("max_retries", 3),
                 }
             ).execute()
 
@@ -242,7 +254,7 @@ class BaseFlow(ABC):
 
         svc.table("snapshots").upsert(
             self.state.to_snapshot_v2(version=seq),
-            on_conflict="aggregate_type,aggregate_id"
+            on_conflict="task_id"
         ).execute()
 
         # 3. Crear pending_approval (usa tenant client para RLS)

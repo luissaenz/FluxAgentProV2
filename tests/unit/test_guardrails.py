@@ -97,9 +97,11 @@ class TestLoadOrgLimits:
 
     def test_returns_limits_from_org_config(self, mock_tenant_client):
         """Config con limits → dict con valores."""
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(data={
+        mock_response = MagicMock()
+        mock_response.data = {
             "config": {"limits": {"approval_threshold": 25_000, "max_tokens": 1_000_000}}
-        })
+        }
+        mock_tenant_client.table("organizations").select.return_value.eq.return_value.single.return_value.execute.return_value = mock_response
 
         result = load_org_limits("org_abc")
 
@@ -107,7 +109,7 @@ class TestLoadOrgLimits:
 
     def test_returns_empty_dict_on_error(self, mock_tenant_client):
         """Si la query falla → dict vacío (no lanza)."""
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.side_effect = Exception("DB error")
+        mock_tenant_client.table("organizations").select.return_value.eq.return_value.single.return_value.execute.side_effect = Exception("DB error")
 
         result = load_org_limits("org_broken")
 

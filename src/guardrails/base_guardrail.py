@@ -27,15 +27,15 @@ def load_org_limits(org_id: str) -> Dict[str, Any]:
         Dict con los límites de la org. Vacío si no hay config o error.
     """
     try:
-        db = get_tenant_client(org_id)
-        result = (
-            db.table("organizations")
-            .select("config")
-            .eq("id", org_id)
-            .single()
-            .execute()
-        )
-        return result.data.get("config", {}).get("limits", {})
+        with get_tenant_client(org_id) as db:
+            result = (
+                db.table("organizations")
+                .select("config")
+                .eq("id", org_id)
+                .single()
+                .execute()
+            )
+            return result.data.get("config", {}).get("limits", {})
     except Exception as e:
         logger.warning("Could not load org limits for %s: %s", org_id, e)
         return {}
