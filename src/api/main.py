@@ -15,6 +15,7 @@ import src.tools.builtin       # noqa: F401
 
 from .routes.webhooks import router as webhooks_router
 from .routes.tasks import router as tasks_router
+from .routes.approvals import router as approvals_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,12 +28,13 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="FluxAgentPro-v2",
-    description="AI Agent Orchestration Engine — Phase 1 Foundation",
-    version="0.1.0",
+    description="AI Agent Orchestration Engine — Phase 2 Governance",
+    version="2.0.0",
 )
 
 app.include_router(webhooks_router)
 app.include_router(tasks_router)
+app.include_router(approvals_router)
 
 
 @app.get("/health")

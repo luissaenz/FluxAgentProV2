@@ -1,4 +1,10 @@
-"""TenantClient — Context manager that injects RLS tenant context via set_config RPC."""
+"""Database session management with tenant isolation via RLS.
+
+Provides three clients:
+- ``get_service_client()``: service-role key, bypasses RLS (vault, system ops)
+- ``get_anon_client()``: anon-key client, respects RLS when org_id is set
+- ``TenantClient``: context manager that sets app.org_id before each query
+"""
 
 from __future__ import annotations
 
@@ -12,33 +18,65 @@ from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# ── Module-level Supabase client (lazy singleton) ──────────────
-_supabase_client: Optional[Client] = None
+# ── Module-level clients (lazy singletons) ──────────────────────
+_service_client: Optional[Client] = None
+_anon_client: Optional[Client] = None
 
 
-def get_supabase_client() -> Client:
-    """Return a module-level Supabase client, creating it on first call."""
-    global _supabase_client
-    if _supabase_client is None:
+def get_service_client() -> Client:
+    """
+    Return the service-role client (bypasses RLS).
+
+    Use ONLY for:
+    - Vault operations (secrets table — RLS allows only service_role SELECT)
+    - Event store synchronous writes (append_sync)
+    - System-level queries
+
+    NEVER expose this to agents or use in agent-facing code.
+    """
+    global _service_client
+    if _service_client is None:
         settings = get_settings()
-        _supabase_client = create_client(
+        _service_client = create_client(
             settings.supabase_url,
             settings.supabase_service_key,
         )
-    return _supabase_client
+    return _service_client
 
 
-# ── TenantClient ───────────────────────────────────────────────
+def get_anon_client() -> Client:
+    """
+    Return the anon-key client (respects RLS when org_id is set).
+
+    Use for read queries where you want RLS to apply normally.
+    For writes with RLS, use TenantClient instead.
+    """
+    global _anon_client
+    if _anon_client is None:
+        settings = get_settings()
+        _anon_client = create_client(
+            settings.supabase_url,
+            settings.supabase_anon_key,
+        )
+    return _anon_client
+
+
+# ── TenantClient ────────────────────────────────────────────────
 
 class TenantClient:
-    """Wraps a Supabase client and sets session-level RLS config on enter."""
+    """
+    Wraps a Supabase client and sets session-level RLS config on enter.
 
-    def __init__(self, supabase: Client, org_id: str, user_id: Optional[str] = None):
-        self._client = supabase
+    Usage::
+
+        with TenantClient(org_id, user_id) as db:
+            db.table("tasks").select("*").execute()
+    """
+
+    def __init__(self, client: Client, org_id: str, user_id: Optional[str] = None):
+        self._client = client
         self._org_id = org_id
         self._user_id = user_id
-
-    # -- context manager protocol ---------------------------------
 
     def __enter__(self) -> "TenantClient":
         """Set tenant config so that RLS policies filter by org."""
@@ -73,8 +111,6 @@ class TenantClient:
         except Exception as exc:
             logger.warning("Failed to clear tenant config: %s", exc)
 
-    # -- proxied helpers ------------------------------------------
-
     def table(self, table_name: str):
         """Proxy to supabase.table()."""
         return self._client.table(table_name)
@@ -84,7 +120,7 @@ class TenantClient:
         return self._client.rpc(func, params)
 
 
-# ── convenience context manager ────────────────────────────────
+# ── convenience context manager ─────────────────────────────────
 
 @contextmanager
 def get_tenant_client(
@@ -94,11 +130,13 @@ def get_tenant_client(
     """
     Obtain a TenantClient with RLS scoped to *org_id*.
 
+    Uses the service-role client internally to be able to call set_config RPC.
+
     Usage::
 
         with get_tenant_client("org_123") as db:
             db.table("tasks").select("*").execute()
     """
-    client = TenantClient(get_supabase_client(), org_id, user_id)
+    client = TenantClient(get_service_client(), org_id, user_id)
     with client:
         yield client

@@ -48,6 +48,20 @@ class BaseFlowState(BaseModel):
     tokens_used: int = Field(default=0, ge=0)
     correlation_id: Optional[str] = None
 
+    # ── HITL: Human-in-the-Loop (Fase 2) ────────────────────────
+    approval_payload: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Datos que el supervisor verá al aprobar"
+    )
+    approval_decision: Optional[str] = Field(
+        default=None,
+        description="Decisión del supervisor: approved | rejected"
+    )
+    approval_decided_by: Optional[str] = Field(
+        default=None,
+        description="Identificador del supervisor que decidió"
+    )
+
     model_config = {"use_enum_values": True, "extra": "allow"}
 
     # ── validators ──────────────────────────────────────────────
@@ -96,7 +110,11 @@ class BaseFlowState(BaseModel):
     # ── serialisation helpers ───────────────────────────────────
 
     def to_snapshot(self) -> dict:
-        """Convert to a row suitable for the ``snapshots`` table."""
+        """
+        Convert to a row suitable for the ``snapshots`` table.
+
+        Compatible with Phase 1 schema (state_json column).
+        """
         return {
             "task_id": self.task_id,
             "org_id": self.org_id,
@@ -105,7 +123,32 @@ class BaseFlowState(BaseModel):
             "state_json": self.model_dump(mode="json"),
         }
 
+    def to_snapshot_v2(self, version: int = 0) -> dict:
+        """
+        Convert to a row for the Phase 2+ schema (aggregate_* columns).
+
+        Used by HITL request_approval().
+        """
+        return {
+            "task_id": self.task_id,
+            "org_id": self.org_id,
+            "flow_type": self.flow_type,
+            "status": self.status,
+            "state_json": self.model_dump(mode="json"),
+            "aggregate_type": "flow",
+            "aggregate_id": self.task_id,
+            "version": version,
+        }
+
     @classmethod
     def from_snapshot(cls, data: dict) -> "BaseFlowState":
-        """Reconstruct from a ``snapshots`` row."""
-        return cls(**data["state_json"])
+        """
+        Reconstruct from a ``snapshots`` row.
+
+        Supports both Phase 1 schema (state_json) and Phase 2+ (state).
+        """
+        # Phase 1 uses state_json, Phase 2+ uses state
+        state_data = data.get("state_json") or data.get("state")
+        if not state_data:
+            raise ValueError("Snapshot has no state_json or state field")
+        return cls(**state_data)
