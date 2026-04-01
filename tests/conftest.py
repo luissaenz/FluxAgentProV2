@@ -1,6 +1,6 @@
-"""Global test fixtures for FluxAgentPro-v2 Phase 2.
+"""Global test fixtures for FluxAgentPro-v2 Phase 2 + 3.
 
-All Supabase and LLM interactions are mocked so that tests run
+All Supabase, LLM, and OpenAI interactions are mocked so that tests run
 without external dependencies.
 """
 
@@ -95,6 +95,8 @@ def mock_service_client():
         "src.db.vault.get_service_client",
         "src.flows.base_flow.get_service_client",
         "src.events.store.get_service_client",
+        "src.tools.mcp_pool.get_service_client",
+        "src.crews.base_crew.get_service_client",
     ]
     
     stack = []
@@ -161,6 +163,7 @@ def mock_tenant_client(mock_service_client):
         "src.flows.base_flow.get_tenant_client",
         "src.guardrails.base_guardrail.get_tenant_client",
         "src.events.store.get_tenant_client",
+        "src.flows.multi_crew_flow.get_tenant_client",
     ]
     
     stack = []
