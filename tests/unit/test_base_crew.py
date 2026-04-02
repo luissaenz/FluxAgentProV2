@@ -24,11 +24,8 @@ from tests.conftest import sample_org_id, mock_service_client
 class TestAgentLoading:
     """BaseCrew agent loading from agent_catalog."""
 
-    @pytest.mark.skip(reason="Mock setup issues - needs conftest integration")
     def test_loads_agent_from_catalog(self, sample_org_id):
         """BaseCrew loads agent definition from agent_catalog."""
-        mock_db = MagicMock()
-
         agent_data = {
             "id": "agent-123",
             "org_id": sample_org_id,
@@ -45,16 +42,19 @@ class TestAgentLoading:
             "is_active": True,
         }
 
-        mock_execute = MagicMock()
-        mock_execute.data = agent_data
         mock_table = MagicMock()
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
         mock_table.maybe_single.return_value = mock_table
-        mock_table.execute.return_value = mock_execute
-        mock_db.table.return_value = mock_table
 
-        with patch("src.db.session.get_service_client", return_value=mock_db):
+        mock_execute = MagicMock()
+        mock_execute.data = agent_data
+        mock_table.execute.return_value = mock_execute
+
+        mock_client = MagicMock()
+        mock_client.table.return_value = mock_table
+
+        with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             crew = BaseCrew(org_id=sample_org_id, role="analyst")
             config = crew._load_agent_config()
 
@@ -62,51 +62,48 @@ class TestAgentLoading:
             assert config["soul_json"]["goal"] == "Analyze data thoroughly"
             assert config["allowed_tools"] == ["db_read", "web_search"]
 
-    @pytest.mark.skip(reason="Mock setup issues - needs conftest integration")
     def test_raises_when_agent_not_found(self, sample_org_id):
         """BaseCrew raises CrewConfigError when agent not found."""
-        mock_db = MagicMock()
-
-        mock_execute = MagicMock()
-        mock_execute.data = None
         mock_table = MagicMock()
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
         mock_table.maybe_single.return_value = mock_table
-        mock_table.execute.return_value = mock_execute
-        mock_db.table.return_value = mock_table
 
-        with patch("src.db.session.get_service_client", return_value=mock_db):
+        mock_execute = MagicMock()
+        mock_execute.data = None
+        mock_table.execute.return_value = mock_execute
+
+        mock_client = MagicMock()
+        mock_client.table.return_value = mock_table
+
+        with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             crew = BaseCrew(org_id=sample_org_id, role="nonexistent_role")
 
             with pytest.raises(CrewConfigError, match="No active agent"):
                 crew._load_agent_config()
 
-    @pytest.mark.skip(reason="Mock setup issues - needs conftest integration")
     def test_raises_when_agent_inactive(self, sample_org_id):
         """BaseCrew raises when agent is inactive."""
-        mock_db = MagicMock()
-
-        mock_execute = MagicMock()
-        mock_execute.data = None
         mock_table = MagicMock()
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
         mock_table.maybe_single.return_value = mock_table
-        mock_table.execute.return_value = mock_execute
-        mock_db.table.return_value = mock_table
 
-        with patch("src.db.session.get_service_client", return_value=mock_db):
+        mock_execute = MagicMock()
+        mock_execute.data = None
+        mock_table.execute.return_value = mock_execute
+
+        mock_client = MagicMock()
+        mock_client.table.return_value = mock_table
+
+        with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             crew = BaseCrew(org_id=sample_org_id, role="inactive_agent")
 
             with pytest.raises(CrewConfigError):
                 crew._load_agent_config()
 
-    @pytest.mark.skip(reason="Mock setup issues - needs conftest integration")
     def test_caches_agent_config(self, sample_org_id):
         """BaseCrew caches agent config after first load."""
-        mock_db = MagicMock()
-
         agent_data = {
             "org_id": sample_org_id,
             "role": "analyst",
@@ -117,16 +114,19 @@ class TestAgentLoading:
             "is_active": True,
         }
 
-        mock_execute = MagicMock()
-        mock_execute.data = agent_data
         mock_table = MagicMock()
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
         mock_table.maybe_single.return_value = mock_table
-        mock_table.execute.return_value = mock_execute
-        mock_db.table.return_value = mock_table
 
-        with patch("src.db.session.get_service_client", return_value=mock_db):
+        mock_execute = MagicMock()
+        mock_execute.data = agent_data
+        mock_table.execute.return_value = mock_execute
+
+        mock_client = MagicMock()
+        mock_client.table.return_value = mock_table
+
+        with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             crew = BaseCrew(org_id=sample_org_id, role="analyst")
 
             config1 = crew._load_agent_config()
@@ -197,11 +197,8 @@ class TestToolResolution:
 class TestRunMethod:
     """BaseCrew.run() synchronous execution."""
 
-    @pytest.mark.skip(reason="Mock setup issues - needs conftest integration")
     def test_run_builds_and_executes_crew(self, sample_org_id):
         """BaseCrew.run() builds agent, task, and crew correctly."""
-        mock_db = MagicMock()
-
         agent_config = {
             "org_id": sample_org_id,
             "role": "analyst",
@@ -216,18 +213,21 @@ class TestRunMethod:
             "is_active": True,
         }
 
-        mock_execute = MagicMock()
-        mock_execute.data = agent_config
         mock_table = MagicMock()
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
         mock_table.maybe_single.return_value = mock_table
+
+        mock_execute = MagicMock()
+        mock_execute.data = agent_config
         mock_table.execute.return_value = mock_execute
-        mock_db.table.return_value = mock_table
+
+        mock_client = MagicMock()
+        mock_client.table.return_value = mock_table
 
         mock_settings = MagicMock()
 
-        with patch("src.db.session.get_service_client", return_value=mock_db):
+        with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             with patch("src.crews.base_crew.get_settings", return_value=mock_settings):
                 with patch("crewai.Agent") as mock_agent_cls:
                     with patch("crewai.Task") as mock_task_cls:
@@ -262,11 +262,8 @@ class TestRunMethod:
                                 inputs={"data": "test"}
                             )
 
-    @pytest.mark.skip(reason="Mock setup issues - needs conftest integration")
     def test_run_uses_default_expected_output(self, sample_org_id):
         """BaseCrew.run() uses default expected_output if not provided."""
-        mock_db = MagicMock()
-
         agent_config = {
             "org_id": sample_org_id,
             "role": "analyst",
@@ -281,18 +278,21 @@ class TestRunMethod:
             "is_active": True,
         }
 
-        mock_execute = MagicMock()
-        mock_execute.data = agent_config
         mock_table = MagicMock()
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
         mock_table.maybe_single.return_value = mock_table
+
+        mock_execute = MagicMock()
+        mock_execute.data = agent_config
         mock_table.execute.return_value = mock_execute
-        mock_db.table.return_value = mock_table
+
+        mock_client = MagicMock()
+        mock_client.table.return_value = mock_table
 
         mock_settings = MagicMock()
 
-        with patch("src.db.session.get_service_client", return_value=mock_db):
+        with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             with patch("src.crews.base_crew.get_settings", return_value=mock_settings):
                 with patch("crewai.Agent"):
                     with patch("crewai.Task") as mock_task_cls:
