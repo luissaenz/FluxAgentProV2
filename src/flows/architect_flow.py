@@ -161,9 +161,12 @@ class ArchitectFlow(BaseFlow):
     async def _execute_architect_agent(self, description: str) -> Any:
         """Ejecutar el agente Architect que produce la definición."""
         from src.config import get_settings
+        from src.flows.workflow_guardrails import ALLOWED_MODELS
 
         settings = get_settings()
         llm = settings.get_llm()
+
+        allowed_models = ", ".join(ALLOWED_MODELS)
 
         architect = Agent(
             role="Workflow Architect",
@@ -183,21 +186,55 @@ class ArchitectFlow(BaseFlow):
 
         task = Task(
             description=f"""
-Analiza esta descripción y produce un WorkflowDefinition JSON válido:
+Analiza esta descripción y produce UNICAMENTE un objeto JSON sin ningún texto adicional.
 
 DESCRIPCIÓN DEL USUARIO:
 {description}
 
-REGLAS:
-- flow_type: snake_case, minúsculas, único globalmente (ej: "invoice_approval_v2")
-- Cada step debe referenciar un agent_role que exista en la lista agents
-- Dependencias entre steps no deben formar ciclos (DAG)
-- max_iter de cada agente ≤ 5
-- Solo modelos permitidos: claude-sonnet-4-20250514, gpt-4o, groq/llama-3.3-70b-versatile
+SCHEMA EXACTO A SEGUIR ( WorkflowDefinition ):
+{{
+  "name": "string, min 3 caracteres, nombre descriptivo del workflow",
+  "description": "string, min 10 caracteres, explicación detallada",
+  "flow_type": "string, snake_case, minúsculas, min 3 caracteres, único globalmente",
+  "steps": [
+    {{
+      "id": "string, identificador único del paso (ej: 'step_1')",
+      "name": "string, nombre del paso",
+      "description": "string, min 10 caracteres, qué hace este paso",
+      "agent_role": "string, debe coincidir exactamente con un role en agents[]",
+      "depends_on": [array de strings o null, ids de pasos anteriores de los que depende],
+      "requires_approval": boolean, false por defecto
+    }}
+  ],
+  "agents": [
+    {{
+      "role": "string, identificador único del agente (ej: 'redactor')",
+      "goal": "string, min 10 caracteres, objetivo del agente",
+      "backstory": "string, min 10 caracteres, trasfondo del agente",
+      "allowed_tools": [array de strings, puede estar vacío []],
+      "rules": [array de strings, puede estar vacío []],
+      "model": "string, uno de: {allowed_models}",
+      "max_iter": integer, entre 1 y 5 inclusive
+    }}
+  ],
+  "approval_rules": [
+    {{
+      "condition": "string, expresión booleana (ej: 'monto > 5000')",
+      "description": "string, explicación de la regla"
+    }}
+  ]
+}}
 
-Responde SOLO con JSON válido, sin markdown ni explicación.
+REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
+1. 'flow_type' debe ser snake_case (solo minúsculas, números y guiones bajos)
+2. Todo 'agent_role' en 'steps' DEBE existir exactamente en 'agents[].role'
+3. El grafo de 'depends_on' no debe tener ciclos (sin dependencias circulares)
+4. 'steps' y 'agents' deben tener al menos 1 elemento cada uno
+5. El campo 'model' DEBE ser uno de los valores permitidos listados arriba
+6. NO agregues campos extra que no estén en el schema
+7. Responde SOLO con el objeto JSON, sin markdown, sin backticks, sin texto explicativo
 """,
-            expected_output="JSON del WorkflowDefinition",
+            expected_output="Un objeto JSON puro que cumpla exactamente con el schema de WorkflowDefinition.",
             agent=architect,
         )
 
@@ -214,20 +251,38 @@ Responde SOLO con JSON válido, sin markdown ni explicación.
         """Extraer y validar JSON del resultado del agente."""
         import json
 
-        raw_text = str(raw_result.raw if hasattr(raw_result, "raw") else raw_result)
+        # Manejar CrewOutput u otros tipos
+        if hasattr(raw_result, "raw"):
+            raw_text = str(raw_result.raw)
+        else:
+            raw_text = str(raw_result)
 
-        # Limpiar markdown code blocks
-        raw_text = re.sub(r"```json\s*", "", raw_text)
-        raw_text = re.sub(r"```\s*$", "", raw_text)
-        raw_text = raw_text.strip()
+        logger.debug("ArchitectFlow: raw_text a parsear: %s", raw_text)
+
+        # Buscar el bloque JSON { ... }
+        json_match = re.search(r"(\{[\s\S]*\})", raw_text)
+        if not json_match:
+            raise ValueError(
+                f"El agente no retornó un objeto JSON. Resultado: '{raw_text[:200]}...'"
+            )
+
+        raw_text = json_match.group(1).strip()
+
+        if not raw_text:
+            raise ValueError(f"El agente retornó un resultado vacío: '{raw_text}'")
 
         try:
             data = json.loads(raw_text)
             return WorkflowDefinition(**data)
         except json.JSONDecodeError as e:
+            logger.error("Error parseando JSON: %s. Texto: %s", e, raw_text)
             raise ValueError(f"El agente retornó JSON inválido: {e}")
         except Exception as e:
-            raise ValueError(f"Validación de WorkflowDefinition falló: {e}")
+            logger.error("Error validando WorkflowDefinition: %s. Data: %s", e, data if 'data' in dir() else 'N/A')
+            raise ValueError(
+                f"Validación de WorkflowDefinition falló: {e}\n"
+                f"JSON recibido: {raw_text[:500]}"
+            )
 
     def _ensure_unique_flow_type(self, flow_type: str) -> str:
         """Si flow_type ya existe globalmente, agregar sufijo."""
@@ -241,7 +296,7 @@ Responde SOLO con JSON válido, sin markdown ni explicación.
             .execute()
         )
 
-        if existing.data:
+        if existing and existing.data:
             suffix = self.org_id.replace("-", "")[:8]
             safe = f"{flow_type}_{suffix}"
             logger.warning(
