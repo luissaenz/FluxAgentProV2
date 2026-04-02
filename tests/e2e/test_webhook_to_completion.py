@@ -99,7 +99,9 @@ class TestTasksEndpoint:
             headers={"X-Org-ID": sample_org_id},
         )
         assert response.status_code == 200
-        assert response.json() == []
+        body = response.json()
+        assert body["items"] == []
+        assert body["total"] == 0
 
 
 class TestHealthEndpoint:

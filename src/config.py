@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     supabase_anon_key: str = Field(..., description="Supabase anon/public key")
     supabase_service_key: str = Field(..., description="Supabase service-role key")
 
+    # ── Supabase Auth (Phase 5) ────────────────────────────────
+    supabase_jwt_secret: str = Field("", description="Supabase JWT signing secret for token verification")
+
     # ── LLM Providers ─────────────────────────────────────────
     anthropic_api_key: Optional[str] = Field(None, description="Anthropic API key")
     openai_api_key: Optional[str] = Field(None, description="OpenAI API key")

@@ -1,21 +1,40 @@
-"""Routes: Approvals — Procesar decisiones de supervisor (HITL)."""
+"""Routes: Approvals — Procesar decisiones de supervisor (HITL).
+
+Phase 5: Updated to support both legacy (org_id in body) and
+dashboard (JWT + X-Org-ID header) authentication modes.
+"""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, field_validator
+from typing import Optional
 import logging
 
 from ...db.session import get_service_client
 from ...events.store import EventStore, EventStoreError
 from ...flows.registry import flow_registry
+from ..middleware import require_org_id
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(prefix="/approvals", tags=["approvals"])
+
+
+class ApprovalRequest(BaseModel):
+    """Payload for processing an approval decision."""
+    action: str  # "approve" or "reject"
+    notes: Optional[str] = None
+
+    @field_validator("action")
+    @classmethod
+    def validate_action(cls, v: str) -> str:
+        if v not in ("approve", "reject"):
+            raise ValueError("action must be 'approve' or 'reject'")
+        return v
 
 
 class ApprovalDecision(BaseModel):
-    """Payload para procesar una decisión de aprobación."""
+    """Legacy payload (backward compatibility with Phase 2-4)."""
     org_id: str
     decision: str  # "approved" | "rejected"
     decided_by: str
@@ -29,35 +48,64 @@ class ApprovalDecision(BaseModel):
         return v
 
 
+@router.get("")
+async def list_approvals(
+    org_id: str = Depends(require_org_id),
+    status: Optional[str] = "pending",
+) -> list:
+    """List pending_approvals for the current org."""
+    db = get_service_client()
+
+    query = (
+        db.table("pending_approvals")
+        .select("*")
+        .eq("org_id", org_id)
+    )
+
+    if status:
+        query = query.eq("status", status)
+
+    result = query.order("created_at", desc=True).execute()
+    return result.data or []
+
+
 @router.post("/{task_id}")
 async def process_approval(
     task_id: str,
-    body: ApprovalDecision,
+    request: Request,
     background: BackgroundTasks,
+    org_id: str = Depends(require_org_id),
 ) -> dict:
     """
-    Procesar la decisión del supervisor sobre una aprobación pendiente.
+    Process supervisor approval/rejection decision.
 
-    SECUENCIA:
-    1. Verificar que la aprobación existe y está pendiente
-    2. Marcar la aprobación como resuelta (approved | rejected)
-    3. Registrar evento approval.{decision}
-    4. Reanudar el Flow en background
-
-    Args:
-        task_id: UUID de la tarea que fue pausada
-        body: Decisión del supervisor
-
-    Returns:
-        {"status": "ok", "task_id": ..., "decision": ...}
-
-    Raises:
-        HTTPException 404: Si la aprobación no existe o ya fue procesada
-        HTTPException 400: Si el flow_type no está registrado
+    Accepts both new format (ApprovalRequest with action) and
+    legacy format (ApprovalDecision with decision) for backward compatibility.
     """
+    body = await request.json()
+
+    # Determine format: new (action) vs legacy (decision)
+    if "action" in body:
+        action = body["action"]
+        if action not in ("approve", "reject"):
+            raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
+        decision = "approved" if action == "approve" else "rejected"
+        decided_by = getattr(request.state, "user_id", body.get("decided_by", "dashboard_user"))
+        notes = body.get("notes", "")
+        effective_org_id = org_id
+    elif "decision" in body:
+        decision = body["decision"]
+        if decision not in ("approved", "rejected"):
+            raise HTTPException(status_code=422, detail="decision must be 'approved' or 'rejected'")
+        decided_by = body.get("decided_by", "unknown")
+        notes = body.get("notes", "")
+        effective_org_id = body.get("org_id", org_id)
+    else:
+        raise HTTPException(status_code=422, detail="Must provide 'action' or 'decision'")
+
     svc = get_service_client()
 
-    # 1. Verificar que la aprobación existe y está pendiente
+    # 1. Verify approval exists and is pending
     approval = (
         svc.table("pending_approvals")
         .select("*")
@@ -70,55 +118,49 @@ async def process_approval(
     if not approval.data:
         raise HTTPException(
             status_code=404,
-            detail="Aprobación no encontrada o ya procesada"
+            detail="Approval not found or already processed",
         )
 
     flow_type = approval.data["flow_type"]
 
-    # 2. Marcar aprobación como resuelta
+    # 2. Mark approval as resolved
     svc.table("pending_approvals").update({
-        "status": body.decision,
-        "decided_by": body.decided_by,
+        "status": decision,
+        "decided_by": decided_by,
     }).eq("task_id", task_id).execute()
 
-    # 3. Registrar evento (bloqueante — Regla R6)
+    # 3. Emit event (blocking — Rule R6)
     try:
         EventStore.append_sync(
-            org_id=body.org_id,
+            org_id=effective_org_id,
             aggregate_type="flow",
             aggregate_id=task_id,
-            event_type=f"approval.{body.decision}",
-            payload={
-                "decided_by": body.decided_by,
-                "notes": body.notes,
-            },
-            actor=f"user:{body.decided_by}"
+            event_type=f"approval.{decision}",
+            payload={"decided_by": decided_by, "notes": notes},
+            actor=f"user:{decided_by}",
         )
     except EventStoreError as e:
         logger.error("Failed to emit approval event: %s", e)
-        raise HTTPException(status_code=500, detail="No se pudo registrar el evento")
+        raise HTTPException(status_code=500, detail="Could not record event")
 
-    # 4. Reanudar el Flow en background
+    # 4. Resume flow in background
     flow_class = flow_registry.get(flow_type)
-
     if not flow_class:
         raise HTTPException(
             status_code=400,
-            detail=f"Flow type '{flow_type}' not found in registry"
+            detail=f"Flow type '{flow_type}' not found in registry",
         )
 
-    # Crear instancia con org_id del body
-    flow = flow_class(org_id=body.org_id)
-
+    flow = flow_class(org_id=effective_org_id)
     background.add_task(
         flow.resume,
         task_id=task_id,
-        decision=body.decision,
-        decided_by=body.decided_by,
+        decision=decision,
+        decided_by=decided_by,
     )
 
     return {
-        "status": "ok",
+        "status": decision,
         "task_id": task_id,
-        "decision": body.decision,
+        "decision": decision,
     }

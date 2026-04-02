@@ -8,12 +8,14 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 # ── eager flow registration (import triggers @register_flow) ─────
-import src.flows.generic_flow   # noqa: F401
-import src.flows.architect_flow   # noqa: F401
-import src.tools.builtin        # noqa: F401
+import src.flows.generic_flow    # noqa: F401
+import src.flows.architect_flow  # noqa: F401
+import src.flows.coctel_flows    # noqa: F401  — Phase 5B CoctelPro
+import src.tools.builtin         # noqa: F401
 
 from .routes.webhooks import router as webhooks_router
 from .routes.tasks import router as tasks_router
@@ -52,6 +54,15 @@ app = FastAPI(
     description="AI Agent Orchestration Engine — Phase 4 Conversational",
     version="4.0.0",
     lifespan=lifespan,
+)
+
+# ── CORS (Phase 5: Dashboard on localhost:3000) ─────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(webhooks_router)
