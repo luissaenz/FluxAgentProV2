@@ -29,16 +29,17 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900">Historial de Tareas</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Historial de Tareas</h2>
 
       {/* Filters */}
       <div className="flex gap-3">
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(0) }}
-          className="rounded-lg border px-3 py-2 text-sm"
+          className="rounded-lg border px-3 py-2 text-sm dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100"
         >
           <option value="">Todos los estados</option>
+          {/* ... options ... */}
           <option value="pending">Pendiente</option>
           <option value="running">Ejecutando</option>
           <option value="awaiting_approval">HITL</option>
@@ -51,22 +52,22 @@ export default function TasksPage() {
           value={flowFilter}
           onChange={(e) => { setFlowFilter(e.target.value); setPage(0) }}
           placeholder="Filtrar por flow_type..."
-          className="rounded-lg border px-3 py-2 text-sm"
+          className="rounded-lg border px-3 py-2 text-sm dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100 placeholder:text-gray-500"
         />
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border bg-white">
+      <div className="overflow-hidden rounded-lg border bg-white dark:bg-gray-900 dark:border-gray-800">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-950">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Flow</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Creado</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Flow</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Estado</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Creado</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y dark:divide-gray-800">
             {isLoading ? (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-sm text-gray-400">
@@ -83,20 +84,20 @@ export default function TasksPage() {
               tasks.map((task) => {
                 const badge = STATUS_BADGES[task.status] || STATUS_BADGES['pending']
                 return (
-                  <tr key={task.task_id} className="hover:bg-gray-50">
+                  <tr key={task.task_id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-4 py-3">
                       <Link
                         href={`/tasks/${task.task_id}`}
-                        className="text-sm text-blue-600 hover:underline"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         {task.task_id.slice(0, 12)}...
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{task.flow_type}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{task.flow_type}</td>
                     <td className="px-4 py-3">
                       <Badge className={badge.className}>{badge.label}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {formatDistanceToNow(new Date(task.created_at), {
                         addSuffix: true,
                         locale: es,
@@ -113,24 +114,24 @@ export default function TasksPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {total} tareas en total
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded-lg border px-3 py-1 text-sm dark:border-gray-800 dark:text-gray-300 disabled:opacity-50"
             >
               Anterior
             </button>
-            <span className="px-3 py-1 text-sm text-gray-500">
+            <span className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400">
               {page + 1} / {totalPages}
             </span>
             <button
               onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded-lg border px-3 py-1 text-sm dark:border-gray-800 dark:text-gray-300 disabled:opacity-50"
             >
               Siguiente
             </button>

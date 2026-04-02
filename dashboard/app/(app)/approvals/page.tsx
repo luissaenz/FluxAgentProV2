@@ -28,7 +28,7 @@ export default function ApprovalsPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900">Centro de Aprobaciones</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Centro de Aprobaciones</h2>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -37,7 +37,7 @@ export default function ApprovalsPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
-            <h3 className="mb-3 text-sm font-medium text-gray-500">
+            <h3 className="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">
               Pendientes ({approvals?.filter((a) => a.status === 'pending').length || 0})
             </h3>
             <ApprovalList
@@ -56,7 +56,7 @@ export default function ApprovalsPage() {
                 isLoading={approve.isPending || reject.isPending}
               />
             ) : (
-              <div className="flex items-center justify-center rounded-lg border border-dashed py-12 text-sm text-gray-400">
+              <div className="flex items-center justify-center rounded-lg border border-dashed py-12 text-sm text-gray-400 dark:border-gray-800 dark:text-gray-600">
                 Selecciona una aprobación para ver el detalle
               </div>
             )}

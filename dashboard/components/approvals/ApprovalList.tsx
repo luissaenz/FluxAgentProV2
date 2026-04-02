@@ -16,7 +16,7 @@ interface ApprovalListProps {
 export function ApprovalList({ approvals, selectedId, onSelect }: ApprovalListProps) {
   if (approvals.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
         <ShieldCheck className="mb-2 h-12 w-12" />
         <p className="text-sm">No hay aprobaciones pendientes</p>
       </div>
@@ -35,17 +35,17 @@ export function ApprovalList({ approvals, selectedId, onSelect }: ApprovalListPr
             onClick={() => onSelect(approval)}
             className={`w-full rounded-lg border p-4 text-left transition-colors ${
               isSelected
-                ? 'border-blue-300 bg-blue-50'
-                : 'border-gray-200 bg-white hover:bg-gray-50'
+                ? 'border-blue-300 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/10'
+                : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:bg-gray-800'
             }`}
           >
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {approval.description}
               </span>
               <Badge className={badge.className}>{badge.label}</Badge>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span>{approval.flow_type}</span>
               <span>&middot;</span>
               <span>

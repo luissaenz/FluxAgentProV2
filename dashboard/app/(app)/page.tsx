@@ -37,10 +37,10 @@ export default function OverviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Overview
         </h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {currentOrg?.name || 'Selecciona una organización'}
         </p>
       </div>
@@ -77,11 +77,11 @@ export default function OverviewPage() {
       </div>
 
       {/* Recent tasks */}
-      <div className="rounded-lg border bg-white">
-        <div className="border-b px-6 py-4">
-          <h3 className="font-semibold text-gray-900">Tareas recientes</h3>
+      <div className="rounded-lg border bg-white dark:bg-gray-900 dark:border-gray-800">
+        <div className="border-b px-6 py-4 dark:border-gray-800">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Tareas recientes</h3>
         </div>
-        <div className="divide-y">
+        <div className="divide-y dark:divide-gray-800">
           {tasks.slice(0, 10).map((task) => {
             const badge = STATUS_BADGES[task.status] || STATUS_BADGES['pending']
             return (
@@ -90,8 +90,8 @@ export default function OverviewPage() {
                 className="flex items-center justify-between px-6 py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{task.flow_type}</p>
-                  <p className="text-xs text-gray-500">{task.task_id.slice(0, 12)}...</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{task.flow_type}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{task.task_id.slice(0, 12)}...</p>
                 </div>
                 <Badge className={badge.className}>{badge.label}</Badge>
               </div>
@@ -123,17 +123,17 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-lg border bg-white p-4 ${
-        highlight ? 'border-amber-300 bg-amber-50' : ''
+      className={`rounded-lg border bg-white p-4 dark:bg-gray-900 dark:border-gray-800 ${
+        highlight ? 'border-amber-300 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/10' : ''
       }`}
     >
       <div className="flex items-center gap-3">
         {icon}
         <div>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          <p className="text-xs text-gray-500">{label}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
           {subtext && (
-            <p className="text-xs text-gray-400">{subtext}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{subtext}</p>
           )}
         </div>
       </div>

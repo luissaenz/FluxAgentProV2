@@ -25,13 +25,13 @@ export function ApprovalDetail({
   const badge = STATUS_BADGES[approval.status] || STATUS_BADGES['pending']
 
   return (
-    <div className="rounded-lg border bg-white p-6">
+    <div className="rounded-lg border bg-white p-6 dark:bg-gray-900 dark:border-gray-800">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {approval.description}
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {approval.flow_type} &middot;{' '}
             {formatDistanceToNow(new Date(approval.created_at), {
               addSuffix: true,
@@ -43,9 +43,9 @@ export function ApprovalDetail({
       </div>
 
       {/* Payload */}
-      <div className="mb-4 rounded-lg bg-gray-50 p-4">
-        <h4 className="mb-2 text-sm font-medium text-gray-700">Payload</h4>
-        <pre className="overflow-x-auto text-xs text-gray-600">
+      <div className="mb-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-950/50">
+        <h4 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Payload</h4>
+        <pre className="overflow-x-auto text-xs text-gray-600 dark:text-gray-400">
           {JSON.stringify(approval.payload, null, 2)}
         </pre>
       </div>
@@ -59,7 +59,7 @@ export function ApprovalDetail({
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
               rows={2}
               placeholder="Agregar notas sobre la decisión..."
             />

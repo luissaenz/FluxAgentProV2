@@ -13,7 +13,7 @@ export default function KanbanPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900">Kanban</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Kanban</h2>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -28,9 +28,9 @@ export default function KanbanPage() {
 
       {/* Task detail slide-over */}
       {selectedTask && (
-        <div className="fixed inset-y-0 right-0 z-50 w-96 border-l bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b p-4">
-            <h3 className="font-semibold text-gray-900">Detalle de tarea</h3>
+        <div className="fixed inset-y-0 right-0 z-50 w-96 border-l bg-white shadow-xl dark:bg-gray-900 dark:border-gray-800">
+          <div className="flex items-center justify-between border-b p-4 dark:border-gray-800">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Detalle de tarea</h3>
             <button
               onClick={() => setSelectedTask(null)}
               className="text-gray-400 hover:text-gray-600"
@@ -40,21 +40,21 @@ export default function KanbanPage() {
           </div>
           <div className="space-y-4 p-4">
             <div>
-              <label className="text-xs font-medium text-gray-500">ID</label>
-              <p className="text-sm text-gray-900">{selectedTask.task_id}</p>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">ID</label>
+              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedTask.task_id}</p>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Flow</label>
-              <p className="text-sm text-gray-900">{selectedTask.flow_type}</p>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Flow</label>
+              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedTask.flow_type}</p>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Status</label>
-              <p className="text-sm text-gray-900">{selectedTask.status}</p>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
+              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedTask.status}</p>
             </div>
             {selectedTask.result && (
               <div>
-                <label className="text-xs font-medium text-gray-500">Resultado</label>
-                <pre className="mt-1 overflow-x-auto rounded bg-gray-50 p-2 text-xs">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Resultado</label>
+                <pre className="mt-1 overflow-x-auto rounded bg-gray-50 p-2 text-xs dark:bg-gray-950 dark:text-gray-300">
                   {JSON.stringify(selectedTask.result, null, 2)}
                 </pre>
               </div>

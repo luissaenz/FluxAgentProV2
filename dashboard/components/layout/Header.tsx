@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { OrgSelector } from './OrgSelector'
 import type { Organization } from '@/lib/types'
 import { LogOut } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface HeaderProps {
   orgs: Organization[]
@@ -15,7 +16,7 @@ export function Header({ orgs, currentOrg, onSwitchOrg }: HeaderProps) {
   const { user, signOut } = useAuth()
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-6">
+    <header className="flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-gray-900 dark:border-gray-800">
       <div className="flex items-center gap-4">
         <OrgSelector
           orgs={orgs}
@@ -25,10 +26,11 @@ export function Header({ orgs, currentOrg, onSwitchOrg }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-500">{user?.email}</span>
+        <ThemeToggle />
+        <span className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</span>
         <button
           onClick={signOut}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         >
           <LogOut className="h-4 w-4" />
           Salir

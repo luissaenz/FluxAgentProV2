@@ -27,7 +27,7 @@ export function EventTimeline({ events, filterTaskId }: EventTimelineProps) {
 
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-600">
         <Activity className="mb-2 h-12 w-12" />
         <p className="text-sm">No hay eventos</p>
       </div>
@@ -45,28 +45,28 @@ export function EventTimeline({ events, filterTaskId }: EventTimelineProps) {
             {/* Timeline line + dot */}
             <div className="flex flex-col items-center">
               <div className={`h-3 w-3 rounded-full ${dotColor}`} />
-              {!isLast && <div className="w-0.5 flex-1 bg-gray-200" />}
+              {!isLast && <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-800" />}
             </div>
 
             {/* Content */}
             <div className="flex-1 pb-6">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {event.event_type}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 dark:text-gray-500">
                   {formatDistanceToNow(new Date(event.created_at), {
                     addSuffix: true,
                     locale: es,
                   })}
                 </span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {event.aggregate_type}:{event.aggregate_id.slice(0, 8)}...
                 {event.actor && ` by ${event.actor}`}
               </p>
               {event.payload && Object.keys(event.payload).length > 0 && (
-                <pre className="mt-1 overflow-x-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
+                <pre className="mt-1 overflow-x-auto rounded bg-gray-50 p-2 text-xs text-gray-600 dark:bg-gray-950 dark:text-gray-400">
                   {JSON.stringify(event.payload, null, 2)}
                 </pre>
               )}

@@ -33,8 +33,8 @@ export function Sidebar({ pendingApprovals = 0 }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r bg-white">
-      <div className="flex h-16 items-center border-b px-6">
+    <aside className="flex h-full w-64 flex-col border-r bg-white dark:bg-gray-900 dark:border-gray-800">
+      <div className="flex h-16 items-center border-b px-6 dark:border-gray-800">
         <h1 className="text-lg font-bold text-blue-600">FluxAgentPro</h1>
       </div>
 
@@ -53,8 +53,8 @@ export function Sidebar({ pendingApprovals = 0 }: SidebarProps) {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
               )}
             >
               <Icon className="h-5 w-5" />

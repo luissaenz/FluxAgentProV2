@@ -29,7 +29,7 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900">Log de Eventos</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Log de Eventos</h2>
 
       <div>
         <input
@@ -37,11 +37,11 @@ export default function EventsPage() {
           value={filterTaskId}
           onChange={(e) => setFilterTaskId(e.target.value)}
           placeholder="Filtrar por task_id..."
-          className="rounded-lg border px-3 py-2 text-sm"
+          className="rounded-lg border px-3 py-2 text-sm dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100"
         />
       </div>
 
-      <div className="rounded-lg border bg-white p-6">
+      <div className="rounded-lg border bg-white p-6 dark:bg-gray-900 dark:border-gray-800">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
