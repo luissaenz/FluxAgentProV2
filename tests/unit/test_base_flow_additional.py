@@ -20,6 +20,7 @@ from src.flows.state import BaseFlowState, FlowStatus
 
 # ── Test Flow implementations ───────────────────────────────────
 
+
 class TestableFlow(BaseFlow):
     """Minimal flow for testing."""
 
@@ -41,6 +42,7 @@ class FailingFlow(BaseFlow):
 
 
 # ── FlowStatus tests ────────────────────────────────────────────
+
 
 class TestFlowStatus:
     """FlowStatus enum values and transitions."""
@@ -68,6 +70,7 @@ class TestFlowStatus:
 
 
 # ── Retry logic tests ───────────────────────────────────────────
+
 
 class TestRetryLogic:
     """Retry count and max_retries behavior."""
@@ -112,6 +115,7 @@ class TestRetryLogic:
 
 
 # ── persist_state tests ─────────────────────────────────────────
+
 
 class TestPersistState:
     """persist_state() behavior and edge cases."""
@@ -173,6 +177,7 @@ class TestPersistState:
 
 # ── emit_event tests ────────────────────────────────────────────
 
+
 class TestEmitEvent:
     """emit_event() behavior and error handling."""
 
@@ -222,6 +227,7 @@ class TestEmitEvent:
 
 # ── Error handling decorator tests ──────────────────────────────
 
+
 class TestWithErrorHandlingDecorator:
     """with_error_handling decorator behavior."""
 
@@ -255,6 +261,7 @@ class TestWithErrorHandlingDecorator:
 
 
 # ── create_task_record tests ────────────────────────────────────
+
 
 class TestCreateTaskRecord:
     """create_task_record() behavior."""
@@ -304,18 +311,16 @@ class TestCreateTaskRecord:
         """create_task_record() emits flow.created event."""
         flow = TestableFlow(org_id=sample_org_id)
 
-        await flow.create_task_record({"test": "data"})
+        with patch.object(flow, "emit_event", new_callable=AsyncMock) as mock_emit:
+            await flow.create_task_record({"test": "data"})
 
-        # EventStore.append should have been called with flow.created
-        assert flow.event_store is not None
-        # Check that append was called
-        assert flow.event_store.append.called
-        calls = flow.event_store.append.call_args_list
-        event_types = [call[1]["event_type"] for call in calls if len(call) > 1]
-        assert len(event_types) > 0
+            mock_emit.assert_called_once_with(
+                "flow.created", {"input_data": {"test": "data"}}
+            )
 
 
 # ── validate_input contract tests ───────────────────────────────
+
 
 class TestValidateInputContract:
     """validate_input() contract tests."""

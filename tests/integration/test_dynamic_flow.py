@@ -101,6 +101,7 @@ WORKFLOW_WITH_APPROVAL_TEMPLATE = {
 
 # ── DynamicWorkflow registration tests ──────────────────────────
 
+
 class TestDynamicWorkflowRegistration:
     """DynamicWorkflow.register() behavior."""
 
@@ -130,6 +131,7 @@ class TestDynamicWorkflowRegistration:
         )
 
         from src.flows.registry import flow_registry
+
         FlowClass = flow_registry.get("another_flow")
 
         assert FlowClass._template_definition["custom"] == "data"
@@ -137,6 +139,7 @@ class TestDynamicWorkflowRegistration:
 
 
 # ── DynamicWorkflow execution tests ─────────────────────────────
+
 
 class TestDynamicWorkflowExecution:
     """DynamicWorkflow._run_crew() execution tests."""
@@ -155,12 +158,17 @@ class TestDynamicWorkflowExecution:
 
         # Mock BaseCrew
         mock_crew_analyst = MagicMock()
-        mock_crew_analyst.run_async = AsyncMock(return_value=MagicMock(raw="Analysis result"))
-        
+        mock_crew_analyst.run_async = AsyncMock(
+            return_value=MagicMock(raw="Analysis result")
+        )
+
         mock_crew_processor = MagicMock()
-        mock_crew_processor.run_async = AsyncMock(return_value=MagicMock(raw="Processing result"))
+        mock_crew_processor.run_async = AsyncMock(
+            return_value=MagicMock(raw="Processing result")
+        )
 
         with patch("src.flows.dynamic_flow.BaseCrew") as MockBaseCrew:
+
             def crew_side_effect(org_id, role):
                 if role == "analyst":
                     return mock_crew_analyst
@@ -190,6 +198,7 @@ class TestDynamicWorkflowExecution:
         flow._flow_type = "simple_test"
         flow.state = MagicMock()
         flow.state.input_data = {"test": "data"}
+        flow.persist_state = AsyncMock()
 
         mock_crew = MagicMock()
         mock_crew.run_async = AsyncMock(return_value=MagicMock(raw="Result"))
@@ -220,7 +229,7 @@ class TestDynamicWorkflowExecution:
 
         # emit_event should be called for each step
         assert flow.emit_event.call_count >= 2
-        
+
         # Check event types
         event_calls = [call[0][0] for call in flow.emit_event.call_args_list]
         assert "step.step_1.completed" in event_calls
@@ -234,8 +243,18 @@ class TestDynamicWorkflowExecution:
         template_with_missing_role = {
             **SIMPLE_WORKFLOW_TEMPLATE,
             "steps": [
-                {"id": "step_1", "name": "Step 1", "description": "Desc", "agent_role": "analyst"},
-                {"id": "step_2", "name": "Step 2", "description": "Desc", "agent_role": None},
+                {
+                    "id": "step_1",
+                    "name": "Step 1",
+                    "description": "Desc",
+                    "agent_role": "analyst",
+                },
+                {
+                    "id": "step_2",
+                    "name": "Step 2",
+                    "description": "Desc",
+                    "agent_role": None,
+                },
             ],
             "agents": SIMPLE_WORKFLOW_TEMPLATE["agents"][:1],
         }
@@ -259,6 +278,7 @@ class TestDynamicWorkflowExecution:
 
 
 # ── Approval rule evaluation tests ──────────────────────────────
+
 
 class TestApprovalRuleEvaluation:
     """_check_approval_rule() behavior."""
@@ -308,6 +328,7 @@ class TestApprovalRuleEvaluation:
 
 # ── Dynamic workflow with approval tests ────────────────────────
 
+
 class TestDynamicWorkflowWithApproval:
     """DynamicWorkflow approval integration."""
 
@@ -330,7 +351,9 @@ class TestDynamicWorkflowWithApproval:
         mock_service_client.rpc.return_value.execute.return_value = MagicMock(data=1)
 
         with patch("src.flows.dynamic_flow.BaseCrew", return_value=mock_crew):
-            with patch.object(flow, "request_approval", new_callable=AsyncMock) as mock_request:
+            with patch.object(
+                flow, "request_approval", new_callable=AsyncMock
+            ) as mock_request:
                 result = await flow._run_crew()
 
                 # request_approval should have been called
@@ -339,10 +362,11 @@ class TestDynamicWorkflowWithApproval:
 
 # ── load_dynamic_flows_from_db tests ────────────────────────────
 
+
 class TestLoadDynamicFlowsFromDB:
     """load_dynamic_flows_from_db() behavior."""
 
-    @patch("src.flows.dynamic_flow.get_service_client")
+    @patch("src.db.session.get_service_client")
     def test_loads_active_flows(self, mock_get_svc):
         """load_dynamic_flows_from_db loads active workflows."""
         mock_svc = MagicMock()
@@ -367,7 +391,7 @@ class TestLoadDynamicFlowsFromDB:
         assert flow_registry.has("flow_a")
         assert flow_registry.has("flow_b")
 
-    @patch("src.flows.dynamic_flow.get_service_client")
+    @patch("src.db.session.get_service_client")
     def test_skips_invalid_flows(self, mock_get_svc):
         """load_dynamic_flows_from_db skips invalid workflows."""
         mock_svc = MagicMock()
@@ -376,7 +400,14 @@ class TestLoadDynamicFlowsFromDB:
         # One valid, one invalid (missing required fields)
         mock_svc.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(
             data=[
-                {"flow_type": "valid_flow", "definition": {"name": "Valid", "steps": [{"id": "s1", "agent_role": "a1"}], "agents": [{"role": "a1"}]}},
+                {
+                    "flow_type": "valid_flow",
+                    "definition": {
+                        "name": "Valid",
+                        "steps": [{"id": "s1", "agent_role": "a1"}],
+                        "agents": [{"role": "a1"}],
+                    },
+                },
                 {"flow_type": "invalid_flow", "definition": {"invalid": "data"}},
             ]
         )
