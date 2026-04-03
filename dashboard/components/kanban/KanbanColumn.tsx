@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   textColor: string
   tasks: Task[]
   onTaskClick?: (task: Task) => void
+  className?: string
 }
 
 export function KanbanColumn({
@@ -19,17 +20,17 @@ export function KanbanColumn({
   textColor,
   tasks,
   onTaskClick,
+  className,
 }: KanbanColumnProps) {
   return (
-    <div className="flex w-72 flex-shrink-0 flex-col rounded-lg bg-gray-50 dark:bg-gray-900/50">
-      <div className={cn('flex items-center justify-between rounded-t-lg px-4 py-3', color)}>
-        <h3 className={cn('text-sm font-semibold', textColor)}>{label}</h3>
+    <div className={cn('flex w-full flex-shrink-0 flex-col rounded-xl border border-transparent bg-gray-50 dark:bg-gray-900/40 dark:border-gray-800/50 md:w-72', className)}>
+      {/* Header with color indicator at the top */}
+      <div className={cn('hidden h-1 items-center rounded-t-xl md:flex', color)} />
+
+      <div className="hidden items-center justify-between bg-slate-100/30 px-4 py-3 dark:bg-gray-800/20 md:flex">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</h3>
         <span
-          className={cn(
-            'inline-flex h-6 min-w-6 items-center justify-center rounded-full text-xs font-medium',
-            color,
-            textColor
-          )}
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-200/50 text-[10px] font-bold text-slate-600 dark:bg-slate-700/50 dark:text-slate-400"
         >
           {tasks.length}
         </span>

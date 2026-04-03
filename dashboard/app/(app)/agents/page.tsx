@@ -44,7 +44,7 @@ export default function AgentsPage() {
             <Link
               key={agent.id}
               href={`/agents/${agent.id}`}
-              className="rounded-lg border bg-white p-6 transition-shadow hover:shadow-md dark:bg-gray-900 dark:border-gray-800 dark:hover:shadow-lg dark:hover:shadow-black/20"
+              className="rounded-lg border bg-white p-4 transition-shadow hover:shadow-md dark:bg-gray-900 dark:border-gray-800 dark:hover:shadow-lg dark:hover:shadow-black/20 md:p-6"
             >
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">

@@ -35,7 +35,7 @@ export default function ApprovalsPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
           <div>
             <h3 className="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">
               Pendientes ({approvals?.filter((a) => a.status === 'pending').length || 0})
