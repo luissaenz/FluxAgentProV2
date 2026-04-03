@@ -347,12 +347,12 @@ class BaseFlow(ABC):
         Hook: se llama después de que el supervisor aprueba.
 
         Override en subclases para definir qué hacer post-aprobación.
-        Por defecto, solo marca como RUNNING y persiste.
+        Por defecto, marca como COMPLETED y persiste.
         """
-        self.state.status = FlowStatus.RUNNING
         self.state.approval_payload = None  # Limpiar tras usar
+        self.state.complete({"approval": "accepted"})
         await self.persist_state()
-        await self.emit_event("flow.resumed", {"decision": "approved"})
+        await self.emit_event("flow.completed", {"decision": "approved"})
 
     async def _on_rejected(self, decided_by: str) -> None:
         """
