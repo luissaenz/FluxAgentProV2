@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import logging
 
-from ..middleware import require_org_id
+from ..middleware import verify_org_membership
 from ...db.session import get_tenant_client
 
 logger = logging.getLogger(__name__)
@@ -56,9 +56,10 @@ def _task_to_response(t: dict) -> TaskResponse:
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: str,
-    org_id: str = Depends(require_org_id),
+    auth: dict = Depends(verify_org_membership),
 ):
     """Return the current state of a single task (used for polling)."""
+    org_id = auth["org_id"]
     with get_tenant_client(org_id) as db:
         result = db.table("tasks").select("*").eq("id", task_id).execute()
 
@@ -70,17 +71,19 @@ async def get_task(
 
 @router.get("", response_model=PaginatedTasksResponse)
 async def list_tasks(
-    org_id: str = Depends(require_org_id),
+    auth: dict = Depends(verify_org_membership),
     status: Optional[str] = None,
     flow_type: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
 ):
     """List tasks for an organisation with pagination and filters."""
+    org_id = auth["org_id"]
     with get_tenant_client(org_id) as db:
         query = (
             db.table("tasks")
             .select("*")
+            .eq("org_id", org_id)  # Explicitly filter by org_id
             .order("created_at", desc=True)
         )
 

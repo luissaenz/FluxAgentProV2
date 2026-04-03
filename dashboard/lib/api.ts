@@ -8,7 +8,7 @@ export async function fapFetch(
 ) {
   const { data: { session } } = await supabase.auth.getSession()
   const orgId = typeof window !== 'undefined'
-    ? localStorage.getItem('selected_org_id') || ''
+    ? localStorage.getItem('organization_id') || localStorage.getItem('selected_org_id') || ''
     : ''
 
   if (!session?.access_token) {

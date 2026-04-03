@@ -47,7 +47,11 @@ class Settings(BaseSettings):
     app_env: str = Field("development", description="development | staging | production")
     log_level: str = Field("INFO", description="Logging level")
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"  # Ignore NEXT_PUBLIC_* and other extra fields from .env
+    }
 
 
 def get_settings() -> Settings:

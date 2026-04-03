@@ -8,8 +8,22 @@ from __future__ import annotations
 
 from typing import Type, Dict, Callable, Any
 import logging
+import re
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_flow_name(name: str) -> str:
+    """Convert PascalCase or other formats to snake_case for registry lookup.
+
+    Examples:
+        "CotizacionFlow" → "cot izacion_flow"
+        "cotizacion_flow" → "cotizacion_flow"
+        "ComprasFlow" → "compras_flow"
+    """
+    # Convert CamelCase to snake_case
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
 class FlowRegistry:
@@ -46,8 +60,14 @@ class FlowRegistry:
     # ── lookup ──────────────────────────────────────────────────
 
     def get(self, name: str) -> Type:
-        """Return the Flow class for *name*, or raise ``ValueError``."""
-        key = name.lower()
+        """Return the Flow class for *name*, or raise ``ValueError``.
+
+        Supports multiple naming formats:
+        - PascalCase: "CotizacionFlow" → looks up "cotizacion_flow"
+        - snake_case: "cotizacion_flow" → looks up "cotizacion_flow"
+        - lowercase: "cot izacionflow" → looks up "cot izacionflow"
+        """
+        key = _normalize_flow_name(name)
         if key not in self._flows:
             raise ValueError(
                 f"Flow '{name}' not found. Available: {list(self._flows.keys())}"

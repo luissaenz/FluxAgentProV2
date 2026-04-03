@@ -17,12 +17,12 @@ import sys
 import time
 
 FASTAPI_URL = "http://localhost:8000"
-COCTEL_PRO_ORG_ID = "coctel-pro-org-id"  # Reemplazar con UUID real
-JWT_TOKEN = "token-del-usuario-demo"      # Reemplazar con JWT real de Supabase Auth
+COCTEL_PRO_ORG_ID = "6877612f-3768-44bf-b6e3-b2d1453c3de9"  # Reemplazar con UUID real
+JWT_TOKEN = "eyJhbGciOiJFUzI1NiIsImtpZCI6ImE3ZTk4NTBjLWM4MDctNGY5MS1hMTFhLWI3Nzc5NDJjMmQxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3RtbG90d250cHRtaWx5Y3Z0Zm9vLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJkNjMwZWViYS0xNWU5LTRlOWItYjA1My1lNjE2OTU2ZGFiNzgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc1MTgzODg4LCJpYXQiOjE3NzUxODAyODgsImVtYWlsIjoiYWRtaW5AY29jdGVscHJvLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzc1MTgwMjg4fV0sInNlc3Npb25faWQiOiIyMjgyMzdkZi04NzZiLTQ5ZjEtODRlOC01MzllMzU4Y2I5MDMiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.rKoKX-3AQpa2RsEYqgXFwWwu8w4KeWO9TLFqzR-tZXxfkrSF9lznF1pvEN9t9IRmr3OIrlAhjGIVUJznLzQwNg"      # Reemplazar con JWT real de Supabase Auth
 
 HEADERS = {
     "Authorization": f"Bearer {JWT_TOKEN}",
-    "X-Org-ID": COCTEL_PRO_ORG_ID,
+    "X-Org-ID": "6877612f-3768-44bf-b6e3-b2d1453c3de9",
     "Content-Type": "application/json",
 }
 
@@ -38,7 +38,7 @@ def step(msg: str):
 def check_health():
     """Verifica que el backend este corriendo."""
     try:
-        r = requests.get(f"{FASTAPI_URL}/health", timeout=5)
+        r = requests.get(f"{FASTAPI_URL}/health", timeout=15)
         r.raise_for_status()
         print(f"  Backend OK: {r.json()}")
     except Exception as e:

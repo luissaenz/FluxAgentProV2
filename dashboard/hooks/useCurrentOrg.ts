@@ -22,7 +22,7 @@ export function useCurrentOrg() {
     // Get user's org memberships
     const { data: members } = await supabase
       .from('org_members')
-      .select('*, organizations(*)')
+      .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true)
 
@@ -31,21 +31,29 @@ export function useCurrentOrg() {
       return
     }
 
+    // Fetch organizations separately since RLS might block the join
+    const { data: allOrgs } = await supabase
+      .from('organizations')
+      .select('*')
+
+    const orgMap = new Map((allOrgs || []).map((o: Organization) => [o.id, o]))
+
+    // Build org list from members + org data
     const orgList = members
-      .map((m: Record<string, unknown>) => m.organizations as Organization)
-      .filter(Boolean)
+      .map((m: Record<string, unknown>) => orgMap.get(m.org_id as string))
+      .filter(Boolean) as Organization[]
 
     setOrgs(orgList)
 
     // Restore previously selected org or use first
-    const savedOrgId = localStorage.getItem('selected_org_id')
+    const savedOrgId = localStorage.getItem('organization_id') || localStorage.getItem('selected_org_id')
     const selectedOrg = orgList.find((o) => o.id === savedOrgId) || orgList[0]
 
     if (selectedOrg) {
       setCurrentOrg(selectedOrg)
-      localStorage.setItem('selected_org_id', selectedOrg.id)
+      localStorage.setItem('organization_id', selectedOrg.id)
       const member = members.find(
-        (m: Record<string, unknown>) => (m.organizations as Organization)?.id === selectedOrg.id
+        (m: Record<string, unknown>) => m.org_id === selectedOrg.id
       ) as OrgMember | undefined
       setMembership(member ?? null)
     }
@@ -55,7 +63,7 @@ export function useCurrentOrg() {
 
   const switchOrg = useCallback((org: Organization) => {
     setCurrentOrg(org)
-    localStorage.setItem('selected_org_id', org.id)
+    localStorage.setItem('organization_id', org.id)
     // Membership will update on next loadOrgs or can be looked up
   }, [])
 

@@ -158,26 +158,26 @@ class EventStore:
             )
         """
         try:
-            svc = get_service_client()
+            # Use TenantClient to set app.org_id for RLS
+            with get_tenant_client(org_id) as db:
+                # Obtener siguiente secuencia atómica (con FOR UPDATE)
+                seq_result = db.rpc("next_event_sequence", {
+                    "p_aggregate_type": aggregate_type,
+                    "p_aggregate_id": aggregate_id
+                }).execute()
 
-            # Obtener siguiente secuencia atómica (con FOR UPDATE)
-            seq_result = svc.rpc("next_event_sequence", {
-                "p_aggregate_type": aggregate_type,
-                "p_aggregate_id": aggregate_id
-            }).execute()
+                sequence = seq_result.data
 
-            sequence = seq_result.data
-
-            # Insertar evento (append-only, RLS valida org_id)
-            svc.table("domain_events").insert({
-                "org_id": org_id,
-                "aggregate_type": aggregate_type,
-                "aggregate_id": aggregate_id,
-                "event_type": event_type,
-                "payload": payload,
-                "actor": actor or "system",
-                "sequence": sequence,
-            }).execute()
+                # Insertar evento (append-only, RLS valida org_id)
+                db.table("domain_events").insert({
+                    "org_id": org_id,
+                    "aggregate_type": aggregate_type,
+                    "aggregate_id": aggregate_id,
+                    "event_type": event_type,
+                    "payload": payload,
+                    "actor": actor or "system",
+                    "sequence": sequence,
+                }).execute()
 
             logger.debug(
                 "Event appended_sync: %s seq=%d agg=%s",

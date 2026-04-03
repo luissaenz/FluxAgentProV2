@@ -11,10 +11,10 @@ from pydantic import BaseModel, field_validator
 from typing import Optional
 import logging
 
-from ...db.session import get_service_client
+from ...db.session import get_service_client, get_tenant_client
 from ...events.store import EventStore, EventStoreError
 from ...flows.registry import flow_registry
-from ..middleware import require_org_id
+from ..middleware import require_org_id, verify_org_membership
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/approvals", tags=["approvals"])
@@ -74,7 +74,7 @@ async def process_approval(
     task_id: str,
     request: Request,
     background: BackgroundTasks,
-    org_id: str = Depends(require_org_id),
+    auth: dict = Depends(verify_org_membership),
 ) -> dict:
     """
     Process supervisor approval/rejection decision.
@@ -82,6 +82,8 @@ async def process_approval(
     Accepts both new format (ApprovalRequest with action) and
     legacy format (ApprovalDecision with decision) for backward compatibility.
     """
+    org_id = auth["org_id"]
+    user_id = auth["user_id"]
     body = await request.json()
 
     # Determine format: new (action) vs legacy (decision)
@@ -90,7 +92,7 @@ async def process_approval(
         if action not in ("approve", "reject"):
             raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
         decision = "approved" if action == "approve" else "rejected"
-        decided_by = getattr(request.state, "user_id", body.get("decided_by", "dashboard_user"))
+        decided_by = user_id
         notes = body.get("notes", "")
         effective_org_id = org_id
     elif "decision" in body:
@@ -103,31 +105,30 @@ async def process_approval(
     else:
         raise HTTPException(status_code=422, detail="Must provide 'action' or 'decision'")
 
-    svc = get_service_client()
-
-    # 1. Verify approval exists and is pending
-    approval = (
-        svc.table("pending_approvals")
-        .select("*")
-        .eq("task_id", task_id)
-        .eq("status", "pending")
-        .maybe_single()
-        .execute()
-    )
-
-    if not approval.data:
-        raise HTTPException(
-            status_code=404,
-            detail="Approval not found or already processed",
+    with get_tenant_client(org_id) as db:
+        # 1. Verify approval exists and is pending
+        approval = (
+            db.table("pending_approvals")
+            .select("*")
+            .eq("task_id", task_id)
+            .eq("status", "pending")
+            .maybe_single()
+            .execute()
         )
 
-    flow_type = approval.data["flow_type"]
+        if not approval.data:
+            raise HTTPException(
+                status_code=404,
+                detail="Approval not found or already processed",
+            )
 
-    # 2. Mark approval as resolved
-    svc.table("pending_approvals").update({
-        "status": decision,
-        "decided_by": decided_by,
-    }).eq("task_id", task_id).execute()
+        flow_type = approval.data["flow_type"]
+
+        # 2. Mark approval as resolved
+        db.table("pending_approvals").update({
+            "status": decision,
+            "decided_by": decided_by,
+        }).eq("task_id", task_id).execute()
 
     # 3. Emit event (blocking — Rule R6)
     try:

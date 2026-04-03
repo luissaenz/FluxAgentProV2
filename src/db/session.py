@@ -67,6 +67,8 @@ class TenantClient:
     """
     Wraps a Supabase client and sets session-level RLS config on enter.
 
+    Uses service-role client with RLS policy validation.
+
     Usage::
 
         with TenantClient(org_id, user_id) as db:
