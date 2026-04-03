@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from uuid import uuid4
 import logging
+import asyncio
 
 from ...flows.registry import flow_registry
 from ..middleware import require_org_id
@@ -14,6 +15,18 @@ from ..middleware import require_org_id
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+
+
+def _run_async_in_background(coro):
+    """Wrapper para ejecutar coroutines async en background tasks síncronos."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(coro)
+        else:
+            loop.run_until_complete(coro)
+    except RuntimeError:
+        asyncio.run(coro)
 
 
 # ── request / response models ──────────────────────────────────
@@ -64,12 +77,14 @@ async def trigger_webhook(
     correlation_id = str(uuid4())
 
     background_tasks.add_task(
-        execute_flow,
-        flow_type=request.flow_type,
-        org_id=org_id,
-        input_data=request.input_data,
-        correlation_id=correlation_id,
-        callback_url=request.callback_url,
+        _run_async_in_background,
+        execute_flow(
+            flow_type=request.flow_type,
+            org_id=org_id,
+            input_data=request.input_data,
+            correlation_id=correlation_id,
+            callback_url=request.callback_url,
+        ),
     )
 
     return WebhookTriggerResponse(
