@@ -22,7 +22,7 @@ import logging
 import traceback
 
 from .state import BaseFlowState, FlowStatus
-from ..db.session import get_tenant_client, get_service_client
+from ..db.session import get_tenant_client, get_service_client, execute_with_retry
 from ..events.store import EventStore, EventStoreError
 
 logger = logging.getLogger(__name__)
@@ -190,22 +190,24 @@ class BaseFlow(ABC):
 
         with get_tenant_client(self.org_id, self.user_id) as db:
             snapshot = self.state.to_snapshot()
-            db.table("snapshots").upsert(snapshot).execute()
+            db.execute_with_retry(db.table("snapshots").upsert(snapshot))
 
-            db.table("tasks").update(
-                {
-                    "status": self.state.status,
-                    "result": self.state.output_data if self.state.output_data else None,
-                    "error": self.state.error,
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                    "approval_required": self.state.approval_payload is not None,
-                    "approval_status": (
-                        "pending"
-                        if self.state.status == FlowStatus.AWAITING_APPROVAL.value
-                        else "none"
-                    ),
-                }
-            ).eq("id", self.state.task_id).execute()
+            db.execute_with_retry(
+                db.table("tasks").update(
+                    {
+                        "status": self.state.status,
+                        "result": self.state.output_data if self.state.output_data else None,
+                        "error": self.state.error,
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "approval_required": self.state.approval_payload is not None,
+                        "approval_status": (
+                            "pending"
+                            if self.state.status == FlowStatus.AWAITING_APPROVAL.value
+                            else "none"
+                        ),
+                    }
+                ).eq("id", self.state.task_id)
+            )
 
     async def emit_event(
         self, event_type: str, payload: Dict[str, Any]
@@ -247,25 +249,25 @@ class BaseFlow(ABC):
         svc = get_service_client()
 
         # 2. Guardar snapshot con esquema v2 (aggregate_*)
-        seq = svc.rpc("next_event_sequence", {
+        seq = execute_with_retry(svc.rpc("next_event_sequence", {
             "p_aggregate_type": "flow",
             "p_aggregate_id": self.state.task_id
-        }).execute().data
+        })).data
 
-        svc.table("snapshots").upsert(
+        execute_with_retry(svc.table("snapshots").upsert(
             self.state.to_snapshot_v2(version=seq),
             on_conflict="task_id"
-        ).execute()
+        ))
 
         # 3. Crear pending_approval (usa tenant client para RLS)
         with get_tenant_client(self.org_id, self.user_id) as db:
-            db.table("pending_approvals").insert({
+            db.execute_with_retry(db.table("pending_approvals").insert({
                 "org_id": self.org_id,
                 "task_id": self.state.task_id,
                 "flow_type": self.flow_type,
                 "description": description,
                 "payload": payload,
-            }).execute()
+            }))
 
         # 4. Actualizar task
         await self.persist_state()

@@ -161,15 +161,15 @@ class EventStore:
             # Use TenantClient to set app.org_id for RLS
             with get_tenant_client(org_id) as db:
                 # Obtener siguiente secuencia atómica (con FOR UPDATE)
-                seq_result = db.rpc("next_event_sequence", {
+                seq_result = db.execute_with_retry(db.rpc("next_event_sequence", {
                     "p_aggregate_type": aggregate_type,
                     "p_aggregate_id": aggregate_id
-                }).execute()
+                }))
 
                 sequence = seq_result.data
 
                 # Insertar evento (append-only, RLS valida org_id)
-                db.table("domain_events").insert({
+                db.execute_with_retry(db.table("domain_events").insert({
                     "org_id": org_id,
                     "aggregate_type": aggregate_type,
                     "aggregate_id": aggregate_id,
@@ -177,7 +177,7 @@ class EventStore:
                     "payload": payload,
                     "actor": actor or "system",
                     "sequence": sequence,
-                }).execute()
+                }))
 
             logger.debug(
                 "Event appended_sync: %s seq=%d agg=%s",

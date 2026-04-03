@@ -9,14 +9,36 @@ Provides three clients:
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Optional, Generator
+from typing import Optional, Generator, Any
 import logging
+import time
 
 from supabase import create_client, Client
 
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# ── Retry utilities ────────────────────────────────────────
+
+def execute_with_retry(query_builder: Any, max_retries: int = 3) -> Any:
+    """
+    Execute a query builder with automatic retry on connection failures.
+    Works with both TenantClient and service_client query builders.
+    """
+    for attempt in range(max_retries):
+        try:
+            return query_builder.execute()
+        except Exception as exc:
+            error_str = str(exc)
+            if "Server disconnected" not in error_str and "RemoteProtocolError" not in str(exc.__class__.__name__):
+                raise
+            if attempt >= max_retries - 1:
+                logger.error("Query failed after %d retries: %s", max_retries, exc)
+                raise
+            logger.debug("Retry %d/%d after connection error: %s", attempt + 1, max_retries, exc)
+            time.sleep(0.1 * (attempt + 1))
 
 # ── Module-level clients (lazy singletons) ──────────────────────
 _service_client: Optional[Client] = None
@@ -130,6 +152,21 @@ class TenantClient:
     def rpc(self, func: str, params: dict):
         """Proxy to supabase.rpc()."""
         return self._client.rpc(func, params)
+
+    def execute_with_retry(self, query_builder, max_retries: int = 3):
+        """Execute a query builder with automatic retry on connection failures."""
+        for attempt in range(max_retries):
+            try:
+                return query_builder.execute()
+            except Exception as exc:
+                if "Server disconnected" not in str(exc) and "RemoteProtocolError" not in str(exc.__class__.__name__):
+                    raise
+                if attempt >= max_retries - 1:
+                    logger.error("Query failed after %d retries: %s", max_retries, exc)
+                    raise
+                logger.debug("Retry %d/%d after connection error: %s", attempt + 1, max_retries, exc)
+                import time
+                time.sleep(0.1 * (attempt + 1))
 
 
 # ── convenience context manager ─────────────────────────────────

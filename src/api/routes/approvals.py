@@ -123,13 +123,12 @@ async def process_approval(
 
     with get_tenant_client(org_id) as db:
         # 1. Verify approval exists and is pending
-        approval = (
+        approval = db.execute_with_retry(
             db.table("pending_approvals")
             .select("*")
             .eq("task_id", task_id)
             .eq("status", "pending")
             .maybe_single()
-            .execute()
         )
 
         if not approval.data:
@@ -141,10 +140,12 @@ async def process_approval(
         flow_type = approval.data["flow_type"]
 
         # 2. Mark approval as resolved
-        db.table("pending_approvals").update({
-            "status": decision,
-            "decided_by": decided_by,
-        }).eq("task_id", task_id).execute()
+        db.execute_with_retry(
+            db.table("pending_approvals").update({
+                "status": decision,
+                "decided_by": decided_by,
+            }).eq("task_id", task_id)
+        )
 
     # 3. Emit event (blocking — Rule R6)
     try:
