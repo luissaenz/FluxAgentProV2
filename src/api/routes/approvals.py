@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
 from pydantic import BaseModel, field_validator
 from typing import Optional
 import logging
+import asyncio
 
 from ...db.session import get_service_client, get_tenant_client
 from ...events.store import EventStore, EventStoreError
@@ -18,6 +19,21 @@ from ..middleware import require_org_id, verify_org_membership
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/approvals", tags=["approvals"])
+
+
+def _run_async_in_background(coro):
+    """Wrapper para ejecutar coroutines async en background tasks síncronos."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Si hay un loop corriendo, crear una tarea
+            asyncio.ensure_future(coro)
+        else:
+            # Si no hay loop, ejecutar directamente
+            loop.run_until_complete(coro)
+    except RuntimeError:
+        # No hay loop, crear uno nuevo
+        asyncio.run(coro)
 
 
 class ApprovalRequest(BaseModel):
@@ -154,10 +170,12 @@ async def process_approval(
 
     flow = flow_class(org_id=effective_org_id)
     background.add_task(
-        flow.resume,
-        task_id=task_id,
-        decision=decision,
-        decided_by=decided_by,
+        _run_async_in_background,
+        flow.resume(
+            task_id=task_id,
+            decision=decision,
+            decided_by=decided_by,
+        ),
     )
 
     return {
