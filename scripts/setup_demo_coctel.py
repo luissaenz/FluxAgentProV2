@@ -93,7 +93,12 @@ def get_jwt_and_org_id(email: str, password: str) -> tuple[str, str]:
 
         # Verificar que el usuario sea miembro de la organizacion
         print("🔗 Verificando membresía del usuario en la organizacion...")
-        membership = sb_admin.table("org_members").select("id").eq("org_id", org_id).eq("user_id", user_id).execute()
+        try:
+            # Use authenticated client to check membership (user should see their own memberships)
+            membership = sb.table("org_members").select("id").eq("org_id", org_id).eq("user_id", user_id).execute()
+        except Exception:
+            # If authenticated check fails, try with admin client
+            membership = sb_admin.table("org_members").select("id").eq("org_id", org_id).eq("user_id", user_id).execute()
 
         if not membership.data:
             print("📝 Agregando usuario a la organizacion...")

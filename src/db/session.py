@@ -82,27 +82,37 @@ class TenantClient:
 
     def __enter__(self) -> "TenantClient":
         """Set tenant config so that RLS policies filter by org."""
-        try:
-            self._client.rpc("set_config", {
-                "p_key": "app.org_id",
-                "p_value": self._org_id,
-                "p_is_local": True,
-            }).execute()
+        max_retries = 3
+        retry_count = 0
 
-            if self._user_id:
+        while retry_count < max_retries:
+            try:
                 self._client.rpc("set_config", {
-                    "p_key": "app.user_id",
-                    "p_value": self._user_id,
+                    "p_key": "app.org_id",
+                    "p_value": self._org_id,
                     "p_is_local": True,
                 }).execute()
 
-            logger.debug("Tenant config set: org_id=%s, user_id=%s", self._org_id, self._user_id)
-        except Exception as exc:
-            logger.error("Failed to set tenant config: %s", exc)
-            raise
-        return self
+                if self._user_id:
+                    self._client.rpc("set_config", {
+                        "p_key": "app.user_id",
+                        "p_value": self._user_id,
+                        "p_is_local": True,
+                    }).execute()
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+                logger.debug("Tenant config set: org_id=%s, user_id=%s", self._org_id, self._user_id)
+                return self
+            except Exception as exc:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    logger.error("Failed to set tenant config after %d retries: %s", max_retries, exc)
+                    raise
+                logger.debug("Retry %d/%d setting tenant config: %s", retry_count, max_retries, exc)
+                # Small delay before retry
+                import time
+                time.sleep(0.1 * retry_count)
+
+    def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:
         """Best-effort cleanup of session config."""
         try:
             self._client.rpc("set_config", {
@@ -111,7 +121,7 @@ class TenantClient:
                 "p_is_local": True,
             }).execute()
         except Exception as exc:
-            logger.warning("Failed to clear tenant config: %s", exc)
+            logger.warning("Failed to clear tenant config (non-blocking): %s", exc)
 
     def table(self, table_name: str):
         """Proxy to supabase.table()."""

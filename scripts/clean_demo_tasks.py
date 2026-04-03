@@ -6,35 +6,39 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from supabase import create_client
+# Add parent directory to path to import from src
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+from src.db.session import get_tenant_client
 
 COCTEL_PRO_ORG_ID = "6877612f-3768-44bf-b6e3-b2d1453c3de9"
 
 # Primero obtener las tareas de CoctelPro
 print(f"📋 Buscando tareas de CoctelPro ({COCTEL_PRO_ORG_ID})...")
-tasks = sb.table("tasks").select("id").eq("org_id", COCTEL_PRO_ORG_ID).execute()
-task_ids = [t["id"] for t in (tasks.data or [])]
 
-if task_ids:
-    # Eliminar en orden de dependencias
-    print(f"🗑️  Eliminando pending_approvals...")
-    sb.table("pending_approvals").delete().eq("org_id", COCTEL_PRO_ORG_ID).execute()
+with get_tenant_client(COCTEL_PRO_ORG_ID) as db:
+    tasks = db.table("tasks").select("id").eq("org_id", COCTEL_PRO_ORG_ID).execute()
+    task_ids = [t["id"] for t in (tasks.data or [])]
 
-    print(f"🗑️  Eliminando {len(task_ids)} snapshots...")
-    for task_id in task_ids:
-        sb.table("snapshots").delete().eq("task_id", task_id).execute()
+    if task_ids:
+        # Eliminar en orden de dependencias
+        print(f"🗑️  Eliminando pending_approvals...")
+        db.table("pending_approvals").delete().eq("org_id", COCTEL_PRO_ORG_ID).execute()
 
-    print(f"🗑️  Eliminando domain_events...")
-    for task_id in task_ids:
-        sb.table("domain_events").delete().eq("aggregate_id", task_id).execute()
+        print(f"🗑️  Eliminando {len(task_ids)} snapshots...")
+        for task_id in task_ids:
+            db.table("snapshots").delete().eq("task_id", task_id).execute()
 
-    # Finalmente eliminar las tareas
-    print(f"🗑️  Eliminando tareas...")
-    result = sb.table("tasks").delete().eq("org_id", COCTEL_PRO_ORG_ID).execute()
-    print(f"✅ {len(result.data) if result.data else len(task_ids)} tareas eliminadas")
-else:
-    print("ℹ️  No hay tareas para eliminar")
+        print(f"🗑️  Eliminando domain_events...")
+        for task_id in task_ids:
+            db.table("domain_events").delete().eq("aggregate_id", task_id).execute()
+
+        # Finalmente eliminar las tareas
+        print(f"🗑️  Eliminando tareas...")
+        result = db.table("tasks").delete().eq("org_id", COCTEL_PRO_ORG_ID).execute()
+        print(f"✅ {len(result.data) if result.data else len(task_ids)} tareas eliminadas")
+    else:
+        print("ℹ️  No hay tareas para eliminar")
 
 print("\n🎉 Kanban limpio! Ahora puedes disparar la demo nuevamente.")
