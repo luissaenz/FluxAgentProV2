@@ -11,12 +11,11 @@ Input:   evento_id, cotizacion_id, opcion_elegida
 Output:  bartenders asignados + stock reservado
 """
 
-from crewai.flow.flow import Flow, listen, start
-from pydantic import BaseModel, Field
-from typing import Any
+from crewai.flow.flow import listen, start
+from pydantic import Field
 
 from src.flows.base_flow import BaseFlow
-from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.state import BaseFlowState
 from src.flows.registry import register_flow
 from src.connectors.supabase_connector import SupabaseMockConnector
 from src.crews.bartenders.reserva_crews import (
@@ -142,7 +141,7 @@ class ReservaFlow(BaseFlow):
                                 items=self.state.items_a_comprar)
 
             # HITL: el Jefe decide si aprobar la compra de emergencia
-            self.request_approval(
+            await self.request_approval(
                 description=(
                     f"Faltante de stock para evento {self.state.evento_id}. "
                     f"Se necesita comprar: "
@@ -245,5 +244,9 @@ class ReservaFlow(BaseFlow):
 
 
     async def _run_crew(self) -> dict:
-        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
-        return {}
+        """Ejecuta la secuencia de agentes del flow (cargar_evento → A6 → A8)."""
+        await self.cargar_evento()
+        await self.agente_6_inventario()
+        await self.agente_8_staffing()
+
+        return self.state.output_data or {}

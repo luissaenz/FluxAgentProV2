@@ -14,12 +14,11 @@ Input:   evento_id
 Output:  orden_compra creada (pendiente de aprobación) o sin acción
 """
 
-from crewai.flow.flow import Flow, listen, start
-from pydantic import BaseModel, Field
-from typing import Any
+from crewai.flow.flow import listen, start
+from pydantic import Field
 
 from src.flows.base_flow import BaseFlow
-from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.state import BaseFlowState
 from src.connectors.supabase_connector import SupabaseMockConnector
 from src.flows.registry import register_flow
 from src.crews.bartenders.reserva_crews import _calcular_items_orden, _guardar_orden
@@ -198,7 +197,7 @@ class AlertaClimaFlow(BaseFlow):
         # ── HITL OBLIGATORIO ─────────────────────────────────────────────
         # Toda compra de emergencia requiere aprobación del Jefe.
         # El flow se pausa aquí hasta que se llame a POST /approvals/{task_id}
-        self.request_approval(
+        await self.request_approval(
             description=(
                 f"ALERTA ROJA — Evento {self.state.evento_id}\n"
                 f"Temperatura pronosticada: {self.state.temp_pronosticada}°C "
@@ -287,5 +286,10 @@ class AlertaClimaFlow(BaseFlow):
 
 
     async def _run_crew(self) -> dict:
-        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
-        return {}
+        """Ejecuta la secuencia de agentes del flow (cargar_evento → A5 → evaluar → A7)."""
+        await self.cargar_evento()
+        await self.agente_5_pronostico()
+        await self.evaluar_alerta()
+        await self.agente_7_orden_emergencia()
+
+        return self.state.output_data or {}

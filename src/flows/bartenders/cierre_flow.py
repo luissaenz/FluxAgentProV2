@@ -14,17 +14,14 @@ Input:   evento_id, costo_real, mermas, compras_emergencia, desvio_climatico,
 Output:  evento cerrado con auditoría y próximo contacto programado
 """
 
-from crewai.flow.flow import Flow, listen, start
-from pydantic import BaseModel, Field
-from typing import Any
+from crewai.flow.flow import listen, start
 
 from src.flows.base_flow import BaseFlow
-from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.state import BaseFlowState
 from src.connectors.supabase_connector import SupabaseMockConnector
 from src.flows.registry import register_flow
 from src.crews.bartenders.cierre_crews import (
     _guardar_auditoria,
-    _actualizar_precios,
     MARGEN_CRITICO_UMBRAL,
 )
 
@@ -260,5 +257,9 @@ class CierreFlow(BaseFlow):
 
 
     async def _run_crew(self) -> dict:
-        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
-        return {}
+        """Ejecuta la secuencia de agentes del flow (cargar_datos → A9 → A10)."""
+        await self.cargar_datos()
+        await self.agente_9_auditoria()
+        await self.agente_10_feedback()
+
+        return self.state.output_data or {}

@@ -14,19 +14,14 @@ Input:   fecha_evento, provincia, localidad, tipo_evento,
 Output:  cotizacion_id + 3 opciones de precio en task.result
 """
 
-from crewai.flow.flow import Flow, listen, start
-from pydantic import BaseModel, Field
-from typing import Any
+from crewai.flow.flow import listen, start
+from pydantic import Field
 
 from src.flows.base_flow import BaseFlow
-from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.state import BaseFlowState
 from src.flows.registry import register_flow
 from src.connectors.supabase_connector import SupabaseMockConnector
 from src.crews.bartenders.preventa_crews import (
-    create_requerimientos_crew,
-    create_meteorologico_crew,
-    create_calculador_crew,
-    create_presupuestador_crew,
     _registrar_evento,
     _calcular_opciones,
     _guardar_cotizacion,
@@ -98,8 +93,16 @@ class PreventaFlow(BaseFlow):
         return True
 
     async def _run_crew(self) -> dict:
-        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
-        return {}
+        """Ejecuta la secuencia de agentes del flow (A1 → A2 → A3 → A4)."""
+        # Los decoradores @start/@listen no se ejecutan automáticamente.
+        # Hay que llamar manualmente a cada paso en secuencia.
+        await self.cargar_input()
+        await self.agente_1_requerimientos()
+        await self.agente_2_clima()
+        await self.agente_3_escandallo()
+        await self.agente_4_cotizacion()
+
+        return self.state.output_data or {}
 
     @start()
     async def cargar_input(self):

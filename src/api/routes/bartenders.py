@@ -97,6 +97,9 @@ async def preventa(
 ):
     flow = flow_registry.create("bartenders_preventa", org_id=org_id)
 
+    # Inicializar el estado del flow (genera task_id y crea registro en DB)
+    await flow.create_task_record(request.model_dump())
+
     background_tasks.add_task(
         flow.execute,
         request.model_dump(),
@@ -132,6 +135,8 @@ async def reserva(
     org_id:           str = Depends(require_org_id),
 ):
     flow = flow_registry.create("bartenders_reserva", org_id=org_id)
+
+    await flow.create_task_record(request.model_dump())
 
     background_tasks.add_task(
         flow.execute,
@@ -171,6 +176,8 @@ async def alerta_clima(
 ):
     flow = flow_registry.create("bartenders_alerta", org_id=org_id)
 
+    await flow.create_task_record(request.model_dump())
+
     background_tasks.add_task(
         flow.execute,
         request.model_dump(),
@@ -206,6 +213,8 @@ async def cierre(
     org_id:           str = Depends(require_org_id),
 ):
     flow = flow_registry.create("bartenders_cierre", org_id=org_id)
+
+    await flow.create_task_record(request.model_dump())
 
     background_tasks.add_task(
         flow.execute,
