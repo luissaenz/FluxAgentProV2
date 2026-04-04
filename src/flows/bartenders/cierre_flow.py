@@ -257,3 +257,8 @@ class CierreFlow(BaseFlow):
             "evento_id": self.state.evento_id,
             "notes":     notes,
         })
+
+
+    async def _run_crew(self) -> dict:
+        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
+        return {}

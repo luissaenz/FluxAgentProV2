@@ -97,6 +97,10 @@ class PreventaFlow(BaseFlow):
 
         return True
 
+    async def _run_crew(self) -> dict:
+        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
+        return {}
+
     @start()
     async def cargar_input(self):
         """Carga el input al estado del flow."""

@@ -284,3 +284,8 @@ class AlertaClimaFlow(BaseFlow):
             "orden_id": self.state.orden_id,
             "notes":    notes,
         })
+
+
+    async def _run_crew(self) -> dict:
+        """CrewAI Flow implementation — not used, flows use @start/@listen instead."""
+        return {}
