@@ -17,6 +17,7 @@ from typing import Any
 
 from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.registry import register_flow
 from src.connectors.supabase_connector import SupabaseMockConnector
 from src.crews.bartenders.reserva_crews import (
     _seleccionar_bartenders,
@@ -51,7 +52,7 @@ class ReservaState(BaseFlowState):
 
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
-
+@register_flow("bartenders_reserva")
 class ReservaFlow(BaseFlow):
     """
     Flow de reserva: confirma cotización, reserva stock y asigna equipo.

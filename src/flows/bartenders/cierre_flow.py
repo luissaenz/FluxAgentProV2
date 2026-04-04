@@ -21,6 +21,7 @@ from typing import Any
 from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState, FlowStatus
 from src.connectors.supabase_connector import SupabaseMockConnector
+from src.flows.registry import register_flow
 from src.crews.bartenders.cierre_crews import (
     _guardar_auditoria,
     _actualizar_precios,
@@ -52,7 +53,7 @@ class CierreState(BaseFlowState):
 
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
-
+@register_flow("bartenders_cierre")
 class CierreFlow(BaseFlow):
     """
     Flow de cierre post-evento.

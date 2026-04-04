@@ -21,6 +21,7 @@ from typing import Any
 from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState, FlowStatus
 from src.connectors.supabase_connector import SupabaseMockConnector
+from src.flows.registry import register_flow
 from src.crews.bartenders.reserva_crews import _calcular_items_orden, _guardar_orden
 from src.tools.bartenders.clima_tool import PronosticoRealTool
 from src.tools.bartenders.inventario_tool import CalcularStockNecesarioTool
@@ -51,7 +52,7 @@ class AlertaState(BaseFlowState):
 
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
-
+@register_flow("bartenders_alerta")
 class AlertaClimaFlow(BaseFlow):
     """
     Flow de alerta climática.

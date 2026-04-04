@@ -20,6 +20,7 @@ from typing import Any
 
 from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.registry import register_flow
 from src.connectors.supabase_connector import SupabaseMockConnector
 from src.crews.bartenders.preventa_crews import (
     create_requerimientos_crew,
@@ -61,6 +62,7 @@ class PreventaState(BaseFlowState):
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
 
+@register_flow("bartenders_preventa")
 class PreventaFlow(BaseFlow):
     """
     Flow de preventa: captura consulta y genera cotización con 3 opciones.
