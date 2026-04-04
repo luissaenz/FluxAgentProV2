@@ -23,6 +23,9 @@ dependencies = [
     "httpx>=0.28.0",
     "structlog>=24.4.0",
     "litellm>=1.83.0",
+    # Phase 6 — Scheduler and date utilities
+    "apscheduler>=3.10.0",
+    "python-dateutil>=2.9.0",
 ]
 
 [project.optional-dependencies]
