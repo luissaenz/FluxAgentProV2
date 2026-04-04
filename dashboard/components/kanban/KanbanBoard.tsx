@@ -4,14 +4,16 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { KANBAN_COLUMNS } from '@/lib/constants'
 import { KanbanColumn } from './KanbanColumn'
 import type { Task } from '@/lib/types'
+import type { PresentationConfig } from '@/lib/presentation/types'
 import { cn } from '@/lib/utils'
 
 interface KanbanBoardProps {
   tasks: Task[]
+  configs?: Record<string, PresentationConfig>
   onTaskClick?: (task: Task) => void
 }
 
-export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, configs, onTaskClick }: KanbanBoardProps) {
   const [activeColumnId, setActiveColumnId] = useState<string>(KANBAN_COLUMNS[0].id)
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
@@ -84,6 +86,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
               color={col.color}
               textColor={col.textColor}
               tasks={columns[col.id] || []}
+              configs={configs}
               onTaskClick={onTaskClick}
               className="w-full h-full"
             />
@@ -100,6 +103,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
               color={col.color}
               textColor={col.textColor}
               tasks={columns[col.id] || []}
+              configs={configs}
               onTaskClick={onTaskClick}
               className="h-full"
             />

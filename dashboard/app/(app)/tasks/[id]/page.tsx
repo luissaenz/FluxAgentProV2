@@ -7,6 +7,9 @@ import { EventTimeline } from '@/components/events/EventTimeline'
 import { Badge } from '@/components/ui/Badge'
 import { STATUS_BADGES } from '@/lib/constants'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
+import { PresentedTaskDetail } from '@/components/presentation/PresentedTaskDetail'
+import { formatFlowType } from '@/lib/presentation/fallback'
+import { usePresentationConfigs } from '@/hooks/usePresentationConfig'
 import type { Task, DomainEvent } from '@/lib/types'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -14,6 +17,8 @@ import { ArrowLeft } from 'lucide-react'
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { orgId } = useCurrentOrg()
+
+  const { data: configs } = usePresentationConfigs(orgId)
 
   const { data: task, isLoading } = useQuery<Task>({
     queryKey: ['task', id],
@@ -71,7 +76,7 @@ export default function TaskDetailPage() {
             </div>
             <div>
               <dt className="text-xs font-medium text-gray-500">Flow Type</dt>
-              <dd className="text-sm text-gray-900">{task.flow_type}</dd>
+              <dd className="text-sm text-gray-900">{formatFlowType(task.flow_type)}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium text-gray-500">Estado</dt>
@@ -88,10 +93,11 @@ export default function TaskDetailPage() {
             {task.result && (
               <div>
                 <dt className="text-xs font-medium text-gray-500">Resultado</dt>
-                <dd>
-                  <pre className="mt-1 overflow-x-auto rounded bg-gray-50 p-2 text-xs">
-                    {JSON.stringify(task.result, null, 2)}
-                  </pre>
+                <dd className="mt-1">
+                  <PresentedTaskDetail
+                    result={task.result}
+                    config={configs?.[task.flow_type]}
+                  />
                 </dd>
               </div>
             )}

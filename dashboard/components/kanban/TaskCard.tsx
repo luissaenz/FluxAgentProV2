@@ -5,6 +5,7 @@ import { STATUS_BADGES } from '@/lib/constants'
 import { Badge } from '@/components/ui/Badge'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { formatFlowType, extractCardSummary } from '@/lib/presentation/fallback'
 
 interface TaskCardProps {
   task: Task
@@ -29,9 +30,11 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
         </span>
       </div>
 
-      <p className="mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">{task.flow_type}</p>
+      <p className="mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+        {formatFlowType(task.flow_type)}
+      </p>
       <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-        {task.task_id.slice(0, 8)}...
+        {extractCardSummary(task.result) || task.task_id.slice(0, 8) + '...'}
       </p>
 
       {task.error && (

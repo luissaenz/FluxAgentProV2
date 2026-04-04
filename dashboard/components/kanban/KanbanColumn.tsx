@@ -1,7 +1,8 @@
 'use client'
 
 import type { Task } from '@/lib/types'
-import { TaskCard } from './TaskCard'
+import type { PresentationConfig } from '@/lib/presentation/types'
+import { PresentedTaskCard } from '@/components/presentation/PresentedTaskCard'
 import { cn } from '@/lib/utils'
 
 interface KanbanColumnProps {
@@ -10,6 +11,7 @@ interface KanbanColumnProps {
   color: string
   textColor: string
   tasks: Task[]
+  configs?: Record<string, PresentationConfig>
   onTaskClick?: (task: Task) => void
   className?: string
 }
@@ -19,6 +21,7 @@ export function KanbanColumn({
   color,
   textColor,
   tasks,
+  configs,
   onTaskClick,
   className,
 }: KanbanColumnProps) {
@@ -41,7 +44,12 @@ export function KanbanColumn({
           <p className="py-8 text-center text-xs text-gray-400 dark:text-gray-500">Sin tareas</p>
         ) : (
           tasks.map((task) => (
-            <TaskCard key={task.task_id} task={task} onClick={onTaskClick} />
+            <PresentedTaskCard
+              key={task.task_id}
+              task={task}
+              config={configs?.[task.flow_type]}
+              onClick={onTaskClick}
+            />
           ))
         )}
       </div>

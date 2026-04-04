@@ -3,12 +3,16 @@
 import { useState } from 'react'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { useTasks } from '@/hooks/useTasks'
+import { usePresentationConfigs } from '@/hooks/usePresentationConfig'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
+import { PresentedTaskDetail } from '@/components/presentation/PresentedTaskDetail'
+import { formatFlowType } from '@/lib/presentation/fallback'
 import type { Task } from '@/lib/types'
 
 export default function KanbanPage() {
   const { orgId } = useCurrentOrg()
   const { data, isLoading } = useTasks(orgId, { limit: 200 })
+  const { data: configs } = usePresentationConfigs(orgId)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   return (
@@ -23,6 +27,7 @@ export default function KanbanPage() {
         <div className="flex-1 overflow-hidden">
           <KanbanBoard
             tasks={data?.items || []}
+            configs={configs}
             onTaskClick={setSelectedTask}
           />
         </div>
@@ -47,7 +52,7 @@ export default function KanbanPage() {
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Flow</label>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedTask.flow_type}</p>
+              <p className="text-sm text-gray-900 dark:text-gray-100">{formatFlowType(selectedTask.flow_type)}</p>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
@@ -56,9 +61,12 @@ export default function KanbanPage() {
             {selectedTask.result && (
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Resultado</label>
-                <pre className="mt-1 overflow-x-auto rounded bg-gray-50 p-2 text-xs dark:bg-gray-950 dark:text-gray-300">
-                  {JSON.stringify(selectedTask.result, null, 2)}
-                </pre>
+                <div className="mt-1">
+                  <PresentedTaskDetail
+                    result={selectedTask.result}
+                    config={configs?.[selectedTask.flow_type]}
+                  />
+                </div>
               </div>
             )}
             {selectedTask.error && (
