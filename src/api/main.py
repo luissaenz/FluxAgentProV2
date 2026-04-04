@@ -22,6 +22,9 @@ from .routes.tasks import router as tasks_router
 from .routes.approvals import router as approvals_router
 from .routes.chat import router as chat_router
 from .routes.workflows import router as workflows_router
+from .routes.bartenders import router as bartenders_router
+from src.flows.bartenders.registry_wiring import register_bartenders_flows
+from src.scheduler.bartenders_jobs import scheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,6 +41,10 @@ async def lifespan(_app: FastAPI):
     """Cargar workflows generados previamente desde la DB al arrancar."""
     from src.flows.dynamic_flow import load_dynamic_flows_from_db
 
+    # Phase 6: Bartenders NOA — registro de flows y scheduler
+    register_bartenders_flows()
+    scheduler.start()
+
     try:
         count = load_dynamic_flows_from_db()
         logger.info("Dynamic workflows loaded: %d", count)
@@ -45,6 +52,9 @@ async def lifespan(_app: FastAPI):
         logger.warning("Could not load dynamic flows from DB: %s", exc)
 
     yield
+
+    # Shutdown — parar scheduler
+    scheduler.shutdown(wait=False)
 
 
 # ── app ─────────────────────────────────────────────────────────
@@ -70,6 +80,7 @@ app.include_router(tasks_router)
 app.include_router(approvals_router)
 app.include_router(chat_router)
 app.include_router(workflows_router)
+app.include_router(bartenders_router)  # Phase 6: Bartenders NOA
 
 
 @app.get("/health")

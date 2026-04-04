@@ -20,12 +20,14 @@ from functools import wraps
 from uuid import uuid4
 import logging
 import traceback
+import structlog
 
 from .state import BaseFlowState, FlowStatus
 from ..db.session import get_tenant_client, get_service_client, execute_with_retry
 from ..events.store import EventStore, EventStoreError
 
 logger = logging.getLogger(__name__)
+logger_struct = structlog.get_logger(__name__)
 
 
 # ── error-handling decorator ───────────────────────────────────
@@ -77,6 +79,7 @@ class BaseFlow(ABC):
         self.state: Optional[BaseFlowState] = None
         self.event_store: Optional[EventStore] = None
         self.extra_kwargs = kwargs
+        self.logger = logger_struct  # Use structlog for structured logging with kwargs
 
     # ── abstract contract ───────────────────────────────────────
 
@@ -112,8 +115,9 @@ class BaseFlow(ABC):
         if not self.validate_input(input_data):
             raise ValueError("Input validation failed")
 
-        # 2. Create task row + initialise state
-        await self.create_task_record(input_data, correlation_id)
+        # 2. Create task row + initialise state (skip if already initialized)
+        if self.state is None:
+            await self.create_task_record(input_data, correlation_id)
 
         # 3. Mark as RUNNING
         self.state.start()

@@ -51,7 +51,7 @@ export default function TaskDetailPage() {
   const badge = STATUS_BADGES[task.status] || STATUS_BADGES['pending']
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/tasks" className="text-gray-400 hover:text-gray-600">
           <ArrowLeft className="h-5 w-5" />
@@ -60,9 +60,9 @@ export default function TaskDetailPage() {
         <Badge className={badge.className}>{badge.label}</Badge>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Task info */}
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-4 sm:p-6">
           <h3 className="mb-4 font-semibold text-gray-900">Información</h3>
           <dl className="space-y-3">
             <div>
@@ -105,7 +105,7 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Event timeline */}
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-white p-4 sm:p-6">
           <h3 className="mb-4 font-semibold text-gray-900">Timeline de Eventos</h3>
           <EventTimeline events={events || []} filterTaskId={id} />
         </div>

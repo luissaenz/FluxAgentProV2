@@ -12,23 +12,25 @@ export default function KanbanPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-[calc(100vh-theme(spacing.16)-theme(spacing.12))] flex-col space-y-4">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Kanban</h2>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex flex-1 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
         </div>
       ) : (
-        <KanbanBoard
-          tasks={data?.items || []}
-          onTaskClick={setSelectedTask}
-        />
+        <div className="flex-1 overflow-hidden">
+          <KanbanBoard
+            tasks={data?.items || []}
+            onTaskClick={setSelectedTask}
+          />
+        </div>
       )}
 
       {/* Task detail slide-over */}
       {selectedTask && (
-        <div className="fixed inset-y-0 right-0 z-50 w-96 border-l bg-white shadow-xl dark:bg-gray-900 dark:border-gray-800">
+        <div className="fixed inset-y-0 right-0 z-50 w-full border-l bg-white shadow-xl dark:bg-gray-900 dark:border-gray-800 sm:w-80 md:w-96">
           <div className="flex items-center justify-between border-b p-4 dark:border-gray-800">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100">Detalle de tarea</h3>
             <button
