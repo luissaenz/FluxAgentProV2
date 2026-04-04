@@ -179,9 +179,9 @@ class CierreFlow(BaseFlow):
         A10: registra cierre relacional — próximo contacto y mensaje de seguimiento.
         Corre tanto si hubo HITL (y fue aprobado) como si no.
         """
-        self._ejecutar_feedback()
+        await self._ejecutar_feedback()
 
-    def _ejecutar_feedback(self):
+    async def _ejecutar_feedback(self):
         """Lógica de feedback compartida por el path normal y el path post-HITL."""
         from src.crews.bartenders.cierre_crews import create_feedback_crew
         connector = SupabaseMockConnector(self.org_id, self.user_id)
@@ -235,7 +235,7 @@ class CierreFlow(BaseFlow):
             "evento_id": self.state.evento_id,
             "notes":     notes,
         })
-        self._ejecutar_feedback()
+        await self._ejecutar_feedback()
 
     async def _on_rejected(self, notes: str = ""):
         """
