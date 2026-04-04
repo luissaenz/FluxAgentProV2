@@ -14,18 +14,22 @@ los flow_type usados en los webhooks y en el scheduler.
 """
 
 from src.flows.registry import flow_registry
-from src.flows.bartenders.preventa_flow import PreventaFlow
-from src.flows.bartenders.reserva_flow  import ReservaFlow
-from src.flows.bartenders.alerta_flow   import AlertaClimaFlow
-from src.flows.bartenders.cierre_flow   import CierreFlow
+# Importar módulos para disparar decoradores @register_flow
+import src.flows.bartenders.preventa_flow  # noqa: F401
+import src.flows.bartenders.reserva_flow   # noqa: F401
+import src.flows.bartenders.alerta_flow    # noqa: F401
+import src.flows.bartenders.cierre_flow    # noqa: F401
 
 
 def register_bartenders_flows() -> None:
     """Registra los 4 flows de Bartenders NOA en el FlowRegistry."""
-    flow_registry.register("bartenders_preventa", PreventaFlow)
-    flow_registry.register("bartenders_reserva",  ReservaFlow)
-    flow_registry.register("bartenders_alerta",   AlertaClimaFlow)
-    flow_registry.register("bartenders_cierre",   CierreFlow)
+    # Los flows ya están registrados vía @register_flow decorator en sus módulos
+    # Esta función solo se importa para asegurar que los módulos se cargan
+    # Verificar que estén registrados
+    names = ["bartenders_preventa", "bartenders_reserva", "bartenders_alerta", "bartenders_cierre"]
+    for name in names:
+        if not flow_registry.has(name):
+            raise ValueError(f"Flow '{name}' no está registrado en FlowRegistry")
 
 
 # ─── Diff de main.py ──────────────────────────────────────────────────────
