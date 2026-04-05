@@ -3,21 +3,39 @@
 import { useState } from 'react'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { useTasks } from '@/hooks/useTasks'
-import { Badge } from '@/components/ui/Badge'
-import { STATUS_BADGES } from '@/lib/constants'
+import { StatusLabel } from '@/components/shared/StatusLabel'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { EmptyState } from '@/components/shared/EmptyState'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export default function TasksPage() {
   const { orgId } = useCurrentOrg()
-  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [flowFilter, setFlowFilter] = useState<string>('')
   const [page, setPage] = useState(0)
   const limit = 20
 
   const { data, isLoading } = useTasks(orgId, {
-    status: statusFilter || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
     flow_type: flowFilter || undefined,
     limit,
     offset: page * limit,
@@ -29,113 +47,129 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Historial de Tareas</h2>
+      <h2 className="text-2xl font-bold tracking-tight">Historial de Tareas</h2>
 
       {/* Filters */}
-      <div className="flex gap-3">
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(0) }}
-          className="rounded-lg border px-3 py-2 text-sm dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100"
-        >
-          <option value="">Todos los estados</option>
-          {/* ... options ... */}
-          <option value="pending">Pendiente</option>
-          <option value="running">Ejecutando</option>
-          <option value="awaiting_approval">HITL</option>
-          <option value="completed">Completado</option>
-          <option value="failed">Error</option>
-          <option value="rejected">Rechazado</option>
-        </select>
-        <input
-          type="text"
+      <div className="flex flex-wrap gap-3">
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0) }}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="pending">Pendiente</SelectItem>
+            <SelectItem value="running">Ejecutando</SelectItem>
+            <SelectItem value="awaiting_approval">HITL</SelectItem>
+            <SelectItem value="completed">Completado</SelectItem>
+            <SelectItem value="failed">Error</SelectItem>
+            <SelectItem value="rejected">Rechazado</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Input
           value={flowFilter}
           onChange={(e) => { setFlowFilter(e.target.value); setPage(0) }}
           placeholder="Filtrar por flow_type..."
-          className="rounded-lg border px-3 py-2 text-sm dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100 placeholder:text-gray-500"
+          className="w-[250px]"
         />
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border bg-white dark:bg-gray-900 dark:border-gray-800">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-950">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Flow</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Estado</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Creado</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y dark:divide-gray-800">
-            {isLoading ? (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-sm text-gray-400">
-                  Cargando...
-                </td>
-              </tr>
-            ) : tasks.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-sm text-gray-400">
-                  No hay tareas
-                </td>
-              </tr>
-            ) : (
-              tasks.map((task) => {
-                const badge = STATUS_BADGES[task.status] || STATUS_BADGES['pending']
-                return (
-                  <tr key={task.task_id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/tasks/${task.task_id}`}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                      >
+      {isLoading ? (
+        <LoadingSpinner label="Cargando tareas..." />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Flow</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Creado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <EmptyState description="No hay tareas" />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                tasks.map((task) => (
+                  <TableRow key={task.task_id} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell>
+                      <Link href={`/tasks/${task.task_id}`} className="font-medium text-primary hover:underline">
                         {task.task_id.slice(0, 12)}...
                       </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{task.flow_type}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={badge.className}>{badge.label}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    </TableCell>
+                    <TableCell>{task.flow_type}</TableCell>
+                    <TableCell><StatusLabel status={task.status} /></TableCell>
+                    <TableCell className="text-muted-foreground">
                       {formatDistanceToNow(new Date(task.created_at), {
                         addSuffix: true,
                         locale: es,
                       })}
-                    </td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {total} tareas en total
           </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              className="rounded-lg border px-3 py-1 text-sm dark:border-gray-800 dark:text-gray-300 disabled:opacity-50"
-            >
-              Anterior
-            </button>
-            <span className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400">
-              {page + 1} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-              className="rounded-lg border px-3 py-1 text-sm dark:border-gray-800 dark:text-gray-300 disabled:opacity-50"
-            >
-              Siguiente
-            </button>
-          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setPage(Math.max(0, page - 1)) }}
+                  className={page === 0 ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                let pageIndex: number
+                if (totalPages <= 5) {
+                  pageIndex = i
+                } else if (page < 3) {
+                  pageIndex = i
+                } else if (page > totalPages - 4) {
+                  pageIndex = totalPages - 5 + i
+                } else {
+                  pageIndex = page - 2 + i
+                }
+                return (
+                  <PaginationItem key={pageIndex}>
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setPage(pageIndex) }}
+                      className={`flex h-10 items-center justify-center rounded-md px-3 text-sm transition-colors ${
+                        pageIndex === page
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      {pageIndex + 1}
+                    </a>
+                  </PaginationItem>
+                )
+              })}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setPage(Math.min(totalPages - 1, page + 1)) }}
+                  className={page >= totalPages - 1 ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
     </div>

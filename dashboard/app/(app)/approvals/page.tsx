@@ -5,6 +5,8 @@ import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { useApprovals } from '@/hooks/useApprovals'
 import { ApprovalList } from '@/components/approvals/ApprovalList'
 import { ApprovalDetail } from '@/components/approvals/ApprovalDetail'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { EmptyState } from '@/components/shared/EmptyState'
 import type { Approval } from '@/lib/types'
 
 export default function ApprovalsPage() {
@@ -26,22 +28,24 @@ export default function ApprovalsPage() {
     )
   }
 
+  const pendingApprovals = approvals?.filter((a) => a.status === 'pending') || []
+
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Centro de Aprobaciones</h2>
+      <h2 className="text-2xl font-bold tracking-tight">Centro de Aprobaciones</h2>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        </div>
+        <LoadingSpinner label="Cargando aprobaciones..." />
+      ) : pendingApprovals.length === 0 ? (
+        <EmptyState title="Sin aprobaciones pendientes" description="No hay tareas que requieran tu aprobación" />
       ) : (
-        <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div>
-            <h3 className="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">
-              Pendientes ({approvals?.filter((a) => a.status === 'pending').length || 0})
+            <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+              Pendientes ({pendingApprovals.length})
             </h3>
             <ApprovalList
-              approvals={approvals || []}
+              approvals={pendingApprovals}
               selectedId={selected?.id}
               onSelect={setSelected}
             />
@@ -56,9 +60,7 @@ export default function ApprovalsPage() {
                 isLoading={approve.isPending || reject.isPending}
               />
             ) : (
-              <div className="flex items-center justify-center rounded-lg border border-dashed py-12 text-sm text-gray-400 dark:border-gray-800 dark:text-gray-600">
-                Selecciona una aprobación para ver el detalle
-              </div>
+              <EmptyState description="Selecciona una aprobación para ver el detalle" />
             )}
           </div>
         </div>

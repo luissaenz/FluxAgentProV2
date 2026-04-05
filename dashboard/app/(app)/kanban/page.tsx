@@ -8,6 +8,8 @@ import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { PresentedTaskDetail } from '@/components/presentation/PresentedTaskDetail'
 import { formatFlowType } from '@/lib/presentation/fallback'
 import type { Task } from '@/lib/types'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function KanbanPage() {
   const { orgId } = useCurrentOrg()
@@ -16,13 +18,11 @@ export default function KanbanPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.16)-theme(spacing.12))] flex-col space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Kanban</h2>
+    <div className="flex h-[calc(100vh-8rem)] flex-col space-y-4">
+      <h2 className="text-2xl font-bold tracking-tight">Kanban</h2>
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        </div>
+        <LoadingSpinner label="Cargando kanban..." />
       ) : (
         <div className="flex-1 overflow-hidden">
           <KanbanBoard
@@ -34,50 +34,51 @@ export default function KanbanPage() {
       )}
 
       {/* Task detail slide-over */}
-      {selectedTask && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full border-l bg-white shadow-xl dark:bg-gray-900 dark:border-gray-800 sm:w-80 md:w-96">
-          <div className="flex items-center justify-between border-b p-4 dark:border-gray-800">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Detalle de tarea</h3>
-            <button
-              onClick={() => setSelectedTask(null)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              &times;
-            </button>
-          </div>
-          <div className="space-y-4 p-4">
-            <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">ID</label>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedTask.task_id}</p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Flow</label>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{formatFlowType(selectedTask.flow_type)}</p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{selectedTask.status}</p>
-            </div>
-            {selectedTask.result && (
-              <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Resultado</label>
-                <div className="mt-1">
-                  <PresentedTaskDetail
-                    result={selectedTask.result}
-                    config={configs?.[selectedTask.flow_type]}
-                  />
+      <Sheet open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle>Detalle de Tarea</SheetTitle>
+            <SheetDescription>
+              {selectedTask && formatFlowType(selectedTask.flow_type)}
+            </SheetDescription>
+          </SheetHeader>
+          {selectedTask && (
+            <div className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ID</label>
+                  <p className="text-sm font-mono">{selectedTask.task_id}</p>
                 </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Flow</label>
+                  <p className="text-sm">{formatFlowType(selectedTask.flow_type)}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Estado</label>
+                  <p className="text-sm">{selectedTask.status}</p>
+                </div>
+                {selectedTask.result && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Resultado</label>
+                    <div className="mt-1">
+                      <PresentedTaskDetail
+                        result={selectedTask.result}
+                        config={configs?.[selectedTask.flow_type]}
+                      />
+                    </div>
+                  </div>
+                )}
+                {selectedTask.error && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Error</label>
+                    <p className="text-sm text-destructive">{selectedTask.error}</p>
+                  </div>
+                )}
               </div>
-            )}
-            {selectedTask.error && (
-              <div>
-                <label className="text-xs font-medium text-gray-500">Error</label>
-                <p className="text-sm text-red-600">{selectedTask.error}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

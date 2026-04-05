@@ -1,7 +1,7 @@
 'use client'
 
 import type { Approval } from '@/lib/types'
-import { Badge } from '@/components/ui/Badge'
+import { Badge } from '@/components/ui/badge'
 import { STATUS_BADGES } from '@/lib/constants'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'

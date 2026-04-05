@@ -3,6 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { api } from '@/lib/api'
 import { Send } from 'lucide-react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -53,61 +58,61 @@ export default function ArchitectPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">Chat MDC (Architect)</h2>
+    <div className="flex h-[calc(100vh-8rem)] flex-col">
+      <h2 className="mb-4 text-2xl font-bold tracking-tight">Chat MDC (Architect)</h2>
 
-      <div className="flex-1 overflow-y-auto rounded-lg border bg-white p-4 dark:bg-gray-900 dark:border-gray-800">
-        {messages.length === 0 && (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400 dark:text-gray-600">
+      <div className="flex-1 overflow-hidden rounded-lg border">
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Describe el workflow que necesitas y el Arquitecto lo generará
           </div>
+        ) : (
+          <ScrollArea className="h-full p-4">
+            <div className="space-y-4">
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+                >
+                  <Card
+                    className={cn(
+                      'max-w-[80%]',
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    )}
+                  >
+                    <CardContent className="p-3">
+                      <pre className="whitespace-pre-wrap font-sans text-sm">{msg.content}</pre>
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
+                    Pensando...
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
         )}
-
-        <div className="space-y-4">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white dark:bg-blue-700'
-                    : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
-                }`}
-              >
-                <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                Pensando...
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
       </div>
 
       <div className="mt-4 flex gap-2">
-        <input
-          type="text"
+        <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Describe tu workflow..."
-          className="flex-1 rounded-lg border px-4 py-2 text-sm focus:border-blue-500 focus:outline-none dark:bg-gray-950 dark:border-gray-800 dark:text-gray-100 placeholder:text-gray-500"
           disabled={loading}
+          className="flex-1"
         />
-        <button
-          onClick={handleSend}
-          disabled={loading || !input.trim()}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
+        <Button onClick={handleSend} disabled={loading || !input.trim()}>
           <Send className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   )

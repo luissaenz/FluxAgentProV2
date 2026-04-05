@@ -3,16 +3,17 @@
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { StatusLabel } from '@/components/shared/StatusLabel'
+import { BackButton } from '@/components/shared/BackButton'
+import { CodeBlock } from '@/components/shared/CodeBlock'
 import { EventTimeline } from '@/components/events/EventTimeline'
-import { Badge } from '@/components/ui/Badge'
-import { STATUS_BADGES } from '@/lib/constants'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { PresentedTaskDetail } from '@/components/presentation/PresentedTaskDetail'
 import { formatFlowType } from '@/lib/presentation/fallback'
 import { usePresentationConfigs } from '@/hooks/usePresentationConfig'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import type { Task, DomainEvent } from '@/lib/types'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -42,79 +43,79 @@ export default function TaskDetailPage() {
   })
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner label="Cargando tarea..." />
   }
 
   if (!task) {
-    return <p className="py-12 text-center text-gray-500">Tarea no encontrada</p>
+    return <p className="py-12 text-center text-muted-foreground">Tarea no encontrada</p>
   }
-
-  const badge = STATUS_BADGES[task.status] || STATUS_BADGES['pending']
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/tasks" className="text-gray-400 hover:text-gray-600">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <h2 className="text-2xl font-bold text-gray-900">Tarea: {task.task_id.slice(0, 12)}...</h2>
-        <Badge className={badge.className}>{badge.label}</Badge>
+        <BackButton href="/tasks" label="Volver" />
+        <h2 className="text-2xl font-bold tracking-tight">Tarea: {task.task_id.slice(0, 12)}...</h2>
+        <StatusLabel status={task.status} />
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Task info */}
-        <div className="rounded-lg border bg-white p-4 sm:p-6">
-          <h3 className="mb-4 font-semibold text-gray-900">Información</h3>
-          <dl className="space-y-3">
-            <div>
-              <dt className="text-xs font-medium text-gray-500">ID</dt>
-              <dd className="text-sm text-gray-900">{task.task_id}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-gray-500">Flow Type</dt>
-              <dd className="text-sm text-gray-900">{formatFlowType(task.flow_type)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-gray-500">Estado</dt>
-              <dd><Badge className={badge.className}>{badge.label}</Badge></dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-gray-500">Creado</dt>
-              <dd className="text-sm text-gray-900">{task.created_at}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-gray-500">Actualizado</dt>
-              <dd className="text-sm text-gray-900">{task.updated_at}</dd>
-            </div>
-            {task.result && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Información</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-3">
               <div>
-                <dt className="text-xs font-medium text-gray-500">Resultado</dt>
-                <dd className="mt-1">
-                  <PresentedTaskDetail
-                    result={task.result}
-                    config={configs?.[task.flow_type]}
-                  />
-                </dd>
+                <dt className="text-sm font-medium text-muted-foreground">ID</dt>
+                <dd className="text-sm font-mono">{task.task_id}</dd>
               </div>
-            )}
-            {task.error && (
               <div>
-                <dt className="text-xs font-medium text-gray-500">Error</dt>
-                <dd className="text-sm text-red-600">{task.error}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Flow Type</dt>
+                <dd className="text-sm">{formatFlowType(task.flow_type)}</dd>
               </div>
-            )}
-          </dl>
-        </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Estado</dt>
+                <dd><StatusLabel status={task.status} /></dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Creado</dt>
+                <dd className="text-sm">{task.created_at}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Actualizado</dt>
+                <dd className="text-sm">{task.updated_at}</dd>
+              </div>
+              {task.result && (
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">Resultado</dt>
+                  <dd className="mt-1">
+                    <PresentedTaskDetail
+                      result={task.result}
+                      config={configs?.[task.flow_type]}
+                    />
+                  </dd>
+                </div>
+              )}
+              {task.error && (
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">Error</dt>
+                  <dd className="text-sm text-destructive">{task.error}</dd>
+                </div>
+              )}
+            </dl>
+          </CardContent>
+        </Card>
 
         {/* Event timeline */}
-        <div className="rounded-lg border bg-white p-4 sm:p-6">
-          <h3 className="mb-4 font-semibold text-gray-900">Timeline de Eventos</h3>
-          <EventTimeline events={events || []} filterTaskId={id} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Timeline de Eventos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EventTimeline events={events || []} filterTaskId={id} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

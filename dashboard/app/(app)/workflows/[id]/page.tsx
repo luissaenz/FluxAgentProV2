@@ -5,9 +5,15 @@ import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { api } from '@/lib/api'
-import { Badge } from '@/components/ui/Badge'
-import Link from 'next/link'
-import { ArrowLeft, Play } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { CodeBlock } from '@/components/shared/CodeBlock'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { BackButton } from '@/components/shared/BackButton'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Play } from 'lucide-react'
 
 export default function WorkflowDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -45,73 +51,68 @@ export default function WorkflowDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner label="Cargando workflow..." />
   }
 
   if (!workflow) {
-    return <p className="py-12 text-center text-gray-500">Workflow no encontrado</p>
+    return <p className="py-12 text-center text-muted-foreground">Workflow no encontrado</p>
   }
 
   return (
     <div className="space-y-6">
+      <BackButton href="/workflows" />
+
       <div className="flex items-center gap-3">
-        <Link href="/workflows" className="text-gray-400 hover:text-gray-600">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <h2 className="text-2xl font-bold text-gray-900">{workflow.name}</h2>
-        <Badge
-          className={
-            workflow.status === 'active'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-gray-100 text-gray-500'
-          }
-        >
+        <h2 className="text-2xl font-bold tracking-tight">{workflow.name}</h2>
+        <Badge variant={workflow.status === 'active' ? 'success' : 'secondary'}>
           {workflow.status}
         </Badge>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Definition */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 font-semibold text-gray-900">Definición</h3>
-          <pre className="overflow-x-auto rounded bg-gray-50 p-4 text-xs text-gray-600">
-            {JSON.stringify(workflow.definition, null, 2)}
-          </pre>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Definición</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CodeBlock code={workflow.definition} />
+          </CardContent>
+        </Card>
 
         {/* Manual trigger */}
-        <div className="rounded-lg border bg-white p-6">
-          <h3 className="mb-4 font-semibold text-gray-900">Trigger Manual</h3>
-          <p className="mb-2 text-sm text-gray-500">
-            flow_type: <code className="rounded bg-gray-100 px-1">{workflow.flow_type}</code>
-          </p>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            input_data (JSON)
-          </label>
-          <textarea
-            value={inputJson}
-            onChange={(e) => setInputJson(e.target.value)}
-            className="mb-3 w-full rounded-lg border px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none"
-            rows={6}
-          />
-          <button
-            onClick={handleTrigger}
-            disabled={triggering || workflow.status !== 'active'}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            <Play className="h-4 w-4" />
-            {triggering ? 'Ejecutando...' : 'Ejecutar'}
-          </button>
-          {triggerResult && (
-            <p className="mt-3 rounded bg-gray-50 p-2 text-sm text-gray-700">
-              {triggerResult}
-            </p>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Trigger Manual</CardTitle>
+            <CardDescription>
+              flow_type: <code className="rounded bg-muted px-1">{workflow.flow_type}</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="input-data">input_data (JSON)</Label>
+              <Textarea
+                id="input-data"
+                value={inputJson}
+                onChange={(e) => setInputJson(e.target.value)}
+                className="font-mono text-sm"
+                rows={6}
+              />
+            </div>
+            <Button
+              onClick={handleTrigger}
+              disabled={triggering || workflow.status !== 'active'}
+            >
+              <Play className="mr-2 h-4 w-4" />
+              {triggering ? 'Ejecutando...' : 'Ejecutar'}
+            </Button>
+            {triggerResult && (
+              <p className="rounded bg-muted p-2 text-sm text-muted-foreground">
+                {triggerResult}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

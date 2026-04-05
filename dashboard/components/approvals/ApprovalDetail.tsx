@@ -2,11 +2,15 @@
 
 import { useState } from 'react'
 import type { Approval } from '@/lib/types'
-import { Badge } from '@/components/ui/Badge'
-import { STATUS_BADGES } from '@/lib/constants'
+import { StatusLabel } from '@/components/shared/StatusLabel'
+import { CodeBlock } from '@/components/shared/CodeBlock'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { CheckCircle, XCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { CheckCircle, XCircle } from 'lucide-react'
 
 interface ApprovalDetailProps {
   approval: Approval
@@ -22,69 +26,62 @@ export function ApprovalDetail({
   isLoading,
 }: ApprovalDetailProps) {
   const [notes, setNotes] = useState('')
-  const badge = STATUS_BADGES[approval.status] || STATUS_BADGES['pending']
 
   return (
-    <div className="rounded-lg border bg-white p-6 dark:bg-gray-900 dark:border-gray-800">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {approval.description}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {approval.flow_type} &middot;{' '}
-            {formatDistanceToNow(new Date(approval.created_at), {
-              addSuffix: true,
-              locale: es,
-            })}
-          </p>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">{approval.description}</h3>
+            <p className="text-sm text-muted-foreground">
+              {approval.flow_type} &middot;{' '}
+              {formatDistanceToNow(new Date(approval.created_at), {
+                addSuffix: true,
+                locale: es,
+              })}
+            </p>
+          </div>
+          <StatusLabel status={approval.status} />
         </div>
-        <Badge className={badge.className}>{badge.label}</Badge>
-      </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Payload */}
+        <CodeBlock code={approval.payload} title="Payload" />
 
-      {/* Payload */}
-      <div className="mb-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-950/50">
-        <h4 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Payload</h4>
-        <pre className="overflow-x-auto text-xs text-gray-600 dark:text-gray-400">
-          {JSON.stringify(approval.payload, null, 2)}
-        </pre>
-      </div>
+        {approval.status === 'pending' && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="approval-notes">Notas (opcional)</Label>
+              <Textarea
+                id="approval-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Agregar notas sobre la decisión..."
+                rows={2}
+              />
+            </div>
 
-      {approval.status === 'pending' && (
-        <>
-          <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Notas (opcional)
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
-              rows={2}
-              placeholder="Agregar notas sobre la decisión..."
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => onApprove(approval.task_id, notes)}
-              disabled={isLoading}
-              className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              <CheckCircle className="h-4 w-4" />
-              Aprobar
-            </button>
-            <button
-              onClick={() => onReject(approval.task_id, notes)}
-              disabled={isLoading}
-              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              <XCircle className="h-4 w-4" />
-              Rechazar
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => onApprove(approval.task_id, notes)}
+                disabled={isLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Aprobar
+              </Button>
+              <Button
+                onClick={() => onReject(approval.task_id, notes)}
+                disabled={isLoading}
+                variant="destructive"
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Rechazar
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   )
 }

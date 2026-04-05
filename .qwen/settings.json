@@ -4,7 +4,15 @@
       "Read(//home/daniel/.gemini/antigravity/brain/d92f3075-a5af-44f4-9d63-d13ca94cb1a4/**)",
       "Bash(python *)",
       "Bash(.venv/bin/pytest *)",
-      "WebFetch(github.com)"
+      "WebFetch(github.com)",
+      "Bash(npm install *)",
+      "Bash(npx *)",
+      "Bash(true)",
+      "Bash(npm uninstall *)",
+      "Bash(del *)",
+      "Bash(rmdir *)",
+      "Bash(move *)",
+      "Bash(npm run *)"
     ]
   },
   "$version": 3

@@ -3,7 +3,7 @@
 import type { Task } from '@/lib/types'
 import type { PresentationConfig } from '@/lib/presentation/types'
 import { STATUS_BADGES } from '@/lib/constants'
-import { Badge } from '@/components/ui/Badge'
+import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { formatFlowType, extractCardSummary } from '@/lib/presentation/fallback'
