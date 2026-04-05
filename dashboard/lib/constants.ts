@@ -13,13 +13,13 @@ export const ROLES = {
   org_operator: { label: 'Operador', description: 'Lectura + aprobaciones' },
 } as const
 
-export const STATUS_BADGES: Record<string, { label: string; className: string }> = {
-  pending: { label: 'Pendiente', className: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200' },
-  running: { label: 'Ejecutando', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200' },
-  awaiting_approval: { label: 'HITL', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200' },
-  completed: { label: 'Completado', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200' },
-  failed: { label: 'Error', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200' },
-  rejected: { label: 'Rechazado', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-200' },
-  cancelled: { label: 'Cancelado', className: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400' },
-  approved: { label: 'Aprobado', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200' },
+export const STATUS_BADGES: Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'info' | 'secondary' | 'default' }> = {
+  pending: { label: 'Pendiente', variant: 'secondary' },
+  running: { label: 'Ejecutando', variant: 'info' },
+  awaiting_approval: { label: 'HITL', variant: 'warning' },
+  completed: { label: 'Completado', variant: 'success' },
+  failed: { label: 'Error', variant: 'destructive' },
+  rejected: { label: 'Rechazado', variant: 'destructive' },
+  cancelled: { label: 'Cancelado', variant: 'secondary' },
+  approved: { label: 'Aprobado', variant: 'success' },
 }

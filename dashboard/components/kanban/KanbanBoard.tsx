@@ -15,16 +15,25 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ tasks, configs, onTaskClick }: KanbanBoardProps) {
   const [activeColumnId, setActiveColumnId] = useState<string>(KANBAN_COLUMNS[0].id)
+  const tabsContainerRef = useRef<HTMLDivElement>(null)
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
-  // Auto-scroll the active tab into view on mobile
+  // Smooth scroll the active tab into center of the container (not the viewport)
   useEffect(() => {
+    const container = tabsContainerRef.current
     const activeTab = tabRefs.current[activeColumnId]
-    if (activeTab) {
-      activeTab.scrollIntoView({
+    
+    if (container && activeTab) {
+      // Calculate the displacement to center the tab
+      const containerHalfWidth = container.clientWidth / 2
+      const tabHalfWidth = activeTab.clientWidth / 2
+      const tabOffsetLeft = activeTab.offsetLeft
+      
+      const scrollValue = tabOffsetLeft - containerHalfWidth + tabHalfWidth
+      
+      container.scrollTo({
+        left: scrollValue,
         behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
       })
     }
   }, [activeColumnId])
@@ -42,9 +51,12 @@ export function KanbanBoard({ tasks, configs, onTaskClick }: KanbanBoardProps) {
   }, [tasks])
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col max-w-full overflow-x-hidden">
       {/* Mobile column selector */}
-      <div className="mb-4 flex w-full gap-2 overflow-x-auto pb-2 md:hidden">
+      <div 
+        ref={tabsContainerRef}
+        className="mb-4 flex w-full gap-2 overflow-x-auto px-4 pb-4 md:hidden scrollbar-hide no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none]"
+      >
         {KANBAN_COLUMNS.map((col) => {
           const isActive = activeColumnId === col.id
           const count = columns[col.id]?.length || 0
@@ -56,16 +68,16 @@ export function KanbanBoard({ tasks, configs, onTaskClick }: KanbanBoardProps) {
               }}
               onClick={() => setActiveColumnId(col.id)}
               className={cn(
-                'flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-all border',
+                'flex flex-shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-all border',
                 isActive
-                  ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400'
+                  ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-100'
+                  : 'border-border bg-card text-muted-foreground/60 hover:border-muted-foreground/30'
               )}
             >
               {col.label}
               <span className={cn(
-                'inline-flex h-5 min-w-5 items-center justify-center rounded-full text-[10px]',
-                isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
+                'inline-flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold',
+                isActive ? 'bg-black/20 text-white' : 'bg-muted-foreground/5 text-muted-foreground/40'
               )}>
                 {count}
               </span>
@@ -75,9 +87,9 @@ export function KanbanBoard({ tasks, configs, onTaskClick }: KanbanBoardProps) {
       </div>
 
       {/* Kanban Container */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-x-hidden max-w-full">
         {/* Mobile View: Single Active Column */}
-        <div className="h-full md:hidden">
+        <div className="mx-auto flex h-full w-full justify-center md:hidden">
           {KANBAN_COLUMNS.filter(c => c.id === activeColumnId).map((col) => (
              <KanbanColumn
               key={col.id}
@@ -88,7 +100,7 @@ export function KanbanBoard({ tasks, configs, onTaskClick }: KanbanBoardProps) {
               tasks={columns[col.id] || []}
               configs={configs}
               onTaskClick={onTaskClick}
-              className="w-full h-full"
+              className="w-full h-full max-w-[92vw]"
             />
           ))}
         </div>

@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale'
 import { formatFlowType, extractCardSummary } from '@/lib/presentation/fallback'
 import { resolvePath } from '@/lib/presentation/resolve'
 import { formatValue } from '@/lib/presentation/format'
+import { cn } from '@/lib/utils'
 
 interface PresentedTaskCardProps {
   task: Task
@@ -54,11 +55,13 @@ export function PresentedTaskCard({ task, config, onClick }: PresentedTaskCardPr
   return (
     <div
       onClick={() => onClick?.(task)}
-      className="cursor-pointer rounded-lg border bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:bg-gray-800 dark:border-gray-700 dark:hover:shadow-lg dark:hover:shadow-black/20"
+      className="cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] dark:bg-card/50 dark:backdrop-blur-sm dark:border-white/5 dark:hover:bg-card/80"
     >
-      <div className="mb-2 flex items-center justify-between">
-        <Badge className={badge.className}>{badge.label}</Badge>
-        <span className="text-xs text-gray-400 dark:text-gray-500">
+      <div className="mb-3 flex items-center justify-between">
+        <Badge variant={badge.variant} className="px-2 py-0 text-[10px] font-bold uppercase tracking-wider">
+          {badge.label}
+        </Badge>
+        <span className="text-[10px] font-medium text-muted-foreground">
           {formatDistanceToNow(new Date(task.created_at), {
             addSuffix: true,
             locale: es,
@@ -66,11 +69,11 @@ export function PresentedTaskCard({ task, config, onClick }: PresentedTaskCardPr
         </span>
       </div>
 
-      <p className="mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-        {icon && <span className="mr-1">{icon}</span>}
+      <p className="mb-1 text-sm font-semibold text-foreground line-clamp-1">
+        {icon && <span className="mr-1.5">{icon}</span>}
         {title}
       </p>
-      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+      <p className="truncate text-xs text-muted-foreground">
         {subtitle || task.task_id.slice(0, 8) + '...'}
       </p>
 

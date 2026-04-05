@@ -109,8 +109,8 @@ const Sidebar = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & {
         data-side={side}
       >
         <div className={cn(
-          "relative h-svh w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
+          "relative h-svh w-[--sidebar-width] transition-[width] duration-200 ease-linear",
+          "group-data-[state=collapsed]:w-0",
           "group-data-[side=right]:rotate-180",
           variant === "floating" || variant === "inset"
             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
@@ -119,11 +119,12 @@ const Sidebar = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & {
         <div className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left" ? "left-0" : "right-0",
+          "group-data-[state=collapsed]:w-0 group-data-[state=collapsed]:pointer-events-none group-data-[state=collapsed]:overflow-hidden",
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
             : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l"
         )} {...props}>
-          <div data-sidebar="sidebar" className={cn("flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow", className)}>
+          <div data-sidebar="sidebar" className={cn("flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow transition-transform duration-300 ease-in-out group-data-[state=collapsed]:-translate-x-full", className)}>
             {children}
           </div>
         </div>
@@ -136,8 +137,8 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
   ({ className, onClick, ...props }, ref) => {
     const { toggleSidebar } = useSidebar()
     return (
-      <Button ref={ref} data-sidebar="trigger" variant="ghost" size="icon" className={cn("h-7 w-7", className)} onClick={(event) => { onClick?.(event); toggleSidebar() }} {...props}>
-        <PanelLeft />
+      <Button ref={ref} data-sidebar="trigger" variant="ghost" size="icon" className={cn("h-8 w-8", className)} onClick={(event) => { onClick?.(event); toggleSidebar() }} {...props}>
+        <PanelLeft className="h-4 w-4" />
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     )
@@ -161,7 +162,7 @@ const SidebarInput = React.forwardRef<React.ElementRef<"input">, React.Component
 ))
 
 const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<"main">>(({ className, ...props }, ref) => (
-  <main ref={ref} className={cn("relative flex min-h-svh flex-1 flex-col bg-background peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow", className)} {...props} />
+  <main ref={ref} className={cn("relative flex min-h-svh flex-1 flex-col bg-background peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:peer-data-[state=expanded]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow transition-all duration-300", className)} {...props} />
 ))
 
 const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(({ className, ...props }, ref) => (

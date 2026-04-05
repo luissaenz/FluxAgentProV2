@@ -26,20 +26,20 @@ export function KanbanColumn({
   className,
 }: KanbanColumnProps) {
   return (
-    <div className={cn('flex w-full flex-shrink-0 flex-col rounded-xl border border-transparent bg-gray-50 dark:bg-gray-900/40 dark:border-gray-800/50 md:w-72', className)}>
-      {/* Header with color indicator at the top */}
-      <div className={cn('hidden h-1 items-center rounded-t-xl md:flex', color)} />
-
-      <div className="hidden items-center justify-between bg-slate-100/30 px-4 py-3 dark:bg-gray-800/20 md:flex">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</h3>
+    <div className={cn('flex w-full flex-shrink-0 flex-col rounded-2xl border bg-muted/30 backdrop-blur-sm transition-colors md:w-72', className)}>
+      <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center gap-2">
+          <div className={cn('h-2 w-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)]', color)} />
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">{label}</h3>
+        </div>
         <span
-          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-200/50 text-[10px] font-bold text-slate-600 dark:bg-slate-700/50 dark:text-slate-400"
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-background/50 text-[10px] font-bold text-muted-foreground shadow-sm ring-1 ring-border"
         >
           {tasks.length}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
         {tasks.length === 0 ? (
           <p className="py-8 text-center text-xs text-gray-400 dark:text-gray-500">Sin tareas</p>
         ) : (
