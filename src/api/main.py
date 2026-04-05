@@ -23,6 +23,7 @@ from .routes.approvals import router as approvals_router
 from .routes.chat import router as chat_router
 from .routes.workflows import router as workflows_router
 from .routes.bartenders import router as bartenders_router
+from .routes.flow_metrics import router as flow_metrics_router
 from src.flows.bartenders.registry_wiring import register_bartenders_flows
 from src.scheduler.bartenders_jobs import scheduler
 
@@ -81,6 +82,7 @@ app.include_router(approvals_router)
 app.include_router(chat_router)
 app.include_router(workflows_router)
 app.include_router(bartenders_router)  # Phase 6: Bartenders NOA
+app.include_router(flow_metrics_router)
 
 
 @app.get("/health")

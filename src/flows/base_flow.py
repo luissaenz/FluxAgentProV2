@@ -140,6 +140,13 @@ class BaseFlow(ABC):
             # 5. Complete
             self.state.complete(result)
             await self.emit_event("flow.completed", {"result": result})
+
+            # Emit token event if tokens were recorded
+            if self.state.tokens_used > 0:
+                await self.emit_event("flow.tokens_recorded", {
+                    "tokens_used": self.state.tokens_used,
+                    "flow_type": self.flow_type,
+                })
         except Exception as exc:
             logger.error("Flow failed: %s", exc)
             raise
@@ -209,6 +216,7 @@ class BaseFlow(ABC):
                             if self.state.status == FlowStatus.AWAITING_APPROVAL.value
                             else "none"
                         ),
+                        "tokens_used": self.state.tokens_used,
                     }
                 ).eq("id", self.state.task_id)
             )

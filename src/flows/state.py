@@ -107,6 +107,11 @@ class BaseFlowState(BaseModel):
         self.status = FlowStatus.AWAITING_APPROVAL
         return self
 
+    def update_tokens(self, tokens: int) -> "BaseFlowState":
+        """Acumular tokens usados. Llamar desde _run_crew() de la subclase."""
+        self.tokens_used += tokens
+        return self
+
     # ── serialisation helpers ───────────────────────────────────
 
     def to_snapshot(self) -> dict:

@@ -95,3 +95,45 @@ export interface Agent {
   created_at: string
   updated_at: string
 }
+
+// ── Metricas del sistema agentino ─────────────────────────
+
+export interface OverviewMetrics {
+  tasks: {
+    total: number
+    by_status: Record<string, number>
+  }
+  tokens: {
+    total: number
+  }
+  approvals: {
+    pending: number
+  }
+  events: {
+    recent: DomainEvent[]
+  }
+}
+
+export interface FlowTypeMetrics {
+  flow_type: string
+  total_runs: number
+  completed: number
+  failed: number
+  running: number
+  awaiting_approval: number
+  pending: number
+  total_tokens: number
+  avg_tokens: number
+  last_run_at: string | null
+}
+
+export interface FlowRun {
+  id: string
+  flow_type: string
+  status: TaskStatus
+  tokens_used: number
+  created_at: string
+  updated_at: string
+  error: string | null
+  correlation_id: string | null
+}
