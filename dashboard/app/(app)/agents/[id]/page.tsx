@@ -8,6 +8,9 @@ import { CodeBlock } from '@/components/shared/CodeBlock'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { BackButton } from '@/components/shared/BackButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useAgentMetrics } from '@/hooks/useAgentMetrics'
+import { Coins } from 'lucide-react'
 import type { Agent } from '@/lib/types'
 
 export default function AgentDetailPage() {
@@ -27,6 +30,12 @@ export default function AgentDetailPage() {
     enabled: !!id,
   })
 
+  const { data: agentMetrics, isLoading: loadingMetrics } = useAgentMetrics()
+
+  const agentTokenUsage = agentMetrics?.find(
+    (m) => m.agent_id === id || m.agent_role.toLowerCase() === agent?.role?.toLowerCase()
+  )
+
   if (isLoading) {
     return <LoadingSpinner label="Cargando agente..." />
   }
@@ -45,6 +54,28 @@ export default function AgentDetailPage() {
           {agent.is_active ? 'Activo' : 'Inactivo'}
         </Badge>
       </div>
+
+      {/* Panel de tokens */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Coins className="h-4 w-4" />
+            Tokens Consumidos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingMetrics ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            <div className="text-2xl font-bold">
+              {(agentTokenUsage?.tokens_used || 0).toLocaleString()}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            Total de tokens consumidos por este agente
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -76,6 +107,21 @@ export default function AgentDetailPage() {
                 {(!agent.allowed_tools || agent.allowed_tools.length === 0) && (
                   <span className="text-sm text-muted-foreground">Ninguno configurado</span>
                 )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">Credenciales</dt>
+              <dd className="mt-1">
+                <a
+                  href="#"
+                  className="text-sm text-blue-600 hover:underline"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    alert('Panel de Vault en desarrollo')
+                  }}
+                >
+                  Ver secrets en Vault →
+                </a>
               </dd>
             </div>
           </dl>

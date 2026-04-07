@@ -1,0 +1,165 @@
+"""src/api/routes/flows.py — Endpoints para listing y ejecución de flows registrados."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from pydantic import BaseModel
+from typing import Optional, Dict, Any, List
+import logging
+
+from ...flows.registry import flow_registry
+from .webhooks import execute_flow
+from ..middleware import require_org_id
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/flows", tags=["flows"])
+
+
+class FlowInfo(BaseModel):
+    """Información de un flow registrado."""
+
+    flow_type: str
+    name: str
+    description: Optional[str] = None
+    input_schema: Optional[Dict[str, Any]] = None
+
+
+class FlowsListResponse(BaseModel):
+    """Respuesta con lista de flows disponibles."""
+
+    flows: List[FlowInfo]
+
+
+class RunFlowRequest(BaseModel):
+    """Request para ejecutar un flow."""
+
+    input_data: Dict[str, Any] = {}
+    callback_url: Optional[str] = None
+
+
+class RunFlowResponse(BaseModel):
+    """Respuesta al ejecutar un flow."""
+
+    task_id: str
+    status: str
+
+
+# Mapeo de flows a sus schemas de input (definidos manualmente o desde los flows)
+FLOW_INPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
+    "bartenders_preventa": {
+        "type": "object",
+        "required": [
+            "fecha_evento",
+            "provincia",
+            "localidad",
+            "tipo_evento",
+            "pax",
+            "duracion_horas",
+            "tipo_menu",
+        ],
+        "properties": {
+            "fecha_evento": {"type": "string", "example": "2026-07-20"},
+            "provincia": {
+                "type": "string",
+                "enum": ["Tucuman", "Salta", "Jujuy", "Catamarca"],
+            },
+            "localidad": {"type": "string"},
+            "tipo_evento": {
+                "type": "string",
+                "enum": ["boda", "corporativo", "fiesta", "otro"],
+            },
+            "pax": {"type": "integer", "minimum": 10, "maximum": 500},
+            "duracion_horas": {"type": "integer", "minimum": 1, "maximum": 24},
+            "tipo_menu": {"type": "string", "enum": ["basico", "estandar", "premium"]},
+            "restricciones": {"type": "string"},
+        },
+    },
+    "bartenders_reserva": {
+        "type": "object",
+        "required": ["evento_id", "cotizacion_id", "opcion_elegida"],
+        "properties": {
+            "evento_id": {"type": "string"},
+            "cotizacion_id": {"type": "string"},
+            "opcion_elegida": {
+                "type": "string",
+                "enum": ["basica", "recomendada", "premium"],
+            },
+        },
+    },
+    "bartenders_alerta": {
+        "type": "object",
+        "required": ["evento_id"],
+        "properties": {
+            "evento_id": {"type": "string"},
+        },
+    },
+    "bartenders_cierre": {
+        "type": "object",
+        "required": ["evento_id", "costo_real"],
+        "properties": {
+            "evento_id": {"type": "string"},
+            "costo_real": {"type": "integer"},
+            "mermas": {"type": "integer", "default": 0},
+            "compras_emergencia": {"type": "integer", "default": 0},
+            "desvio_climatico": {"type": "string"},
+            "rating": {"type": "integer", "minimum": 1, "maximum": 5},
+        },
+    },
+}
+
+
+@router.get("/available", response_model=FlowsListResponse)
+async def list_available_flows(
+    org_id: str = Depends(require_org_id),
+):
+    """
+    Listar todos los flows registrados disponibles para ejecución.
+    """
+    flows = []
+
+    for flow_type in flow_registry.list_flows():
+        flows.append(
+            FlowInfo(
+                flow_type=flow_type,
+                name=flow_type.replace("_", " ").title(),
+                description=f"Flow: {flow_type}",
+                input_schema=FLOW_INPUT_SCHEMAS.get(flow_type),
+            )
+        )
+
+    return FlowsListResponse(flows=flows)
+
+
+@router.post("/{flow_type}/run", response_model=RunFlowResponse)
+async def run_flow(
+    flow_type: str,
+    request: RunFlowRequest,
+    background_tasks: BackgroundTasks,
+    org_id: str = Depends(require_org_id),
+):
+    """
+    Ejecutar un flow específico con los datos de entrada.
+    Retorna 202 Accepted inmediatamente - el flow corre en background.
+    """
+    if not flow_registry.has(flow_type):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Flow '{flow_type}' no encontrado. Disponibles: {flow_registry.list_flows()}",
+        )
+
+    correlation_id = f"manual-{flow_type}-{org_id}"
+
+    background_tasks.add_task(
+        execute_flow,
+        flow_type=flow_type,
+        org_id=org_id,
+        input_data=request.input_data,
+        correlation_id=correlation_id,
+        callback_url=request.callback_url,
+    )
+
+    return RunFlowResponse(
+        task_id=correlation_id,
+        status="accepted",
+    )

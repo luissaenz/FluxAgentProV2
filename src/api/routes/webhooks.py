@@ -31,9 +31,12 @@ def _run_async_in_background(coro):
 
 # ── request / response models ──────────────────────────────────
 
+
 class WebhookTriggerRequest(BaseModel):
     flow_type: str = Field(..., description="Registered flow name")
-    input_data: Dict[str, Any] = Field(default_factory=dict, description="Input payload")
+    input_data: Dict[str, Any] = Field(
+        default_factory=dict, description="Input payload"
+    )
     callback_url: Optional[str] = Field(None, description="URL for completion callback")
 
 
@@ -44,6 +47,7 @@ class WebhookTriggerResponse(BaseModel):
 
 
 # ── route ───────────────────────────────────────────────────────
+
 
 @router.post(
     "/trigger",
@@ -96,23 +100,30 @@ async def trigger_webhook(
 
 # ── background execution ───────────────────────────────────────
 
+
 async def execute_flow(
     flow_type: str,
     org_id: str,
     input_data: Dict[str, Any],
     correlation_id: str,
     callback_url: Optional[str] = None,
-) -> None:
-    """Run a flow in the background — called by ``BackgroundTasks``."""
+) -> Optional[str]:
+    """Run a flow in the background — called by ``BackgroundTasks``.
+
+    Returns the real task_id assigned by the flow, or None if not available yet.
+    """
     try:
         flow_class = flow_registry.get(flow_type)
         flow = flow_class(org_id=org_id)
-        await flow.execute(input_data, correlation_id)
+        task_id = await flow.execute(input_data, correlation_id)
 
         if callback_url:
             await _send_callback(callback_url, flow.state)
+
+        return task_id
     except Exception as exc:
         logger.error("Background flow execution failed: %s", exc)
+        return None
 
 
 async def _send_callback(callback_url: str, state) -> None:

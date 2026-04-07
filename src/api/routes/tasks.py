@@ -20,6 +20,7 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 # ── response models ──────────────────────────────────────────────
 
+
 class TaskResponse(BaseModel):
     task_id: str
     org_id: str
@@ -27,6 +28,7 @@ class TaskResponse(BaseModel):
     status: str
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+    tokens_used: int = 0
     created_at: str
     updated_at: str
 
@@ -38,6 +40,7 @@ class PaginatedTasksResponse(BaseModel):
 
 # ── helpers ──────────────────────────────────────────────────────
 
+
 def _task_to_response(t: dict) -> TaskResponse:
     return TaskResponse(
         task_id=t["id"],
@@ -46,12 +49,14 @@ def _task_to_response(t: dict) -> TaskResponse:
         status=t["status"],
         result=t.get("result"),
         error=t.get("error"),
+        tokens_used=t.get("tokens_used", 0) or 0,
         created_at=str(t["created_at"]),
         updated_at=str(t["updated_at"]),
     )
 
 
 # ── routes ──────────────────────────────────────────────────────
+
 
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(

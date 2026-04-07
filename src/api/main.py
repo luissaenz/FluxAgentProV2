@@ -12,10 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 # ── eager flow registration (import triggers @register_flow) ─────
-import src.flows.generic_flow    # noqa: F401
+import src.flows.generic_flow  # noqa: F401
 import src.flows.architect_flow  # noqa: F401
-import src.flows.coctel_flows    # noqa: F401  — Phase 5B CoctelPro
-import src.tools.builtin         # noqa: F401
+import src.flows.coctel_flows  # noqa: F401  — Phase 5B CoctelPro
+import src.tools.builtin  # noqa: F401
 
 from .routes.webhooks import router as webhooks_router
 from .routes.tasks import router as tasks_router
@@ -24,6 +24,7 @@ from .routes.chat import router as chat_router
 from .routes.workflows import router as workflows_router
 from .routes.bartenders import router as bartenders_router
 from .routes.flow_metrics import router as flow_metrics_router
+from .routes.flows import router as flows_router
 from src.flows.bartenders.registry_wiring import register_bartenders_flows
 from src.scheduler.bartenders_jobs import scheduler
 
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 # ── lifespan ─────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -83,6 +85,7 @@ app.include_router(chat_router)
 app.include_router(workflows_router)
 app.include_router(bartenders_router)  # Phase 6: Bartenders NOA
 app.include_router(flow_metrics_router)
+app.include_router(flows_router)  # Semana 2: flows disponibles y ejecución
 
 
 @app.get("/health")

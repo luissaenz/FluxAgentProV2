@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import type { WorkflowTemplate } from '@/lib/types'
 import Link from 'next/link'
 import { Workflow } from 'lucide-react'
+import { RunFlowDialog } from '@/components/flows/RunFlowDialog'
 
 const statusVariants: Record<string, 'default' | 'secondary' | 'destructive' | 'success'> = {
   draft: 'secondary',
@@ -37,6 +38,7 @@ export default function WorkflowsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Workflows</h2>
+        <RunFlowDialog />
       </div>
 
       <div className="flex gap-2">
