@@ -112,6 +112,15 @@ class BaseFlowState(BaseModel):
         self.tokens_used += tokens
         return self
 
+    def estimate_tokens(self, text: Any) -> int:
+        """
+        Fallback: estimar tokens basados en el tamaño del texto.
+        Regla de oro: 1 token ≈ 4 caracteres (promedio en inglés/español).
+        """
+        if not text:
+            return 0
+        return len(str(text)) // 4
+
     # ── serialisation helpers ───────────────────────────────────
 
     def to_snapshot(self) -> dict:

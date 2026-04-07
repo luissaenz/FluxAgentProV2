@@ -245,7 +245,17 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
             verbose=True,
         )
 
-        return await crew.kickoff_async(inputs={})
+        result = await crew.kickoff_async(inputs={})
+        
+        # Track tokens
+        if hasattr(result, "token_usage") and result.token_usage:
+            self.state.update_tokens(result.token_usage.get("total_tokens", 0))
+        elif hasattr(result, "usage_metrics") and result.usage_metrics:
+            self.state.update_tokens(result.usage_metrics.get("total_tokens", 0))
+        else:
+            self.state.update_tokens(self.state.estimate_tokens(str(result)))
+
+        return result
 
     def _parse_workflow_definition(self, raw_result: Any) -> WorkflowDefinition:
         """Extraer y validar JSON del resultado del agente."""

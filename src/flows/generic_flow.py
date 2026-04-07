@@ -34,4 +34,13 @@ class GenericFlow(BaseFlow):
         result = await crew.kickoff_async(
             inputs={"text": self.state.input_data["text"]}
         )
+        
+        # Track tokens
+        if hasattr(result, "token_usage") and result.token_usage:
+            self.state.update_tokens(result.token_usage.get("total_tokens", 0))
+        elif hasattr(result, "usage_metrics") and result.usage_metrics:
+            self.state.update_tokens(result.usage_metrics.get("total_tokens", 0))
+        else:
+            self.state.update_tokens(self.state.estimate_tokens(str(result)))
+
         return {"processed_text": str(result)}

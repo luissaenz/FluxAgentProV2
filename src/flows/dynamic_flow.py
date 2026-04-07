@@ -76,7 +76,9 @@ class DynamicWorkflow(BaseFlow):
 
             logger.info(
                 "DynamicFlow[%s] ejecutando step '%s' con agent '%s'",
-                self._flow_type, step_id, agent_role
+                self._flow_type,
+                step_id,
+                agent_role,
             )
 
             crew = BaseCrew(org_id=self.org_id, role=agent_role)
@@ -89,11 +91,18 @@ class DynamicWorkflow(BaseFlow):
                 },
             )
 
+            # Track real tokens from CrewAI
+            self.state.update_tokens(crew.get_last_tokens_used())
+
             results[step_id] = {"result": str(result.raw)}
             await self.persist_state()
-            await self.emit_event(f"step.{step_id}.completed", {
-                "output": results[step_id]
-            })
+            await self.emit_event(
+                f"step.{step_id}.completed",
+                {
+                    "output": results[step_id],
+                    "tokens_used": crew.get_last_tokens_used(),
+                },
+            )
 
             # Evaluar approval_rules
             for rule in approval_rules:
@@ -168,10 +177,7 @@ def load_dynamic_flows_from_db() -> int:
             )
             count += 1
         except Exception as exc:
-            logger.error(
-                "No se pudo cargar dynamic flow %s: %s",
-                t["flow_type"], exc
-            )
+            logger.error("No se pudo cargar dynamic flow %s: %s", t["flow_type"], exc)
 
     logger.info("DynamicWorkflow: %d flows cargados desde DB", count)
     return count

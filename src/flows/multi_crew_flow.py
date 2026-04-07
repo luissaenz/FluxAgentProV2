@@ -46,11 +46,13 @@ class MultiCrewFlow(BaseFlow):
     """
 
     # Approval threshold guardrail (staticmethod to avoid self being passed)
-    _approval_check = staticmethod(make_approval_check(
-        amount_field="monto",
-        threshold_key="approval_threshold",
-        default_threshold=50_000,
-    ))
+    _approval_check = staticmethod(
+        make_approval_check(
+            amount_field="monto",
+            threshold_key="approval_threshold",
+            default_threshold=50_000,
+        )
+    )
 
     def validate_input(self, input_data: Dict[str, Any]) -> bool:
         return bool(input_data)
@@ -69,16 +71,18 @@ class MultiCrewFlow(BaseFlow):
         task_id = str(uuid4())
 
         with get_tenant_client(self.org_id, self.user_id) as db:
-            db.table("tasks").insert({
-                "id": task_id,
-                "org_id": self.org_id,
-                "flow_type": "multi_crew",
-                "flow_id": task_id,
-                "status": "pending",
-                "payload": input_data,
-                "correlation_id": correlation_id,
-                "max_retries": self.extra_kwargs.get("max_retries", 3),
-            }).execute()
+            db.table("tasks").insert(
+                {
+                    "id": task_id,
+                    "org_id": self.org_id,
+                    "flow_type": "multi_crew",
+                    "flow_id": task_id,
+                    "status": "pending",
+                    "payload": input_data,
+                    "correlation_id": correlation_id,
+                    "max_retries": self.extra_kwargs.get("max_retries", 3),
+                }
+            ).execute()
 
         self.state = MultiCrewState(
             task_id=task_id,
@@ -143,6 +147,9 @@ class MultiCrewFlow(BaseFlow):
             task_description="Perform initial analysis with available data.",
             inputs={"data": self.state.input_data},
         )
+        # Track real tokens from CrewAI
+        self.state.update_tokens(crew.get_last_tokens_used())
+
         # 1. Intentar parsear el resultado como JSON para extraer lógica de negocio
         try:
             parsed_result = json.loads(str(result))
@@ -154,9 +161,13 @@ class MultiCrewFlow(BaseFlow):
             self.state.crew_a_output = {"result": str(result)}
 
         await self.persist_state()
-        await self.emit_event("crew_a.completed", {
-            "output": self.state.crew_a_output,
-        })
+        await self.emit_event(
+            "crew_a.completed",
+            {
+                "output": self.state.crew_a_output,
+                "tokens_used": crew.get_last_tokens_used(),
+            },
+        )
 
     def _decide_next_crew(self) -> str:
         """Router: decide which crew to run next based on Crew A output.
@@ -175,6 +186,9 @@ class MultiCrewFlow(BaseFlow):
             task_description="Process the output from the initial analysis.",
             inputs={"analysis": self.state.crew_a_output},
         )
+        # Track real tokens from CrewAI
+        self.state.update_tokens(crew.get_last_tokens_used())
+
         try:
             parsed_result = json.loads(str(result))
             if isinstance(parsed_result, dict):
@@ -185,9 +199,13 @@ class MultiCrewFlow(BaseFlow):
             self.state.crew_b_output = {"result": str(result)}
 
         await self.persist_state()
-        await self.emit_event("crew_b.completed", {
-            "output": self.state.crew_b_output,
-        })
+        await self.emit_event(
+            "crew_b.completed",
+            {
+                "output": self.state.crew_b_output,
+                "tokens_used": crew.get_last_tokens_used(),
+            },
+        )
 
         # Guardrail: check if amount exceeds approval threshold
         amount = self.state.crew_b_output.get("monto", 0)
@@ -204,11 +222,18 @@ class MultiCrewFlow(BaseFlow):
             task_description="Review and summarise the analysis results.",
             inputs={"analysis": self.state.crew_a_output},
         )
+        # Track real tokens from CrewAI
+        self.state.update_tokens(crew.get_last_tokens_used())
+
         self.state.crew_c_output = {"result": str(result)}
         await self.persist_state()
-        await self.emit_event("crew_c.completed", {
-            "output": self.state.crew_c_output,
-        })
+        await self.emit_event(
+            "crew_c.completed",
+            {
+                "output": self.state.crew_c_output,
+                "tokens_used": crew.get_last_tokens_used(),
+            },
+        )
 
     async def _finalise(self) -> None:
         """Complete the flow with aggregated results."""

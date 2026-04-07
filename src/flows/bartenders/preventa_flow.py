@@ -139,6 +139,7 @@ class PreventaFlow(BaseFlow):
         })
 
         self.state.evento_id = registro["evento_id"]
+        self.state.update_tokens(self.state.estimate_tokens(registro))
         self.logger.info("preventa.a1.completado", evento_id=self.state.evento_id)
         await self.emit_event("preventa.evento_registrado",
                         {"evento_id": self.state.evento_id})
@@ -160,6 +161,7 @@ class PreventaFlow(BaseFlow):
         self.logger.info("preventa.a2.completado",
                          mes=mes,
                          factor_pct=self.state.factor_climatico_pct)
+        self.state.update_tokens(self.state.estimate_tokens(config if config else "default"))
         await self.emit_event("preventa.factor_climatico_determinado", {
             "mes":        mes,
             "factor_pct": self.state.factor_climatico_pct,
@@ -187,6 +189,7 @@ class PreventaFlow(BaseFlow):
 
         self.logger.info("preventa.a3.completado",
                          escandallo=self.state.escandallo_final)
+        self.state.update_tokens(self.state.estimate_tokens(resultado))
         await self.emit_event("preventa.escandallo_calculado", {
             "escandallo_final": self.state.escandallo_final,
             "bartenders":       resultado.bartenders_necesarios,
@@ -227,6 +230,7 @@ class PreventaFlow(BaseFlow):
         self.logger.info("preventa.a4.completado",
                          cotizacion_id=cotizacion_id,
                          recomendada=opciones["recomendada"])
+        self.state.update_tokens(self.state.estimate_tokens(opciones))
         await self.emit_event("preventa.cotizacion_generada", {
             "cotizacion_id":     cotizacion_id,
             "opcion_recomendada":opciones["recomendada"],

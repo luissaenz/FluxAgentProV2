@@ -100,6 +100,7 @@ class CierreFlow(BaseFlow):
             if self.state.precio_cobrado > 0 else 0.0
         )
         self.state.margen_critico = self.state.margen_pct < MARGEN_CRITICO_UMBRAL
+        self.state.update_tokens(self.state.estimate_tokens(cotizacion))
 
         self.logger.info("cierre.datos_cargados",
                          evento_id=self.state.evento_id,
@@ -129,6 +130,7 @@ class CierreFlow(BaseFlow):
             desvio_climatico   = self.state.desvio_climatico,
         )
         self.state.auditoria_id = auditoria_id
+        self.state.update_tokens(self.state.estimate_tokens({"auditoria_id": auditoria_id}))
 
         # Actualizar evento a "ejecutado"
         connector.update("eventos", self.state.evento_id, {
@@ -213,6 +215,7 @@ class CierreFlow(BaseFlow):
             "ganancia_neta":   self.state.ganancia_neta,
             "proxima_contacto": prox_contacto,
         }
+        self.state.update_tokens(self.state.estimate_tokens(self.state.output_data))
 
         self.logger.info("cierre.completado",
                          evento_id=self.state.evento_id,

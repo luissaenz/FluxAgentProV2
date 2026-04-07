@@ -90,7 +90,7 @@ class BaseCrew:
             expected_output: Description of expected output format.
 
         Returns:
-            CrewOutput from crew.kickoff().
+            CrewOutput from crew.kickoff() with token usage attached.
         """
         from crewai import Agent, Crew, Process, Task
 
@@ -127,7 +127,49 @@ class BaseCrew:
             verbose=False,
         )
 
-        return crew.kickoff(inputs=inputs or {})
+        result = crew.kickoff(inputs=inputs or {})
+
+        # Extract token usage from crew result
+        self._extract_token_usage(result)
+
+        return result
+
+    def _extract_token_usage(self, result: Any) -> None:
+        """Extract and store token usage from CrewAI result."""
+        tokens = 0
+
+        # Try token_usage attribute (CrewAI standard)
+        if hasattr(result, "token_usage") and result.token_usage:
+            token_data = result.token_usage
+            if hasattr(token_data, "total_tokens"):
+                tokens = token_data.total_tokens
+            elif isinstance(token_data, dict):
+                tokens = token_data.get("total_tokens", 0)
+
+        # Try usage_metrics attribute
+        elif hasattr(result, "usage_metrics") and result.usage_metrics:
+            metrics = result.usage_metrics
+            if hasattr(metrics, "total_tokens"):
+                tokens = metrics.total_tokens
+            elif isinstance(metrics, dict):
+                tokens = metrics.get("total_tokens", 0)
+
+        # Try tokens attribute
+        elif hasattr(result, "tokens") and result.tokens:
+            tokens = result.tokens
+
+        # Try to get from crew.usage_metrics (alternative path)
+        elif hasattr(result, "crew") and hasattr(result.crew, "usage_metrics"):
+            crew_metrics = result.crew.usage_metrics
+            if hasattr(crew_metrics, "total_tokens"):
+                tokens = crew_metrics.total_tokens
+
+        # Store in instance for retrieval after run
+        self._last_tokens_used = tokens
+
+    def get_last_tokens_used(self) -> int:
+        """Return tokens consumed in last run."""
+        return getattr(self, "_last_tokens_used", 0)
 
     async def run_async(
         self,
@@ -173,7 +215,12 @@ class BaseCrew:
             verbose=False,
         )
 
-        return await crew.kickoff_async(inputs=inputs or {})
+        result = await crew.kickoff_async(inputs=inputs or {})
+
+        # Extract token usage from crew result
+        self._extract_token_usage(result)
+
+        return result
 
     async def kickoff_async(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
         """Alias for run_async() — compatibility with Phase 3 documentation."""
