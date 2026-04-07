@@ -3,19 +3,34 @@
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase'
-import { Badge } from '@/components/ui/badge'
-import { CodeBlock } from '@/components/shared/CodeBlock'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { BackButton } from '@/components/shared/BackButton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useAgentDetail } from '@/hooks/useAgentDetail'
 import { useAgentMetrics } from '@/hooks/useAgentMetrics'
-import { Coins } from 'lucide-react'
+import { BackButton } from '@/components/shared/BackButton'
+import { StatusLabel } from '@/components/shared/StatusLabel'
+import { CodeBlock } from '@/components/shared/CodeBlock'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Bot, Key, Coins } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
 import type { Agent } from '@/lib/types'
+import Link from 'next/link'
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>()
-
   const { data: agent, isLoading } = useQuery<Agent | null>({
     queryKey: ['agent', id],
     queryFn: async () => {
@@ -31,102 +46,229 @@ export default function AgentDetailPage() {
   })
 
   const { data: agentMetrics, isLoading: loadingMetrics } = useAgentMetrics()
+  const { data: detail, isLoading: loadingDetail } = useAgentDetail(
+    typeof agent?.org_id === 'string' ? agent.org_id : '',
+    id || ''
+  )
 
   const agentTokenUsage = agentMetrics?.find(
     (m) => m.agent_id === id || m.agent_role.toLowerCase() === agent?.role?.toLowerCase()
   )
 
   if (isLoading) {
-    return <LoadingSpinner label="Cargando agente..." />
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   if (!agent) {
-    return <p className="py-12 text-center text-muted-foreground">Agente no encontrado</p>
+    return (
+      <p className="py-12 text-center text-muted-foreground">
+        Agente no encontrado
+      </p>
+    )
   }
+
+  const metrics = detail?.metrics
+  const credentials = detail?.credentials || []
+  const soul = agent.soul_json || {}
+  const totalTokens = metrics?.total_tokens ?? agentTokenUsage?.tokens_used ?? 0
 
   return (
     <div className="space-y-6">
-      <BackButton href="/agents" />
-
-      <div className="flex items-center gap-3">
-        <h2 className="text-2xl font-bold tracking-tight">{agent.role}</h2>
-        <Badge variant={agent.is_active ? 'success' : 'secondary'}>
-          {agent.is_active ? 'Activo' : 'Inactivo'}
-        </Badge>
+      <div className="flex items-center gap-4">
+        <BackButton href="/agents" />
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Bot className="h-6 w-6" />
+            {agent.role}
+          </h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant={agent.is_active ? 'success' : 'secondary'}>
+              {agent.is_active ? 'Activo' : 'Inactivo'}
+            </Badge>
+            {agent.model && (
+              <Badge variant="outline">{agent.model}</Badge>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Panel de tokens */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Coins className="h-4 w-4" />
-            Tokens Consumidos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingMetrics ? (
-            <Skeleton className="h-8 w-24" />
-          ) : (
-            <div className="text-2xl font-bold">
-              {(agentTokenUsage?.tokens_used || 0).toLocaleString()}
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">
-            Total de tokens consumidos por este agente
-          </p>
-        </CardContent>
-      </Card>
+      {/* Metricas rapidas */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <MetricCard
+          label="Tokens totales"
+          value={totalTokens.toLocaleString()}
+          icon={<Coins className="h-4 w-4" />}
+        />
+        <MetricCard
+          label="Tareas completadas"
+          value={metrics?.tasks_by_status.completed ?? '—'}
+        />
+        <MetricCard
+          label="Tareas fallidas"
+          value={metrics?.tasks_by_status.failed ?? '—'}
+        />
+        <MetricCard
+          label="Max iteraciones"
+          value={agent.max_iter}
+        />
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">SOUL Definition</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CodeBlock code={agent.soul_json} />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">Informacion</TabsTrigger>
+          <TabsTrigger value="tasks">
+            Tareas {metrics?.recent_tasks?.length ? `(${metrics.recent_tasks.length})` : ''}
+          </TabsTrigger>
+          <TabsTrigger value="credentials">
+            Credenciales ({credentials.length})
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Configuración</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="space-y-3">
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">Max Iteraciones</dt>
-              <dd className="text-sm">{agent.max_iter}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">Tools permitidos</dt>
-              <dd className="mt-1 flex flex-wrap gap-1">
-                {agent.allowed_tools?.map((tool) => (
-                  <Badge key={tool} variant="outline">
-                    {tool}
-                  </Badge>
-                ))}
-                {(!agent.allowed_tools || agent.allowed_tools.length === 0) && (
-                  <span className="text-sm text-muted-foreground">Ninguno configurado</span>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">Credenciales</dt>
-              <dd className="mt-1">
-                <a
-                  href="#"
-                  className="text-sm text-blue-600 hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    alert('Panel de Vault en desarrollo')
-                  }}
-                >
-                  Ver secrets en Vault →
-                </a>
-              </dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
+        {/* Tab: Informacion */}
+        <TabsContent value="info" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Configuracion</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div><strong>Role:</strong> {agent.role}</div>
+              <div><strong>Modelo:</strong> {agent.model || '—'}</div>
+              <div><strong>Max iteraciones:</strong> {agent.max_iter}</div>
+              <div>
+                <strong>Herramientas:</strong>{' '}
+                {(agent.allowed_tools || []).join(', ') || '—'}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Accordion type="single" collapsible>
+            <AccordionItem value="soul">
+              <AccordionTrigger>SOUL Definition (Prompt)</AccordionTrigger>
+              <AccordionContent>
+                <CodeBlock code={soul} />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </TabsContent>
+
+        {/* Tab: Tareas */}
+        <TabsContent value="tasks">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tareas Recientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingDetail ? (
+                <p className="text-sm text-muted-foreground">Cargando...</p>
+              ) : !metrics?.recent_tasks?.length ? (
+                <p className="text-sm text-muted-foreground">
+                  Sin tareas para este agente.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {metrics.recent_tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/tasks/${task.id}`}
+                          className="font-mono text-primary hover:underline"
+                        >
+                          {task.id.slice(0, 8)}...
+                        </Link>
+                        <Badge variant="outline">{task.flow_type}</Badge>
+                        <span>{task.tokens_used.toLocaleString()} tokens</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <StatusLabel status={task.status} />
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(task.created_at), {
+                            addSuffix: true,
+                            locale: es,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Credenciales */}
+        <TabsContent value="credentials">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                Credenciales en Vault
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {credentials.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Sin credenciales asociadas.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {credentials.map((cred, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded border px-3 py-2 text-sm"
+                    >
+                      <Key className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-mono">{cred.tool}</span>
+                      {cred.description && (
+                        <span className="text-xs text-muted-foreground">
+                          — {cred.description}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-3">
+                Solo se muestran los nombres de las herramientas que requieren credenciales.
+                Los valores nunca se exponen.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: string | number
+  icon?: React.ReactNode
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
   )
 }

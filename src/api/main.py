@@ -25,6 +25,9 @@ from .routes.workflows import router as workflows_router
 from .routes.bartenders import router as bartenders_router
 from .routes.flow_metrics import router as flow_metrics_router
 from .routes.flows import router as flows_router
+from .routes.tickets import router as tickets_router
+from .routes.agents import router as agents_router
+from .routes.transcripts import router as transcripts_router
 from src.flows.bartenders.registry_wiring import register_bartenders_flows
 from src.scheduler.bartenders_jobs import scheduler
 
@@ -85,7 +88,10 @@ app.include_router(chat_router)
 app.include_router(workflows_router)
 app.include_router(bartenders_router)  # Phase 6: Bartenders NOA
 app.include_router(flow_metrics_router)
-app.include_router(flows_router)  # Semana 2: flows disponibles y ejecución
+app.include_router(flows_router)  # flows disponibles y ejecucion
+app.include_router(tickets_router)  # Semana 2: tickets
+app.include_router(agents_router)  # Semana 2: agent detail
+app.include_router(transcripts_router)  # Semana 2: transcripts
 
 
 @app.get("/health")

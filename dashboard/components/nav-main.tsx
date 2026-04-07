@@ -11,6 +11,7 @@ import {
   Workflow,
   Activity,
   MessageSquare,
+  Ticket,
   type LucideIcon,
 } from 'lucide-react'
 import {
@@ -38,6 +39,7 @@ const defaultNavItems: NavItem[] = [
   { title: 'Kanban', url: '/kanban', icon: Columns3 },
   { title: 'Aprobaciones', url: '/approvals', icon: ShieldCheck },
   { title: 'Historial', url: '/tasks', icon: History },
+  { title: 'Tickets', url: '/tickets', icon: Ticket },
   { title: 'Agentes', url: '/agents', icon: Bot },
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },

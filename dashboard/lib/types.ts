@@ -92,6 +92,7 @@ export interface Agent {
   soul_json: Record<string, unknown>
   allowed_tools: string[]
   max_iter: number
+  model?: string
   created_at: string
   updated_at: string
 }
@@ -136,4 +137,72 @@ export interface FlowRun {
   updated_at: string
   error: string | null
   correlation_id: string | null
+}
+
+// ── Tickets ─────────────────────────
+
+export type TicketStatus =
+  | 'backlog'
+  | 'todo'
+  | 'in_progress'
+  | 'done'
+  | 'blocked'
+  | 'cancelled'
+
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
+
+export interface Ticket {
+  id: string
+  org_id: string
+  title: string
+  description: string | null
+  flow_type: string | null
+  priority: TicketPriority
+  status: TicketStatus
+  input_data: Record<string, unknown> | null
+  task_id: string | null
+  created_by: string | null
+  assigned_to: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+}
+
+export interface TicketCreate {
+  title: string
+  description?: string
+  flow_type?: string
+  priority?: TicketPriority
+  input_data?: Record<string, unknown>
+  assigned_to?: string
+}
+
+export interface TicketUpdate {
+  status?: TicketStatus
+  notes?: string
+  assigned_to?: string
+}
+
+// ── Agente detallado con metricas ─────────────────────────
+
+export interface AgentDetail {
+  agent: Agent
+  metrics: {
+    total_tokens: number
+    tasks_by_status: Record<string, number>
+    recent_tasks: Array<{
+      id: string
+      flow_type: string
+      status: TaskStatus
+      tokens_used: number
+      created_at: string
+      updated_at: string
+      error: string | null
+    }>
+  }
+  credentials: Array<{
+    tool: string
+    description: string | null
+  }>
 }

@@ -13,7 +13,9 @@ import { formatFlowType } from '@/lib/presentation/fallback'
 import { usePresentationConfigs } from '@/hooks/usePresentationConfig'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { FileText } from 'lucide-react'
 import type { Task, DomainEvent } from '@/lib/types'
+import Link from 'next/link'
 
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -56,6 +58,13 @@ export default function TaskDetailPage() {
         <BackButton href="/tasks" label="Volver" />
         <h2 className="text-2xl font-bold tracking-tight">Tarea: {task.task_id.slice(0, 12)}...</h2>
         <StatusLabel status={task.status} />
+        <Link
+          href={`/tasks/${id}/transcript`}
+          className="ml-auto flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <FileText className="h-4 w-4" />
+          Ver Transcript
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

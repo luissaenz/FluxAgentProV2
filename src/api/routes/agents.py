@@ -1,0 +1,96 @@
+"""Endpoints para detalle de agentes con metricas."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+
+from ..middleware import require_org_id
+from ...db.session import get_tenant_client
+
+router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+@router.get("/{agent_id}/detail")
+async def get_agent_detail(
+    agent_id: str,
+    org_id: str = Depends(require_org_id),
+):
+    """
+    Detalle completo de un agente.
+
+    Incluye: datos del catalog, metricas de tokens, tareas recientes,
+    y referencias a credenciales en Vault (solo nombres, nunca valores).
+    """
+    from fastapi import HTTPException
+
+    with get_tenant_client(org_id) as db:
+        # Agent data
+        agent_result = (
+            db.table("agent_catalog")
+            .select("*")
+            .eq("id", agent_id)
+            .eq("org_id", org_id)
+            .maybe_single()
+            .execute()
+        )
+
+    if not agent_result.data:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    agent = agent_result.data
+    agent_role = agent.get("role", "")
+
+    # Tareas donde este agente participo (via assigned_agent_role)
+    with get_tenant_client(org_id) as db:
+        tasks_result = (
+            db.table("tasks")
+            .select("id, flow_type, status, tokens_used, created_at, updated_at, error")
+            .eq("assigned_agent_role", agent_role)
+            .order("created_at", desc=True)
+            .limit(50)
+            .execute()
+        )
+
+        # Agregados de tokens para este agente
+        tokens_result = (
+            db.table("tasks")
+            .select("tokens_used")
+            .eq("assigned_agent_role", agent_role)
+            .execute()
+        )
+
+    total_tokens = sum(
+        t.get("tokens_used", 0)
+        for t in (tokens_result.data or [])
+    )
+
+    status_counts: dict = {}
+    for t in (tasks_result.data or []):
+        s = t.get("status", "unknown")
+        status_counts[s] = status_counts.get(s, 0) + 1
+
+    # Credenciales — solo nombres de secrets asociados a las tools del agente
+    secret_refs: list = []
+    allowed_tools = agent.get("allowed_tools") or []
+    if allowed_tools:
+        try:
+            from ...tools.registry import tool_registry
+            for tool_name in allowed_tools:
+                tool_meta = tool_registry.get(tool_name)
+                if tool_meta:
+                    secret_refs.append({
+                        "tool": tool_name,
+                        "description": tool_meta.description if hasattr(tool_meta, 'description') else None,
+                    })
+        except Exception:
+            pass  # Si no se puede cargar el registry, continuar sin refs
+
+    return {
+        "agent": agent,
+        "metrics": {
+            "total_tokens": total_tokens,
+            "tasks_by_status": status_counts,
+            "recent_tasks": tasks_result.data or [],
+        },
+        "credentials": secret_refs,
+    }

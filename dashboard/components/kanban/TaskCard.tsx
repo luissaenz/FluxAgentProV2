@@ -21,7 +21,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       className="cursor-pointer rounded-lg border bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:bg-gray-800 dark:border-gray-700 dark:hover:shadow-lg dark:hover:shadow-black/20"
     >
       <div className="mb-2 flex items-center justify-between">
-        <Badge className={badge.className}>{badge.label}</Badge>
+        <Badge variant={badge.variant}>{badge.label}</Badge>
         <span className="text-xs text-gray-400 dark:text-gray-500">
           {formatDistanceToNow(new Date(task.created_at), {
             addSuffix: true,

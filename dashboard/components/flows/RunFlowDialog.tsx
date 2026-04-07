@@ -108,13 +108,13 @@ export function RunFlowDialog({ children }: RunFlowDialogProps) {
                     <div key={field} className="space-y-1">
                       <Label htmlFor={field} className="capitalize">
                         {field.replace(/_/g, ' ')}
-                        {selectedFlowInfo?.input_schema?.required?.includes(field) && (
+                        {(selectedFlowInfo?.input_schema?.required as string[] | undefined)?.includes(field) && (
                           <span className="text-destructive ml-1">*</span>
                         )}
                       </Label>
                       {prop.enum ? (
                         <Select
-                          {...register(field, { required: selectedFlowInfo?.input_schema?.required?.includes(field) })}
+                          {...register(field, { required: (selectedFlowInfo?.input_schema?.required as string[] | undefined)?.includes(field) })}
                         >
                           <SelectTrigger id={field}>
                             <SelectValue placeholder="Seleccionar..." />
@@ -133,7 +133,7 @@ export function RunFlowDialog({ children }: RunFlowDialogProps) {
                           type={prop.type === 'integer' ? 'number' : 'text'}
                           step={prop.type === 'integer' ? '1' : undefined}
                           placeholder={prop.example?.toString()}
-                          {...register(field, { required: selectedFlowInfo?.input_schema?.required?.includes(field) })}
+                          {...register(field, { required: (selectedFlowInfo?.input_schema?.required as string[] | undefined)?.includes(field) })}
                         />
                       )}
                     </div>

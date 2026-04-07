@@ -42,5 +42,7 @@ export const api = {
     fapFetch(path, { method: 'POST', body: JSON.stringify(body) }),
   put: (path: string, body?: unknown) =>
     fapFetch(path, { method: 'PUT', body: JSON.stringify(body) }),
+  patch: (path: string, body?: unknown) =>
+    fapFetch(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: (path: string) => fapFetch(path, { method: 'DELETE' }),
 }

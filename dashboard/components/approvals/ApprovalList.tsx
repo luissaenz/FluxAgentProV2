@@ -43,7 +43,7 @@ export function ApprovalList({ approvals, selectedId, onSelect }: ApprovalListPr
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {approval.description}
               </span>
-              <Badge className={badge.className}>{badge.label}</Badge>
+              <Badge variant={badge.variant}>{badge.label}</Badge>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span>{approval.flow_type}</span>
