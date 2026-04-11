@@ -13,7 +13,7 @@
 ## 2. Estado Actual del Proyecto
 - **Implementado y Funcional:**
     - **Fase 8 Baseline (CERRADA):** Token Tracking (Real/Estimado), Gobernanza de Datos (RLS, auditoría append-only), Dashboard Base (Métricas, Flows registrados).
-    - **E4 - Tickets (Back-end):** Tabla `tickets` con RLS, endpoints CRUD y ejecución de flows asociados via `POST /tickets/{id}/execute`.
+    - **E4 - Tickets (Back-end):** Tabla `tickets` con RLS, endpoints CRUD y ejecución de flows. Hardening completo: manejo de errores con estado `blocked`, preservación de notas, trazabilidad via `correlation_id`, vinculación de `task_id` incluso en fallos.
 - **Parcialmente Implementado:**
     - **E4 - Tickets (UI):** Rutas creadas en `dashboard/app/(app)/tickets`, tipos TS definidos. Falta refinamiento de la vista de lista y formulario de creación.
 - **No existe aún:**
@@ -39,6 +39,9 @@
 - **Patrón de Ejecución:** Los tickets desacoplan la *solicitud* de la *ejecución*. Un ticket puede estar en backlog antes de convertirse en una `task` de ejecución.
 - **Trazabilidad:** Uso de `EventStore` (tabla `domain_events`) como fuente de verdad para el historial de ejecución y futuros Transcripts.
 - **Seguridad:** Aislamiento total por `org_id` usando el patrón `TenantClient` que inyecta el contexto en cada sesión de base de datos.
+- **Contrato de `execute_flow`:** Retorna `Dict[str, Any]` con claves `task_id`, `error`, `error_type` (no `Optional[str]`). Permite al llamador diferenciación precisa entre éxito y fallo.
+- **Preservación de notas:** Los errores de ejecución se concatenan al campo `notes` existente, sin sobrescribir contenido manual previo.
+- **Reintento desde `blocked`:** Tickets en estado `blocked` pueden re-ejecutarse (solo `in_progress` y `done` rechazan re-ejecución).
 
 ## 5. Registro de Pasos Completados
 
@@ -48,6 +51,7 @@
 | 4.1 | ✅ | `019_tickets.sql` | Tabla tickets con RLS | Soporte multi-tenant integrado. |
 | 4.2 | ✅ | `src/api/routes/tickets.py` | API de tickets y `/execute` | Implementación de ejecución asíncrona. |
 | 4.3 | ✅ | `src/api/main.py` | Registro de router | API conectada. |
+| 4.4 | ✅ | `src/api/routes/webhooks.py`, `src/api/routes/tickets.py` | Hardening de `/execute`: execute_flow retorna Dict con error/task_id, helpers para blocked/done, preservación de notas | 8/8 criterios cumplidos, 17 tests, validación APROBADA. |
 
 ## 6. Criterios Generales de Aceptación MVP
 - **Tickets:** Se puede crear, priorizar y ejecutar un flow desde un ticket.

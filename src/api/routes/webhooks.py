@@ -107,23 +107,36 @@ async def execute_flow(
     input_data: Dict[str, Any],
     correlation_id: str,
     callback_url: Optional[str] = None,
-) -> Optional[str]:
+) -> Dict[str, Any]:
     """Run a flow in the background — called by ``BackgroundTasks``.
 
-    Returns the real task_id assigned by the flow, or None if not available yet.
+    Returns a dict with:
+      - task_id: str or None
+      - error: str or None
+      - error_type: str or None
+
+    The caller can determine success by checking if result["error"] is None.
     """
+    result: Dict[str, Any] = {"task_id": None, "error": None, "error_type": None}
+    flow = None
     try:
         flow_class = flow_registry.get(flow_type)
         flow = flow_class(org_id=org_id)
         task_id = await flow.execute(input_data, correlation_id)
+        result["task_id"] = task_id
 
         if callback_url:
             await _send_callback(callback_url, flow.state)
 
-        return task_id
     except Exception as exc:
         logger.error("Background flow execution failed: %s", exc)
-        return None
+        result["error"] = str(exc)
+        result["error_type"] = type(exc).__name__
+        # Try to capture task_id from flow state if it was set before the exception
+        if flow and hasattr(flow, 'state') and hasattr(flow.state, 'task_id') and flow.state.task_id:
+            result["task_id"] = flow.state.task_id
+
+    return result
 
 
 async def _send_callback(callback_url: str, state) -> None:

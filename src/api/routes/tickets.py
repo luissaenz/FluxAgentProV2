@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from ..middleware import require_org_id
 from ...db.session import get_tenant_client
 from ...flows.registry import flow_registry
+from .webhooks import execute_flow
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -74,10 +75,68 @@ def _to_ticket_response(row: dict) -> TicketResponse:
         created_by=row.get("created_by"),
         assigned_to=row.get("assigned_to"),
         notes=row.get("notes"),
-        created_at=str(row["created_at"]),
-        updated_at=str(row["updated_at"]),
-        resolved_at=str(row["resolved_at"]) if row.get("resolved_at") else None,
+        created_at=row["created_at"].isoformat() if isinstance(row.get("created_at"), datetime) else str(row.get("created_at", "")),
+        updated_at=row["updated_at"].isoformat() if isinstance(row.get("updated_at"), datetime) else str(row.get("updated_at", "")),
+        resolved_at=row["resolved_at"].isoformat() if isinstance(row.get("resolved_at"), datetime) else None,
     )
+
+
+def _append_error_note(db, ticket_id: str, error_msg: str, error_type: str) -> None:
+    """Append error information to ticket notes, preserving existing content."""
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Fetch current notes
+    result = db.table("tickets").select("notes").eq("id", ticket_id).maybe_single().execute()
+    current_notes = result.data.get("notes", "") if result.data else ""
+
+    # Format new error entry
+    new_note = f"[{now}] {error_type}: {error_msg}"
+
+    # Preserve existing notes, append new error
+    updated_notes = new_note if not current_notes else f"{current_notes}\n{new_note}"
+
+    db.table("tickets").update({
+        "notes": updated_notes,
+        "updated_at": now,
+    }).eq("id", ticket_id).execute()
+
+
+def _handle_blocked_ticket(
+    db, ticket_id: str, result: Dict[str, Any]
+) -> None:
+    """Mark ticket as blocked with error details. Preserves existing notes.
+
+    Single UPDATE to avoid race condition (ID-002 fix).
+    Explicit defaults for safety when result is empty dict (ID-003 fix).
+    """
+    error_msg = result.get("error") or "Unknown error"
+    error_type = result.get("error_type") or "Exception"
+    task_id = result.get("task_id")
+
+    _append_error_note(db, ticket_id, error_msg, error_type)
+
+    now = datetime.now(timezone.utc).isoformat()
+    update_data: Dict[str, Any] = {
+        "status": "blocked",
+        "updated_at": now,
+    }
+    if task_id:
+        update_data["task_id"] = task_id
+
+    db.table("tickets").update(update_data).eq("id", ticket_id).execute()
+
+
+def _handle_done_ticket(
+    db, ticket_id: str, task_id: str
+) -> None:
+    """Mark ticket as done with linked task_id."""
+    now = datetime.now(timezone.utc).isoformat()
+    db.table("tickets").update({
+        "task_id": task_id,
+        "status": "done",
+        "resolved_at": now,
+        "updated_at": now,
+    }).eq("id", ticket_id).execute()
 
 
 # ── Routes ──────────────────────────────────────────────────
@@ -218,8 +277,6 @@ async def execute_ticket(
     - Dispara el Flow directamente y espera resultado
     - Al completar, vincula task_id al ticket y actualiza status
     """
-    from .webhooks import execute_flow
-
     with get_tenant_client(org_id) as db:
         ticket_result = (
             db.table("tickets")
@@ -261,44 +318,66 @@ async def execute_ticket(
 
     # Ejecutar el Flow
     correlation_id = f"ticket-{ticket_id}"
-    task_id = None
 
     try:
-        task_id = await execute_flow(
+        result = await execute_flow(
             flow_type=ticket["flow_type"],
             org_id=org_id,
             input_data=ticket.get("input_data") or {},
             correlation_id=correlation_id,
             callback_url=None,
         )
-    except Exception as exc:
-        # Si falla, marcar ticket como blocked
+    except Exception as infra_exc:
+        # Error de infraestructura (DB, red, etc)
         with get_tenant_client(org_id) as db:
-            db.table("tickets").update({
-                "status": "blocked",
-                "notes": f"Execution error: {str(exc)}",
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }).eq("id", ticket_id).execute()
+            _handle_blocked_ticket(db, ticket_id, {
+                "error": str(infra_exc),
+                "error_type": type(infra_exc).__name__,
+            })
         raise HTTPException(
             status_code=500,
-            detail=f"Flow execution failed: {str(exc)}",
+            detail=f"Flow execution infrastructure error: {str(infra_exc)}",
         )
 
-    # Vincular task_id y actualizar status
-    final_status = "done"
-    with get_tenant_client(org_id) as db:
-        db.table("tickets").update({
-            "task_id": task_id,
-            "status": final_status,
-            "resolved_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }).eq("id", ticket_id).execute()
+    # Procesar resultado de execute_flow (Criterios ID-001, ID-002, ID-003)
+    if result is None or not result or result.get("error"):
+        with get_tenant_client(org_id) as db:
+            _handle_blocked_ticket(db, ticket_id, result or {})
+        
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Flow execution failed",
+                "ticket_id": ticket_id,
+                "task_id": result.get("task_id") if result else None,
+                "status": "blocked",
+                "error": (result.get("error") if result else "Unknown error") or "Unknown error",
+            }
+        )
 
-    return {
-        "ticket_id": ticket_id,
-        "task_id": task_id,
-        "status": final_status,
-    }
+    # Éxito (ID-002)
+    task_id = result.get("task_id")
+    with get_tenant_client(org_id) as db:
+        _handle_done_ticket(db, ticket_id, task_id)
+        
+        # Recuperar ticket actualizado para devolver objeto completo (ID-005)
+        updated_ticket = (
+            db.table("tickets")
+            .select("*")
+            .eq("id", ticket_id)
+            .maybe_single()
+            .execute()
+        )
+
+    if not updated_ticket.data:
+        # Fallback si no se encuentra (no debería pasar)
+        return {
+            "ticket_id": ticket_id,
+            "task_id": task_id,
+            "status": "done",
+        }
+
+    return _to_ticket_response(updated_ticket.data)
 
 
 @router.delete("/{ticket_id}", response_model=TicketResponse)
