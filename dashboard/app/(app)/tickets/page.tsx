@@ -48,7 +48,7 @@ export default function TicketsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const { data: ticketsData, isLoading } = useTickets(orgId, {
-    status: statusFilter || undefined,
+    status: statusFilter === 'all' || !statusFilter ? undefined : statusFilter,
   })
   const executeTicket = useExecuteTicket()
 
@@ -160,7 +160,7 @@ export default function TicketsPage() {
             <SelectValue placeholder="Todos los estados" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="backlog">Backlog</SelectItem>
             <SelectItem value="todo">Todo</SelectItem>
             <SelectItem value="in_progress">En progreso</SelectItem>
