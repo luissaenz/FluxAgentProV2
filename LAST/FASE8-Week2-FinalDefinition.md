@@ -1,12 +1,16 @@
-# FAP v2 — Semana 2: Definicion de Implementacion (v2 — verificada contra codigo)
+# FAP v2 — Semana 2: Definición Final del MVP (Baseline Fase 8)
 
-> **Restricciones absolutas:**
-> 1. Supabase almacena **solo datos del sistema agentino** — nunca datos de la operatoria
-> 2. **Nunca modificar archivos de CrewAI** (`src/crews/`, `src/flows/multi_crew_flow.py`)
-> 3. Token tracking se implementa en la capa FAP (BaseFlowState/EventStore), no en CrewAI
-> 4. El `api.ts` existente tiene auth JWT — no reemplazar
->
-> **Estado verificado:** 2026-04-06
+> **Estado del Proyecto:** ✅ Fase 8 Baseline CERRADA (Token Tracking + Infraestructura Core).
+> **Objetivo Actual:** Implementar los 3 pilares finales para el MVP (Tickets, Transcripts y Agent Panel).
+
+## Resumen de Cierre de Fase 8 (Baseline)
+A partir de abril de 2026, el sistema cuenta con una base sólida de gobernanza y trazabilidad. Los siguientes componentes se consideran **Producción-Ready** y no se tocarán más allá de mantenimiento:
+
+1. **Token Tracking Híbrido:** Real (kickoff_async) para flows de IA y Estimado para flows deterministas (Bartenders).
+2. **Gobernanza de Datos:** Persistencia de estados, métricas acumulativas y auditoría de eventos append-only.
+3. **Dashboard Base:** Visualización de métricas generales, lista de flows disponibles y ejecución manual rápida.
+4. **Auth & Multitenancy:** Aislamiento por organización y autenticación JWT integrada.
+
 
 ---
 
@@ -54,41 +58,18 @@
 | `BaseCrew._extract_token_usage()` | `src/crews/base_crew.py:134-167` | Existe (lee crew.result) |
 | `BaseCrew.get_last_tokens_used()` | `src/crews/base_crew.py:169-171` | Existe |
 
-### Gaps reales (lo que NO existe — Semana 2)
+### El Salto al MVP: De Aplicación Core a Plataforma de Gestión
 
-| Gap | Donde | Impacto |
-|-----|-------|---------|
-| No hay sistema de tickets | Sin tabla `tickets`, sin API, sin UI | No hay forma de solicitar trabajo con ciclo de vida formal |
-| No hay transcript de ejecucion | Sin endpoint, sin hook, sin UI | Debugging imposible — no se puede ver que paso en un flow |
-| No hay Supabase Realtime channel por task | EventStore escribe pero no hay push al frontend | Sin streaming en vivo |
-| Panel de agente incompleto | Falta historial de tareas del agente, tabs, credenciales reales | Visibilidad parcial |
-| `/flow-metrics/by-agent` es heuristico | Usa `role.lower() in flow_type.lower()` para mapear | Tokens por agente son aproximacion, no dato real |
-| No hay columna `assigned_agent` real | Solo existe `assigned_agent_role` — pero **nunca se popula** | No se pueden filtrar tareas por agente |
+El objetivo del MVP es transformar a FluxAgentPro de un "motor de ejecución" a una **Plataforma de Gestión de Servicios Agentinos**. Para lograrlo, los siguientes tres entregables cierran el ciclo de vida del producto:
 
----
-
-## Alcance Semana 2: tres entregables
-
-```
-Entregable 4:  Levantar Tickets — sistema formal de solicitudes de trabajo
-Entregable 5:  Panel de Agente completo — tareas, credenciales, metricas
-Entregable 6:  Run Transcript — historico + streaming en tiempo real
-```
-
-### Decision de scope
-
-**Tickets: Si implementar.** Aunque `RunFlowDialog` permite ejecutar flows, NO reemplaza un sistema de tickets con ciclo de vida (backlog → todo → in_progress → done), priorizacion, asignacion, y vinculacion a task ejecutada. Son complementarios:
-
-| | RunFlowDialog | Tickets |
-|---|---|---|
-| Ejecucion inmediata | ✅ | ❌ (se ejecuta cuando se decide) |
-| Priorizacion | ❌ | ✅ |
-| Asignacion a agente | ❌ | ✅ |
-| Ciclo de vida | ❌ | ✅ |
-| Historial de solicitudes | ❌ | ✅ |
-| Vinculacion task → solicitud | Parcial | ✅ (task_id en ticket) |
+| Entregable | Concepto | Valor para el MVP |
+|------------|----------|-------------------|
+| **E4: Sistema de Tickets** | Gestión de Demanda | Permite desacoplar la solicitud de la ejecución, priorizar trabajo y trackear backlog de forma profesional. |
+| **E5: Panel de Agente 2.0** | Visibilidad Operativa | Centro de mando para cada agente: historial de tareas, herramientas del Vault y eficiencia. |
+| **E6: Run Transcripts** | Transparencia (Wow Factor) | Visualización en tiempo real de qué está pensando y haciendo la IA durante un run. |
 
 ---
+
 
 ## Entregable 4 — Levantar Tickets
 
@@ -2194,11 +2175,32 @@ Requiere que la tabla `domain_events` este publicada en `supabase_realtime`. Si 
 
 ---
 
-## Deuda tecnica conocida (no bloqueante)
+---
+
+## Plan de Acción Inmediato (Pipeline de Calidad)
+
+| Acción | Responsable | Estado |
+|--------|-------------|--------|
+| **Backend Integration** | Agentic Backend | ⏳ Pendiente |
+| **Frontend UI/UX** | UI Designer Agent | ⏳ Pendiente |
+| **Validación MVP** | QA Reviewer | ⏳ Pendiente |
+
+### Pasos Críticos:
+1. **Infraestructura:** Ejecutar migración `019_tickets.sql`.
+2. **API:** Implementar routers de `tickets`, `agents` y `transcripts`.
+3. **Puliendo la UX:** Integrar Realtime en Transcripts y Tabs en el Panel de Agente.
+
+---
+
+> [!IMPORTANT]
+> **Definición de Cerrado (Fase 8 Baseline):**
+> Se declara que el desarrollo técnico hasta este momento (Token Tracking, FlowRegistry, PersistentState, Metrics API) es el **Core Estable**. El equipo se enfoca exclusivamente en los 3 entregables del MVP para asegurar una salida a producción impecable.
+
+## Deuda técnica conocida (no bloqueante)
 
 | Deuda | Impacto | Cuando resolver |
 |-------|---------|----------------|
-| `/flow-metrics/by-agent` es heuristico para bartenders | Tokens por agente son aproximacion | Semana 3+ |
-| `assigned_agent_role` no se popula en bartenders flows | No se pueden filtrar tareas por agente en bartenders | Semana 3+ |
-| No hay redaccion activa de secrets en transcripts | Si algun evento futuro filtra un secreto, seria visible | Cuando se identifique el riesgo |
-| No hay paginacion en transcripts | Si un flow genera 1000+ eventos, la carga es pesada | Cuando sea necesario |
+| `/flow-metrics/by-agent` es heurístico para bartenders | Tokens por agente son aproximación | Post-MVP |
+| `assigned_agent_role` no se popula en bartenders | No hay filtro por agente en multi-flow | Post-MVP |
+| Paginación en Transcripts | Carga pesada en flows de 1000+ eventos | Post-MVP |
+
