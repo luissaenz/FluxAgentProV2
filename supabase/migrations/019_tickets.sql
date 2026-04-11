@@ -30,6 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_tickets_task ON tickets(task_id);
 -- RLS — MISMO PATRON que tasks (service_role bypass + tenant isolation)
 ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS tickets_org_access ON tickets;
 CREATE POLICY tickets_org_access ON tickets
     FOR ALL
     USING (
@@ -46,6 +47,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_tickets_updated_at ON tickets;
 CREATE TRIGGER trg_tickets_updated_at
     BEFORE UPDATE ON tickets
     FOR EACH ROW
