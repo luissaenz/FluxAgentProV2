@@ -1,0 +1,46 @@
+
+> fluxagentpro-dashboard@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.21
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/13) ...
+   Generating static pages (3/13) 
+   Generating static pages (6/13) 
+   Generating static pages (9/13) 
+ ✓ Generating static pages (13/13)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    6.56 kB         195 kB
+├ ○ /_not-found                          873 B          88.1 kB
+├ ○ /agents                              2.89 kB         173 kB
+├ ƒ /agents/[id]                         11.1 kB         189 kB
+├ ○ /approvals                           8.39 kB         177 kB
+├ ○ /architect                           3.16 kB         165 kB
+├ ○ /events                              3.14 kB         171 kB
+├ ○ /kanban                              5.7 kB          192 kB
+├ ○ /login                               4.07 kB         159 kB
+├ ○ /tasks                               5.35 kB         208 kB
+├ ƒ /tasks/[id]                          6.83 kB         189 kB
+├ ƒ /tasks/[id]/transcript               4.68 kB         186 kB
+├ ○ /tickets                             5.96 kB         235 kB
+├ ƒ /tickets/[id]                        2.1 kB          192 kB
+├ ○ /workflows                           15.8 kB         217 kB
+└ ƒ /workflows/[id]                      5.09 kB         175 kB
++ First Load JS shared by all            87.2 kB
+  ├ chunks/117-1a0ff764fb7dc36c.js       31.6 kB
+  ├ chunks/fd9d1056-771c0c2b17eaf2f9.js  53.6 kB
+  └ other shared chunks (total)          1.95 kB
+
+
+ƒ Middleware                             78.8 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

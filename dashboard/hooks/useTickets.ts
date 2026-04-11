@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { Ticket, TicketCreate, TicketUpdate } from '@/lib/types'
+import { toast } from 'sonner'
 
 export function useTickets(
   orgId: string,
@@ -57,10 +58,43 @@ export function useUpdateTicket() {
 export function useExecuteTicket() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (ticketId: string) => api.post(`/tickets/${ticketId}/execute`),
-    onSuccess: (_data, ticketId) => {
+    mutationFn: ({ ticketId }: { ticketId: string; ticketTitle?: string }) =>
+      api.post(`/tickets/${ticketId}/execute`),
+    onMutate: ({ ticketTitle }) => {
+      const loadingMessage = ticketTitle
+        ? `Ejecutando ticket "${ticketTitle}"...`
+        : "Ejecutando ticket..."
+      const toastId = toast.loading(loadingMessage)
+      return { toastId }
+    },
+    onSuccess: (_data, { ticketId }, context) => {
+      toast.dismiss(context?.toastId)
+      const taskId = _data?.task_id ? ` (Task: ${_data.task_id.slice(0, 8)})` : ''
+      toast.success("Ticket ejecutado correctamente", {
+        description: `Ticket movido a ejecución correctamente.${taskId}`,
+      })
+    },
+    onSettled: (_data, _error, { ticketId }) => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] })
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] })
+    },
+    onError: (error, _variables, context) => {
+      toast.dismiss(context?.toastId)
+      // Detectar errores de red vs errores de API
+      const isNetworkError =
+        error.name === 'TypeError' ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('NetworkError') ||
+        error.message.includes('ENOTFOUND')
+
+      const errorMessage = isNetworkError
+        ? "Error de conexión. Verifique su conexión e intente nuevamente."
+        : error.message || "Ocurrió un error inesperado al ejecutar el ticket."
+
+      toast.error("Fallo al ejecutar", {
+        description: errorMessage,
+        id: context?.toastId,
+      })
     },
   })
 }

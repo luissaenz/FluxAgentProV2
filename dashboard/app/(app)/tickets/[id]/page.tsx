@@ -65,7 +65,7 @@ export default function TicketDetailPage() {
         </div>
         {canExecute && (
           <Button
-            onClick={() => executeTicket.mutate(ticket!.id)}
+            onClick={() => executeTicket.mutate({ ticketId: ticket!.id, ticketTitle: ticket!.title })}
             disabled={executeTicket.isPending}
           >
             <Play className="mr-2 h-4 w-4" />

@@ -14,7 +14,9 @@
       "Bash(move *)",
       "Bash(npm run *)",
       "Bash(.\\.venv\\scripts\\python *)",
-      "Bash(uv *)"
+      "Bash(uv *)",
+      "Bash(select-object *)",
+      "Bash(type *)"
     ]
   },
   "$version": 3

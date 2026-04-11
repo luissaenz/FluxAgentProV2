@@ -29,8 +29,18 @@ export async function fapFetch(
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || `API error: ${response.status}`)
+    const errorData = await response.json().catch(() => ({}))
+    const detail = errorData.detail
+    
+    // Si detail es un objeto, intentamos extraer los campos message o error según prioridad
+    let message = `API error: ${response.status}`
+    if (typeof detail === 'string') {
+      message = detail
+    } else if (detail && typeof detail === 'object') {
+      message = detail.error || detail.message || JSON.stringify(detail)
+    }
+    
+    throw new Error(message)
   }
 
   return response.json()

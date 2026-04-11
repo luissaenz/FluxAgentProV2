@@ -121,7 +121,7 @@ export default function TicketsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => executeTicket.mutate(ticket.id)}
+            onClick={() => executeTicket.mutate({ ticketId: ticket.id, ticketTitle: ticket.title })}
             disabled={executeTicket.isPending}
           >
             <Play className="h-4 w-4" />
