@@ -81,7 +81,7 @@ def _to_ticket_response(row: dict) -> TicketResponse:
     )
 
 
-def _append_error_note(db, ticket_id: str, error_msg: str, error_type: str) -> None:
+def _append_error_note(db, ticket_id: str, error_msg: str, error_type: str, correlation_id: Optional[str] = None) -> None:
     """Append error information to ticket notes, preserving existing content."""
     now = datetime.now(timezone.utc).isoformat()
 
@@ -90,7 +90,10 @@ def _append_error_note(db, ticket_id: str, error_msg: str, error_type: str) -> N
     current_notes = result.data.get("notes", "") if result.data else ""
 
     # Format new error entry
-    new_note = f"[{now}] {error_type}: {error_msg}"
+    prefix = f"[{now}]"
+    if correlation_id:
+        prefix += f" [Trace: {correlation_id}]"
+    new_note = f"{prefix} {error_type}: {error_msg}"
 
     # Preserve existing notes, append new error
     updated_notes = new_note if not current_notes else f"{current_notes}\n{new_note}"
@@ -113,7 +116,7 @@ def _handle_blocked_ticket(
     error_type = result.get("error_type") or "Exception"
     task_id = result.get("task_id")
 
-    _append_error_note(db, ticket_id, error_msg, error_type)
+    _append_error_note(db, ticket_id, error_msg, error_type, result.get("correlation_id"))
 
     now = datetime.now(timezone.utc).isoformat()
     update_data: Dict[str, Any] = {
@@ -333,6 +336,7 @@ async def execute_ticket(
             _handle_blocked_ticket(db, ticket_id, {
                 "error": str(infra_exc),
                 "error_type": type(infra_exc).__name__,
+                "correlation_id": correlation_id,
             })
         raise HTTPException(
             status_code=500,

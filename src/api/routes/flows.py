@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
+from uuid import uuid4
 import logging
 
 from ...flows.registry import flow_registry
@@ -42,6 +43,7 @@ class RunFlowResponse(BaseModel):
     """Respuesta al ejecutar un flow."""
 
     task_id: str
+    correlation_id: str
     status: str
 
 
@@ -148,7 +150,9 @@ async def run_flow(
             detail=f"Flow '{flow_type}' no encontrado. Disponibles: {flow_registry.list_flows()}",
         )
 
-    correlation_id = f"manual-{flow_type}-{org_id}"
+    # SUPUESTO: correlation_id debe ser único por ejecución para trazabilidad correcta.
+    # Formato: manual-{flow_type}-{org_prefix}-{short_uuid}
+    correlation_id = f"manual-{flow_type}-{org_id[:8]}-{uuid4().hex[:6]}"
 
     background_tasks.add_task(
         execute_flow,
@@ -161,5 +165,6 @@ async def run_flow(
 
     return RunFlowResponse(
         task_id=correlation_id,
+        correlation_id=correlation_id,
         status="accepted",
     )

@@ -22,7 +22,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DomainEvent:
-    """Immutable domain event waiting in the flush queue."""
+    """Immutable domain event waiting in the flush queue.
+    
+    Attributes:
+        event_id: Unique ID of the event record.
+        org_id: UUID of the organization.
+        aggregate_type: Type of aggregate (e.g., 'flow').
+        aggregate_id: UUID of the instance (e.g., task_id).
+        event_type: Name of the event.
+        payload: Dict with event data.
+        correlation_id: Tracing ID to link events across aggregates and logs.
+        actor: Who/what caused the event.
+    """
 
     event_id: str = field(default_factory=lambda: str(uuid4()))
     org_id: str = ""
@@ -30,6 +41,7 @@ class DomainEvent:
     aggregate_id: str = ""
     event_type: str = ""
     payload: Dict[str, Any] = field(default_factory=dict)
+    correlation_id: Optional[str] = None
     actor: Optional[str] = None
     sequence: int = 0
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -66,9 +78,10 @@ class EventStore:
         )
     """
 
-    def __init__(self, org_id: str, user_id: Optional[str] = None) -> None:
+    def __init__(self, org_id: str, user_id: Optional[str] = None, correlation_id: Optional[str] = None) -> None:
         self.org_id = org_id
         self.user_id = user_id
+        self.correlation_id = correlation_id
         self._queue: List[DomainEvent] = []
         self._sequence = 0
 
@@ -80,6 +93,7 @@ class EventStore:
         aggregate_id: str,
         event_type: str,
         payload: Dict[str, Any],
+        correlation_id: Optional[str] = None,
     ) -> None:
         """Enqueue an event (synchronous — no I/O)."""
         self._sequence += 1
@@ -89,6 +103,7 @@ class EventStore:
             aggregate_id=aggregate_id,
             event_type=event_type,
             payload=payload,
+            correlation_id=correlation_id or self.correlation_id,
             actor=self.user_id,
             sequence=self._sequence,
         )
@@ -111,6 +126,7 @@ class EventStore:
                     "aggregate_id": e.aggregate_id,
                     "event_type": e.event_type,
                     "payload": e.payload,
+                    "correlation_id": e.correlation_id,
                     "actor": e.actor,
                     "sequence": e.sequence,
                 }
@@ -135,6 +151,7 @@ class EventStore:
         aggregate_id: str,
         event_type: str,
         payload: Dict[str, Any],
+        correlation_id: Optional[str] = None,
         actor: Optional[str] = None,
     ) -> None:
         """
@@ -175,6 +192,7 @@ class EventStore:
                     "aggregate_id": aggregate_id,
                     "event_type": event_type,
                     "payload": payload,
+                    "correlation_id": correlation_id,
                     "actor": actor or "system",
                     "sequence": sequence,
                 }))

@@ -46,7 +46,7 @@ class BaseFlowState(BaseModel):
     retry_count: int = Field(default=0, ge=0)
     max_retries: int = Field(default=3, ge=0)
     tokens_used: int = Field(default=0, ge=0)
-    correlation_id: Optional[str] = None
+    correlation_id: str = Field(..., description="ID de correlación para tracing de extremo a extremo")
 
     # ── HITL: Human-in-the-Loop (Fase 2) ────────────────────────
     approval_payload: Optional[Dict[str, Any]] = Field(
@@ -165,4 +165,9 @@ class BaseFlowState(BaseModel):
         state_data = data.get("state_json") or data.get("state")
         if not state_data:
             raise ValueError("Snapshot has no state_json or state field")
+
+        # Ensure correlation_id exists for legacy support
+        if "correlation_id" not in state_data:
+            state_data["correlation_id"] = f"legacy-task-{data.get('task_id', 'unknown')}"
+            
         return cls(**state_data)

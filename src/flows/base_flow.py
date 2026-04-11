@@ -162,6 +162,15 @@ class BaseFlow(ABC):
         correlation_id: Optional[str] = None,
     ) -> None:
         """Insert a row into ``tasks`` and initialise ``self.state``."""
+        if correlation_id is None:
+            logger.warning(
+                "Flow %s for org %s created task without correlation_id. "
+                "This breaks cross-execution traceability. "
+                "Ensure callers pass a correlation_id.",
+                self.__class__.__name__,
+                self.org_id,
+            )
+
         task_id = str(uuid4())
 
         with get_tenant_client(self.org_id, self.user_id) as db:
@@ -187,7 +196,7 @@ class BaseFlow(ABC):
             correlation_id=correlation_id,
         )
 
-        self.event_store = EventStore(self.org_id, self.user_id)
+        self.event_store = EventStore(self.org_id, self.user_id, correlation_id)
         await self.emit_event("flow.created", {"input_data": input_data})
 
     async def persist_state(self) -> None:
@@ -293,6 +302,7 @@ class BaseFlow(ABC):
                 aggregate_id=self.state.task_id,
                 event_type="approval.requested",
                 payload={"description": description},
+                correlation_id=self.state.correlation_id,
                 actor=f"flow:{self.__class__.__name__}"
             )
         except EventStoreError:
@@ -334,7 +344,7 @@ class BaseFlow(ABC):
         self.state.approval_decided_by = decided_by
 
         # 3. Actualizar event_store
-        self.event_store = EventStore(self.org_id, self.user_id)
+        self.event_store = EventStore(self.org_id, self.user_id, self.state.correlation_id)
 
         # 4. Emitir evento de decisión
         try:
@@ -344,6 +354,7 @@ class BaseFlow(ABC):
                 aggregate_id=self.state.task_id,
                 event_type=f"approval.{decision}",
                 payload={"decided_by": decided_by},
+                correlation_id=self.state.correlation_id,
                 actor=f"user:{decided_by}"
             )
         except EventStoreError:

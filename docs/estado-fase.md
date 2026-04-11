@@ -12,8 +12,8 @@
 
 ## 2. Estado Actual del Proyecto
 - **Implementado y Funcional:**
-    - **Fase 8 Baseline (CERRADA):** Token Tracking (Real/Estimado), Gobernanza de Datos (RLS, auditoría append-only), Dashboard Base (Métricas, Flows registrados).
     - **E4 - Tickets (Back-end):** Tabla `tickets` con RLS, endpoints CRUD y ejecución de flows. Hardening completo: manejo de errores con estado `blocked`, preservación de notas, trazabilidad via `correlation_id`, vinculación de `task_id` incluso en fallos.
+    - **Estandarización del `correlation_id` (CERRADA):** Infraestructura de tracing de extremo a extremo implementada. Columna `correlation_id` indexada en `domain_events`. Propagación obligatoria desde routers (Tickets, Webhooks, Manual, Chat) hasta el núcleo de ejecución.
 - **Parcialmente Implementado:**
     - **E4 - Tickets (UI):** Rutas creadas en `dashboard/app/(app)/tickets`, tipos TS definidos. Falta refinamiento de la vista de lista y formulario de creación.
 - **No existe aún:**
@@ -24,6 +24,8 @@
 - **Modelos de Datos:**
     - `tickets`: `id`, `org_id`, `title`, `description`, `flow_type`, `priority`, `status`, `input_data`, `task_id`, `assigned_to`, `notes`.
     - `tasks`: Incluye `tokens_used` y `assigned_agent_role`.
+    - `domain_events`: Ahora incluye columna `correlation_id` (TEXT) indexada para auditoría de trazas.
+    - `BaseFlowState`: Campo `correlation_id` (str) obligatorio para garantizar trazabilidad desde el inicio.
 - **Endpoints API:**
     - `/tickets`: CRUD completo + `/execute`.
     - `/flow-metrics`: Métricas por flow y por agente.
@@ -37,11 +39,10 @@
 
 ## 4. Decisiones de Arquitectura Tomadas
 - **Patrón de Ejecución:** Los tickets desacoplan la *solicitud* de la *ejecución*. Un ticket puede estar en backlog antes de convertirse en una `task` de ejecución.
-- **Trazabilidad:** Uso de `EventStore` (tabla `domain_events`) como fuente de verdad para el historial de ejecución y futuros Transcripts.
-- **Seguridad:** Aislamiento total por `org_id` usando el patrón `TenantClient` que inyecta el contexto en cada sesión de base de datos.
-- **Contrato de `execute_flow`:** Retorna `Dict[str, Any]` con claves `task_id`, `error`, `error_type` (no `Optional[str]`). Permite al llamador diferenciación precisa entre éxito y fallo.
-- **Preservación de notas:** Los errores de ejecución se concatenan al campo `notes` existente, sin sobrescribir contenido manual previo.
-- **Reintento desde `blocked`:** Tickets en estado `blocked` pueden re-ejecutarse (solo `in_progress` y `done` rechazan re-ejecución).
+- **Trazabilidad de Extremo a Extremo:** Cada origen de disparo utiliza prefijos semánticos obligatorios en el `correlation_id`: `ticket-{id}`, `manual-{type}-{org_prefix}-{uuid}`, `webhook-{uuid}`, `chat-{conv_id}`.
+- **Persistencia Directa en Eventos:** Se prioriza la persistencia del `correlation_id` en la tabla `domain_events` como columna indexada de primer nivel para habilitar los futuros *Run Transcripts* con alto rendimiento (evitando JOINs con snapshots).
+- **Soporte Legacy:** El sistema carga estados antiguos asignando un ID `legacy-task-{id}` automáticamente para evitar fallos de validación en ejecuciones previas a la Fase 8.
+- **Delegación de Emisión:** Se centraliza la emisión de eventos de estado de flujo en `BaseFlow`, eliminando emisiones manuales duplicadas en routers para mantener la integridad de la traza.
 
 ## 5. Registro de Pasos Completados
 
@@ -52,6 +53,7 @@
 | 4.2 | ✅ | `src/api/routes/tickets.py` | API de tickets y `/execute` | Implementación de ejecución asíncrona. |
 | 4.3 | ✅ | `src/api/main.py` | Registro de router | API conectada. |
 | 4.4 | ✅ | `src/api/routes/webhooks.py`, `src/api/routes/tickets.py` | Hardening de `/execute`: execute_flow retorna Dict con error/task_id, helpers para blocked/done, preservación de notas | 8/8 criterios cumplidos, 17 tests, validación APROBADA. |
+| 1.2 | ✅ | `021_add_event_correlation.sql`, `src/flows/state.py`, `src/api/routes/chat.py` | Estandarización de `correlation_id` con prefijos semánticos y persistencia en DB | Trazabilidad end-to-end garantizada. |
 
 ## 6. Criterios Generales de Aceptación MVP
 - **Tickets:** Se puede crear, priorizar y ejecutar un flow desde un ticket.

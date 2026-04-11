@@ -147,20 +147,6 @@ async def process_approval(
             }).eq("task_id", task_id)
         )
 
-    # 3. Emit event (blocking — Rule R6)
-    try:
-        EventStore.append_sync(
-            org_id=effective_org_id,
-            aggregate_type="flow",
-            aggregate_id=task_id,
-            event_type=f"approval.{decision}",
-            payload={"decided_by": decided_by, "notes": notes},
-            actor=f"user:{decided_by}",
-        )
-    except EventStoreError as e:
-        logger.error("Failed to emit approval event: %s", e)
-        raise HTTPException(status_code=500, detail="Could not record event")
-
     # 4. Resume flow in background
     flow_class = flow_registry.get(flow_type)
     if not flow_class:

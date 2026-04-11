@@ -78,7 +78,7 @@ async def trigger_webhook(
             ),
         )
 
-    correlation_id = str(uuid4())
+    correlation_id = f"webhook-{uuid4()}"
 
     background_tasks.add_task(
         _run_async_in_background,

@@ -157,7 +157,7 @@ async def _run_architect_background(
                 "description": description,
                 "conversation_id": conversation_id,
             },
-            correlation_id=conversation_id,
+            correlation_id=f"chat-{conversation_id}",
         )
 
         flow_type = result.output_data.get("flow_type")

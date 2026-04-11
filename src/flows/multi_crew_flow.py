@@ -93,7 +93,11 @@ class MultiCrewFlow(BaseFlow):
             correlation_id=correlation_id,
         )
 
-        self.event_store = EventStore(self.org_id, self.user_id)
+        self.event_store = EventStore(
+            self.org_id, 
+            self.user_id, 
+            correlation_id=self.state.correlation_id
+        )
         await self.emit_event("flow.created", {"input_data": input_data})
 
     @with_error_handling
