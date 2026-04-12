@@ -179,9 +179,14 @@ export interface TicketCreate {
 }
 
 export interface TicketUpdate {
+  title?: string
+  description?: string | null
+  flow_type?: string | null
+  priority?: TicketPriority
   status?: TicketStatus
-  notes?: string
-  assigned_to?: string
+  input_data?: Record<string, unknown> | null
+  notes?: string | null
+  assigned_to?: string | null
 }
 
 // ── Agente detallado con metricas ─────────────────────────

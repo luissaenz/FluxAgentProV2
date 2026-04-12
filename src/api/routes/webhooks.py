@@ -122,18 +122,18 @@ async def execute_flow(
     try:
         flow_class = flow_registry.get(flow_type)
         flow = flow_class(org_id=org_id)
-        task_id = await flow.execute(input_data, correlation_id)
-        result["task_id"] = task_id
+        state = await flow.execute(input_data, correlation_id)
+        result["task_id"] = state.task_id if hasattr(state, 'task_id') else str(state)
 
         if callback_url:
-            await _send_callback(callback_url, flow.state)
+            await _send_callback(callback_url, state)
 
     except Exception as exc:
         logger.error("Background flow execution failed: %s", exc)
         result["error"] = str(exc)
         result["error_type"] = type(exc).__name__
         # Try to capture task_id from flow state if it was set before the exception
-        if flow and hasattr(flow, 'state') and hasattr(flow.state, 'task_id') and flow.state.task_id:
+        if flow and hasattr(flow, 'state') and flow.state and hasattr(flow.state, 'task_id'):
             result["task_id"] = flow.state.task_id
 
     return result

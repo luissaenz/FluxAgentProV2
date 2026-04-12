@@ -38,6 +38,8 @@ def mock_flow():
     flow = MagicMock()
     flow.state.task_id = "task-abc-123"
     flow.execute = AsyncMock()
+    flow.create_task_record = AsyncMock()
+    flow.persist_state      = AsyncMock()
     return flow
 
 

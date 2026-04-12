@@ -57,48 +57,15 @@ class MultiCrewFlow(BaseFlow):
     def validate_input(self, input_data: Dict[str, Any]) -> bool:
         return bool(input_data)
 
-    async def create_task_record(
-        self,
-        input_data: Dict[str, Any],
-        correlation_id: Optional[str] = None,
-    ) -> None:
-        """Override to use MultiCrewState instead of BaseFlowState."""
-        from uuid import uuid4
-        from datetime import datetime, timezone
-        from ..db.session import get_tenant_client
-        from ..events.store import EventStore
+    @property
+    def state_class(self):
+        """Use MultiCrewState for this flow."""
+        return MultiCrewState
 
-        task_id = str(uuid4())
-
-        with get_tenant_client(self.org_id, self.user_id) as db:
-            db.table("tasks").insert(
-                {
-                    "id": task_id,
-                    "org_id": self.org_id,
-                    "flow_type": "multi_crew",
-                    "flow_id": task_id,
-                    "status": "pending",
-                    "payload": input_data,
-                    "correlation_id": correlation_id,
-                    "max_retries": self.extra_kwargs.get("max_retries", 3),
-                }
-            ).execute()
-
-        self.state = MultiCrewState(
-            task_id=task_id,
-            org_id=self.org_id,
-            user_id=self.user_id,
-            flow_type="multi_crew",
-            input_data=input_data,
-            correlation_id=correlation_id,
-        )
-
-        self.event_store = EventStore(
-            self.org_id, 
-            self.user_id, 
-            correlation_id=self.state.correlation_id
-        )
-        await self.emit_event("flow.created", {"input_data": input_data})
+    @property
+    def flow_type(self) -> str:
+        """Name used in registry."""
+        return "multi_crew"
 
     @with_error_handling
     async def execute(

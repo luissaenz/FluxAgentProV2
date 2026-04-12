@@ -9,7 +9,8 @@ class TestTokenTracking(unittest.TestCase):
         self.state = BaseFlowState(
             task_id=self.task_id,
             org_id=self.org_id,
-            flow_type="test_flow"
+            flow_type="test_flow",
+            correlation_id=f"test-corr-{self.task_id}"
         )
 
     def test_initial_tokens_zero(self):

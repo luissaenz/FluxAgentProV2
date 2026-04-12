@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from pydantic import BaseModel, Field
 
 from ..middleware import require_org_id
@@ -30,7 +30,12 @@ class TicketCreate(BaseModel):
 
 
 class TicketUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    flow_type: Optional[str] = None
+    priority: Optional[str] = Field(None, pattern="^(low|medium|high|urgent)$")
     status: Optional[str] = None
+    input_data: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
     assigned_to: Optional[str] = None
 
@@ -200,16 +205,16 @@ async def get_ticket(
 
 @router.post("", response_model=TicketResponse, status_code=201)
 async def create_ticket(
-    body: TicketCreate,
+    ticket_input: TicketCreate,
     org_id: str = Depends(require_org_id),
 ):
     """Crea un nuevo ticket."""
     # Validar flow_type si se proporciona
-    if body.flow_type and not flow_registry.has(body.flow_type):
+    if ticket_input.flow_type and not flow_registry.has(ticket_input.flow_type):
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Flow type '{body.flow_type}' not found. "
+                f"Flow type '{ticket_input.flow_type}' not found. "
                 f"Available: {flow_registry.list_flows()}"
             ),
         )
@@ -220,17 +225,17 @@ async def create_ticket(
     ticket_data: Dict[str, Any] = {
         "id": ticket_id,
         "org_id": org_id,
-        "title": body.title,
-        "description": body.description,
-        "flow_type": body.flow_type,
-        "priority": body.priority,
+        "title": ticket_input.title,
+        "description": ticket_input.description,
+        "flow_type": ticket_input.flow_type,
+        "priority": ticket_input.priority,
         "status": "backlog",
-        "input_data": body.input_data,
+        "input_data": ticket_input.input_data,
         "created_at": now,
         "updated_at": now,
     }
-    if body.assigned_to:
-        ticket_data["assigned_to"] = body.assigned_to
+    if ticket_input.assigned_to:
+        ticket_data["assigned_to"] = ticket_input.assigned_to
 
     with get_tenant_client(org_id) as db:
         result = db.table("tickets").insert(ticket_data).execute()
@@ -244,15 +249,24 @@ async def create_ticket(
 @router.patch("/{ticket_id}", response_model=TicketResponse)
 async def update_ticket(
     ticket_id: str,
-    body: TicketUpdate,
+    ticket_update: TicketUpdate,
     org_id: str = Depends(require_org_id),
 ):
     """Actualiza un ticket (estado, notas, asignacion)."""
-    update_data: Dict[str, Any] = body.model_dump(exclude_none=True)
+    # print(f"DEBUG: Updating ticket {ticket_id} with body: {ticket_update}")
+    update_data: Dict[str, Any] = ticket_update.model_dump(exclude_unset=True)
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     if update_data.get("status") in ("done", "cancelled"):
         update_data["resolved_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Validar flow_type si se proporciona en la actualización
+    if "flow_type" in update_data and update_data["flow_type"]:
+        if not flow_registry.has(update_data["flow_type"]):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Flow type '{update_data['flow_type']}' not found."
+            )
 
     with get_tenant_client(org_id) as db:
         result = (
@@ -321,12 +335,17 @@ async def execute_ticket(
 
     # Ejecutar el Flow
     correlation_id = f"ticket-{ticket_id}"
+    input_data = ticket.get("input_data") or {}
+
+    # Auto-mapping para GenericFlow si falta 'text'
+    if ticket["flow_type"] == "generic_flow" and "text" not in input_data:
+        input_data["text"] = ticket.get("description") or ticket.get("title") or ""
 
     try:
         result = await execute_flow(
             flow_type=ticket["flow_type"],
             org_id=org_id,
-            input_data=ticket.get("input_data") or {},
+            input_data=input_data,
             correlation_id=correlation_id,
             callback_url=None,
         )
@@ -384,26 +403,19 @@ async def execute_ticket(
     return _to_ticket_response(updated_ticket.data)
 
 
-@router.delete("/{ticket_id}", response_model=TicketResponse)
+@router.delete("/{ticket_id}", status_code=204)
 async def delete_ticket(
     ticket_id: str,
     org_id: str = Depends(require_org_id),
 ):
-    """Elimina un ticket (soft-delete: status = cancelled)."""
-    now = datetime.now(timezone.utc).isoformat()
+    """Elimina un ticket (Hard delete)."""
     with get_tenant_client(org_id) as db:
-        result = (
-            db.table("tickets")
-            .update({
-                "status": "cancelled",
-                "resolved_at": now,
-                "updated_at": now,
-            })
-            .eq("id", ticket_id)
-            .execute()
-        )
+        # Primero verificamos si existe
+        check = db.table("tickets").select("id").eq("id", ticket_id).maybe_single().execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Ticket not found")
 
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        # Eliminamos
+        db.table("tickets").delete().eq("id", ticket_id).execute()
 
-    return _to_ticket_response(result.data[0])
+    return None

@@ -79,7 +79,13 @@ class BaseFlow(ABC):
         self.state: Optional[BaseFlowState] = None
         self.event_store: Optional[EventStore] = None
         self.extra_kwargs = kwargs
-        self.logger = logger_struct  # Use structlog for structured logging with kwargs
+        self.logger = logger_struct
+        self._flow_type_override: Optional[str] = None
+
+    @property
+    def state_class(self):
+        """Allow subclasses to provide a specific State class."""
+        return BaseFlowState
 
     # ── abstract contract ───────────────────────────────────────
 
@@ -167,18 +173,19 @@ class BaseFlow(ABC):
                 "Flow %s for org %s created task without correlation_id. "
                 "This breaks cross-execution traceability. "
                 "Ensure callers pass a correlation_id.",
-                self.__class__.__name__,
+                self.flow_type,
                 self.org_id,
             )
 
         task_id = str(uuid4())
+        flow_name = self.flow_type
 
         with get_tenant_client(self.org_id, self.user_id) as db:
             db.table("tasks").insert(
                 {
                     "id": task_id,
                     "org_id": self.org_id,
-                    "flow_type": self.__class__.__name__,
+                    "flow_type": flow_name,
                     "flow_id": task_id,
                     "status": "pending",
                     "payload": input_data,
@@ -187,16 +194,20 @@ class BaseFlow(ABC):
                 }
             ).execute()
 
-        self.state = BaseFlowState(
+        self.state = self.state_class(
             task_id=task_id,
             org_id=self.org_id,
             user_id=self.user_id,
-            flow_type=self.__class__.__name__,
+            flow_type=flow_name,
             input_data=input_data,
             correlation_id=correlation_id,
         )
 
-        self.event_store = EventStore(self.org_id, self.user_id, correlation_id)
+        self.event_store = EventStore(
+            self.org_id, 
+            self.user_id, 
+            correlation_id=self.state.correlation_id
+        )
         await self.emit_event("flow.created", {"input_data": input_data})
 
     async def persist_state(self) -> None:

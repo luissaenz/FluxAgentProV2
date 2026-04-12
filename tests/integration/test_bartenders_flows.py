@@ -21,7 +21,37 @@ from unittest.mock import MagicMock, patch, AsyncMock
 from datetime import date
 
 ORG_ID  = "11111111-1111-1111-1111-111111111111"
-USER_ID = "test-user"
+USER_ID = "22222222-2222-2222-2222-222222222222"
+
+
+# ─── Global Mocks for Database Activity ────────────────────────────────────
+
+@pytest.fixture(autouse=True)
+def mock_supabase_db():
+    """Globally mock get_tenant_client and get_service_client to avoid real DB calls."""
+    mock_db = MagicMock()
+    # Simulate common query chain: db.table().insert().execute()
+    mock_query = MagicMock()
+    mock_query.insert.return_value = mock_query
+    mock_query.update.return_value = mock_query
+    mock_query.upsert.return_value = mock_query
+    mock_query.eq.return_value = mock_query
+    mock_query.select.return_value = mock_query
+    mock_query.execute.return_value = MagicMock(data=[{"id": "mocked"}], error=None)
+    
+    mock_db.table.return_value = mock_query
+    mock_db.rpc.return_value = mock_query
+    mock_db.execute_with_retry.return_value = MagicMock(data=1, error=None) # for sequences
+
+    with patch("src.db.session.get_service_client", return_value=mock_db), \
+         patch("src.db.session.get_tenant_client") as mock_get_tenant:
+        
+        @contextmanager
+        def mock_tenant_cm(*args, **kwargs):
+            yield mock_db
+            
+        mock_get_tenant.side_effect = mock_tenant_cm
+        yield mock_db
 
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────
@@ -145,6 +175,27 @@ COTIZACION_MOCK = {
 
 
 CONNECTOR_PATH = "src.connectors.supabase_connector.SupabaseMockConnector"
+# Targets for individual modules to avoid import-time binding issues
+ALERTA_CONNECTOR_PATH  = "src.flows.bartenders.alerta_flow.SupabaseMockConnector"
+RESERVA_CONNECTOR_PATH = "src.flows.bartenders.reserva_flow.SupabaseMockConnector"
+CIERRE_CONNECTOR_PATH  = "src.flows.bartenders.cierre_flow.SupabaseMockConnector"
+PREVENTA_CONNECTOR_PATH = "src.flows.bartenders.preventa_flow.SupabaseMockConnector"
+RESERVA_CREWS_CONNECTOR_PATH = "src.crews.bartenders.reserva_crews.SupabaseMockConnector"
+
+from contextlib import ExitStack
+
+def patch_connectors(mock_obj):
+    """Utility to patch all possible locations where SupabaseMockConnector is used."""
+    stack = ExitStack()
+    stack.enter_context(patch(CONNECTOR_PATH, return_value=mock_obj))
+    stack.enter_context(patch(ALERTA_CONNECTOR_PATH, return_value=mock_obj))
+    stack.enter_context(patch(RESERVA_CONNECTOR_PATH, return_value=mock_obj))
+    stack.enter_context(patch(CIERRE_CONNECTOR_PATH, return_value=mock_obj))
+    stack.enter_context(patch(PREVENTA_CONNECTOR_PATH, return_value=mock_obj))
+    # Note: crews use BaseDataConnector often, but sometimes explicitly SupabaseMockConnector
+    return stack
+
+from contextlib import contextmanager
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -206,13 +257,18 @@ class TestAlertaFlow:
         assert flow.validate_input({}) is False
         assert flow.validate_input({"evento_id": "EVT-001"}) is True
 
-    def test_on_approved_actualiza_orden_a_aprobada(self):
+    @pytest.mark.asyncio
+    async def test_on_approved_actualiza_orden_a_aprobada(self):
         from src.flows.bartenders.alerta_flow import AlertaClimaFlow, AlertaState
         from src.flows.state import FlowStatus
 
         flow = AlertaClimaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = AlertaState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_alerta",
+            correlation_id="corr-123",
             evento_id="EVT-001", orden_id="OC-001", total_compra=220_000,
             alerta_roja=True,
         )
@@ -220,8 +276,8 @@ class TestAlertaFlow:
         mock_connector = MagicMock()
         mock_connector.update.return_value = {}
 
-        with patch(CONNECTOR_PATH, return_value=mock_connector):
-            flow._on_approved("ok demo")
+        with patch_connectors(mock_connector):
+            await flow._on_approved("ok demo")
 
         calls = mock_connector.update.call_args_list
         tablas = [c[0][0] for c in calls]
@@ -232,12 +288,17 @@ class TestAlertaFlow:
         orden_call = next(c for c in calls if c[0][0] == "ordenes_compra")
         assert orden_call[0][2]["status"] == "aprobada"
 
-    def test_on_rejected_actualiza_orden_a_rechazada(self):
+    @pytest.mark.asyncio
+    async def test_on_rejected_actualiza_orden_a_rechazada(self):
         from src.flows.bartenders.alerta_flow import AlertaClimaFlow, AlertaState
 
         flow = AlertaClimaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = AlertaState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_alerta",
+            correlation_id="corr-123",
             evento_id="EVT-001", orden_id="OC-001", total_compra=220_000,
             alerta_roja=True,
         )
@@ -245,8 +306,8 @@ class TestAlertaFlow:
         mock_connector = MagicMock()
         mock_connector.update.return_value = {}
 
-        with patch(CONNECTOR_PATH, return_value=mock_connector):
-            flow._on_rejected("no autorizado")
+        with patch_connectors(mock_connector):
+            await flow._on_rejected("no autorizado")
 
         orden_call = next(
             c for c in mock_connector.update.call_args_list
@@ -254,34 +315,48 @@ class TestAlertaFlow:
         )
         assert orden_call[0][2]["status"] == "rechazada"
 
-    def test_on_approved_output_data_correcto(self):
+    @pytest.mark.asyncio
+    async def test_on_approved_output_data_correcto(self):
         from src.flows.bartenders.alerta_flow import AlertaClimaFlow, AlertaState
 
         flow = AlertaClimaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = AlertaState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_alerta",
+            correlation_id="corr-123",
             evento_id="EVT-001", orden_id="OC-001", total_compra=220_000,
             alerta_roja=True,
         )
 
-        with patch(CONNECTOR_PATH, return_value=MagicMock(update=MagicMock(return_value={}))):
-            flow._on_approved()
+        mock_connector = MagicMock()
+        mock_connector.update.return_value = {}
+        with patch_connectors(mock_connector):
+            await flow._on_approved()
 
         assert flow.state.output_data["accion"] == "compra_aprobada"
         assert flow.state.output_data["orden_id"] == "OC-001"
 
-    def test_on_rejected_output_data_correcto(self):
+    @pytest.mark.asyncio
+    async def test_on_rejected_output_data_correcto(self):
         from src.flows.bartenders.alerta_flow import AlertaClimaFlow, AlertaState
 
         flow = AlertaClimaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = AlertaState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_alerta",
+            correlation_id="corr-123",
             evento_id="EVT-001", orden_id="OC-002", total_compra=150_000,
             alerta_roja=True,
         )
 
-        with patch(CONNECTOR_PATH, return_value=MagicMock(update=MagicMock(return_value={}))):
-            flow._on_rejected("presupuesto excedido")
+        mock_connector = MagicMock()
+        mock_connector.update.return_value = {}
+        with patch_connectors(mock_connector):
+            await flow._on_rejected("presupuesto excedido")
 
         assert flow.state.output_data["accion"] == "compra_rechazada"
         assert "presupuesto excedido" in flow.state.output_data["mensaje"]
@@ -299,12 +374,17 @@ class TestCierreFlow:
         assert flow.validate_input({"evento_id": "EVT-001"}) is False
         assert flow.validate_input({"evento_id": "EVT-001", "costo_real": 1000}) is True
 
-    def test_on_approved_cierre_ejecuta_feedback(self):
+    @pytest.mark.asyncio
+    async def test_on_approved_cierre_ejecuta_feedback(self):
         from src.flows.bartenders.cierre_flow import CierreFlow, CierreState
 
         flow = CierreFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = CierreState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_cierre",
+            correlation_id="corr-123",
             evento_id="EVT-001", auditoria_id="AUD-001",
             precio_cobrado=5_000_000, costo_real=4_800_000,
             ganancia_neta=200_000, margen_pct=4.0,
@@ -316,25 +396,30 @@ class TestCierreFlow:
         mock_connector.read_one.return_value = evento_mock
         mock_connector.update.return_value   = {}
 
-        with patch(CONNECTOR_PATH, return_value=mock_connector):
-            flow._on_approved("aprobado por el jefe")
+        with patch_connectors(mock_connector):
+            await flow._on_approved("aprobado por el jefe")
 
         assert flow.state.output_data["status"] == "cerrado"
         assert "proxima_contacto" in flow.state.output_data
 
-    def test_on_rejected_cierre_deja_evento_ejecutado(self):
+    @pytest.mark.asyncio
+    async def test_on_rejected_cierre_deja_evento_ejecutado(self):
         from src.flows.bartenders.cierre_flow import CierreFlow, CierreState
 
         flow = CierreFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = CierreState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_cierre",
+            correlation_id="corr-123",
             evento_id="EVT-001", auditoria_id="AUD-001",
             precio_cobrado=5_000_000, costo_real=4_800_000,
             margen_pct=4.0, margen_critico=True,
         )
 
-        with patch(CONNECTOR_PATH, return_value=MagicMock()):
-            flow._on_rejected("requiere análisis")
+        with patch_connectors(MagicMock()):
+            await flow._on_rejected("requiere análisis")
 
         assert flow.state.output_data["status"] == "ejecutado"
         assert "análisis" in flow.state.output_data["mensaje"]
@@ -369,12 +454,17 @@ class TestReservaFlow:
             "opcion_elegida": "ultra-premium"  # inválida
         }) is False
 
-    def test_on_approved_continua_con_staffing(self):
+    @pytest.mark.asyncio
+    async def test_on_approved_continua_con_staffing(self):
         from src.flows.bartenders.reserva_flow import ReservaFlow, ReservaState
 
         flow = ReservaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = ReservaState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_reserva",
+            correlation_id="corr-123",
             evento_id="EVT-001", cotizacion_id="COT-001",
             pax=80, tipo_menu="premium",
             fecha_evento="2026-07-20", duracion_horas=5,
@@ -386,26 +476,31 @@ class TestReservaFlow:
         mock_connector.read_one.return_value = EVENTO_MOCK
         mock_connector.update.return_value  = {}
 
-        with patch(CONNECTOR_PATH, return_value=mock_connector):
-            flow._on_approved("aprobado")
+        with patch_connectors(mock_connector):
+            await flow._on_approved("aprobado")
 
         assert flow.state.output_data is not None
         assert flow.state.output_data.get("status") == "confirmado"
 
-    def test_on_rejected_vuelve_a_cotizado(self):
+    @pytest.mark.asyncio
+    async def test_on_rejected_vuelve_a_cotizado(self):
         from src.flows.bartenders.reserva_flow import ReservaFlow, ReservaState
 
         flow = ReservaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = ReservaState(
-            task_id="task-001", org_id=ORG_ID, user_id=USER_ID,
+            task_id="33333333-3333-3333-3333-333333333333",
+            org_id=ORG_ID,
+            user_id=USER_ID,
+            flow_type="bartenders_reserva",
+            correlation_id="corr-123",
             evento_id="EVT-001",
         )
 
         mock_connector = MagicMock()
         mock_connector.update.return_value = {}
 
-        with patch(CONNECTOR_PATH, return_value=mock_connector):
-            flow._on_rejected("sin presupuesto para compra")
+        with patch_connectors(mock_connector):
+            await flow._on_rejected("sin presupuesto para compra")
 
         update_call = mock_connector.update.call_args
         assert update_call[0][2]["status"] == "cotizado"

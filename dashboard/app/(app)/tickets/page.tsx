@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTickets, useExecuteTicket } from '@/hooks/useTickets'
+import { useTickets, useExecuteTicket, useDeleteTicket } from '@/hooks/useTickets'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable } from '@/components/data-table'
@@ -22,10 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Play } from 'lucide-react'
+import { Plus, Play, Pencil, Trash2 } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import type { Ticket } from '@/lib/types'
 import { CreateTicketForm } from '@/components/tickets/CreateTicketForm'
+import { EditTicketForm } from '@/components/tickets/EditTicketForm'
 import Link from 'next/link'
 
 const PRIORITY_BADGES: Record<string, string> = {
@@ -46,11 +47,13 @@ export default function TicketsPage() {
   const { orgId } = useCurrentOrg()
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingTicket, setEditingTicket] = useState<Ticket | null>(null)
 
   const { data: ticketsData, isLoading } = useTickets(orgId, {
     status: statusFilter === 'all' || !statusFilter ? undefined : statusFilter,
   })
   const executeTicket = useExecuteTicket()
+  const deleteTicket = useDeleteTicket()
 
   const columns: ColumnDef<Ticket>[] = [
     {
@@ -58,7 +61,7 @@ export default function TicketsPage() {
       header: 'Titulo',
       cell: ({ row }) => (
         <Link
-          href={`/tickets/${row.getValue('id')}`}
+          href={`/tickets/${row.original.id}`}
           className="font-medium text-primary hover:underline"
         >
           {row.getValue('title')}
@@ -109,23 +112,59 @@ export default function TicketsPage() {
       header: '',
       cell: ({ row }) => {
         const ticket = row.original
+        const isExecuting = executeTicket.isPending && executeTicket.variables?.ticketId === ticket.id
         const canExecute =
           ticket.status !== 'in_progress' &&
           ticket.status !== 'done' &&
           ticket.status !== 'cancelled' &&
           !!ticket.flow_type
 
-        if (!canExecute) return null
+        const handleDelete = () => {
+          if (confirm('¿Estás seguro de que deseas eliminar este ticket permanentemente?')) {
+            deleteTicket.mutate(ticket.id)
+          }
+        }
 
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => executeTicket.mutate({ ticketId: ticket.id, ticketTitle: ticket.title })}
-            disabled={executeTicket.isPending}
-          >
-            <Play className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 justify-end">
+            {canExecute && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => executeTicket.mutate({ ticketId: ticket.id, ticketTitle: ticket.title })}
+                disabled={executeTicket.isPending}
+                className={isExecuting ? 'animate-pulse text-primary h-8 w-8' : 'h-8 w-8 text-muted-foreground hover:text-primary'}
+                title="Ejecutar"
+              >
+                {isExecuting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              title="Editar"
+              onClick={() => setEditingTicket(ticket)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              title="Eliminar"
+              onClick={handleDelete}
+              disabled={deleteTicket.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         )
       },
     },
@@ -170,6 +209,20 @@ export default function TicketsPage() {
           </SelectContent>
         </Select>
       </div>
+
+      <Dialog open={!!editingTicket} onOpenChange={(open) => !open && setEditingTicket(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Ticket</DialogTitle>
+          </DialogHeader>
+          {editingTicket && (
+            <EditTicketForm
+              ticket={editingTicket}
+              onSuccess={() => setEditingTicket(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <DataTable
         data={ticketsData?.items ?? []}

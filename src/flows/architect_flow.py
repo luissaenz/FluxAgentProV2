@@ -252,10 +252,16 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
         result = await crew.kickoff_async(inputs={})
         
         # Track tokens
+        tokens = 0
         if hasattr(result, "token_usage") and result.token_usage:
-            self.state.update_tokens(result.token_usage.get("total_tokens", 0))
+            usage = result.token_usage
+            tokens = usage.get("total_tokens", 0) if isinstance(usage, dict) else getattr(usage, "total_tokens", 0)
         elif hasattr(result, "usage_metrics") and result.usage_metrics:
-            self.state.update_tokens(result.usage_metrics.get("total_tokens", 0))
+            usage = result.usage_metrics
+            tokens = usage.get("total_tokens", 0) if isinstance(usage, dict) else getattr(usage, "total_tokens", 0)
+        
+        if tokens:
+            self.state.update_tokens(tokens)
         else:
             self.state.update_tokens(self.state.estimate_tokens(str(result)))
 

@@ -34,7 +34,7 @@ interface NavMainProps {
   items?: NavItem[]
 }
 
-const defaultNavItems: NavItem[] = [
+export const defaultNavItems: NavItem[] = [
   { title: 'Overview', url: '/', icon: LayoutDashboard },
   { title: 'Kanban', url: '/kanban', icon: Columns3 },
   { title: 'Aprobaciones', url: '/approvals', icon: ShieldCheck },

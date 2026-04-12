@@ -21,11 +21,9 @@ class GenericFlow(BaseFlow):
     """Demo flow that processes text via a single-agent crew."""
 
     def validate_input(self, input_data: Dict[str, Any]) -> bool:
-        if "text" not in input_data:
-            logger.error("Missing 'text' in input_data")
-            return False
-        if not isinstance(input_data["text"], str):
-            logger.error("'text' must be a string")
+        text = input_data.get("text")
+        if not text or not isinstance(text, str) or not text.strip():
+            logger.error("Missing or empty 'text' in input_data")
             return False
         return True
 
@@ -36,10 +34,16 @@ class GenericFlow(BaseFlow):
         )
         
         # Track tokens
+        tokens = 0
         if hasattr(result, "token_usage") and result.token_usage:
-            self.state.update_tokens(result.token_usage.get("total_tokens", 0))
+            usage = result.token_usage
+            tokens = usage.get("total_tokens", 0) if isinstance(usage, dict) else getattr(usage, "total_tokens", 0)
         elif hasattr(result, "usage_metrics") and result.usage_metrics:
-            self.state.update_tokens(result.usage_metrics.get("total_tokens", 0))
+            usage = result.usage_metrics
+            tokens = usage.get("total_tokens", 0) if isinstance(usage, dict) else getattr(usage, "total_tokens", 0)
+        
+        if tokens:
+            self.state.update_tokens(tokens)
         else:
             self.state.update_tokens(self.state.estimate_tokens(str(result)))
 

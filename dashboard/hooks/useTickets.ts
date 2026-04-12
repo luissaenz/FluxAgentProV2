@@ -51,7 +51,15 @@ export function useUpdateTicket() {
     onSuccess: (_data, { ticketId }) => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] })
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] })
+      toast.success("Ticket actualizado", {
+        description: "Los cambios se guardaron correctamente."
+      })
     },
+    onError: (error: any) => {
+      toast.error("Error al actualizar", {
+        description: error.message || "No se pudo guardar los cambios."
+      })
+    }
   })
 }
 
@@ -94,6 +102,21 @@ export function useExecuteTicket() {
       toast.error("Fallo al ejecutar", {
         description: errorMessage,
         id: context?.toastId,
+      })
+    },
+  })
+}
+export function useDeleteTicket() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ticketId: string) => api.delete(`/tickets/${ticketId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] })
+      toast.success("Ticket eliminado correctamente")
+    },
+    onError: (error: any) => {
+      toast.error("Error al eliminar ticket", {
+        description: error.message || "No se pudo eliminar el ticket.",
       })
     },
   })
