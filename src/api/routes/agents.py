@@ -59,8 +59,9 @@ async def get_agent_detail(
         except Exception as exc:
             import logging
             logging.getLogger(__name__).warning(
-                "Error al recuperar metadata para el agente %s (posible tabla omitida): %s", 
-                agent_role, exc
+                "Error al recuperar metadata SOUL para el rol '%s' en la organización '%s'. "
+                "Causa probable: tabla agent_metadata no migrada o error de conectividad. Detalle: %s", 
+                agent_role, org_id, exc
             )
         
         # Fallbacks finales: Garantizar que el frontend siempre tenga claves consistentes

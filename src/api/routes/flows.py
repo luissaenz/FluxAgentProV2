@@ -24,6 +24,24 @@ class FlowInfo(BaseModel):
     name: str
     description: Optional[str] = None
     input_schema: Optional[Dict[str, Any]] = None
+    depends_on: List[str] = []
+    category: Optional[str] = None
+
+
+class FlowHierarchyNode(BaseModel):
+    """Nodo en la jerarquía de flows."""
+
+    flow_type: str
+    name: str
+    category: Optional[str] = None
+    depends_on: List[str] = []
+
+
+class FlowHierarchyResponse(BaseModel):
+    """Respuesta con la jerarquía completa de flows."""
+
+    hierarchy: Dict[str, FlowHierarchyNode]
+    categories: Dict[str, List[str]]
 
 
 class FlowsListResponse(BaseModel):
@@ -121,16 +139,45 @@ async def list_available_flows(
     flows = []
 
     for flow_type in flow_registry.list_flows():
+        meta = flow_registry.get_metadata(flow_type)
         flows.append(
             FlowInfo(
                 flow_type=flow_type,
                 name=flow_type.replace("_", " ").title(),
                 description=f"Flow: {flow_type}",
                 input_schema=FLOW_INPUT_SCHEMAS.get(flow_type),
+                depends_on=meta.get("depends_on", []),
+                category=meta.get("category"),
             )
         )
 
     return FlowsListResponse(flows=flows)
+
+
+@router.get("/hierarchy", response_model=FlowHierarchyResponse)
+async def get_flow_hierarchy(
+    org_id: str = Depends(require_org_id),
+):
+    """
+    Obtener la jerarquía completa de flows con dependencias y categorías.
+
+    Phase 4: Endpoint para visualización de árbol de procesos de negocio.
+    """
+    hierarchy = {}
+    for flow_type, meta in flow_registry.get_hierarchy().items():
+        hierarchy[flow_type] = FlowHierarchyNode(
+            flow_type=flow_type,
+            name=flow_type.replace("_", " ").title(),
+            category=meta.get("category"),
+            depends_on=meta.get("depends_on", []),
+        )
+
+    categories = flow_registry.get_flows_by_category()
+
+    return FlowHierarchyResponse(
+        hierarchy=hierarchy,
+        categories=categories,
+    )
 
 
 @router.post("/{flow_type}/run", response_model=RunFlowResponse)

@@ -2,11 +2,14 @@
 
 Flows self-register at import time via the ``@register_flow`` decorator,
 keeping the API Gateway completely decoupled from concrete implementations.
+
+Phase 4: Added ``depends_on`` and ``category`` metadata to model business
+process hierarchies (e.g. "Venta" → "Facturación").
 """
 
 from __future__ import annotations
 
-from typing import Type, Dict, Callable, Any
+from typing import Type, Dict, Callable, Any, Optional, List
 import logging
 import re
 
@@ -27,28 +30,59 @@ def _normalize_flow_name(name: str) -> str:
 
 
 class FlowRegistry:
-    """Thread-safe (GIL) registry mapping lowercase names → Flow classes."""
+    """Thread-safe (GIL) registry mapping lowercase names → Flow classes.
+
+    Phase 4: Each flow entry now stores optional metadata:
+    - depends_on: list of flow names that must complete before this flow
+    - category: business process category (e.g. "ventas", "facturacion")
+    """
 
     def __init__(self) -> None:
         self._flows: Dict[str, Type] = {}
         self._builders: Dict[str, Callable[[], Any]] = {}
+        self._metadata: Dict[str, Dict[str, Any]] = {}
 
     # ── registration ────────────────────────────────────────────
 
-    def register(self, name: str | None = None) -> Callable[[Type], Type]:
+    def register(
+        self,
+        name: str | None = None,
+        *,
+        depends_on: Optional[List[str]] = None,
+        category: Optional[str] = None,
+    ) -> Callable[[Type], Type]:
         """
         Class decorator that registers a Flow.
 
         Usage::
 
-            @flow_registry.register("my_flow")
+            @flow_registry.register("my_flow", category="ventas")
             class MyFlow(BaseFlow): ...
+
+            @flow_registry.register(
+                "facturacion_flow",
+                depends_on=["venta_flow"],
+                category="facturacion",
+            )
+            class FacturacionFlow(BaseFlow): ...
         """
 
         def decorator(flow_class: Type) -> Type:
             flow_name = (name or flow_class.__name__).lower()
             self._flows[flow_name] = flow_class
-            logger.info("Registered flow: %s", flow_name)
+
+            # Store metadata
+            self._metadata[flow_name] = {
+                "depends_on": depends_on or [],
+                "category": category,
+            }
+
+            logger.info(
+                "Registered flow: %s (category=%s, depends_on=%s)",
+                flow_name,
+                category,
+                depends_on,
+            )
             return flow_class
 
         return decorator
@@ -56,6 +90,34 @@ class FlowRegistry:
     def register_builder(self, name: str, builder: Callable[[], Any]) -> None:
         """Register a lazy builder function."""
         self._builders[name.lower()] = builder
+
+    # ── metadata access ─────────────────────────────────────────
+
+    def get_metadata(self, name: str) -> Dict[str, Any]:
+        """Return metadata for a flow, or defaults if not found."""
+        key = _normalize_flow_name(name)
+        return self._metadata.get(key, {"depends_on": [], "category": None})
+
+    def get_hierarchy(self) -> Dict[str, Dict[str, Any]]:
+        """Return full hierarchy with metadata for all flows."""
+        result = {}
+        for flow_name in self._flows:
+            meta = self._metadata.get(flow_name, {"depends_on": [], "category": None})
+            result[flow_name] = {
+                "depends_on": meta.get("depends_on", []),
+                "category": meta.get("category"),
+            }
+        return result
+
+    def get_flows_by_category(self) -> Dict[str, List[str]]:
+        """Group flows by their category."""
+        groups: Dict[str, List[str]] = {}
+        for flow_name, meta in self._metadata.items():
+            cat = meta.get("category") or "sin_categoria"
+            if cat not in groups:
+                groups[cat] = []
+            groups[cat].append(flow_name)
+        return groups
 
     # ── lookup ──────────────────────────────────────────────────
 
@@ -97,6 +159,11 @@ flow_registry = FlowRegistry()
 
 
 # ── convenience decorator ───────────────────────────────────────
-def register_flow(name: str | None = None) -> Callable[[Type], Type]:
-    """Shortcut for ``flow_registry.register(name)``."""
-    return flow_registry.register(name)
+def register_flow(
+    name: str | None = None,
+    *,
+    depends_on: Optional[List[str]] = None,
+    category: Optional[str] = None,
+) -> Callable[[Type], Type]:
+    """Shortcut for ``flow_registry.register(name)`` with optional metadata."""
+    return flow_registry.register(name, depends_on=depends_on, category=category)

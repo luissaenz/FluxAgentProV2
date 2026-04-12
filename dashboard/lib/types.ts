@@ -215,3 +215,30 @@ export interface AgentDetail {
     description: string | null
   }>
 }
+
+// ── Flow Hierarchy (Phase 4) ─────────────────────────
+
+export interface FlowHierarchyNode {
+  flow_type: string
+  name: string
+  category: string | null
+  depends_on: string[]
+}
+
+export interface FlowHierarchyResponse {
+  hierarchy: Record<string, FlowHierarchyNode>
+  categories: Record<string, string[]>
+}
+
+export interface FlowInfo {
+  flow_type: string
+  name: string
+  description: string | null
+  input_schema: Record<string, unknown> | null
+  depends_on: string[]
+  category: string | null
+}
+
+export interface FlowsListResponse {
+  flows: FlowInfo[]
+}

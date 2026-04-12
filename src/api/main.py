@@ -27,6 +27,7 @@ from .routes.flows import router as flows_router
 from .routes.tickets import router as tickets_router
 from .routes.agents import router as agents_router
 from .routes.transcripts import router as transcripts_router
+from .routes.analytical_chat import router as analytical_chat_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,6 +82,7 @@ app.include_router(flows_router)  # flows disponibles y ejecucion
 app.include_router(tickets_router)  # Semana 2: tickets
 app.include_router(agents_router)  # Semana 2: agent detail
 app.include_router(transcripts_router)  # Semana 2: transcripts
+app.include_router(analytical_chat_router)  # Phase 4: analytical assistant
 
 
 @app.get("/health")

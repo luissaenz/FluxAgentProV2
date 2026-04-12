@@ -21,7 +21,8 @@
       "Bash(timeout *)",
       "Bash(set *)",
       "Bash(taskkill *)",
-      "Bash(make *)"
+      "Bash(make *)",
+      "Bash(.venv\\scripts\\python.exe *)"
     ]
   },
   "$version": 3
