@@ -228,6 +228,10 @@ export interface FlowHierarchyNode {
 export interface FlowHierarchyResponse {
   hierarchy: Record<string, FlowHierarchyNode>
   categories: Record<string, string[]>
+  validation: {
+    invalid_dependencies: Record<string, string[]>
+    cycles: string[][]
+  }
 }
 
 export interface FlowInfo {

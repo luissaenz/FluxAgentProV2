@@ -13,6 +13,7 @@ import type { WorkflowTemplate } from '@/lib/types'
 import Link from 'next/link'
 import { Workflow } from 'lucide-react'
 import { RunFlowDialog } from '@/components/flows/RunFlowDialog'
+import { FlowHierarchyView } from '@/components/flows/FlowHierarchyView'
 
 const statusVariants: Record<string, 'default' | 'secondary' | 'destructive' | 'success'> = {
   draft: 'secondary',
@@ -86,6 +87,10 @@ export default function WorkflowsPage() {
           ))}
         </div>
       )}
+
+      <div className="mt-8">
+        <FlowHierarchyView />
+      </div>
     </div>
   )
 }

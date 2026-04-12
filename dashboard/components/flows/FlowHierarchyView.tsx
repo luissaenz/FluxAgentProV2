@@ -14,16 +14,87 @@ import {
   ArrowDown,
   FolderTree,
   AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import type { FlowHierarchyNode, FlowHierarchyResponse } from '@/lib/types'
 import { formatFlowType } from '@/lib/presentation/fallback'
 
+// ── Helpers de diagnóstico ──────────────────────────────────────
+
 /**
- * FlowHierarchyView — Visualización en árbol de la jerarquía de flows.
- *
- * Phase 4: Muestra cómo se conectan los flows de negocio,
- * agrupados por categoría y con indicadores de dependencia.
+ * Determina si un nodo está involucrado en un ciclo.
+ * Returns the cycle vector if found, null otherwise.
  */
+function findCycleForNode(
+  flowType: string,
+  cycles: string[][]
+): string[] | null {
+  return cycles.find((cycle) => cycle.includes(flowType)) ?? null
+}
+
+/**
+ * Determina si un nodo tiene dependencias inválidas (huérfanas).
+ */
+function hasInvalidDependencies(
+  flowType: string,
+  invalidDeps: Record<string, string[]>
+): string[] | null {
+  return invalidDeps[flowType] ?? null
+}
+
+/**
+ * Calcula el estado global de salud del grafo.
+ */
+function computeHealthStatus(
+  validation: FlowHierarchyResponse['validation']
+): { ok: boolean; totalErrors: number; summary: string } {
+  const cycleCount = validation.cycles.length
+  const orphanCount = Object.keys(validation.invalid_dependencies).length
+  const totalErrors = cycleCount + orphanCount
+
+  if (totalErrors === 0) {
+    return { ok: true, totalErrors: 0, summary: 'Todo Verde' }
+  }
+
+  const parts: string[] = []
+  if (cycleCount > 0) parts.push(`${cycleCount} ciclo${cycleCount > 1 ? 's' : ''}`)
+  if (orphanCount > 0) parts.push(`${orphanCount} dependencia${orphanCount > 1 ? 's' : ''} rota${orphanCount > 1 ? 's' : ''}`)
+
+  return {
+    ok: false,
+    totalErrors,
+    summary: parts.join(', '),
+  }
+}
+
+/**
+ * Genera un tooltip descriptivo para un nodo con errores.
+ */
+function buildErrorTooltip(
+  flowType: string,
+  validation: FlowHierarchyResponse['validation']
+): string | null {
+  const reasons: string[] = []
+
+  const cycle = findCycleForNode(flowType, validation.cycles)
+  if (cycle) {
+    const cycleStr = cycle.map(formatFlowType).join(' → ')
+    reasons.push(`Ciclo detectado: ${cycleStr} → ${formatFlowType(cycle[0])}`)
+  }
+
+  const invalidDeps = hasInvalidDependencies(flowType, validation.invalid_dependencies)
+  if (invalidDeps && invalidDeps.length > 0) {
+    const depsStr = invalidDeps.map(formatFlowType).join(', ')
+    reasons.push(`Dependencias rotas: ${depsStr}`)
+  }
+
+  return reasons.length > 0 ? reasons.join('\n') : null
+}
+
+// ── Componente principal ────────────────────────────────────────
+
 export function FlowHierarchyView() {
   const { data, isLoading, error } = useQuery<FlowHierarchyResponse>({
     queryKey: ['flows-hierarchy'],
@@ -56,11 +127,19 @@ export function FlowHierarchyView() {
         <CardContent className="pt-6">
           <div className="flex items-start gap-3 text-destructive">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-            <div>
+            <div className="flex-1">
               <p className="font-medium">Error al cargar la jerarquía</p>
               <p className="text-sm text-muted-foreground mt-1">
                 {(error as Error).message || 'No se pudo obtener la jerarquía de flows.'}
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => window.location.reload()}
+              >
+                Reintentar
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -84,13 +163,18 @@ export function FlowHierarchyView() {
     )
   }
 
+  const health = computeHealthStatus(data.validation)
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <GitBranch className="h-4 w-4" />
-          Jerarquía de Flows
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <GitBranch className="h-4 w-4" />
+            Jerarquía y Salud de Procesos
+          </CardTitle>
+          <HealthBadge health={health} />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {Object.entries(data.categories).map(([category, flowTypes]) => (
@@ -99,10 +183,35 @@ export function FlowHierarchyView() {
             category={category}
             flowTypes={flowTypes}
             hierarchy={data.hierarchy}
+            validation={data.validation}
           />
         ))}
       </CardContent>
     </Card>
+  )
+}
+
+// ── Health Badge ────────────────────────────────────────────────
+
+function HealthBadge({
+  health,
+}: {
+  health: { ok: boolean; totalErrors: number; summary: string }
+}) {
+  if (health.ok) {
+    return (
+      <Badge variant="outline" className="gap-1 text-green-600 border-green-200">
+        <CheckCircle2 className="h-3 w-3" />
+        Todo Verde
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge variant="destructive" className="gap-1">
+      <AlertTriangle className="h-3 w-3" />
+      {health.totalErrors} Error{health.totalErrors > 1 ? 's' : ''} de Grafo
+    </Badge>
   )
 }
 
@@ -112,10 +221,19 @@ interface CategoryTreeProps {
   category: string
   flowTypes: string[]
   hierarchy: Record<string, FlowHierarchyNode>
+  validation: FlowHierarchyResponse['validation']
 }
 
-function CategoryTree({ category, flowTypes, hierarchy }: CategoryTreeProps) {
-  const [isOpen, setIsOpen] = useState(true)
+function CategoryTree({ category, flowTypes, hierarchy, validation }: CategoryTreeProps) {
+  // SUPUESTO: Las categorías con flows en ciclo o con dependencias rotas
+  // se abren por defecto para que el operador vea los errores inmediatamente.
+  const hasErrors = flowTypes.some((ft) => {
+    const cycle = findCycleForNode(ft, validation.cycles)
+    const invalidDeps = hasInvalidDependencies(ft, validation.invalid_dependencies)
+    return cycle || invalidDeps
+  })
+
+  const [isOpen, setIsOpen] = useState(hasErrors)
 
   const displayName =
     category === 'sin_categoria'
@@ -143,17 +261,34 @@ function CategoryTree({ category, flowTypes, hierarchy }: CategoryTreeProps) {
         </div>
       </Button>
 
-      {isOpen && (
-        <div className="px-3 pb-3">
-          <div className="space-y-2 pl-6">
-            {flowTypes.map((flowType) => {
-              const node = hierarchy[flowType]
-              if (!node) return null
-              return <FlowNode key={flowType} node={node} hierarchy={hierarchy} />
-            })}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3">
+              <div className="space-y-2 pl-6">
+                {flowTypes.map((flowType) => {
+                  const node = hierarchy[flowType]
+                  if (!node) return null
+                  return (
+                    <FlowNode
+                      key={flowType}
+                      node={node}
+                      hierarchy={hierarchy}
+                      validation={validation}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -163,23 +298,40 @@ function CategoryTree({ category, flowTypes, hierarchy }: CategoryTreeProps) {
 interface FlowNodeProps {
   node: FlowHierarchyNode
   hierarchy: Record<string, FlowHierarchyNode>
+  validation: FlowHierarchyResponse['validation']
 }
 
-function FlowNode({ node, hierarchy }: FlowNodeProps) {
+function FlowNode({ node, hierarchy, validation }: FlowNodeProps) {
   const hasDependencies = node.depends_on && node.depends_on.length > 0
   const isDependencyOf = Object.values(hierarchy).filter((other) =>
     other.depends_on?.includes(node.flow_type)
   )
+
+  const cycle = findCycleForNode(node.flow_type, validation.cycles)
+  const invalidDeps = hasInvalidDependencies(node.flow_type, validation.invalid_dependencies)
+  const hasError = !!cycle || !!invalidDeps
+  const errorTooltip = buildErrorTooltip(node.flow_type, validation)
 
   return (
     <div className="relative">
       {/* Línea conectora vertical */}
       <div className="absolute left-[-16px] top-0 h-full w-px bg-border" />
 
-      <div className="rounded-lg border bg-card p-3 space-y-2 hover:border-primary/50 transition-all">
+      <div
+        className={`rounded-lg border p-3 space-y-2 transition-all ${
+          hasError
+            ? 'border-red-400 bg-red-50/30 dark:bg-red-950/20 animate-pulse'
+            : 'bg-card hover:border-primary/50'
+        }`}
+        title={errorTooltip ?? undefined}
+      >
         {/* Header del nodo */}
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-primary" />
+          {hasError ? (
+            <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
+          ) : (
+            <div className="h-2 w-2 rounded-full bg-primary" />
+          )}
           <span className="text-sm font-semibold">{formatFlowType(node.flow_type)}</span>
           {node.category && (
             <Badge variant="outline" className="text-xs">
@@ -193,11 +345,19 @@ function FlowNode({ node, hierarchy }: FlowNodeProps) {
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <ArrowDown className="h-3 w-3 rotate-180" />
             <span>Depende de:</span>
-            {node.depends_on.map((dep) => (
-              <Badge key={dep} variant="secondary" className="text-xs">
-                {formatFlowType(dep)}
-              </Badge>
-            ))}
+            {node.depends_on.map((dep) => {
+              const isDepInvalid = invalidDeps?.includes(dep)
+              return (
+                <Badge
+                  key={dep}
+                  variant={isDepInvalid ? 'destructive' : 'secondary'}
+                  className="text-xs"
+                >
+                  {formatFlowType(dep)}
+                  {isDepInvalid && ' (rota)'}
+                </Badge>
+              )
+            })}
           </div>
         )}
 
