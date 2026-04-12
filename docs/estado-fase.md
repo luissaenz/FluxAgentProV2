@@ -46,9 +46,9 @@
 | 1.2 | ✅ | `src/flows/state.py`, `src/flows/base_flow.py` | Estandarización de `correlation_id` | Trazabilidad end-to-end con prefijos. |
 | 1.3 | ✅ | `dashboard/hooks/useTickets.ts` | Feedback visual con Sonner Toasts | Toasts de carga, éxito y error detallado. |
 | 1.4 | ✅ | `tickets/page.tsx` | Refinamiento de UI | Indicadores de carga por fila y spinners. |
-| 1.5 | ✅ | Varios (Logs verificados) | Validación E2E | Ciclo completo Ticket -> Flow -> Task verificado vía logs en tiempo real. |
+| 1.5 | ✅ | `src/scripts/validate_e2e_lifecycle.py`, `LAST/validacion.md` | Validación E2E Certificada | Ciclo completo verificado: Ticket -> Flow -> Task -> EventStore. Todas las pruebas PASS. |
 
 ## 6. Criterios Generales de Aceptación MVP
-- **Tickets:** Happy path completo. Gestión de errores sin crash. Persistencia en DB verificada.
-- **Calidad:** Código compila y las mutaciones invalidan caché correctamente.
-- **Próximo Objetivo:** Iniciar Fase 2: Agent Panel 2.0 (Personalidad del Agente y SOUL).
+- **Tickets:** Happy path completo. Gestión de errores sin crash. Persistencia en DB verificada con `correlation_id` estandarizado.
+- **Calidad:** Código compila, validación técnica automatizada exitosa en entorno de desarrollo.
+- **Próximo Objetivo:** Iniciar **Fase 2: Agent Panel 2.0** (Migración `020_agent_metadata.sql`, Personality Cards y SOUL integration).

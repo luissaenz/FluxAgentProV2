@@ -14,6 +14,7 @@ import logging
 # ── eager flow registration (import triggers @register_flow) ─────
 import src.flows.generic_flow  # noqa: F401
 import src.flows.architect_flow  # noqa: F401
+import src.flows.test_flows  # noqa: F401 — E2E validation flows (Paso 1.5)
 import src.tools.builtin  # noqa: F401
 
 from .routes.webhooks import router as webhooks_router

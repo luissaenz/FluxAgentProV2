@@ -27,6 +27,7 @@ class TicketCreate(BaseModel):
     priority: str = Field(default="medium", pattern="^(low|medium|high|urgent)$")
     input_data: Optional[Dict[str, Any]] = None
     assigned_to: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class TicketUpdate(BaseModel):
@@ -236,6 +237,8 @@ async def create_ticket(
     }
     if ticket_input.assigned_to:
         ticket_data["assigned_to"] = ticket_input.assigned_to
+    if ticket_input.notes:
+        ticket_data["notes"] = ticket_input.notes
 
     with get_tenant_client(org_id) as db:
         result = db.table("tickets").insert(ticket_data).execute()

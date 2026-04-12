@@ -16,7 +16,11 @@
       "Bash(.\\.venv\\scripts\\python *)",
       "Bash(uv *)",
       "Bash(select-object *)",
-      "Bash(type *)"
+      "Bash(type *)",
+      "Bash(curl *)",
+      "Bash(timeout *)",
+      "Bash(set *)",
+      "Bash(taskkill *)"
     ]
   },
   "$version": 3
