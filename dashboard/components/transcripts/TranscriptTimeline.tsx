@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
 import { useTranscriptTimeline, type ConnectionStatus } from '@/hooks/useTranscriptTimeline'
 import { TimelineEvent } from './TimelineEvent'
 
@@ -195,7 +194,7 @@ export function TranscriptTimeline({ taskId, orgId }: TranscriptTimelineProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea ref={scrollRef} className="h-[600px]">
+          <ScrollArea ref={scrollRef} className="h-[calc(100vh-320px)] min-h-[400px]">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin mb-2" />
@@ -252,37 +251,6 @@ export function TranscriptTimeline({ taskId, orgId }: TranscriptTimelineProps) {
         </motion.div>
       )}
     </div>
-  )
-}
-
-// Componente interno para el badge de estado de conexion
-function ConnectionStatusBadge({ status }: { status: ConnectionStatus }) {
-  if (status === 'connected') return null
-
-  if (status === 'disconnected') {
-    return (
-      <Badge variant="outline" className="flex items-center gap-1 text-xs text-muted-foreground">
-        <WifiOff className="h-3 w-3" />
-        Sin tiempo real
-      </Badge>
-    )
-  }
-
-  if (status === 'error') {
-    return (
-      <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-        <WifiOff className="h-3 w-3" />
-        Desconectado
-      </Badge>
-    )
-  }
-
-  // connecting
-  return (
-    <Badge variant="outline" className="flex items-center gap-1 text-xs text-muted-foreground">
-      <Loader2 className="h-3 w-3 animate-spin" />
-      Conectando...
-    </Badge>
   )
 }
 
