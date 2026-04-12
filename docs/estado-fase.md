@@ -1,55 +1,60 @@
-# 🗺️ ESTADO DE FASE: FASE 2 - INICIADA 🏗️
+# 🗺️ ESTADO DE FASE: FASE 2 - AGENT PANEL 🏗️
 
 ## 1. Resumen de Fase
-- **Objetivo:** Transformar FluxAgentPro de un motor de ejecución técnica a una **Plataforma de Gestión de Servicios Agentinos** estable y robusta (MVP Fase 1).
+- **Objetivo:** Dotar a los agentes de personalidad narrativa (SOUL) y enriquecer la visibilidad de sus herramientas y capacidades dentro de la plataforma (MVP Fase 2).
 - **Pasos de la Fase:**
-    1. **1.1 [Backend]:** Hardening del endpoint `/execute` (Estados `blocked`, notas de errores). [COMPLETADO]
-    2. **1.2 [Backend]:** Estandarización de `correlation_id` (Trazabilidad end-to-end). [COMPLETADO]
-    3. **1.3 [Frontend]:** Feedback visual en `useExecuteTicket` (Sonner Toasts). [COMPLETADO]
-    4. **1.4 [Frontend]:** Refinamiento UI en Lista de Tickets (Spinners, animaciones, refresco). [COMPLETADO]
-    5. **1.5 [Validación]:** Prueba E2E ciclovida completa. [COMPLETADO]
-- **Dependencias:**
-    - E4 Baseline (Tickets) - Finalizado con éxito.
-    - Infraestructura de trazabilidad operativa.
+    1. **1.x [Hardening]:** Completar robustez de tickets y trazabilidad. [FINALIZADO ✅]
+    2. **2.1 [DB]:** Migración `020_agent_metadata.sql` (Esquema SOUL). [COMPLETADO ✅]
+    3. **2.2 [Backend]:** Enriquecimiento de `GET /agents/{id}/detail` con metadata. [COMPLETADO ✅]
+    4. **2.3 [Frontend]:** Implementar componente `AgentPersonalityCard.tsx`. [PRÓXIMO 🎯]
+    5. **2.4 [Frontend]:** Refactorizar pestaña de "Herramientas" (Metadata-driven UI). [PENDIENTE]
+    6. **2.5 [Validación]:** Test de aislamiento multi-tenant para SOUL. [PENDIENTE]
 
 ## 2. Estado Actual del Proyecto
 - **Implementado y Funcional:**
-    - **E4 - Tickets (Back-end):** Endpoint `POST /tickets/{id}/execute` robusto. Maneja errores de infraestructura y lógica. Preserva historial de errores en `notes`.
-    - **Trazabilidad:** Propagation de `correlation_id` (`ticket-{id}`) funcionando desde API -> Flow -> EventStore.
-    - **Estabilización:** Corregidos errores de serialización JSON detectados en la extracción de IDs de tareas. El backend ahora retorna objetos `TicketResponse` completos tras ejecución.
-    - **UI/UX:** Lista de tickets interactiva con indicadores de carga por fila (`animate-pulse` + spinners). Feedback proactivo vía `toast.loading` y `toast.success/error`.
-    - **Fase 2 (E5) - Agent Panel 2.0:** Migración `020_agent_metadata.sql` completada. Estructura de SOUL lista para integración.
-    - **Fase 3 (E6) - Run Transcripts:** Sin visualización de trazas en tiempo real.
+    - **Infraestructura de Tickets (Hardening):** Ciclo de vida completo (Backlog -> In Progress -> Done/Blocked) verificado. El sistema captura errores de ejecución y los persiste en el ticket.
+    - **Trazabilidad (Correlation ID):** Estandarización de `correlation_id` (prefijos `ticket-`, `manual-`, `bartenders-`) propagada correctamente desde API hasta `BaseFlow` y `EventStore`.
+    - **Backend de Agentes (Fase 2):** El endpoint de detalle ahora realiza un LEFT JOIN con `agent_metadata`, inyectando `display_name`, `soul_narrative` y `avatar_url`. Posee fallbacks automáticos si no hay metadata.
+    - **Dominio Especializado (Bartenders NOA):** Módulo completo de operación para eventos (Preventa, Reserva, Alerta, Cierre) implementado como prueba de concepto de la flexibilidad del motor de flows.
+    - **UI/UX Dashboard:** Lista de tickets con indicadores de carga síncronos, notificaciones reactivas (Sonner) y navegación fluida entre tareas y agentes.
+
+- **Parcialmente Implementado:**
+    - **Frontend de Agentes:** La vista de detalle aún muestra el `soul_json` crudo en lugar de la narrativa enriquecida. Falta el componente visual para la personalidad del agente.
+    - **Real-time (Fase 3):** Los eventos de dominio se registran pero no se emiten via Supabase Realtime hacia el frontend aún.
 
 ## 3. Contratos Técnicos Vigentes
 - **Modelos de Datos:**
-    - `tickets`: `id`, `org_id`, `title`, `description`, `flow_type`, `priority`, `status`, `task_id`, `notes`.
-    - `agent_metadata`: `id`, `org_id`, `agent_role`, `display_name`, `soul_narrative`, `avatar_url`.
+    - `tickets`: Soporta estados `blocked` y campos de `notes` dinámicos para logs de error.
+    - `agent_metadata`: Vincula rol y organización con identidad visual y narrativa.
+    - `domain_events`: Almacena el rastro de ejecución vinculado por `correlation_id`.
 - **API Endpoints:**
-    - `POST /tickets/{id}/execute`: Retorna el objeto `TicketResponse` actualizado (Step 1.1 + fixes).
-    - `X-Task-Correlation-ID`: Header estandarizado para trazabilidad cruzada.
+    - `POST /tickets/{id}/execute`: Orquesta la ejecución y vincula el `task_id` resultante.
+    - `GET /agents/{id}/detail`: Contrato enriquecido: `{ agent: { ..., display_name, soul_narrative }, metrics: { ... }, credentials: [ ... ] }`.
+    - `POST /bartenders/*`: Suite de endpoints de dominio para procesos de negocio específicos.
 - **Frontend Hooks:**
-    - `useExecuteTicket`: Invalida `['tickets']` y `['ticket', ticketId]` al finalizar. Gestiona el ciclo de vida del toast id automáticamente.
+    - `useExecuteTicket`: Gestiona estados locales de carga y sincronización con React Query.
+    - `useAgentDetail`: Consume el contrato enriquecido del backend.
 
 ## 4. Decisiones de Arquitectura Tomadas
-- **Single Source of Truth:** El `correlation_id` se genera en la API y es la única clave de unión entre Tickets y Eventos de Dominio.
-- **Resiliencia Frontend:** Detección de errores de red específica en los hooks para evitar que el usuario se confunda con "mensajes de error de API" cuando el problema es de conexión local.
-- **Auto-mapping:** En `GenericFlow`, si no hay datos de entrada, el backend mapea automáticamente el título/descripción a la clave `text`.
-- **Autonomía de DDL:** Las migraciones de base de datos deben ser autocontenidas, definiendo funciones de utilidad locales (ej: `handle_updated_at`) para evitar dependencias fallidas durante la ejecución en entornos limpios.
-- **Bypass de RLS Operativo:** Todas las tablas de dominio deben incluir políticas que permitan el acceso explícito al rol `service_role` para asegurar la operatividad del backend y procesos de fondo.
+- **Resiliencia de Metadata:** Si un agente no tiene registro en `agent_metadata`, el backend genera un `display_name` amigable basado en su `role` y mantiene la nulidad de la narrativa sin romper la respuesta.
+- **Trazabilidad por Prefijos:** Uso de esquemas de naming en el `correlation_id` para identificar el origen de la ejecución (`ticket-{id}`, `bartenders-preventa-{hash}`, etc.).
+- **Despliegue de DDL:** Uso de políticas RLS que otorgan bypass al `service_role` para asegurar que el motor de ejecución no se vea bloqueado por restricciones de seguridad a nivel de fila diseñadas para usuarios.
+- **Backend-Driven Forms:** Los schemas de input para los flows se definen en el servidor (`FLOW_INPUT_SCHEMAS`) para centralizar la validación, aunque el frontend aún no los consume dinámicamente al 100%.
 
-## 5. Registro de Pasos Completados
+## 5. Registro de Pasos Completados (MVP)
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
-| 1.1 | ✅ | `src/api/routes/tickets.py` | Hardening de `/execute` | Manejo de estados `blocked` y notas de error. |
-| 1.2 | ✅ | `src/flows/state.py`, `src/flows/base_flow.py` | Estandarización de `correlation_id` | Trazabilidad end-to-end con prefijos. |
-| 1.3 | ✅ | `dashboard/hooks/useTickets.ts` | Feedback visual con Sonner Toasts | Toasts de carga, éxito y error detallado. |
-| 1.4 | ✅ | `tickets/page.tsx` | Refinamiento de UI | Indicadores de carga por fila y spinners. |
-| 1.5 | ✅ | `src/scripts/validate_e2e_lifecycle.py`, `LAST/validacion.md` | Validación E2E Certificada | Ciclo completo verificado: Ticket -> Flow -> Task -> EventStore. Todas las pruebas PASS. |
-| 2.1 | ✅ | `supabase/migrations/020_agent_metadata.sql` | Esquema de Personalidad (SOUL) | Migración robustecida con bypass de `service_role` y seed data inicial. |
+| 1.1 | ✅ | `src/api/routes/tickets.py` | Hardening de `/execute` | Manejo de estados `blocked` y persistencia de errores. |
+| 1.2 | ✅ | `src/flows/base_flow.py` | Estandarización de `correlation_id` | Trazabilidad end-to-end garantizada. |
+| 1.3 | ✅ | `dashboard/hooks/useTickets.ts` | Feedback visual Sonner | Integración de toasts de carga/éxito/error. |
+| 1.4 | ✅ | `tickets/page.tsx` | Refinamiento de UI | Indicadores por fila y refresco automático. |
+| 1.5 | ✅ | `tests/scripts/...` | Validación E2E Certificada | Ciclo Ticket -> Task -> Events validado. |
+| 2.1 | ✅ | `supabase/migrations/020...` | Esquema SOUL (Metadata) | Tabla `agent_metadata` con RLS. |
+| 2.2 | ✅ | `src/api/routes/agents.py` | Backend de Personalidad | LEFT JOIN con metadata y fallbacks de naming. |
 
 ## 6. Criterios Generales de Aceptación MVP
-- **Tickets:** Happy path completo. Gestión de errores sin crash. Persistencia en DB verificada con `correlation_id` estandarizado.
-- **Calidad:** Código compila, validación técnica automatizada exitosa en entorno de desarrollo.
-- **Próximo Objetivo:** Continuar Fase 2 con el **Paso 2.2 [Backend]:** Integrar `get_agent_detail` con un `LEFT JOIN` hacia la nueva tabla `agent_metadata`.
+- **Trazabilidad:** Cualquier ejecución debe ser rastreable en el `event_store` filtrando por `correlation_id`.
+- **Estabilidad:** Errores de red o de lógica del agente se muestran al usuario sin dejar el sistema en estado inconsistente.
+- **Identidad:** Los agentes dejan de ser entidades puramente técnicas para tener una representación "humana" en el sistema.
+- **Próximo Objetivo:** Implementar `AgentPersonalityCard.tsx` y actualizar `AgentDetailPage` para consumir los campos de identidad (display_name, narrative, avatar).

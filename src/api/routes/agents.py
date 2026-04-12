@@ -24,7 +24,7 @@ async def get_agent_detail(
     from fastapi import HTTPException
 
     with get_tenant_client(org_id) as db:
-        # Agent data
+        # 1. Registro base del catálogo
         agent_result = (
             db.table("agent_catalog")
             .select("*")
@@ -34,13 +34,43 @@ async def get_agent_detail(
             .execute()
         )
 
-    if not agent_result.data:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        if not agent_result.data:
+            raise HTTPException(status_code=404, detail="Agent not found")
 
-    agent = agent_result.data
-    agent_role = agent.get("role", "")
+        agent = agent_result.data
+        agent_role = agent.get("role", "")
 
-    # Tareas donde este agente participo (via assigned_agent_role)
+        # 2. Enriquecimiento con Metadata (SOUL)
+        # Se maneja como opcional para no bloquear métricas críticas en caso de error
+        try:
+            metadata_result = (
+                db.table("agent_metadata")
+                .select("display_name, soul_narrative, avatar_url")
+                .eq("org_id", org_id)
+                .eq("agent_role", agent_role)
+                .maybe_single()
+                .execute()
+            )
+
+            if metadata_result and metadata_result.data:
+                # Inyectar metadata en el objeto del agente
+                agent.update(metadata_result.data)
+            
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Error al recuperar metadata para el agente %s (posible tabla omitida): %s", 
+                agent_role, exc
+            )
+        
+        # Fallbacks finales: Garantizar que el frontend siempre tenga claves consistentes
+        if not agent.get("display_name"):
+            agent["display_name"] = agent_role.replace("-", " ").title() if agent_role else "Unknown Agent"
+            
+        agent.setdefault("soul_narrative", None)
+        agent.setdefault("avatar_url", None)
+
+    # Tareas donde este agente participó
     with get_tenant_client(org_id) as db:
         tasks_result = (
             db.table("tasks")
