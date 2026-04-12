@@ -57,7 +57,7 @@ class PreventaState(BaseFlowState):
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
 
-@register_flow("bartenders_preventa")
+@register_flow("bartenders_preventa", category="preventa", depends_on=[])
 class PreventaFlow(BaseFlow):
     """
     Flow de preventa: captura consulta y genera cotización con 3 opciones.

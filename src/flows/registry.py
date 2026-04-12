@@ -119,6 +119,85 @@ class FlowRegistry:
             groups[cat].append(flow_name)
         return groups
 
+    # ── validation ──────────────────────────────────────────────
+
+    def validate_dependencies(self) -> Dict[str, List[str]]:
+        """Identify flows that reference non-existent dependencies.
+
+        Returns a dict mapping flow_name → list of invalid dependency names.
+        Empty dict means all dependencies are valid.
+        """
+        invalid: Dict[str, List[str]] = {}
+        registered_names = set(self._flows.keys())
+
+        for flow_name, meta in self._metadata.items():
+            deps = meta.get("depends_on", [])
+            missing = [dep for dep in deps if dep.lower() not in registered_names]
+            if missing:
+                invalid[flow_name] = missing
+                logger.warning(
+                    "Flow '%s' has invalid dependencies: %s",
+                    flow_name,
+                    missing,
+                )
+
+        return invalid
+
+    def detect_cycles(self) -> List[List[str]]:
+        """Detect dependency cycles using DFS (O(V+E)).
+
+        Returns a list of cycles, where each cycle is a list of flow names
+        forming the cycle (e.g. [["a", "b", "a"], ["x", "y", "z", "x"]]).
+        """
+        cycles: List[List[str]] = []
+        visited: set = set()
+        rec_stack: set = set()
+        path: List[str] = []
+
+        def dfs(node: str) -> None:
+            visited.add(node)
+            rec_stack.add(node)
+            path.append(node)
+
+            deps = self._metadata.get(node, {}).get("depends_on", [])
+            for dep in deps:
+                dep_lower = dep.lower()
+                if dep_lower not in self._flows:
+                    continue  # skip non-existent deps (handled by validate_dependencies)
+                if dep_lower not in visited:
+                    dfs(dep_lower)
+                elif dep_lower in rec_stack:
+                    # Found a cycle — extract it from the path
+                    cycle_start = path.index(dep_lower)
+                    cycle = path[cycle_start:] + [dep_lower]
+                    cycles.append(cycle)
+
+            path.pop()
+            rec_stack.discard(node)
+
+        for flow_name in self._flows:
+            if flow_name not in visited:
+                dfs(flow_name)
+
+        if cycles:
+            logger.warning("Detected dependency cycles: %s", cycles)
+
+        return cycles
+
+    def run_full_validation(self) -> Dict[str, Any]:
+        """Run complete graph validation and return results.
+
+        Designed to be called once after all flows are registered (post-startup).
+        Returns a validation report suitable for API responses.
+        """
+        invalid_deps = self.validate_dependencies()
+        cycles = self.detect_cycles()
+
+        return {
+            "invalid_dependencies": invalid_deps,
+            "cycles": cycles,
+        }
+
     # ── lookup ──────────────────────────────────────────────────
 
     def get(self, name: str) -> Type:

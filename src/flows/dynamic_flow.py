@@ -40,6 +40,10 @@ class DynamicWorkflow(BaseFlow):
         """Crear una subclase DynamicWorkflow con la definition y registrarla."""
         template = definition
 
+        # Extract metadata from template definition
+        category = definition.get("category")
+        depends_on = definition.get("depends_on", [])
+
         class RegisteredFlow(cls):
             _template_definition = template
             _flow_type = flow_type
@@ -47,7 +51,14 @@ class DynamicWorkflow(BaseFlow):
         RegisteredFlow.__name__ = f"DynamicFlow_{flow_type}"
         RegisteredFlow.__qualname__ = f"DynamicFlow_{flow_type}"
 
-        flow_registry._flows[flow_type.lower()] = RegisteredFlow
+        flow_type_lower = flow_type.lower()
+        flow_registry._flows[flow_type_lower] = RegisteredFlow
+
+        # Register metadata so dynamic flows appear in hierarchy/validation
+        flow_registry._metadata[flow_type_lower] = {
+            "depends_on": depends_on,
+            "category": category,
+        }
 
     def validate_input(self, input_data: Dict[str, Any]) -> bool:
         return bool(input_data)

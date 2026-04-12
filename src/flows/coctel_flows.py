@@ -18,7 +18,7 @@ from .registry import register_flow
 logger = logging.getLogger(__name__)
 
 
-@register_flow("cotizacion_flow")
+@register_flow("cotizacion_flow", category="ventas", depends_on=[])
 class CotizacionFlow(BaseFlow):
     """Agente Ventas: cotización con HITL si descuento >15% o cliente VIP."""
 
@@ -55,7 +55,7 @@ class CotizacionFlow(BaseFlow):
         return {"status": "completed", "total": total, "descuento": descuento}
 
 
-@register_flow("logistica_flow")
+@register_flow("logistica_flow", category="operaciones", depends_on=["cotizacion_flow"])
 class LogisticaFlow(BaseFlow):
     """Agente Logística: calcula insumos con HITL para eventos grandes."""
 
@@ -97,7 +97,7 @@ class LogisticaFlow(BaseFlow):
         return base
 
 
-@register_flow("compras_flow")
+@register_flow("compras_flow", category="compras", depends_on=["logistica_flow"])
 class ComprasFlow(BaseFlow):
     """Agente Compras: genera órdenes de compra. HITL: SIEMPRE."""
 
@@ -122,7 +122,7 @@ class ComprasFlow(BaseFlow):
         return {"status": "completed", "total": total}
 
 
-@register_flow("finanzas_flow")
+@register_flow("finanzas_flow", category="finanzas", depends_on=["cotizacion_flow", "compras_flow"])
 class FinanzasFlow(BaseFlow):
     """Agente Finanzas: registra ingresos/egresos con HITL si margen < 20%."""
 

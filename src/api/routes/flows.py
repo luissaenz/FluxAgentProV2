@@ -42,6 +42,7 @@ class FlowHierarchyResponse(BaseModel):
 
     hierarchy: Dict[str, FlowHierarchyNode]
     categories: Dict[str, List[str]]
+    validation: Dict[str, Any] = {}
 
 
 class FlowsListResponse(BaseModel):
@@ -159,9 +160,10 @@ async def get_flow_hierarchy(
     org_id: str = Depends(require_org_id),
 ):
     """
-    Obtener la jerarquía completa de flows con dependencias y categorías.
+    Obtener la jerarquía completa de flows con dependencias, categorías y validación.
 
     Phase 4: Endpoint para visualización de árbol de procesos de negocio.
+    Incluye resultados de validación de integridad del grafo de dependencias.
     """
     hierarchy = {}
     for flow_type, meta in flow_registry.get_hierarchy().items():
@@ -173,10 +175,12 @@ async def get_flow_hierarchy(
         )
 
     categories = flow_registry.get_flows_by_category()
+    validation = flow_registry.run_full_validation()
 
     return FlowHierarchyResponse(
         hierarchy=hierarchy,
         categories=categories,
+        validation=validation,
     )
 
 

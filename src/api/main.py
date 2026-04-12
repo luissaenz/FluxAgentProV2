@@ -14,8 +14,13 @@ import logging
 # ── eager flow registration (import triggers @register_flow) ─────
 import src.flows.generic_flow  # noqa: F401
 import src.flows.architect_flow  # noqa: F401
+import src.flows.coctel_flows  # noqa: F401
 import src.flows.test_flows  # noqa: F401 — E2E validation flows (Paso 1.5)
 import src.tools.builtin  # noqa: F401
+
+# Bartenders NOA flows — Phase 4
+from src.flows.bartenders.registry_wiring import register_bartenders_flows
+from src.api.routes.bartenders import router as bartenders_router
 
 from .routes.webhooks import router as webhooks_router
 from .routes.tasks import router as tasks_router
@@ -45,11 +50,23 @@ async def lifespan(_app: FastAPI):
     """Cargar workflows generados previamente desde la DB al arrancar."""
     from src.flows.dynamic_flow import load_dynamic_flows_from_db
 
+    # Register bartender flows at import time
+    register_bartenders_flows()
+
     try:
         count = load_dynamic_flows_from_db()
         logger.info("Dynamic workflows loaded: %d", count)
+
+        # Run full validation of the registry (Paso 4.1)
+        from src.flows.registry import flow_registry
+        validation = flow_registry.run_full_validation()
+        if validation["status"] == "error":
+            logger.error("Flow Registry validation failed: %s", validation["errors"])
+        else:
+            logger.info("Flow Registry validated successfully.")
+
     except Exception as exc:
-        logger.warning("Could not load dynamic flows from DB: %s", exc)
+        logger.warning("Could not initialize flows during lifespan: %s", exc)
 
     yield
 
@@ -79,6 +96,7 @@ app.include_router(chat_router)
 app.include_router(workflows_router)
 app.include_router(flow_metrics_router)
 app.include_router(flows_router)  # flows disponibles y ejecucion
+app.include_router(bartenders_router)  # Phase 4: Bartenders NOA
 app.include_router(tickets_router)  # Semana 2: tickets
 app.include_router(agents_router)  # Semana 2: agent detail
 app.include_router(transcripts_router)  # Semana 2: transcripts

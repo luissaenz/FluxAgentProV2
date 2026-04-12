@@ -50,7 +50,7 @@ class CierreState(BaseFlowState):
 
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
-@register_flow("bartenders_cierre")
+@register_flow("bartenders_cierre", category="cierre", depends_on=["bartenders_reserva"])
 class CierreFlow(BaseFlow):
     """
     Flow de cierre post-evento.

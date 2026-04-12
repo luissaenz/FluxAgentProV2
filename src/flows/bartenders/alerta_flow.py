@@ -51,7 +51,7 @@ class AlertaState(BaseFlowState):
 
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
-@register_flow("bartenders_alerta")
+@register_flow("bartenders_alerta", category="monitoreo", depends_on=["bartenders_reserva"])
 class AlertaClimaFlow(BaseFlow):
     """
     Flow de alerta climática.

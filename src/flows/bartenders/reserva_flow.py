@@ -51,7 +51,7 @@ class ReservaState(BaseFlowState):
 
 
 # ─── Flow ──────────────────────────────────────────────────────────────────
-@register_flow("bartenders_reserva")
+@register_flow("bartenders_reserva", category="reserva", depends_on=["bartenders_preventa"])
 class ReservaFlow(BaseFlow):
     """
     Flow de reserva: confirma cotización, reserva stock y asigna equipo.

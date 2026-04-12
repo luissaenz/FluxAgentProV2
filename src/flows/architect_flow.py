@@ -46,7 +46,7 @@ class ArchitectState(BaseFlowState):
     agents_created: list[str] = []
 
 
-@register_flow("architect_flow")
+@register_flow("architect_flow", category="system")
 class ArchitectFlow(BaseFlow):
     """
     Flow conversacional que genera nuevos workflows desde NL.

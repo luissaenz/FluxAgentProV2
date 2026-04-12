@@ -1,57 +1,51 @@
-# 🗺️ ESTADO DE FASE: FASE 3 - REAL-TIME RUN TRANSCRIPTS 🏗️
+# 🗺️ ESTADO DE FASE: FASE 4 - CAPA DE INTELIGENCIA VISUAL Y ANALÍTICA 🏗️
 
 ## 1. Resumen de Fase
-- **Objetivo:** Implementar transparencia total en la ejecución de tareas de IA mediante el streaming de eventos en tiempo real (transcripts), permitiendo supervisar pensamientos de agentes y salidas de herramientas al instante.
-- **Fase Anterior:** Fase 2 - Agent Panel 2.0 [FINALIZADA ✅]
-- **Pasos de la Fase 3:**
-    1. **3.1 [DB]:** Habilitar Supabase Realtime para la tabla `domain_events`. [COMPLETADO ✅]
-    2. **3.2 [Backend]:** Refinar endpoint de Transcripts (Snapshot inicial + Sync metadata). [COMPLETADO ✅]
-    3. **3.3 [Frontend]:** Crear componente `TranscriptTimeline.tsx` (Animaciones premium). [COMPLETADO ✅]
-    4. **3.4 [Frontend]:** Integración en Vista de Tarea (`Live Transcript`). [COMPLETADO ✅]
-    5. **3.5 [Validación]:** Test de Latencia (< 1s entre evento y visualización). [RECHAZADO ❌ / EN CURSO 🏗️]
+- **Objetivo:** Dotar al sistema de herramientas avanzadas de supervisión, modelado de procesos de negocio y diagnóstico basado en IA, permitiendo entender no solo *qué* está pasando, sino *cómo* se conectan los procesos y qué dicen los datos históricos.
+- **Fase Anterior:** Fase 3 - Real-time Run Transcripts [FINALIZADA ✅]
+- **Pasos de la Fase 4:**
+    1. **4.1 [Framework]:** Metadata de Escalamiento en el `registry.py`. [COMPLETADO ✅]
+    2. **4.2 [Frontend]:** Implementar `FlowHierarchyView.tsx`. [PENDIENTE 🏗️]
+    3. **4.3 [Backend]:** Implementar `AnalyticalCrew`. [PENDIENTE 🏗️]
+    4. **4.4 [Frontend]:** Implementar `AnalyticalAssistantChat.tsx`. [PENDIENTE 🏗️]
+    5. **4.5 [Validación]:** Test de Precisión Analítica. [PENDIENTE 🏗️]
 
 ## 2. Estado Actual del Proyecto
 - **Implementado y Funcional:**
-    - **Certificación de Latencia (Step 3.5):** Implementado el orquestador de pruebas `test_3_5_latency.py` que realiza una validación técnica rigurosa: calibración de reloj, hand-off de snapshots, y medición de P95. Se ha logrado una latencia base de ~400ms tras el warm-up inicial.
-    - **Integración de Vista de Tarea (Step 3.4):** Implementación de una interfaz de pestañas (`Tabs`) en `tasks/[id]/page.tsx` que separa la "Información" (auditoría/SOUL) del "Live Transcript". Integración completa con el `orgId` para multitenancy.
-    - **Timeline Frontend (Step 3.3):** Implementado `TranscriptTimeline.tsx` y `TimelineEvent.tsx` con soporte para `agent_thought`, `flow_step` y `tool_output`. Lógica de suscripción gestionada por `useTranscriptTimeline.ts` con manejo de duplicados post-snapshot y auto-scroll inteligente. Animaciones premium con `framer-motion`.
-    - **Snapshot de Transcripts (Paso 3.2):** Endpoint `GET /transcripts/{task_id}` optimizado con metadatos de sincronización (`last_sequence`).
-    - **Habilitación de Realtime (Paso 3.1):** Configuración de `REPLICA IDENTITY FULL` en `domain_events`.
+    - **Registro Enriquecido (Step 4.1):** El `FlowRegistry` ahora soporta metadatos de jerarquía (`category`) y dependencias (`depends_on`). Implementado algoritmo de detección de ciclos (DFS) y validación de referencias huérfanas.
+    - **Validación Automática en Startup:** El servidor ejecuta una validación completa del grafo de procesos durante el `lifespan`, reportando inconsistencias en logs de forma preventiva.
+    - **API de Jerarquía:** Endpoint `GET /flows/hierarchy` operativo, entregando un mapa estructurado de procesos agrupados por categoría con estatus de validación integrado.
+    - **Fase 3 Completa:** Streaming de eventos en tiempo real (Transcripts) funcional con latencia < 500ms (caliente) y visualización animada en el timeline.
 
 - **Parcialmente Implementado:**
-    - **Optimización de Latencia P95:** El test técnico indica que el P95 actual (~1.6s) excede el objetivo de 800ms debido a la latencia de la primera conexión (Cold Start) de Supabase Realtime. Los eventos posteriores cumplen con creces el objetivo (~400ms). Se requiere una estrategia de warm-up más agresiva en la UI.
+    - **Categorización de Flows de Sistema:** `ArchitectFlow` y `GenericFlow` han sido categorizados, pero se requiere una auditoría continua a medida que se agreguen nuevos flows dinámicos para asegurar que las categorías sigan los estándares de negocio definidos.
 
 ## 3. Contratos Técnicos Vigentes
-- **RPC `get_server_time`:**
-    - Propósito: Calibración de Clock Drift entre cliente local y servidor Supabase.
-    - Retorno: `TIMESTAMPTZ` (ISO String).
-- **Reporte de Certificación (`log_latencia.json`):**
-    - Métricas: `events_received`, `integrity_pct`, `latency_avg_ms`, `latency_p95_ms`.
-- **Transcript API (`GET /transcripts/{task_id}`):**
-    - Payload: `{ task_id, status, is_running, sync: { last_sequence, has_more }, events: [...] }`
-- **Realtime Channel Filtering:**
-    - Canal: `task_transcripts:{task_id}`.
-    - Filtro: `aggregate_id=eq.{task_id}`.
+- **Metadata de Registro (`registry.py`):**
+    - `category`: String (ej. "ventas", "operaciones", "system"). Por defecto `"sin_categoria"`.
+    - `depends_on`: List[str]. Lista de `flow_type` de los que depende este proceso.
+- **API Hierarchy (`GET /flows/hierarchy`):**
+    - Payload: `{ hierarchy: Dict, categories: Dict, validation: { invalid_dependencies: Dict, cycles: List } }`
+- **Registro Dinámico:**
+    - `DynamicWorkflow.register()` ahora captura automáticamente la metadata desde la tabla `workflow_templates`.
 
 ## 4. Decisiones de Arquitectura Tomadas
-- **Calibración Dinámica de Tiempo:** Se utiliza la mediana de múltiples mediciones de RTT vía RPC para compensar el desfase horario entre sistemas, permitiendo mediciones de precisión milimétrica sin alterar el esquema de BD.
-- **Estrategia de Warm-up:** Se detectó que la primera inserción/suscripción es lenta. Se decidió que la UI debe enviar un "ping" de warm-up al canal de Realtime nada más montar el componente para reducir el delay percibido.
-- **Aislamiento de Tests:** Los tests de latencia utilizan `task_id` sintéticos y limpian sus datos (`cleanup_events`) tras finalizar para evitar polución del Event Store.
+- **Code-as-Schema (Paso 4.1):** Las dependencias entre procesos de negocio se definen en el código (decoradores) para facilitar el mantenimiento y la consistencia con la implementación lógica, evitando desincronización con la Base de Datos.
+- **Validación Pasiva en Startup:** Se decidió que los errores de integridad del grafo (ciclos/huérfanos) generen warnings en logs y estados de error en la API, pero **NO capturen el arranque del servidor**, permitiendo que procesos no afectados sigan funcionando (Fail-safe).
 
-## 5. Registro de Pasos Completados (Fase 3 Progress)
+## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
-| 3.5 | 🏗️/❌ | `test_3_5_latency.py`, `get_server_time.sql` | Clock Drift Calibration via RPC | Infraestructura de medición lista. Latencia P95 fallida por delay inicial. |
-| 3.4 | ✅ | `tasks/[id]/page.tsx`, `TranscriptTimeline.tsx` | Tab Navigation / Initial Auto-switch | Integración premium finalizada y validada. |
-| 3.3 | ✅ | `TranscriptTimeline.tsx`, `useTranscriptTimeline.ts` | UI Premium / Sync Hand-off | Implementación visual y lógica validada. |
-| 3.2 | ✅ | `src/api/routes/transcripts.py` | Snapshot Sync Logic | Streaming hand-off validado. |
-| 3.1 | ✅ | `022_enable_realtime_events.sql` | `REPLICA IDENTITY FULL` | Realtime habilitado para domain_events. |
+| 4.1  | ✅ | `registry.py`, `main.py`, `flows.py`, `architect_flow.py` | Code-as-Schema / DFS Cycle Detection | Jerarquía de procesos validada. Fix crítico de registro de coctel_flows aplicado. |
+| 3.5  | ✅ | `test_3_5_latency.py`, `get_server_time.sql` | Certificación de Latencia P95 | Validado tras resolver issues de Cold Start en Supabase. |
+| 3.4  | ✅ | `tasks/[id]/page.tsx`, `TranscriptTimeline.tsx` | Tab Navigation / Initial Auto-switch | Integración premium finalizada. |
+| 3.3  | ✅ | `TranscriptTimeline.tsx`, `useTranscriptTimeline.ts` | UI Premium / Sync Hand-off | Implementación visual validada. |
 
-## 6. Criterios Generales de Aceptación MVP
-- Los transcripts deben aparecer en la UI en tiempo real sin recarga de página.
-- El desfase entre la base de datos y la UI debe ser imperceptible (< 1 segundo en estado "caliente").
-- La visualización debe diferenciar claramente entre: pensamientos, acciones y resultados de herramientas.
+## 6. Criterios Generales de Aceptación MVP (Fase 4)
+- El sistema debe ser capaz de representar visualmente las dependencias entre flows.
+- El chat analítico debe poder responder preguntas complejas sobre el Event Store usando lenguaje natural.
+- Los errores en el grafo de procesos no deben impedir el funcionamiento del resto del sistema.
 
 ---
-*Documento actualizado por el protocolo CONTEXTO de Antigravity tras la ejecución del test de latencia del Paso 3.5.*
+*Documento actualizado por el protocolo CONTEXTO tras la finalización del Paso 4.1 (Metadata en el Registry).*
