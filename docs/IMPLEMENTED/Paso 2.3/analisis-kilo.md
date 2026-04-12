@@ -3,116 +3,106 @@
 ## 1. Diseño Funcional
 
 ### Happy Path
-El usuario accede a la página de detalle de un agente y en la pestaña "Información" ve una tarjeta visual atractiva que muestra:
-- Avatar del agente (imagen circular)
-- Nombre de display amigable (ej: "Asistente de Ventas" en lugar de "sales_assistant")
-- Descripción narrativa de la personalidad del agente en texto legible, no JSON crudo
+- El usuario accede a la página de detalle de un agente específico (/agents/{id}).
+- En la pestaña "Información", se muestra una tarjeta (`AgentPersonalityCard`) que presenta:
+  - Nombre público del agente (display_name).
+  - Descripción narrativa de la personalidad (soul_narrative), formateada como texto legible.
+  - Avatar del agente (avatar_url), o iniciales como fallback.
+- El encabezado H1 de la página se actualiza dinámicamente con el nombre público del agente.
 
-El flujo completo: Usuario → Página de agentes → Seleccionar agente → Ver pestaña "Información" → Tarjeta de personalidad visible inmediatamente, sin necesidad de expandir accordions.
+### Edge Cases que Afectan al MVP
+- Agente sin registro en `agent_metadata`: Mostrar nombre generado basado en el rol del agente (ej. "Agente Bartender"), narrativa genérica ("Este agente está diseñado para..."), y avatar con iniciales.
+- Avatar con URL inválida: Fallback automático a iniciales estilizadas.
+- Narrativa muy larga: Limitar visualmente a 300 caracteres con opción de "ver más" si excede.
 
-### Edge Cases Relevantes para MVP
-- **Agente sin metadata:** Mostrar fallback con el role del agente como nombre y descripción genérica ("Agente especializado en [role]")
-- **Avatar faltante:** Mostrar icono de bot por defecto
-- **Navegación móvil:** La tarjeta mantiene legibilidad en pantallas pequeñas (320px+)
-- **Texto largo en narrativa:** Truncar a 200 caracteres con opción de "ver más"
-
-### Manejo de Errores
-- **Carga fallida del detalle:** Mostrar spinner durante carga, mensaje de error si falla completamente
-- **Imagen de avatar rota:** Fallback automático a icono de bot sin romper el layout
-- **Usuario sin permisos:** No aplica (ya manejado en rutas protegidas)
+### Manejo de Errores: Qué Ve el Usuario Cuando Algo Falla
+- Si falla la carga de datos del agente: Mostrar mensaje "Cargando personalidad..." con skeleton loader.
+- Si el endpoint falla: Mantener la página funcional con datos básicos del agente (sin personalidad enriquecida).
 
 ## 2. Diseño Técnico
 
-### Componentes Nuevos o Modificaciones
-- **AgentPersonalityCard.tsx:** Componente principal que recibe `agent` (con campos enriquecidos) y renderiza la tarjeta visual
-- **Modificación de AgentDetailPage:** Reemplazar el accordion "SOUL Definition" por el nuevo componente AgentPersonalityCard
-- **Actualización de tipos:** Extender interfaz `Agent` para incluir `display_name`, `soul_narrative`, `avatar_url` (string | null)
+### Componentes Nuevos o Modificaciones a Existentes
+- **Nuevo componente:** `AgentPersonalityCard.tsx` en `dashboard/components/agents/`.
+  - Props: Recibe `agent` (tipo `Agent` extendido con metadata).
+  - Renderiza: Card con avatar, nombre y narrativa.
+  - Fallbacks internos para datos faltantes.
 
-### Interfaces (Inputs/Outputs)
-**AgentPersonalityCard props:**
-- `agent: Agent` (con campos enriquecidos)
-- `isLoading?: boolean`
+- **Modificaciones:**
+  - `agents/[id]/page.tsx`: Integrar `AgentPersonalityCard` en la pestaña "Información" (tabs).
+  - Actualizar el componente de título (H1) para usar `agent.display_name` en lugar de `agent.role`.
 
-**AgentPersonalityCard output:**
-- JSX.Element renderizado con Card de shadcn/ui
-- Estructura: Avatar + Nombre + Narrativa + Badge de estado
+### Interfaces (Inputs/Outputs de Cada Componente)
+- `AgentPersonalityCard`:
+  - Input: `agent: { display_name: string, soul_narrative: string, avatar_url?: string, role: string }`
+  - Output: JSX.Element (tarjeta visual)
+
+- `useAgentDetail` hook: Ya consume el contrato enriquecido del backend (`GET /agents/{id}/detail`).
 
 ### Modelos de Datos Nuevos o Extensiones
-Extensión de interfaz `Agent` en `lib/types.ts`:
-```typescript
-export interface Agent {
-  // ... campos existentes
-  display_name?: string | null
-  soul_narrative?: string | null
-  avatar_url?: string | null
-}
-```
+- Extensión del tipo `Agent` en `lib/types.ts`: Ya incluye `display_name`, `soul_narrative`, `avatar_url` (confirmado en estado-fase.md).
 
-Coherente con contrato backend: `GET /agents/{id}/detail` retorna `{ agent: { ..., display_name, soul_narrative, avatar_url }, ... }`
+- Sin cambios a modelos de backend; usa `agent_metadata` existente.
 
-### APIs/Endpoints
-Sin cambios requeridos - usa endpoint existente `GET /agents/{id}/detail` ya enriquecido en paso 2.2.
+### Integraciones
+- **Backend:** Consume `GET /agents/{id}/detail` que realiza LEFT JOIN con `agent_metadata`.
+- **UI Library:** Usar componentes de shadcn/ui (Card, Avatar) para consistencia visual.
+
+**Coherencia con estado-fase.md:** Este diseño respeta el contrato de API definido (enriquecido con metadata) y las decisiones de fallbacks automáticos.
 
 ## 3. Decisiones
 
-Sin decisiones nuevas - implementación directa del contrato técnico establecido en estado-fase.md.
+- **UI Framework:** Usar shadcn/ui Card y Avatar para mantener consistencia con el dashboard existente.
+- **Fallbacks de Datos:** Generar display_name basado en role si falta metadata, para evitar roturas visuales.
+- **Formato de Narrativa:** Renderizar soul_narrative como texto enriquecido (markdown básico) si contiene formato, o texto plano.
+- **Avatar Handling:** Usar componente Avatar de shadcn con src opcional; fallback a iniciales generadas de display_name.
+- **Actualización de H1:** En el layout de la página, usar useEffect para actualizar document.title y el H1 basado en agent.display_name.
+
+Cada decisión se basa en la necesidad de enriquecer la identidad del agente sin romper la experiencia existente.
 
 ## 4. Criterios de Aceptación
+Lista binaria (sí/no) de condiciones que deben cumplirse para considerar el paso COMPLETO:
 
-- La tarjeta AgentPersonalityCard se muestra en la pestaña "Información" del detalle de agente
-- Se visualiza avatar (o fallback), display_name y soul_narrative en formato legible
-- El accordion "SOUL Definition (Prompt)" ya no es visible por defecto
-- Al hacer hover sobre la narrativa se muestra tooltip con texto completo si está truncado
-- En agentes sin metadata se muestra fallback amigable sin errores
-- El componente responde correctamente en viewport móvil (sm: 640px, xs: 320px)
-- No se muestran datos sensibles ni JSON crudo en la vista principal
+- El componente AgentPersonalityCard se muestra correctamente en la pestaña "Información" del detalle del agente.
+- La tarjeta muestra el display_name del agente como título principal.
+- La soul_narrative se presenta como texto legible (no JSON crudo).
+- El avatar se carga desde avatar_url, o muestra iniciales si falla.
+- El H1 de la página se actualiza dinámicamente con el display_name del agente.
+- Funciona correctamente cuando el agente no tiene metadata (fallbacks aplicados).
+- No hay errores de consola relacionados con datos faltantes.
 
 ## 5. Riesgos
 
 ### Riesgos Concretos del Paso
-- **Riesgo de ruptura visual:** Avatar URL podría ser inválida causando layout shift - *Mitigación:* Validar URL y fallback inmediato a icono
-- **Riesgo de performance:** Carga de imagen de avatar bloquea render - *Mitigación:* Lazy loading con Suspense y skeleton
-- **Riesgo de truncado excesivo:** Narrativa muy corta no comunica personalidad - *Mitigación:* Definir límite mínimo de caracteres en validación
-- **Riesgo de inconsistencia:** Backend podría no tener todos los agentes con metadata - *Mitigación:* Fallbacks robustos en componente
+- **Carga de Imagen de Avatar:** URL inválida podría causar errores 404 visibles. **Mitigación:** Implementar onError en img tag para fallback inmediato a iniciales.
+- **Texto Largo en Narrativa:** Podría romper el layout si es excesivamente largo. **Mitigación:** Limitar visualmente a 3 líneas con ellipsis, añadir "ver más" expandable.
+- **Dependencia de Metadata:** Si el backend no provee los campos, la UI podría quedar vacía. **Mitigación:** Fallbacks robustos en el componente y validación en TypeScript.
+- **Consistencia Visual:** El avatar podría no escalar bien en móviles. **Mitigación:** Usar clases responsive de Tailwind.
 
-### Estrategias de Mitigación
-- Implementar logging de errores de carga de avatar para monitoreo
-- Añadir tests visuales con Storybook para diferentes estados
-- Validar contrato en desarrollo con MSW mocks
+Cada riesgo tiene estrategia de mitigación implementada en el componente.
 
 ## 6. Plan
 
 ### Tareas Atómicas Ordenadas
-1. **Actualizar tipos (Baja):** Extender interfaz `Agent` con campos `display_name`, `soul_narrative`, `avatar_url`
-2. **Crear componente base (Media):** Implementar `AgentPersonalityCard.tsx` con layout básico y fallbacks
-3. **Añadir interactividad (Baja):** Implementar truncado de narrativa con "ver más" y tooltip
-4. **Responsive design (Baja):** Asegurar legibilidad en móvil y tablet
-5. **Integrar en AgentDetailPage (Media):** Reemplazar accordion por nuevo componente
-6. **Testing visual (Baja):** Verificar renders en diferentes estados (con/sin metadata)
+1. **Crear componente base AgentPersonalityCard.tsx** (Media): Implementar la estructura con Card, Avatar y texto. Incluir fallbacks.
+2. **Implementar lógica de fallbacks** (Baja): Añadir generación de iniciales y nombre por rol.
+3. **Integrar en página de detalle** (Media): Modificar agents/[id]/page.tsx para incluir el componente en tabs "Información".
+4. **Actualizar H1 dinámicamente** (Baja): Usar useEffect para setear document.title y el H1 con display_name.
+5. **Testing visual y responsive** (Media): Verificar en diferentes tamaños de pantalla y casos de datos faltantes.
 
-### Dependencias Explícitas
-- Tarea 1 debe completarse antes de tarea 2
-- Tarea 2 debe completarse antes de tarea 5
-- Tareas 3 y 4 pueden paralelizarse con tarea 5
+### Estimación de Complejidad Relativa
+- Baja: Lógica simple, cambios menores.
+- Media: Integración con UI existente, manejo de estados.
+- Alta: No aplica en este paso.
+
+### Dependencias Explícitas Entre Tareas
+- Tarea 2 depende de 1 (fallbacks dentro del componente).
+- Tareas 3 y 4 dependen de 1 (componente creado).
+- Tarea 5 depende de 3 y 4 (integración completa).
 
 ## 🔮 Roadmap (NO implementar ahora)
+- **Animaciones de entrada:** Transiciones suaves al cargar la tarjeta para mejorar UX.
+- **Edición inline:** Permitir al usuario editar la personalidad directamente desde la UI (requiere backend adicional).
+- **Personalización avanzada:** Soporte para múltiples avatares o temas por agente.
+- **Analytics de visualización:** Tracking de cuánto tiempo se ve la personalidad para métricas de engagement.
 
-### Optimizaciones Futuras
-- **Personalización visual:** Temas de color por tipo de agente (ventas = verde, soporte = azul)
-- **Animaciones:** Transiciones suaves al cargar metadata
-- **Cache de avatares:** Service worker para offline de imágenes
-- **Narrativas dinámicas:** Actualización en tiempo real si metadata cambia
-
-### Mejoras de UX
-- **Editar personalidad:** Modal para actualizar display_name y narrativa desde frontend
-- **Galería de avatares:** Selector predefinido de imágenes para agentes
-- **Preview de cambios:** Vista previa antes de guardar modificaciones
-
-### Decisiones de Diseño que No Bloquean
-- Mantener JSON crudo accesible vía developer mode (localStorage flag)
-- Soporte para múltiples idiomas en narrativas (i18n ready)
-- Integración con sistema de themes para avatares adaptativos
-
----
-
-**Análisis completado por agente kilo - Paso 2.3 Fase 2**
+Estas mejoras se consideran para fases posteriores, asegurando que no bloqueen la implementación MVP de identidad narrativa.

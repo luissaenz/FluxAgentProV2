@@ -20,7 +20,8 @@
       "Bash(curl *)",
       "Bash(timeout *)",
       "Bash(set *)",
-      "Bash(taskkill *)"
+      "Bash(taskkill *)",
+      "Bash(make *)"
     ]
   },
   "$version": 3

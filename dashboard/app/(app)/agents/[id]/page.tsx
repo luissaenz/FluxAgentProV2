@@ -9,6 +9,7 @@ import { BackButton } from '@/components/shared/BackButton'
 import { StatusLabel } from '@/components/shared/StatusLabel'
 import { CodeBlock } from '@/components/shared/CodeBlock'
 import { AgentPersonalityCard } from '@/components/agents/AgentPersonalityCard'
+import { AgentToolsCard } from '@/components/agents/AgentToolsCard'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -24,7 +25,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Bot, Key, Coins } from 'lucide-react'
+import { Bot, Key, Coins, Wrench } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Agent } from '@/lib/types'
@@ -133,7 +134,8 @@ export default function AgentDetailPage() {
             Tareas {metrics?.recent_tasks?.length ? `(${metrics.recent_tasks.length})` : ''}
           </TabsTrigger>
           <TabsTrigger value="credentials">
-            Credenciales ({credentials.length})
+            <Wrench className="h-4 w-4" />
+            Herramientas con Credenciales ({credentials.length})
           </TabsTrigger>
         </TabsList>
 
@@ -147,6 +149,12 @@ export default function AgentDetailPage() {
             isLoading={loadingDetail}
           />
 
+          <AgentToolsCard
+            allowedTools={agent.allowed_tools || []}
+            credentials={credentials}
+            isLoading={loadingDetail}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Configuracion</CardTitle>
@@ -155,10 +163,6 @@ export default function AgentDetailPage() {
               <div><strong>Role:</strong> {agent.role}</div>
               <div><strong>Modelo:</strong> {agent.model || '—'}</div>
               <div><strong>Max iteraciones:</strong> {agent.max_iter}</div>
-              <div>
-                <strong>Herramientas:</strong>{' '}
-                {(agent.allowed_tools || []).join(', ') || '—'}
-              </div>
             </CardContent>
           </Card>
 

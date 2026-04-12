@@ -1,156 +1,158 @@
-# Análisis Técnico — Paso 2.3: Implementar componente `AgentPersonalityCard.tsx`
+# Analisis Tecnico — Paso 2.3: Implementar componente `AgentPersonalityCard.tsx`
 
-**Agente:** qwen
-**Fecha:** 2026-04-12
-**Fase:** 2 — Agent Panel (SOUL)
-
----
-
-## 1. Diseño Funcional
+## 1. Diseno Funcional
 
 ### Happy Path
-1. El usuario navega a `/agents/[id]` desde la lista de agentes.
-2. La página carga los datos del agente (Supabase directo) y el detalle enriquecido (REST API `GET /agents/{id}/detail`).
-3. En la pestaña **"Información"**, el componente `AgentPersonalityCard.tsx` se renderiza **por encima** de la tarjeta de "Configuración".
-4. El componente muestra:
-   - **Avatar** (si existe `avatar_url`) o un placeholder con la inicial del `display_name`.
-   - **Display name** como título principal (reemplaza el `role` crudo como identidad visible).
-   - **Soul narrative** como texto legible, renderizado con párrafos o viñetas según el contenido.
-   - **Role** como badge secundario (contexto técnico, no identidad principal).
-5. Si el agente **no tiene metadata** (`soul_narrative` es null/empty), el componente muestra un estado vacío con mensaje: *"Este agente aún no tiene una personalidad narrativa definida."*
+1. El usuario navega a la pagina de detalle de un agente (`/agents/{id}`).
+2. Se renderiza la pagina con los datos basicos del agente obtenidos de `agent_catalog` (query directa a Supabase).
+3. Simultaneamente, se dispara `useAgentDetail` que consulta `GET /agents/{id}/detail`, obteniendo el contrato enriquecido con `display_name`, `soul_narrative` y `avatar_url`.
+4. Mientras carga, el componente muestra un skeleton con la forma de la tarjeta (avatar, nombre, rol, parrafos de narrativa).
+5. Al recibir los datos, `AgentPersonalityCard` se renderiza dentro del tab "Informacion" mostrando:
+   - Avatar con imagen personalizada (si `avatar_url` existe y carga correctamente) O fallback estetico con iniciales sobre gradiente violeta/indigo.
+   - Badge del rol del agente.
+   - Indicador "Identidad Verificada" con icono de usuario.
+   - Narrativa de personalidad (`soul_narrative`) entre comillas, con estilo italic y `whitespace-pre-line` para respetar saltos de linea.
+   - Si no hay narrativa, se muestra un mensaje default: *"Este agente opera bajo una directiva tecnica estandar sin narrativa de personalidad adicional."*
 
-### Edge Cases
-| Caso | Comportamiento |
-|------|---------------|
-| `soul_narrative` es null o string vacío | Se muestra `EmptyState` con ícono de `Bot` y mensaje informativo. No se rompe la UI. |
-| `avatar_url` es null o URL inválida | Se renderiza un avatar placeholder con la primera letra del `display_name` sobre fondo gradiente. |
-| `display_name` no existe (fallback del backend) | El backend ya garantiza `display_name` como fallback (`role.replace("-", " ").title()`). El componente lo usa tal cual. |
-| `soul_narrative` contiene markdown básico | Se renderiza como texto plano con saltos de línea respetados (`whitespace-pre-line`). **MVP no parsea markdown.** |
-| Carga asíncrona | Se muestra `Skeleton` con la misma forma del card mientras `useAgentDetail` no ha respondido. |
+### Edge Cases Relevantes para MVP
+| Escenario | Comportamiento |
+|-----------|---------------|
+| `avatar_url` es null o vacio | Se muestra fallback de iniciales con gradiente |
+| La imagen del avatar falla al cargar (onError) | Se activa `avatarError` state y se muestra fallback |
+| `soul_narrative` es null, vacio o solo whitespace | Se muestra el mensaje default en lugar de un bloque vacio |
+| `display_name` es vacio o indefinido | Fallback a `agent.role` (ya resuelto en el padre antes de pasar props) |
+| Agente sin metadata en `agent_metadata` | El backend ya resuelve esto con fallbacks; el componente recibe datos validos |
 
-### Manejo de Errores
-- Si `useAgentDetail` falla (error de red, auth), la página ya maneja el estado de error a nivel de React Query. El componente no necesita retry propio — solo responde a los estados `isLoading`, `isError`, `data` del hook padre.
-- Si `avatar_url` apunta a un recurso que no carga, el `onError` del `<img>` hace fallback al placeholder de inicial.
+### Manejo de Errores (Que ve el usuario)
+- **Error de red al cargar detalle:** El hook `useAgentDetail` no tiene manejo de error UI explicito; la pagina sigue mostrando los datos basicos de `agent_catalog`. El usuario ve el agente sin enriquecimiento de personalidad, pero la pagina no se rompe.
+- **Error de avatar (imagen rota):** Silencioso — el componente hace fallback automatico al avatar de iniciales sin notificar al usuario.
+- **Error general de la pagina:** Si ni siquiera `agent_catalog` carga, se muestra "Agente no encontrado".
+
+### Ambiguedades Detectadas
+1. **No hay reintentos automaticos en `useAgentDetail`:** Si la llamada al endpoint enriquecido falla, no se reintenta ni se muestra un estado de error al usuario. Los datos basicos siguen visibles, pero el usuario no sabe que falta informacion.
+2. **El skeleton de carga no cubre toda la pagina:** Solo cubre el header y metricas rapidas en el padre; `AgentPersonalityCard` tiene su propio skeleton interno pero el padre ya renderiza un skeleton general antes de llegar aqui. Hay doble capa de skeleton innecesaria potencial.
 
 ---
 
-## 2. Diseño Técnico
+## 2. Diseno Tecnico
 
-### Componente: `AgentPersonalityCard.tsx`
+### Componentes Involucrados
 
-**Ubicación:** `dashboard/components/shared/AgentPersonalityCard.tsx`
+#### `AgentPersonalityCard` (`dashboard/components/agents/AgentPersonalityCard.tsx`)
+- **Responsabilidad:** Presentar la identidad visual del agente (avatar, nombre, rol, narrativa).
+- **Props (`AgentPersonalityCardProps`):**
+  - `displayName: string` — Nombre publico del agente (puede ser el role como fallback).
+  - `role: string` — Rol tecnico del agente (se muestra como badge).
+  - `soulNarrative: string | null` — Narrativa de personalidad legible por humanos.
+  - `avatarUrl: string | null` — URL de la imagen de avatar.
+  - `isLoading: boolean` — Estado de carga del query de detalle enriquecido.
+- **Estado interno:**
+  - `avatarError: boolean` — Trackea si la imagen del avatar fallo para mostrar fallback.
+- **Dependencias UI:** `Card`, `CardContent`, `Badge`, `Skeleton` (shadcn/ui), `Bot`, `User` (lucide-react).
 
-**Props:**
-```typescript
-interface AgentPersonalityCardProps {
-  displayName: string
-  role: string
-  soulNarrative: string | null
-  avatarUrl: string | null
-  isLoading: boolean
-}
-```
+#### Padre: `agents/[id]/page.tsx`
+- Obtiene datos basicos via query directa a Supabase (`agent_catalog`).
+- Obtiene datos enriquecidos via `useAgentDetail` (llama a `GET /agents/{id}/detail`).
+- Resuelve `displayName` con fallback: `detail?.agent.display_name ?? agent.role`.
+- Renderiza `AgentPersonalityCard` dentro del `TabsContent value="info"`.
+- Tambien renderiza metricas rapidas, tab de tareas recientes, tab de credenciales, y accordion con el SOUL JSON crudo.
 
-**Estructura visual:**
-```
-┌─────────────────────────────────────────────┐
-│ [Avatar]  DisplayName                       │
-│           Badge: role                       │
-├─────────────────────────────────────────────┤
-│  soul_narrative (texto narrativo,           │
-│   whitespace-pre-line, text-sm)             │
-└─────────────────────────────────────────────┘
-```
+#### Hook: `useAgentDetail`
+- **Query Key:** `['agent-detail', orgId, agentId]`
+- **Endpoint:** `GET /agents/${agentId}/detail`
+- **Auto-refresh:** Cada 15 segundos (`refetchInterval`).
+- **Stale time:** 10 segundos.
+- **Retorna:** `AgentDetail` con `{ agent, metrics, credentials }`.
 
-**Implementación interna:**
-- Usa `Card`, `CardContent` de shadcn/ui.
-- Avatar: `div` circular de 48px con gradiente (`bg-gradient-to-br from-violet-500 to-indigo-600`) y texto centrado (primera letra de `displayName`, uppercase, `text-lg font-semibold text-white`). Si hay `avatarUrl`, renderiza `<img>` con `onError` fallback.
-- DisplayName: `text-lg font-semibold`.
-- Role badge: `Badge variant="outline"`.
-- Soul narrative: `text-sm text-muted-foreground whitespace-pre-line`.
+### Modelos de Datos (Extensiones)
+- La interfaz `Agent` en `lib/types.ts` ya incluye los campos enriquecidos:
+  ```typescript
+  display_name?: string
+  soul_narrative?: string
+  avatar_url?: string
+  ```
+- Estos son opcionales porque el backend aplica fallbacks cuando no existe registro en `agent_metadata`.
 
-### Modificación: `agents/[id]/page.tsx`
+### Integracion con Backend
+- El contrato de `GET /agents/{id}/detail` ya esta definido y funcional (Paso 2.2 completado).
+- Realiza LEFT JOIN con `agent_metadata` e inyecta los campos enriquecidos en el objeto `agent`.
+- No se requieren cambios en el backend para este paso.
 
-**Cambios:**
-1. Importar `AgentPersonalityCard` y `Skeleton` (ya importado).
-2. Extraer los campos enriquecidos del objeto `detail.agent` (que ya incluye `display_name`, `soul_narrative`, `avatar_url` inyectados por el backend).
-3. Renderizar `AgentPersonalityCard` dentro del `TabsContent value="info"`, **antes** del Card de "Configuración".
-4. El título de la página (h1) pasa de mostrar `agent.role` a mostrar `detail?.agent?.display_name ?? agent.role` — esto da identidad humana inmediatamente al cargar.
-5. El Accordion de "SOUL Definition (Prompt)" se **mantiene** para desarrolladores que quieran ver el JSON crudo, pero se mueve **después** de la tarjeta de personalidad.
-
-**Jerarquía visual resultante en Tab "Información":**
-```
-1. AgentPersonalityCard (nuevo — narrativa visual)
-2. Card: Configuración (existente — datos técnicos)
-3. Accordion: SOUL Definition JSON (existente — para devs)
-```
-
-### Tipos
-
-No se requieren cambios en `types.ts`. El `AgentDetail` ya devuelve `agent` que es de tipo `Agent`, y el backend inyecta los campos extras (`display_name`, `soul_narrative`, `avatar_url`) directamente en el objeto. TypeScript los trata como propiedades dinámicas — se acceden con indexación segura: `detail.agent.display_name`, etc.
-
-Para tipado estricto, se puede extender `Agent` en `types.ts` con campos opcionales, pero **no es necesario para el MVP** — el acceso seguro con `?? null` es suficiente.
+### Version Duplicada No Utilizada
+- Existe una segunda version de `AgentPersonalityCard` en `dashboard/components/shared/AgentPersonalityCard.tsx`.
+- Esta version usa `EmptyState` en lugar de mensaje default, tiene styling mas simple (sin gradientes, sin badge de "Identidad Verificada"), y no esta importada en ningun archivo.
+- **Decision:** Mantener solo la version de `components/agents/` que es la usada. La version `shared/` es un artifact de desarrollo que deberia eliminarse para evitar confusion.
 
 ---
 
 ## 3. Decisiones
 
-| Decisión | Justificación |
-|----------|---------------|
-| **No parsear markdown en `soul_narrative`** | El MVP necesita mostrar texto legible, no un renderer markdown. `whitespace-pre-line` maneja saltos de línea naturales sin añadir dependencia (`react-markdown`). Se puede añadir después. |
-| **Avatar placeholder con gradiente** | Evita dependencia de librerías de avatar (como `react-avatar`). El gradiente `from-violet-500 to-indigo-600` coincide con la paleta dark-mode del proyecto. |
-| **Mantener el Accordion JSON para devs** | Los ingenieros necesitan ver el `soul_json` crudo para debugging. No eliminar esta capacidad; solo cambiar su jerarquía visual. |
-| **No crear un hook nuevo** | `useAgentDetail` ya devuelve los campos enriquecidos. El componente solo necesita props — no lógica de fetching propia. |
-| **Card en lugar de sección libre** | Sigue el patrón existente de shadcn/ui en el proyecto. Coherencia visual garantizada. |
+| # | Decision | Justificacion |
+|---|----------|--------------|
+| D1 | **Priorizar datos basicos sobre enriquecidos** | Si `useAgentDetail` falla, la pagina sigue siendo funcional con los datos de `agent_catalog`. El usuario puede ver la configuracion tecnica del agente aunque no vea su personalidad. |
+| D2 | **Mensaje default para narrativa vacia** | En lugar de mostrar un bloque vacio o un "EmptyState" generico, se muestra un mensaje explicativo que indica que el agente opera bajo directiva tecnica estandar. Esto da contexto al usuario en lugar de dejar un hueco visual. |
+| D3 | **Fallback de avatar con iniciales sobre gradiente** | Solucion visualmente atractida que no requiere asset externo y da una identidad minima reconocible. El gradiente violeta/indigo se alinea con la estetica general del dashboard. |
+| D4 | **`whitespace-pre-line` para la narrativa** | Permite que los saltos de linea en la narrativa se respeten sin necesidad de parsear markdown o HTML. Simple y efectivo para MVP. |
+| D5 | **Estado `avatarError` silencioso** | No se muestra toast ni notificacion cuando el avatar falla porque no es informacion accionable para el usuario. El fallback visual es suficiente. |
 
 ---
 
-## 4. Criterios de Aceptación
+## 4. Criterios de Aceptacion
 
-- [ ] El componente `AgentPersonalityCard.tsx` existe en `dashboard/components/shared/`.
-- [ ] El componente acepta las props: `displayName`, `role`, `soulNarrative`, `avatarUrl`, `isLoading`.
-- [ ] Cuando `soulNarrative` tiene contenido, se muestra como texto legible dentro de un Card.
-- [ ] Cuando `soulNarrative` es null/vacío, se muestra un EmptyState con mensaje en español.
-- [ ] Cuando `avatarUrl` es null, se muestra un avatar placeholder con la inicial del displayName.
-- [ ] Cuando `avatarUrl` existe pero falla la carga (onError), se hace fallback al placeholder.
-- [ ] La página `agents/[id]/page.tsx` renderiza `AgentPersonalityCard` en la pestaña "Información" antes que la card de Configuración.
-- [ ] El h1 del página muestra `display_name` cuando está disponible, fallback a `role` si no.
-- [ ] Se muestra Skeleton mientras `useAgentDetail` está cargando.
-- [ ] El Accordion de SOUL Definition JSON se mantiene accesible debajo de la tarjeta de personalidad.
-- [ ] No hay errores de TypeScript al compilar (`npm run build` pasa sin errores).
+| # | Criterio | Verificable |
+|---|----------|-------------|
+| C1 | El componente `AgentPersonalityCard` se renderiza dentro del tab "Informacion" de la pagina de detalle del agente | ✅ Si/No |
+| C2 | Cuando `isLoading` es true, se muestra skeleton con forma de avatar, nombre y parrafos | ✅ Si/No |
+| C3 | Si `avatar_url` es valido, se muestra la imagen del avatar; si es null, vacio o falla la carga, se muestra fallback con inicial del agente sobre gradiente | ✅ Si/No |
+| C4 | Si `soul_narrative` tiene contenido, se muestra entre comillas con estilo italic y `whitespace-pre-line` | ✅ Si/No |
+| C5 | Si `soul_narrative` es null/vacia, se muestra el mensaje default sobre directiva tecnica estandar | ✅ Si/No |
+| C6 | El `displayName` muestra el valor enriquecido del backend o hace fallback al `role` del agente | ✅ Si/No |
+| C7 | El badge del rol del agente se muestra con estilo secundario/primary visible | ✅ Si/No |
+| C8 | El indicador "Identidad Verificada" se muestra junto al rol | ✅ Si/No |
+| C9 | El componente no rompe la pagina si los datos enriquecidos fallan (los datos basicos siguen visibles) | ✅ Si/No |
+| C10 | La pagina H1 se actualiza con el `displayName` del agente | ✅ Si/No |
 
 ---
 
 ## 5. Riesgos
 
-| Riesgo | Mitigación |
-|--------|-----------|
-| **El backend inyecta campos dinámicos que TypeScript no reconoce** | Acceso seguro con `?.` y `?? null`. Si el tipado causa problemas en build, añadir campos opcionales a la interfaz `Agent` en `types.ts`. |
-| **`soul_narrative` viene con formato inconsistente (JSON, HTML, texto)** | El backend ya lo define como `text` en la migración 020. MVP asume texto plano. Si llega JSON stringified, se muestra tal cual — es un bug de datos, no de UI. |
-| **Avatar URL externa causa CORS o mixed-content** | El `onError` fallback cubre el caso visual. Para producción, validar que las URLs sean HTTPS en el backend. |
-| **El componente se siente "desconectado" del resto de la página** | Usar las mismas clases de Card, spacing (`space-y-4`), y paleta de colores que los componentes existentes. |
+| # | Riesgo | Impacto | Mitigacion |
+|---|--------|---------|------------|
+| R1 | **Duplicidad de componentes:** Existen dos versiones de `AgentPersonalityCard` (`agents/` y `shared/`). Un desarrollador podria importar la version incorrecta. | Medio — confusion en el equipo, inconsistencia visual. | Eliminar `dashboard/components/shared/AgentPersonalityCard.tsx` o consolidar en una sola version exportada desde un unico lugar. |
+| R2 | **Sin reintento automatico en `useAgentDetail`:** Si la llamada falla por un timeout transitorio, el usuario nunca ve la narrativa hasta que hace refresh manual. | Bajo — los datos basicos siguen disponibles, pero la experiencia es incompleta. | Agregar `retry: 1` o `retry: 2` al query de TanStack Query para reintentos automaticos. |
+| R3 | **El auto-refetch cada 15s es innecesario para datos de personalidad:** La narrativa y avatar de un agente no cambian frecuentemente. Esto genera llamadas innecesarias al backend. | Bajo — carga innecesaria en el servidor y consumo de datos del usuario. | Separar la query de metadata personal del agent-detail o aumentar `staleTime`/`refetchInterval` para este dato especifico. Actualmente `useAgentDetail` trae todo junto (agent, metrics, credentials). |
+| R4 | **`whitespace-pre-line` puede causar desbordamiento visual** si la narrativa tiene lineas muy largas sin espacios. | Bajo — en practica la narrativa es texto natural con espacios. | Agregar `overflow-wrap: break-word` o `max-w-full` al parrafo como precaucion. |
 
 ---
 
 ## 6. Plan
 
-| # | Tarea | Complejidad | Dependencias |
-|---|-------|-------------|--------------|
-| 1 | Crear `dashboard/components/shared/AgentPersonalityCard.tsx` con toda la lógica de renderizado (avatar, displayName, narrative, empty state) | Baja | — |
-| 2 | Modificar `dashboard/app/(app)/agents/[id]/page.tsx`: importar componente, extraer campos enriquecidos de `detail.agent`, insertar en Tab "Información", actualizar h1 | Baja | Tarea 1 |
-| 3 | (Opcional) Extender interfaz `Agent` en `types.ts` con `display_name?`, `soul_narrative?`, `avatar_url?` para tipado estricto | Baja | — |
-| 4 | Verificar build sin errores: `cd dashboard && npm run build` | Media | Tareas 1, 2 |
-| 5 | Verificación visual: navegar a `/agents/[id]` con un agente que tenga metadata y uno que no | Baja | Tareas 1, 2 |
+| # | Tarea | Complejidad | Dependencias | Notas |
+|---|-------|-------------|--------------|-------|
+| T1 | Verificar que `AgentPersonalityCard` se integra correctamente en el tab "Informacion" con datos del backend enriquecido | Baja | Paso 2.2 completado | Ya implementado y funcional. Validar visualmente. |
+| T2 | Eliminar la version duplicada en `dashboard/components/shared/AgentPersonalityCard.tsx` | Baja | Ninguna | Limpieza de codigo muerto para evitar confusion. |
+| T3 | Agregar `retry: 1` al query de `useAgentDetail` para tolerancia a fallos transitorios | Baja | Ninguna | Mejora de resiliencia sin cambios de contrato. |
+| T4 | Agregar `overflow-wrap: break-word` al parrafo de narrativa para prevenir desbordamiento | Baja | Ninguna | Precaucion defensiva de CSS. |
+| T5 | Verificar aislamiento multi-org: Agente A en Org 1 no ve metadata de Agente A en Org 2 | Media | Paso 2.5 | Esto depende de las politicas RLS en `agent_metadata` y del filtro por `org_id` en el backend. Validar con prueba directa. |
+| T6 | Documentar en `estado-fase.md` que este paso esta completo y archivar el analisis | Baja | T1-T5 completados | Actualizar registro de fase. |
 
-**Orden recomendado:** 1 → 3 → 2 → 4 → 5
+**Orden recomendado:** T1 → T2 → T3 → T4 → T5 → T6
+
+**Estado actual del paso:** El componente ya esta implementado y funcional (T1). El trabajo restante es pulido y limpieza (T2-T6).
 
 ---
 
 ## 🔮 Roadmap (NO implementar ahora)
 
-- **Markdown/Rich Text rendering:** Si `soul_narrative` evoluciona a formato rico, integrar `react-markdown` o un renderer de bloques.
-- **Avatar personalizado:** Permitir upload de imagen real con crop, almacenada en Supabase Storage.
-- **Editabilidad:** Un botón de "Editar personalidad" que abra un modal para modificar `soul_narrative` y `display_name` desde el frontend (actualmente solo lectura).
-- **Animación de entrada:** Framer Motion para que la tarjeta aparezca con fade-in suave.
-- **Tipado estricto del agente enriquecido:** Crear interfaz `AgentEnriched` que extienda `Agent` con los campos de metadata de forma explícita, en lugar de acceso dinámico.
-- **Internacionalización:** Si el sistema se traduce, `soul_narrative` debería soportar versiones por idioma.
+### Mejoras Post-MVP
+1. **EmptyState visual para agentes sin personalidad:** En lugar del mensaje textual, usar un componente `EmptyState` con icono ilustrativo y un CTA para "Configurar personalidad del agente" cuando el sistema lo permita.
+2. **Editor de narrativa inline:** Permitir que usuarios con permisos editen el `soul_narrative` directamente desde la UI, con preview en tiempo real.
+3. **Avatar upload:** Integrar con Supabase Storage para permitir subir imagenes de avatar en lugar de solo URLs externas.
+4. **Soporte de markdown en narrativa:** Si la narrativa necesita formato rico (negritas, listas, enlaces), integrar un renderizador de markdown ligero (ej. `react-markdown`).
+5. **Separacion de queries:** Dividir `useAgentDetail` en `useAgentPersonality` (datos estaticos, sin refetch) y `useAgentMetrics` (datos dinamicos, con refetch) para optimizar llamadas al servidor.
+6. **Skeleton unificado:** Eliminar el skeleton interno del componente y manejar toda la carga a nivel de pagina para evitar parpadeos entre skeletons padre e hijo.
+
+### Decisiones de Diseño que No Bloquean el Futuro
+- **Props interface extensible:** `AgentPersonalityCardProps` puede crecer con campos como `onEdit`, `permissions`, o `theme` sin requerir reescritura.
+- **Separacion de concerns:** El componente es puramente presentacional; toda la logica de datos vive en el padre y los hooks. Esto facilita probar el componente en aislamiento y reutilizarlo en otros contextos.
+- **Version `shared/` como seed para reutilizacion:** Si en el futuro se necesita mostrar personalidad de agentes en otras partes del dashboard (ej. selector de agentes, lista de agentes), la version `shared/` puede refinarse y usarse como componente base comun.

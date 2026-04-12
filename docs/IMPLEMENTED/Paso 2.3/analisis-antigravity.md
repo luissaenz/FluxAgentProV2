@@ -1,79 +1,89 @@
-# 🧠 ANÁLISIS TÉCNICO: PASO 2.3 - IMPLEMENTAR AGENTPERSONALITYCARD.TSX
+# 🧠 ANÁLISIS TÉCNICO: PASO 2.3 - AGENT PERSONALITY CARD & EXPERIENCE (SOUL UI)
 
 ## 1. Diseño Funcional
 
-Este paso transforma la visualización técnica del agente en una experiencia de "identidad". El objetivo es que el usuario perciba al agente no como un script, sino como una entidad con propósito y personalidad (SOUL).
+Este paso tiene como objetivo transformar la ficha técnica del agente en una experiencia de "identidad digital". No se trata solo de mostrar datos, sino de proyectar la sofisticación y el propósito de cada entidad autónoma del sistema.
 
-- **Happy Path:** Al navegar al detalle de un agente, la sección principal de información muestra la `AgentPersonalityCard`. Esta tarjeta incluye:
-    - **Avatar:** Imagen circular con bordes suavizados (glassmorphism). Fallback automático a icono de `Bot` si no hay URL.
-    - **Nombre Público (`display_name`):** Título prominente que reemplaza el `role` técnico (ej: "Soporte Estratégico" en lugar de `agent-support`).
-    - **Narrativa de Alma (`soul_narrative`):** Párrafo descriptivo que explica el comportamiento y la "filosofía" de ejecución del agente.
-- **Micro-interacciones:** Hover effects que iluminan sutilmente el borde de la tarjeta y una animación de entrada (fade-in + slide-up) para enfatizar la carga de la "personalidad".
+- **Happy Path:** Al visualizar el detalle de un agente, la parte superior de la pestaña "Información" presenta la `AgentPersonalityCard`. 
+    - El usuario es recibido por un avatar estilizado con bordes suavizados (Squircle/Rounded-2xl).
+    - El nombre público (`display_name`) domina la jerarquía visual, proyectando una identidad humana/profesional por encima del rol técnico.
+    - La **Narrativa de Alma (`soul_narrative`)** se presenta en una tipografía elegante, posiblemente en itálica o con un estilo de "cita", transmitiendo la filosofía operativa del agente.
+- **Estética "Wow" (Premium):** 
+    - Uso de gradientes sutiles en el fondo de la tarjeta (`from-card to-muted/30`).
+    - Micro-animaciones de entrada: Un suave `fade-in-up` de **Framer Motion** para simular que el agente se "materializa" al cargar.
+    - Hover effects: Elevación sutil y cambio de opacidad en el gradiente de borde.
 - **Edge Cases MVP:**
-    - **Metadata Ausente:** Si el backend devuelve `null` en narrativa, se mostrará un texto elegante: *"Este agente opera bajo directivas técnicas puras. Definición narrativa pendiente."*
-    - **Error de Imagen:** Uso de `AvatarFallback` de Radix para evitar espacios en blanco o iconos de "imagen rota".
-- **Manejo de Errores:** Si `useAgentDetail` falla, la tarjeta muestra su propio estado de esqueleto (Skeleton) independiente de las métricas.
+    - **Metadata Inexistente:** Si el backend no tiene registro en `agent_metadata`, la tarjeta debe autogenerar un fallback estético usando las iniciales del `role` y un gradiente de color único por agente.
+    - **Avatar Roto:** Fallback inmediato al icono de `Bot` (lucide-react) o a las iniciales mencionadas.
+- **Manejo de Errores:**
+    - Fallback visual ante fallos de carga del detalle (Skeleton state unificado con el resto del dashboard).
+
+---
 
 ## 2. Diseño Técnico
 
 ### Componentes y Estructura
-- **Nuevo Componente:** `AgentPersonalityCard.tsx`
-    - **Ubicación:** `dashboard/components/agents/` (crear directorio).
-    - **Props:** `agent: Agent`.
-- **Modificación de Página:** `dashboard/app/(app)/agents/[id]/page.tsx`
-    - Reemplazar el `Accordion` de "SOUL Definition" por la nueva tarjeta.
-    - Mover el `CodeBlock` de `soul_json` a una sección secundaria de "Especificaciones Técnicas" o bajo un nuevo Tab de "Configuración Avanzada".
+- **`AgentPersonalityCard.tsx` (Nuevo):**
+    - Componente atomizado en `dashboard/components/agents/`.
+    - **Tecnologías:** Radix UI `Avatar` (para gestión de fallbacks), Framer Motion (para transiciones premium).
+    - **Props:** 
+        - `displayName`: string (fallback al role).
+        - `role`: string (identificador técnico).
+        - `soulNarrative`: string | null.
+        - `avatarUrl`: string | null.
+        - `isLoading`: boolean.
 
-### Tipos de Datos (Refactor Obligatorio)
-Se debe actualizar `dashboard/lib/types.ts`:
-```typescript
-export interface Agent {
-  // ... campos existentes ...
-  display_name?: string;    // Inyectado por backend
-  soul_narrative?: string;  // Inyectado por backend
-  avatar_url?: string;     // Inyectado por backend
-}
-```
+### Integración en Página
+- **`dashboard/app/(app)/agents/[id]/page.tsx`:**
+    - Sustitución de la cabecera actual por una composición que combine el `BackButton` con la nueva tarjeta.
+    - La cabecera H1 de la página debe sincronizarse con el `displayName` de la tarjeta para mantener coherencia visual.
 
-### Estética Premium
-- **Fondo:** `bg-card/50` con `backdrop-blur-md` (si el tema lo permite).
-- **Borde:** Gradiente sutil `from-primary/20 to-secondary/20`.
-- **Tipografía:** Título en `font-semibold`, narrativa con `leading-relaxed` y color `text-muted-foreground`.
+### Modelos de Datos (Frontend Types)
+- Extensión de la interfaz `Agent` en `dashboard/lib/types.ts` (Referenciado en `docs/estado-fase.md` sección 3).
+    - Se aseguran los campos `display_name`, `soul_narrative` y `avatar_url` como opcionales para evitar romper implementaciones actuales.
+
+---
 
 ## 3. Decisiones
 
-1. **Uso de Radix UI Avatar:** Se elige sobre la etiqueta `<img>` nativa por su manejo avanzado de estados de carga y fallbacks integrados, crucial para una UI profesional.
-2. **Framer Motion para el "Despertar":** Aplicar una animación de opacidad lenta al componente para reforzar la narrativa de que el agente es una entidad inteligente que se "carga" en el sistema.
-3. **Preservar el SOUL JSON:** Aunque se oculte de la vista principal, el JSON original es vital para debugging. Se mantendrá accesible pero en un segundo plano visual.
+1. **Radix UI Avatar vs <img>:** Se elige Radix UI por su capacidad nativa de manejar el ciclo de vida del avatar (Loading -> Error -> Fallback) de forma declarativa y accesible.
+2. **Framer Motion para "Personalidad":** Se decide incluir una animación de entrada `initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}`. Esto aleja el dashboard de una herramienta estática y lo acerca a una plataforma "inteligente" y viva.
+3. **Squircle/Rounded-2xl UI:** Se abandona el círculo perfecto para el avatar por una estética más moderna y alineada con interfaces de alto nivel (tipo Apple/Modern SaaS).
 
-## 4. Criterios de Aceptación (NUEVO)
+---
 
-- [ ] Las interfaces en `lib/types.ts` incluyen `display_name`, `soul_narrative` y `avatar_url` como opcionales.
-- [ ] El componente `AgentPersonalityCard` renderiza el `display_name` como encabezado de la tarjeta.
-- [ ] Si `avatar_url` es válido, la imagen se visualiza sin distorsión (object-cover).
-- [ ] La narrativa utiliza un componente de texto que respeta el espaciado (whitespace-pre-wrap si es necesario).
-- [ ] El dashboard no presenta errores de lint/typescript tras la integración.
-- [ ] La página de detalle del agente carga correctamente incluso si el registro de metadata no existe (fallback al role técnico).
+## 4. Criterios de Aceptación
+
+- [ ] El componente `AgentPersonalityCard` utiliza `framer-motion` para una transición de entrada fluida.
+- [ ] El avatar muestra correctamente la imagen de `avatar_url` o, en su defecto, las iniciales del nombre con un fondo gradiente.
+- [ ] El `display_name` se visualiza correctamente si existe; de lo contrario, muestra el `role` capitalizado.
+- [ ] La narrativa de alma respeta saltos de línea y se muestra con un estilo tipográfico diferenciado (ej. `italic`, `text-muted-foreground`).
+- [ ] El componente es totalmente responsivo (pasa de layout horizontal en desktop a vertical en mobile si es necesario).
+- [ ] El estado `isLoading: true` renderiza Skeletons que mantienen las dimensiones exactas de la tarjeta final.
+
+---
 
 ## 5. Riesgos
 
 | Riesgo | Impacto | Estrategia de Mitigación |
 |--------|---------|-------------------------|
-| **Carga Lenta de Imágenes:** Avatares externos pueden ralentizar la percepción de velocidad. | Medio | Usar Skeleton local dentro de la tarjeta y pesos de imagen optimizados. |
-| **Pérdida de Contexto Técnico:** Usuarios avanzados podrían extrañar ver el prompt crudo rápidamente. | Bajo | Mantener el `Accordion` técnico al pie del tab de información. |
-| **Mismatch de Tipos:** El frontend podría fallar si el backend no envía los campos inyectados. | Alto | Definir valores por defecto en la desestructuración de props del componente. |
+| **Inconsistencia de Naming:** El backend podría devolver `display_name` vacío mientras el detail carga. | Medio | Implementar lógica de fallback robusta en el componente: `displayName ?? role`. |
+| **Performance de Animaciones:** Exceso de Framer Motion en listas largas. | Bajo | La tarjeta solo vive en el detalle (una por vista), el impacto es despreciable. |
+| **Contrato de Tipos:** Desconexión entre el JSON del backend y las interfaces TS. | Alto | Validación estricta en el hook `useAgentDetail` antes de pasar datos al componente. |
 
-## 6. Plan de Implementación
+---
 
-1. **Infraestructura (Baja):** Crear el directorio `dashboard/components/agents` y actualizar `lib/types.ts`.
-2. **Componente Soul (Media):** Implementar `AgentPersonalityCard.tsx` con Shadcn UI (Card, Avatar) y Framer Motion.
-3. **Integración UI (Media):** Modificar `app/(app)/agents/[id]/page.tsx` para inyectar la tarjeta y reordenar la información técnica.
-4. **Pulido (Baja):** Ajustar Skeletons y validación de fallbacks.
+## 6. Plan
+
+1. **Definición de Tipos (Baja):** Refinar `lib/types.ts` para asegurar que los nuevos campos de SOUL estén presentes y tipados correctamente.
+2. **Construcción del Componente (Media):** Implementar `AgentPersonalityCard.tsx` integrando Radix UI Avatar y Framer Motion. Configurar gradientes y estilos tailwind.
+3. **Integración en Detail Page (Media):** Inyectar el componente en `agents/[id]/page.tsx`, pasando las props desde el hook `useAgentDetail`.
+4. **Validación de Fallbacks (Baja):** Probar con un agente sin metadata para asegurar que la UI "degrada gracilmente" a los valores técnicos básicos.
 
 ---
 
 ## 🔮 Roadmap (NO implementar ahora)
 
-- **Editor de Personalidad:** Formulario in-place para que el usuario pueda editar el `display_name` y la `narrative` directamente desde el panel.
-- **Generación de Avatares:** Integrar con una API de generación de imágenes (o el `generate_image` tool) para crear avatares únicos basados en el rol del agente.
-- **Voces:** Extender la metadata para incluir IDs de voces de ElevenLabs/OpenAI para futura síntesis de voz en el chat.
+- **Editor de Identidad:** Modal para que el admin pueda subir un avatar o describir la "personalidad" del agente desde la propia tarjeta.
+- **Dynamic Themes:** Cambiar el color del gradiente de la tarjeta basado en las capacidades/herramientas predominantes del agente (ej. azul para análisis, verde para ejecución, naranja para creatividad).
+- **Status Indicator Vivo:** Pequeña animación de "pulsación" en el avatar cuando el agente tiene una tarea en ejecución activa.

@@ -1,303 +1,212 @@
-# ANÁLISIS TÉCNICO — PASO 2.3 (Agente: Claude)
+# 📋 ANÁLISIS TÉCNICO — PASO 2.4
 
-## Paso: 2.3 [Frontend]
-## Objetivo: Implementar componente `AgentPersonalityCard.tsx`
-## Detalle: Mostrar el SOUL del agente no como JSON crudo, sino como una descripción narrativa legible por humanos en la pestaña "Información".
-
----
-
-## 1. Comprensión del Paso
-
-**Problema que resuelve:** Actualmente la página de detalle del agente (`agents/[id]/page.tsx`) muestra `soul_json` como JSON crudo dentro de un `CodeBlock`. Esto es ilegible para usuarios no técnicos. El paso crea un componente que transforma `soul_narrative` (string narrativo) en una presentación visual atractivo.
-
-**Relación con la fase:** Es el paso de UI que consume los datos enriquecidos del backend (Paso 2.2). Sin el componente, el `soul_narrative` no se muestra. Depende de que `agent_metadata` tenga datos (Paso 2.1) y el backend los entregue (Paso 2.2).
-
-**Inputs:** Campo `soul_narrative` (string), `display_name` (string), `avatar_url` (string, opcional) del endpoint `GET /agents/{id}/detail`.
-**Outputs:** Componente `AgentPersonalityCard.tsx` que se integra en `agents/[id]/page.tsx`, pestaña "Información".
+**Paso:** 2.4
+**Rol:** Frontend
+**Agente:** Claude
+**Fecha:** 2026-04-12
 
 ---
 
-## 2. Supuestos y Ambigüedades
+## 1. Diseño Funcional
 
-### Ambigüedad 1: ¿Dónde se coloca el componente en la página?
-**Resolución:** Reemplazar el `Accordion` con `soul_json` crudo en la pestaña "Información" (`TabsContent value="info"`) por el nuevo `AgentPersonalityCard`. El `CodeBlock` actual muestra `soul` — se elimina y se reemplaza por la card narrativa.
+### 1.1 Comprensión del Paso
 
-### Ambigüedad 2: ¿Qué pasa si `soul_narrative` es `null` o vacío?
-**Resolución:** Mostrar un mensaje fallback legible: "Este agente aún no tiene una descripción de personalidad definida." No mostrar JSON ni valores técnicos. Mantener la card para que el admin sepa que existe pero falta contenido.
+**Problema que resuelve:**
+La pestaña "Información" del detalle de agente muestra la lista de `allowed_tools` como texto plano sin contexto semántico: `"noop, obtener_factor_climatico, verificar_pronostico_real"`. El agente no puede inferir qué hace cada herramienta ni sus características operativas (timeout, si requiere aprobación, tags descriptivos).
 
-### Ambigüedad 3: ¿Avatar obligatorio?
-**Resolución:** `avatar_url` es opcional. Si no existe, usar un icono de robot (`Bot` de lucide-react) como avatar placeholder — mismo patrón que el fallback en `agents/[id]/page.tsx:90` (`<Bot className="h-6 w-6" />`).
+**Inputs:**
+- `AgentPersonalityCard` ya rendered en la pestaña (Paso 2.3 completado).
+- `allowed_tools: string[]` disponible en el objeto `agent` local.
+- `detail?.credentials` del endpoint `GET /agents/{id}/detail` con `{ tool, description }` por cada tool que tiene credencial asociada.
 
-### Ambigüedad 4: ¿Se elimina el `CodeBlock` del SOUL?
-**Resolución:** El `CodeBlock` muestra `soul_json` que es el JSON técnico de CrewAI. El nuevo diseño narrativo usa `soul_narrative`. Se elimina el accordion `soul` del CodeBlock y se reemplaza por `AgentPersonalityCard`. El `soul_json`raw queda accesible si se necesita debugging — pero ya no es el foco de la pestaña "Información".
+**Outputs esperados:**
+- Nuevo componente `AgentToolsCard.tsx` integrado en la pestaña "Información".
+- Muestra cada herramienta con: nombre, descripción narrativa, badges (tags, requires_approval, timeout).
+- La pestaña "Credenciales" ya consume `detail?.credentials` pero muestra tool names sin iconografía ni categorización clara.
+
+**Rol en la fase:**
+Este es el cierre de la experiencia "identidad + capacidades" del agente. Con 2.3 (personalidad narrativa) y 2.4 (descripciones de herramientas), el panel del agente alcanza el estándar de usability del MVP para E5.
+
+### 1.2 Happy Path
+
+```
+Usuario abre detalle de agente
+  → Tabs: Información, Tareas, Credenciales
+  → Tab "Información" renderiza:
+      ├── AgentPersonalityCard (nombre, avatar, narrativa SOUL — Paso 2.3)
+      ├── AgentToolsCard (NUEVO — tools del agente con metadata)
+      └── Configuración (role, modelo, max_iter)
+  → AgentToolsCard muestra cada tool como tarjeta con:
+      - Nombre de la herramienta (未必ados como "obtener_factor_climatico")
+      - Descripción legible (del ToolMetadata.description)
+      - Badges: tags, requires_approval, timeout
+```
+
+### 1.3 Edge Cases MVP
+
+| Caso | Comportamiento esperado |
+|------|------------------------|
+| `allowed_tools` vacío `[]` | Mensaje "Este agente no tiene herramientas asignadas" en AgentToolsCard |
+| Tool sin metadata en registry (tool existe en DB pero no está registrado en runtime) | Mostrar nombre con badge "Sin descripción disponible" y descripción fallback `null` |
+| Tool sin description en ToolMetadata | Usar el `name` como descripción de fallback, sin badge |
+| `loadingDetail` true | Skeleton de cards equivalente al de AgentPersonalityCard |
+| Credenciales vacías | Mantener estado actual (mensaje "Sin credenciales asociadas") |
+
+### 1.4 Manejo de Errores
+
+- **registry no carga (runtime):** Las tools se muestran con nombre y descripción "Información no disponible" sin crashear la UI.
+- **API detail falla:** `useAgentDetail` tiene `staleTime: 10_000` y `refetchInterval: 15_000`. Se muestra último valor cacheado o estado vacío sin bloquear la página.
 
 ---
 
-## 3. Diseño Funcional
+## 2. Diseño Técnico
 
-### Happy Path
-1. Usuario abre la pestaña "Información" del detalle de un agente.
-2. Ve `AgentPersonalityCard` con:
-   - Avatar (imagen o icono `Bot` fallback)
-   - `display_name` como nombre principal
-   - `soul_narrative` como párrafo descriptivo
-3. Si `soul_narrative` es null/vacío, ve mensaje placeholder.
+### 2.1 Componentes
 
-### Edge Cases
-- **`soul_narrative` null:** Card muestra mensaje placeholder "Este agente aún no tiene una descripción..."
-- **`avatar_url` null:** Icono `Bot` de lucide-react.
-- **`display_name` null:** Fallback al `agent.role` formateado (title case) — mismo fallback que backend.
-- **Dashboard sin agente cargado:** Comportamiento existente (loading skeleton).
+#### Nuevo: `AgentToolsCard.tsx`
+**Ubicación:** `dashboard/components/agents/AgentToolsCard.tsx`
 
-### Manejo de Errores
-- No hay errores de red en este componente — consume datos que ya vinieron del query de la página padre.
-- Si `agent` o `soul_narrative` faltan, se muestran placeholders.
-
----
-
-## 4. Diseño Técnico
-
-### Archivo: `dashboard/components/agents/AgentPersonalityCard.tsx`
-
-**Ubicación:** `dashboard/components/agents/` (directorio nuevo para componentes de agentes).
-
-**Props:**
+Props:
 ```typescript
-interface AgentPersonalityCardProps {
-  displayName: string | null | undefined
-  soulNarrative: string | null | undefined
-  avatarUrl: string | null | undefined
-  agentRole: string
+interface AgentToolsCardProps {
+  allowedTools: string[]           // desde agent.allowed_tools
+  credentials: ToolCredential[]     // desde detail?.credentials (para marcar cuáles requieren credencial)
+  isLoading: boolean
+}
+
+interface ToolCredential {
+  tool: string
+  description: string | null
 }
 ```
 
-**Estructura del componente:**
-```
-Card
-├── CardHeader (flex row, gap-4, items-center)
-│   ├── Avatar (img si avatarUrl, Bot icon si no)
-│   └── div (flex column)
-│       ├── CardTitle (displayName o role formateado)
-│       └── CardDescription (agentRole)
-└── CardContent
-    └── p (soulNarrative o placeholder)
-```
+Render:
+- Si `isLoading`: Skeleton (3 tarjetas de tool)
+- Si `allowedTools.length === 0`: Empty state
+- Para cada tool: `ToolCard` con nombre, descripción, badges
 
-**Código del componente:**
+#### Componente interno: `ToolCard`
+- Nombre formateado (reemplazar `_` con espacios, title case)
+- Descripción del ToolMetadata (o fallback)
+- Badge de tags (max 3 visibles)
+- Badge `requires_approval: true` → color warning
+- Badge `timeout_seconds` → "30s timeout"
+- Indicador `requires_credential` si existe en `credentials`
+
+#### Modificación: `agents/[id]/page.tsx`
+- Importar `AgentToolsCard`
+- Ubicarlo en `TabsContent value="info"` después de `AgentPersonalityCard`
+- Reemplazar el div hardcodeado de "Herramientas" en Configuracion por el nuevo componente
+
+### 2.2 Integración con Tipos Existentes
+
+**Tipo a agregar en `lib/types.ts`:**
 ```typescript
-'use client'
-
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Bot, User } from 'lucide-react'
-import Image from 'next/image'
-
-interface AgentPersonalityCardProps {
-  displayName: string | null | undefined
-  soulNarrative: string | null | undefined
-  avatarUrl: string | null | undefined
-  agentRole: string
-}
-
-export function AgentPersonalityCard({
-  displayName,
-  soulNarrative,
-  avatarUrl,
-  agentRole,
-}: AgentPersonalityCardProps) {
-  const hasNarrative = soulNarrative && soulNarrative.trim().length > 0
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center gap-4 pb-2">
-        {/* Avatar */}
-        <div className="flex-shrink-0">
-          {avatarUrl ? (
-            <div className="relative h-12 w-12 overflow-hidden rounded-full bg-muted">
-              <Image
-                src={avatarUrl}
-                alt={displayName || agentRole}
-                fill
-                className="object-cover"
-              />
-            </div>
-          ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Bot className="h-6 w-6 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-
-        {/* Nombre y Role */}
-        <div className="flex flex-col gap-1 min-w-0">
-          <CardTitle className="text-xl truncate">
-            {displayName || agentRole.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-          </CardTitle>
-          <CardDescription className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs font-normal">
-              {agentRole}
-            </Badge>
-          </CardDescription>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-2">
-        {hasNarrative ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {soulNarrative}
-          </p>
-        ) : (
-          <p className="text-sm italic text-muted-foreground">
-            Este agente aún no tiene una descripción de personalidad definida.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  )
+export interface ToolInfo {
+  name: string
+  description: string | null
+  tags: string[]
+  requires_approval: boolean
+  timeout_seconds: number
+  retry_count: number
 }
 ```
 
-### Integración en `agents/[id]/page.tsx`
+**Nota de coherencia:** El tipo `AgentDetail.credentials` ya existe en `lib/types.ts` líneas 213-216 con `tool: string` y `description: string | null`. El contrato del backend es compatible. El tipo `ToolInfo` es nuevo y no reemplaza nada existente.
 
-**Cambio en el tab "Información" (líneas ~136-161):**
+### 2.3 Modelos de Datos
 
-Reemplazar:
-```tsx
-<Accordion type="single" collapsible>
-  <AccordionItem value="soul">
-    <AccordionTrigger>SOUL Definition (Prompt)</AccordionTrigger>
-    <AccordionContent>
-      <CodeBlock code={soul} />
-    </AccordionContent>
-  </AccordionItem>
-</Accordion>
-```
+No hay cambios en modelos de datos. El paso es 100% frontend.
 
-Por:
-```tsx
-<AgentPersonalityCard
-  displayName={agent.display_name}
-  soulNarrative={agent.soul_narrative}
-  avatarUrl={agent.avatar_url}
-  agentRole={agent.role}
-/>
-```
+### 2.4 Integración con Contratos Existentes
 
-**Fuente de datos:**
-- `agent.display_name` — viene de `agent_metadata` inyectado en `agent` por backend (Paso 2.2).
-- `agent.soul_narrative` — viene de `agent_metadata` inyectado en `agent` por backend (Paso 2.2).
-- `agent.avatar_url` — viene de `agent_metadata` inyectado en `agent` por backend (Paso 2.2).
+- **`GET /agents/{id}/detail`**: No se modifica el backend. El frontend consume el contrato existente enriquecido en Paso 2.2.
+- **`detail?.credentials`**: Disponible y funcional. Se usa para mostrar cuáles tools requieren credencial.
+- **`tool_registry` (backend Python)**: Proveedor de metadata en runtime. No se expone al frontend directamente — el frontend consume la descripción via `credentials.description` o por nombre de tool via metadata estática (simulada en el componente si no se tiene acceso).
 
-**Import a agregar en `agents/[id]/page.tsx`:**
-```typescript
-import { AgentPersonalityCard } from '@/components/agents/AgentPersonalityCard'
-```
-
-### Coherencia con `estado-fase.md`
-- Usa componentes existentes de `shadcn/ui` (`Card`, `Badge`).
-- El fallback de `displayName` usa el mismo pattern que backend: `agentRole.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())`.
-- Mensaje de placeholder en español — coherente con el resto del dashboard.
+**Ambigüedad detectada:** El `tool_registry` es Python y corre en el servidor. El frontend no puede acceder a metadata de tools directamente — solo recibe `credentials` que el backend calcula con `tool_registry.get(tool_name)`. Para tools que NO tienen credencial, el backend no devuelve descripción. **Resolución propuesta:** En el frontend, hardcodear un mapping estático de tool → descripción para las tools conocidas del dominio Bartenders (preventa, escandallo, inventario, clima). Para herramientas genéricas sin mapping, usar la lógica de fallback (nombre formateado + "Sin descripción disponible").
 
 ---
 
-## 5. Decisiones Tecnológicas
+## 3. Decisiones
 
-### Decisión 1: Crear directorio `components/agents/`
-**Elección:** Crear `dashboard/components/agents/AgentPersonalityCard.tsx` en un directorio dedicado para componentes de agentes.
-**Justificación:** Permite organizar componentes relacionados con agentes (actualmente solo existe la página). Si en el futuro se crean más componentes (ej. `AgentListCard.tsx`), ya hay estructura. No hay nada类似的 existente.
+### D3.1: Descripciones de tools via mapping estático en frontend
 
-### Decisión 2: Mostrar siempre la card, incluso sin narrative
-**Elección:** La card siempre se renderiza. Si no hay `soul_narrative`, muestra mensaje placeholder.
-**Justificación:** El diseño comunica "existe un agente con esta identidad". Ocultar la card completamente podría confundir al usuario que espera ver la información del agente. Placeholder con mensaje es más informativo.
+El backend `agents.py` (línea 108-116) solo retorna `credentials` para tools que el agente tiene asociadas Y que el registry puede resolver. El frontend no tiene acceso a `ToolMetadata` del registry Python directamente.
 
-### Decición 3: Reemplazar el Accordion de `soul_json`, no complementar
-**Elección:** Eliminar el `CodeBlock` que muestra `soul_json` crudo y reemplazarlo por `AgentPersonalityCard`.
-**Justificación:** El objetivo del paso es mostrar narrativa legible, no JSON técnico. Mostrar ambos sería redundante y contradice el objetivo de "no como JSON crudo". El `soul_json`raw sigue accesible via debugging directo en DB si se necesita.
+**Decisión:** Crear un mapping estático `TOOL_DESCRIPTIONS` en `dashboard/lib/tool-descriptions.ts` con las tools del dominio Bartenders y sus descripciones narrativas. Para tools desconocidas, fallback al nombre formateado.
 
----
+**Justificación:** Evita crear un endpoint nuevo solo para consultar metadata de tools. Las tools registradas en el sistema son conocidas y finitas para el MVP. El mapping es mantenible y extensible.
 
-## 6. Criterios de Aceptación
+### D3.2: Formato de nombre legible
 
-| # | Criterio | Verificable sin ambigüedad |
-|---|----------|--------------------------|
-| 1 | El componente `AgentPersonalityCard` existe en `dashboard/components/agents/` | El archivo existe en la ruta |
-| 2 | La card muestra `displayName` como título | Visualmente: el nombre aparece como `CardTitle` |
-| 3 | La card muestra `soulNarrative` como párrafo legible | Visualmente: texto narrativo en `CardContent` |
-| 4 | Si `soulNarrative` es null/vacío, muestra mensaje placeholder | Visualmente: texto "Este agente aún no tiene..." aparece |
-| 5 | Si no hay `avatarUrl`, muestra icono `Bot` fallback | Visualmente: icono robot visible |
-| 6 | `agent.role` se muestra como Badge bajo el nombre | Visualmente: Badge con texto del role |
-| 7 | La card reemplaza el `CodeBlock` del `soul_json` en la pestaña "Información" | El accordion con JSON crudo ya no aparece |
-| 8 | La integración consume `agent.display_name`, `agent.soul_narrative`, `agent.avatar_url` del endpoint enriquecido | Los campos se leen correctamente del objeto `agent` |
+`obtener_factor_climatico` → "Obtener Factor Climatico" (title case, guiones bajos reemplazados por espacios).
+
+**Decisión:** Función utility `formatToolName(name: string): string` que normaliza nombres de tools a texto legible.
+
+### D3.3: Badges de metadata operativa
+
+Solo se muestran `requires_approval` y `timeout_seconds` como badges visuales. `retry_count` se omite para MVP (información secundaria).
 
 ---
 
-## 7. Riesgos
+## 4. Criterios de Aceptación
 
-### Riesgo 1: `agent` no tiene los campos `display_name`, `soul_narrative`, `avatar_url`
-**Severidad:** Baja.
-**Descripción:** Si el backend no hizo el enrichment (fallback o versión old), estos campos serán `undefined` y el componente debe manejarlo.
-**Mitigación:** El componente usa `||` y `?.` para null/undefined — el fallback a `agentRole` formateado para `displayName` y el mensaje placeholder para `soulNarrative` ya manejan este caso.
-
-### Riesgo 2: `Image` de Next.js con `avatarUrl` externo puede fallar
-**Severidad:** Baja.
-**Descripción:** Si `avatar_url` apunta a una URL externa no configurada en `next.config`, el componente crasheará.
-**Mitigación:** Usar `<img>` nativo en vez de `next/image` para URLs externas, o verificar que `next.config` permite dominios externos. Por ahora se usa `next/image` con `object-cover` y fallback a `Bot` icon en error de carga (`onError`).
-
-### Riesgo 3: Tipo `Agent` en `types.ts` no tiene `display_name`, `soul_narrative`, `avatar_url`
-**Severidad:** Media.
-**Descripción:** El tipo `Agent` definido en `types.ts` no incluye los campos nuevos. TypeScript podría marcar como error.
-**Mitigación:** Actualizar el tipo `Agent` para incluir `display_name?: string`, `soul_narrative?: string`, `avatar_url?: string`.
+| # | Criterio | Verificación |
+|---|----------|--------------|
+| CA1 | El componente `AgentToolsCard` se renderiza sin errores en la pestaña "Información" | Inspección visual en `/agents/[id]` |
+| CA2 | Si `allowed_tools` está vacío, se muestra mensaje "Este agente no tiene herramientas asignadas" | Crear ticket con agente sin tools |
+| CA3 | Cada tool muestra su nombre formateado (ej: `obtener_factor_climatico` → "Obtener Factor Climatico") | Comparar con input |
+| CA4 | Las tools de Bartenders muestran descripción narrativa (no solo el nombre técnico) | Verificar tools: `obtener_factor_climatico`, `verificar_pronostico_real` |
+| CA5 | El badge `requires_approval` aparece si la tool lo requiere | Herramienta con `requires_approval: true` en registry |
+| CA6 | Los estados de loading muestran skeleton y no bloquean el render | Throttle red simulando slow network |
+| CA7 | La página de detalle del agente sigue cargando aunque `AgentToolsCard` falle | Verificar en DevTools que errores de tool no crashean el tab |
+| CA8 | Las tools marcadas como `requires_credential` en `credentials` muestran indicador visual | Cross-reference con tab "Credenciales" |
 
 ---
 
-## 8. Plan de Implementación
+## 5. Riesgos
 
-| # | Tarea | Complejidad | Dependencias |
-|---|-------|-------------|--------------|
-| 1 | Crear directorio `dashboard/components/agents/` | Baja | Ninguna |
-| 2 | Crear `AgentPersonalityCard.tsx` con estructura Card + Avatar + narrative | Media | Tipos actualizados (Tarea 3) |
-| 3 | Actualizar tipo `Agent` en `types.ts` para incluir campos de metadata | Baja | Ninguna |
-| 4 | Integrar `AgentPersonalityCard` en `agents/[id]/page.tsx`, reemplazar accordion | Baja | Tareas 1, 2 |
-| 5 | Eliminar import unused de `CodeBlock` y `Accordion` si ya no se usan | Baja | Tarea 4 |
-
-**Orden recomendado:** 3 → 1 → 2 → 4 → 5.
+| # | Riesgo | Probabilidad | Impacto | Mitigación |
+|---|--------|-------------|---------|------------|
+| R1 | El mapping estático queda desincronizado si se registran nuevas tools en el registry | Media | Baja | Documentar que cada nueva tool debe aggiornare el mapping. El fallback por nombre garantiza que nunca se muestre "undefined" |
+| R2 | Si una tool existe en `agent_catalog.allowed_tools` pero no está en el registry Python, falla el `tool_registry.get(tool_name)` en backend (línea 109) | Baja | Baja | El try/except en `agents.py` línea 115-116 ya captura el error. La tool se excluye de `secret_refs` silenciosamente. El frontend recibe `credentials` sin esa tool — sin break, solo lista incompleta |
+| R3 | El componente no escala si un agente tiene 20+ tools | Baja | Baja | Limitar visualización a scroll interno + "Mostrar más" si `allowed_tools.length > 10`. MVP no requiere esta complejidad |
 
 ---
 
-## 9. Testing
+## 6. Plan
 
-### Caso 1: Con metadata completa
-- Setup: Agente con `display_name: "Ana Analyst"`, `soul_narrative: "Experta en..."`, `avatar_url: "https://..."`
-- Verificar: Card con avatar, nombre "Ana Analyst", badge con role, párrafo con narrative
+### Tarea 1: Crear mapping estático de descripciones
+**Archivo:** `dashboard/lib/tool-descriptions.ts`
+**Complejidad:** Baja
+**Descripción:** Mapping `Record<string, ToolDescription>` con nombre de tool → `{ description, tags, requiresApproval, timeoutSeconds }`. Poblar con tools de Bartenders y builtin.
 
-### Caso 2: Sin soul_narrative
-- Setup: Agente con `display_name: "Analyst Bot"`, `soul_narrative: null`
-- Verificar: Card visible, avatar (Bot icon), nombre "Analyst Bot", párrafo placeholder "Este agente aún no tiene..."
+### Tarea 2: Crear utility de formateo de nombres
+**Archivo:** `dashboard/lib/tool-descriptions.ts` (mismo archivo)
+**Complejidad:** Baja
+**Descripción:** Función `formatToolName(name: string): string`
 
-### Caso 3: Sin avatar_url
-- Setup: Agente con `display_name: "Test Agent"`, `soul_narrative: "..."`, `avatar_url: null`
-- Verificar: Icono Bot visible en lugar de imagen
+### Tarea 3: Implementar `AgentToolsCard`
+**Archivo:** `dashboard/components/agents/AgentToolsCard.tsx`
+**Complejidad:** Media
+**Dependencias:** Tarea 1 y 2
+**Descripción:** Componente principal. Recibe `allowedTools`, `credentials`, `isLoading`. Renderiza grid de `ToolCard` o empty state o skeleton.
 
-### Caso 4: Sin display_name
-- Setup: Agente con `display_name: null`, `role: "analyst"`, `soul_narrative: "..."`
-- Verificar: Título muestra "Analyst" (role formateado)
+### Tarea 4: Integrar en `agents/[id]/page.tsx`
+**Archivo:** `dashboard/app/(app)/agents/[id]/page.tsx`
+**Complejidad:** Baja
+**Dependencias:** Tarea 3
+**Descripción:** Importar `AgentToolsCard`. Reemplazar el div `<div><strong>Herramientas:</strong>{(agent.allowed_tools || []).join(', ') || '—'}</div>` (línea 159-161) por `<AgentToolsCard allowedTools={agent.allowed_tools || []} credentials={credentials} isLoading={loadingDetail} />`.
 
----
-
-## 10. Consideraciones Futuras (No implementar ahora)
-
-### Botón de editar SOUL
-Future: Agregar un botón "Editar" en la card que abra un diálogo para actualizar `soul_narrative` via `PATCH /agents/{id}/metadata`.
-
-### Avatar upload
-Future: Permitir subir una imagen de avatar que se guarde en `agent_metadata.avatar_url`. Requiere storage bucket y endpoint de upload.
-
-### SOUL version history
-Future: Guardar versiones anteriores de `soul_narrative` para auditoría de cambios de personalidad.
+### Tarea 5: Verificación visual
+**Acción:** Abrir detalle de un agente con tools (agente "bartender-preventa" en org de demo). Verificar que las descripciones corresponden al mapping, los badges son visibles y el loading state es correcto.
 
 ---
 
 ## 🔮 Roadmap (NO implementar ahora)
-- **Edición inline del SOUL:** Modal/drawer para que el admin edite `soul_narrative` y `display_name` directamente desde la card.
-- **Templates de SOUL:** Selector de templates predefinidos para popular la descripción narrativa de nuevos agentes rápidamente.
-- **Métricas de uso del SOUL:** Cuántas veces se ejecutó un agente con cada SOUL — correlación entre personalidad y performance.
+
+- **Endpoint de metadata dinámica:** Crear `GET /tools/metadata` que el frontend pueda consultar para obtener ToolMetadata en tiempo real, eliminando la necesidad del mapping estático.
+- **Filtro por tag:** Agregar botones de filtro en AgentToolsCard por tag (ej: "mostrar solo tools de clima", "mostrar tools que requieren aprobación").
+- **Tool detail modal:** Click en una tool abre un modal con parámetros, ejemplos de uso y logs de invocación reciente.
+- **Integración con tool invocations reales:** Mostrar conteo de veces que cada tool fue ejecutada por este agente (requiere ampliar el contrato de `GET /agents/{id}/detail`).
