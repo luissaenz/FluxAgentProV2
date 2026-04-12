@@ -95,6 +95,10 @@ export interface Agent {
   model?: string
   created_at: string
   updated_at: string
+  // Campos enriquecidos inyectados por el backend REST
+  display_name?: string
+  soul_narrative?: string
+  avatar_url?: string
 }
 
 // ── Metricas del sistema agentino ─────────────────────────

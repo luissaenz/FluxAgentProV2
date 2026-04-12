@@ -8,6 +8,7 @@ import { useAgentMetrics } from '@/hooks/useAgentMetrics'
 import { BackButton } from '@/components/shared/BackButton'
 import { StatusLabel } from '@/components/shared/StatusLabel'
 import { CodeBlock } from '@/components/shared/CodeBlock'
+import { AgentPersonalityCard } from '@/components/agents/AgentPersonalityCard'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -76,6 +77,9 @@ export default function AgentDetailPage() {
     )
   }
 
+  const enrichedAgent = detail?.agent ?? agent
+  const displayName = enrichedAgent?.display_name ?? agent.role
+
   const metrics = detail?.metrics
   const credentials = detail?.credentials || []
   const soul = agent.soul_json || {}
@@ -88,7 +92,7 @@ export default function AgentDetailPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Bot className="h-6 w-6" />
-            {agent.role}
+            {displayName}
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant={agent.is_active ? 'success' : 'secondary'}>
@@ -135,6 +139,14 @@ export default function AgentDetailPage() {
 
         {/* Tab: Informacion */}
         <TabsContent value="info" className="space-y-4">
+          <AgentPersonalityCard
+            displayName={displayName}
+            role={agent.role}
+            soulNarrative={enrichedAgent?.soul_narrative ?? null}
+            avatarUrl={enrichedAgent?.avatar_url ?? null}
+            isLoading={loadingDetail}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Configuracion</CardTitle>
