@@ -25,7 +25,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Bot, Key, Coins, Wrench } from 'lucide-react'
+import { Bot, Coins } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Agent } from '@/lib/types'
@@ -127,20 +127,16 @@ export default function AgentDetailPage() {
         />
       </div>
 
-      <Tabs defaultValue="info">
+      <Tabs defaultValue="detail">
         <TabsList>
-          <TabsTrigger value="info">Informacion</TabsTrigger>
+          <TabsTrigger value="detail">Detalle</TabsTrigger>
           <TabsTrigger value="tasks">
             Tareas {metrics?.recent_tasks?.length ? `(${metrics.recent_tasks.length})` : ''}
           </TabsTrigger>
-          <TabsTrigger value="credentials">
-            <Wrench className="h-4 w-4" />
-            Herramientas con Credenciales ({credentials.length})
-          </TabsTrigger>
         </TabsList>
 
-        {/* Tab: Informacion */}
-        <TabsContent value="info" className="space-y-4">
+        {/* Tab: Detalle */}
+        <TabsContent value="detail" className="space-y-4">
           <AgentPersonalityCard
             displayName={displayName}
             role={agent.role}
@@ -223,45 +219,6 @@ export default function AgentDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Tab: Credenciales */}
-        <TabsContent value="credentials">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                Credenciales en Vault
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {credentials.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Sin credenciales asociadas.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {credentials.map((cred, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 rounded border px-3 py-2 text-sm"
-                    >
-                      <Key className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-mono">{cred.tool}</span>
-                      {cred.description && (
-                        <span className="text-xs text-muted-foreground">
-                          — {cred.description}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground mt-3">
-                Solo se muestran los nombres de las herramientas que requieren credenciales.
-                Los valores nunca se exponen.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )

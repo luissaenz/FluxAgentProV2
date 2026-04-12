@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -14,17 +15,31 @@ interface AgentToolsCardProps {
   isLoading?: boolean
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20
+    }
+  }
+};
+
 /**
  * AgentToolsCard - Muestra las herramientas de un agente como un grid de tarjetas inteligentes.
- * 
- * Cada tarjeta muestra:
- * - Nombre legible (mapeado desde registry o formateado)
- * - Descripción narrativa
- * - Badges de "Requiere Aprobación", "Timeout", "Requiere Credencial"
- * 
- * SUPUESTO: Las herramientas con credenciales son aquellas que aparecen en el array
- * `credentials` del backend. Si una herramienta está en allowed_tools pero no en
- * credentials, no requiere credencial explícita.
  */
 export function AgentToolsCard({
   allowedTools,
@@ -88,7 +103,12 @@ export function AgentToolsCard({
                 {category}
               </h4>
             )}
-            <div className="grid gap-3 md:grid-cols-2">
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid gap-3 md:grid-cols-2"
+            >
               {tools.map((toolName) => {
                 const metadata = getToolMetadata(toolName)
                 const requiresCredential = toolsWithCredentials.has(toolName)
@@ -97,16 +117,17 @@ export function AgentToolsCard({
                 )
 
                 return (
-                  <ToolCard
-                    key={toolName}
-                    toolName={toolName}
-                    metadata={metadata}
-                    requiresCredential={requiresCredential}
-                    credentialDescription={credential?.description}
-                  />
+                  <motion.div key={toolName} variants={itemVariants}>
+                    <ToolCard
+                      toolName={toolName}
+                      metadata={metadata}
+                      requiresCredential={requiresCredential}
+                      credentialDescription={credential?.description}
+                    />
+                  </motion.div>
                 )
               })}
-            </div>
+            </motion.div>
           </div>
         ))}
       </CardContent>
@@ -130,10 +151,10 @@ function ToolCard({
   credentialDescription,
 }: ToolCardProps) {
   return (
-    <div className="rounded-lg border p-3 space-y-2 hover:border-primary/50 transition-colors">
+    <div className="rounded-lg border p-3 space-y-2 hover:border-primary/50 transition-all hover:bg-muted/5 group">
       {/* Header: nombre y badges */}
       <div className="flex items-start justify-between gap-2">
-        <h5 className="text-sm font-semibold leading-tight">
+        <h5 className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
           {metadata.displayName}
         </h5>
         <div className="flex shrink-0 flex-wrap items-center gap-1">
@@ -194,7 +215,7 @@ function ToolCard({
 
       {/* Descripción de credencial si existe */}
       {credentialDescription && (
-        <div className="mt-1 flex items-start gap-1 rounded bg-muted/50 px-2 py-1.5">
+        <div className="mt-1 flex items-start gap-1 rounded bg-muted/50 px-2 py-1.5 border border-dashed border-muted-foreground/20">
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
           <p className="text-[10px] text-muted-foreground leading-snug">
             {credentialDescription}
@@ -207,10 +228,6 @@ function ToolCard({
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-/**
- * Agrupa herramientas por su primer tag para organización visual.
- * Si no tiene tags, las pone en "Sin categoría".
- */
 function groupToolsByCategory(tools: string[]): Record<string, string[]> {
   const grouped: Record<string, string[]> = {}
 
