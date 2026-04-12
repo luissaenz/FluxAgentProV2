@@ -14,7 +14,7 @@ Rutas:
     POST /bartenders/cierre     → CierreFlow
 """
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 import structlog

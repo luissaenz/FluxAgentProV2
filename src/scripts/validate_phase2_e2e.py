@@ -1,13 +1,12 @@
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 import logging
 import sys
 from uuid import uuid4
 
-from src.db.session import get_service_client, get_tenant_client
-from src.flows.base_flow import BaseFlow, BaseFlowState, FlowStatus
+from src.db.session import get_service_client
+from src.flows.base_flow import BaseFlow, FlowStatus
 from src.db.vault import get_secret
-from src.guardrails.base_guardrail import make_approval_check
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("validate_phase2_e2e")

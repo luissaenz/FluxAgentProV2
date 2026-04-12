@@ -13,16 +13,13 @@ import math
 import uuid
 from datetime import datetime
 from crewai import Agent, Crew, Task, Process
-from pydantic import BaseModel, Field
-from typing import Any
+from pydantic import BaseModel
 
 from src.connectors.base_connector import BaseDataConnector
-from src.tools.bartenders.clima_tool import PronosticoRealTool, PronosticoRealOutput
+from src.tools.bartenders.clima_tool import PronosticoRealTool
 from src.tools.bartenders.inventario_tool import (
     CalcularStockNecesarioTool,
     ReservarStockTool,
-    LiberarStockTool,
-    ReservarStockOutput,
 )
 
 
@@ -288,7 +285,7 @@ def create_compras_crew(
     )
 
     # Persistir la orden directamente
-    orden_id = _guardar_orden(connector, evento_id, motivo, items_orden, total)
+    _guardar_orden(connector, evento_id, motivo, items_orden, total)
 
     return Crew(
         agents=[agent],
@@ -437,7 +434,7 @@ def create_staffing_crew(
             "fecha_proxima_reserva": fecha_evento,
         })
 
-    hoja_de_ruta = _generar_hoja_de_ruta(
+    _generar_hoja_de_ruta(
         asignados, fecha_evento, duracion_horas, provincia, localidad
     )
 

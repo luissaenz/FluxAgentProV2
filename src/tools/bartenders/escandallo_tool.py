@@ -25,7 +25,6 @@ import math
 from typing import Any
 from pydantic import BaseModel, Field
 from crewai.tools import BaseTool
-from src.connectors.base_connector import BaseDataConnector
 
 
 # ─── Modelos de input/output ───────────────────────────────────────────────

@@ -47,19 +47,26 @@ class BaseCrew:
             return self._agent_config
 
         svc = get_service_client()
-        result = (
+        query = (
             svc.table("agent_catalog")
             .select("*")
             .eq("org_id", self.org_id)
             .eq("role", self.role)
             .eq("is_active", True)
             .maybe_single()
-            .execute()
         )
+        result = query.execute()
+
+        if result is None:
+            logger.error(
+                "Supabase query returned None for role '%s' in org '%s'. Check connectivity or client config.",
+                self.role, self.org_id
+            )
+            raise CrewConfigError(f"Database unavailable or returned empty for role '{self.role}'")
 
         if not result.data:
             raise CrewConfigError(
-                f"No active agent with role '{self.role}' for org '{self.org_id}'"
+                f"No active agent with role '{self.role}' for org '{self.org_id}' (Checked table 'agent_catalog')"
             )
 
         self._agent_config = result.data

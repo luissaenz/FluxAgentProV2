@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 import logging
 
-from ..db.session import get_tenant_client, get_service_client
+from ..db.session import get_tenant_client
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@
 
 import sys
 import os
-from uuid import uuid4
 
 # Add src to path if needed (though uv run usually handles this if called correctly)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -18,7 +17,7 @@ def seed():
     print("🚀 Starting Developer Data Seeding...")
     
     try:
-        settings = get_settings()
+        get_settings()
         supabase = get_supabase_client()
         
         # 1. Check if organization exists or create a new one

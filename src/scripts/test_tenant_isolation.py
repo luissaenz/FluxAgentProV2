@@ -21,8 +21,6 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from typing import Dict, Any, Optional
-from datetime import datetime, timezone
 from uuid import uuid4
 
 # Agregar src/ al path

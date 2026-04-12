@@ -16,7 +16,6 @@ Dos responsabilidades separadas:
 from typing import Any
 from pydantic import BaseModel, Field
 from crewai.tools import BaseTool
-from src.connectors.base_connector import BaseDataConnector
 
 
 # ─── Modelos ───────────────────────────────────────────────────────────────
@@ -195,7 +194,7 @@ class PronosticoRealTool(BaseTool):
             if len(year) != 4 or len(month) != 2 or len(day) != 2:
                 raise ValueError("Formato debe ser YYYY-MM-DD (4-2-2 dígitos)")
             return int(month)
-        except (IndexError, ValueError) as e:
+        except (IndexError, ValueError):
             raise ValueError(
                 f"Formato de fecha inválido: '{fecha_evento}'. "
                 f"Esperado: YYYY-MM-DD"

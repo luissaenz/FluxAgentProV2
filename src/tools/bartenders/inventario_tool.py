@@ -20,7 +20,6 @@ Tres tools separadas con responsabilidades claras:
 from typing import Any
 from pydantic import BaseModel, Field
 from crewai.tools import BaseTool
-from src.connectors.base_connector import BaseDataConnector
 import math
 
 

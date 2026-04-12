@@ -15,12 +15,11 @@ Pattern confirmado con MultiCrewFlow real:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict
 
 from .base_flow import BaseFlow
 from .registry import flow_registry
 from ..crews.base_crew import BaseCrew
-from ..guardrails.base_guardrail import make_approval_check
 
 logger = logging.getLogger(__name__)
 

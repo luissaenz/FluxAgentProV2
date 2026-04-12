@@ -71,7 +71,7 @@ class SendMessageTool(OrgBaseTool):
     def _run(self, to: str, message: str) -> str:
         # El LLM no ve el token. La tool lo obtiene internamente.
         try:
-            api_token = self._get_secret("messaging_api_token")
+            self._get_secret("messaging_api_token")
         except VaultError as e:
             return f"Error: {e}"
 
@@ -103,7 +103,7 @@ class SendEmailTool(OrgBaseTool):
 
     def _run(self, to: str, subject: str, body: str) -> str:
         try:
-            smtp_password = self._get_secret("smtp_password")
+            self._get_secret("smtp_password")
         except VaultError as e:
             return f"Error: {e}"
 

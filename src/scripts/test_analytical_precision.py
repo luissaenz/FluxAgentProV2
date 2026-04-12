@@ -14,13 +14,11 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from typing import Dict, Any, List
 
 # Agregar src/ al path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.crews.analytical_crew import AnalyticalCrew, ALLOWED_ANALYTICAL_QUERIES
-from src.db.session import get_tenant_client
 
 # ── Configuración de test ─────────────────────────────────────────
 

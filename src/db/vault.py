@@ -7,7 +7,7 @@ el resultado de la operación.
 
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import List
 import logging
 
 from .session import get_service_client

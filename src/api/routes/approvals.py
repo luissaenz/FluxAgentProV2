@@ -13,7 +13,6 @@ import logging
 import asyncio
 
 from ...db.session import get_service_client, get_tenant_client
-from ...events.store import EventStore, EventStoreError
 from ...flows.registry import flow_registry
 from ..middleware import require_org_id, verify_org_membership
 
@@ -109,14 +108,14 @@ async def process_approval(
             raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
         decision = "approved" if action == "approve" else "rejected"
         decided_by = user_id
-        notes = body.get("notes", "")
+        body.get("notes", "")
         effective_org_id = org_id
     elif "decision" in body:
         decision = body["decision"]
         if decision not in ("approved", "rejected"):
             raise HTTPException(status_code=422, detail="decision must be 'approved' or 'rejected'")
         decided_by = body.get("decided_by", "unknown")
-        notes = body.get("notes", "")
+        body.get("notes", "")
         effective_org_id = body.get("org_id", org_id)
     else:
         raise HTTPException(status_code=422, detail="Must provide 'action' or 'decision'")

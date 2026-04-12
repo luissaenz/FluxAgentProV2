@@ -13,7 +13,6 @@ from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from crewai import Agent, Crew, Task, Process
 from pydantic import BaseModel, Field
-from typing import Any
 
 from src.connectors.base_connector import BaseDataConnector
 
@@ -133,7 +132,7 @@ def create_auditoria_crew(
     )
 
     # Persistir auditoría directamente
-    auditoria_id = _guardar_auditoria(
+    _guardar_auditoria(
         connector, evento_id, precio_cobrado, costo_real,
         margen_pct, mermas, compras_emergencia, desvio_climatico
     )

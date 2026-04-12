@@ -183,7 +183,6 @@ class CierreFlow(BaseFlow):
 
     async def _ejecutar_feedback(self):
         """Lógica de feedback compartida por el path normal y el path post-HITL."""
-        from src.crews.bartenders.cierre_crews import create_feedback_crew
         connector = SupabaseMockConnector(self.org_id, self.user_id)
 
         # Calcular próximo contacto (mismo mes, año siguiente)

@@ -14,14 +14,12 @@ El agente tiene acceso a:
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
-from .base_crew import BaseCrew, CrewConfigError
-from ..db.session import get_tenant_client, get_service_client
-from ..config import get_settings
+from .base_crew import BaseCrew
+from ..db.session import get_tenant_client
 from ..events.store import EventStore
 
 logger = logging.getLogger(__name__)

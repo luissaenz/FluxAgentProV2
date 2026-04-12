@@ -2,14 +2,12 @@ import asyncio
 import logging
 import sys
 from uuid import uuid4
-from typing import Dict, Any
 from unittest.mock import patch, AsyncMock
 
 from src.db.session import get_service_client
 from src.db.memory import save_memory, search_memory
 from src.flows.multi_crew_flow import MultiCrewFlow
 from src.flows.state import FlowStatus
-from src.crews.base_crew import BaseCrew
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("validate_phase3_e2e")

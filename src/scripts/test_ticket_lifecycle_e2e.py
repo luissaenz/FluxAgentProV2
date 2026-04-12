@@ -17,13 +17,12 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
 # Agregar src/ al path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from src.db.session import get_tenant_client, get_service_client
+from src.db.session import get_tenant_client
 from src.flows.registry import flow_registry
 from uuid import uuid4
 
@@ -94,7 +93,6 @@ async def test_ticket_lifecycle():
     print("   🔄 Estado cambiado a: in_progress")
 
     # Ejecutar el flow directamente
-    from src.flows.registry import flow_registry
     from src.api.routes.webhooks import execute_flow
 
     correlation_id = f"ticket-{ticket_id}"
@@ -152,7 +150,7 @@ async def test_ticket_lifecycle():
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }).eq("id", ticket_id).execute()
             expected_status = "blocked"
-            print(f"   ⚠️  Flow retornó error, marcando como blocked")
+            print("   ⚠️  Flow retornó error, marcando como blocked")
         else:
             # Debería estar done con task_id
             db.table("tickets").update({

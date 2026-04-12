@@ -19,7 +19,7 @@ from ...db.conversation_store import (
     update_status,
 )
 from ...flows.architect_flow import ArchitectFlow
-from ...guardrails.base_guardrail import check_quota, QuotaExceededError
+from ...guardrails.base_guardrail import QuotaExceededError
 from ..middleware import require_org_id
 
 logger = logging.getLogger(__name__)

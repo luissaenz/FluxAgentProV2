@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 from ...db.session import get_tenant_client
-from ...flows.dynamic_flow import DynamicWorkflow
 from ..middleware import require_org_id
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])

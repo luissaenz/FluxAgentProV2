@@ -14,9 +14,12 @@ from __future__ import annotations
 import uuid
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List
+from typing import TYPE_CHECKING, Optional, List
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +40,10 @@ class MemoryError(Exception):
 
 # ── Lazy OpenAI client ────────────────────────────────────────────
 
-_client: Optional["OpenAI"] = None  # type: ignore[name-defined]
+_client: Optional["OpenAI"] = None
 
 
-def _get_openai_client() -> "OpenAI":  # type: ignore[name-defined]
+def _get_openai_client() -> "OpenAI":
     """Lazy-initialise the OpenAI client — does not fail at import time."""
     global _client
     if _client is None:

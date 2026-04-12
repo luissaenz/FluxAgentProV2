@@ -13,10 +13,8 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 import os
-from typing import Optional
 
 # Ensure src is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -425,9 +423,9 @@ async def main():
     org_id = os.getenv("TEST_ORG_ID")
     if not org_id:
         print(f"\n{RED}ERROR: TEST_ORG_ID environment variable is required{RESET}")
-        print(f"Usage: TEST_ORG_ID=<your-org-uuid> uv run python src/scripts/validate_e2e_lifecycle.py")
+        print("Usage: TEST_ORG_ID=<your-org-uuid> uv run python src/scripts/validate_e2e_lifecycle.py")
         print(f"\n{YELLOW}You can find your org_id in the database:{RESET}")
-        print(f"  SELECT id FROM organizations LIMIT 1;")
+        print("  SELECT id FROM organizations LIMIT 1;")
         sys.exit(1)
 
     print(f"\n{BOLD}🧪  E2E LIFECYCLE VALIDATION — PASO 1.5{RESET}")

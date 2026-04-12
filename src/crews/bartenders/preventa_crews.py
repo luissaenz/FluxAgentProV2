@@ -12,11 +12,10 @@ Reglas invariantes de todos los agentes:
 """
 
 from crewai import Agent, Crew, Task, Process
-from pydantic import BaseModel, Field
-from typing import Any
+from pydantic import BaseModel
 from src.connectors.base_connector import BaseDataConnector
-from src.tools.bartenders.escandallo_tool import EscandalloTool, EscandalloOutput
-from src.tools.bartenders.clima_tool import FactorClimaticoTool, FactorClimaticoOutput
+from src.tools.bartenders.escandallo_tool import EscandalloTool
+from src.tools.bartenders.clima_tool import FactorClimaticoTool
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -91,7 +90,6 @@ def create_requerimientos_crew(
         fecha_evento, provincia, localidad, tipo_evento,
         pax, duracion_horas, tipo_menu, restricciones (opcional)
     """
-    import uuid
     from datetime import date
 
     agent = Agent(
@@ -392,7 +390,7 @@ def create_presupuestador_crew(
     )
 
     # Persistencia directa — separada del LLM
-    cotizacion_id = _guardar_cotizacion(
+    _guardar_cotizacion(
         connector, evento_id, escandallo_total, opciones, factor_climatico
     )
 
