@@ -23,7 +23,9 @@
       "Bash(taskkill *)",
       "Bash(make *)",
       "Bash(.venv\\scripts\\python.exe *)",
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(mkdir *)",
+      "Bash(dir *)"
     ]
   },
   "$version": 3
