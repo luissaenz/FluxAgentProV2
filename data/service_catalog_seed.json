@@ -1,0 +1,1822 @@
+{
+  "tools": [
+    {
+      "id": "stripe.create_customer",
+      "name": "Create Customer",
+      "provider": {
+        "id": "stripe",
+        "name": "Stripe",
+        "category": "payments",
+        "auth_type": "api_key",
+        "base_url": "https://api.stripe.com/v1",
+        "health_check_url": "https://api.stripe.com/v1/balance",
+        "docs_url": "https://stripe.com/docs/api",
+        "required_secrets": ["stripe_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "email": {"type": "string", "description": "Customer email"},
+          "name": {"type": "string", "description": "Customer name"},
+          "description": {"type": "string", "description": "Customer description"}
+        },
+        "required": ["email"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "object": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.stripe.com/v1/customers",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}
+      },
+      "tool_profile": {
+        "description": "Creates a new customer in Stripe",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "payments"
+      }
+    },
+    {
+      "id": "stripe.list_customers",
+      "name": "List Customers",
+      "provider": {
+        "id": "stripe",
+        "name": "Stripe",
+        "category": "payments",
+        "auth_type": "api_key",
+        "base_url": "https://api.stripe.com/v1",
+        "health_check_url": "https://api.stripe.com/v1/balance",
+        "docs_url": "https://stripe.com/docs/api",
+        "required_secrets": ["stripe_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {"type": "integer", "description": "Number of customers to return"},
+          "email": {"type": "string", "description": "Filter by email"}
+        },
+        "required": []
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "data": {"type": "array"},
+          "has_more": {"type": "boolean"}
+        }
+      },
+      "execution": {
+        "url": "https://api.stripe.com/v1/customers",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists customers in Stripe",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "payments"
+      }
+    },
+    {
+      "id": "stripe.create_payment_intent",
+      "name": "Create Payment Intent",
+      "provider": {
+        "id": "stripe",
+        "name": "Stripe",
+        "category": "payments",
+        "auth_type": "api_key",
+        "base_url": "https://api.stripe.com/v1",
+        "health_check_url": "https://api.stripe.com/v1/balance",
+        "docs_url": "https://stripe.com/docs/api",
+        "required_secrets": ["stripe_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "amount": {"type": "integer", "description": "Amount in cents"},
+          "currency": {"type": "string", "description": "Three-letter ISO currency code"},
+          "customer": {"type": "string", "description": "Customer ID"}
+        },
+        "required": ["amount", "currency"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.stripe.com/v1/payment_intents",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}
+      },
+      "tool_profile": {
+        "description": "Creates a payment intent in Stripe",
+        "risk_level": "high",
+        "requires_approval": true,
+        "category": "payments"
+      }
+    },
+    {
+      "id": "stripe.get_balance",
+      "name": "Get Balance",
+      "provider": {
+        "id": "stripe",
+        "name": "Stripe",
+        "category": "payments",
+        "auth_type": "api_key",
+        "base_url": "https://api.stripe.com/v1",
+        "health_check_url": "https://api.stripe.com/v1/balance",
+        "docs_url": "https://stripe.com/docs/api",
+        "required_secrets": ["stripe_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "available": {"type": "array"},
+          "pending": {"type": "array"}
+        }
+      },
+      "execution": {
+        "url": "https://api.stripe.com/v1/balance",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Retrieves current balance from Stripe",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "payments"
+      }
+    },
+    {
+      "id": "stripe.create_refund",
+      "name": "Create Refund",
+      "provider": {
+        "id": "stripe",
+        "name": "Stripe",
+        "category": "payments",
+        "auth_type": "api_key",
+        "base_url": "https://api.stripe.com/v1",
+        "health_check_url": "https://api.stripe.com/v1/balance",
+        "docs_url": "https://stripe.com/docs/api",
+        "required_secrets": ["stripe_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "payment_intent": {"type": "string", "description": "Payment Intent ID to refund"},
+          "amount": {"type": "integer", "description": "Amount to refund in cents (optional, full if omitted)"}
+        },
+        "required": ["payment_intent"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.stripe.com/v1/refunds",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}
+      },
+      "tool_profile": {
+        "description": "Creates a refund for a payment in Stripe",
+        "risk_level": "high",
+        "requires_approval": true,
+        "category": "payments"
+      }
+    },
+    {
+      "id": "twilio.send_sms",
+      "name": "Send SMS",
+      "provider": {
+        "id": "twilio",
+        "name": "Twilio",
+        "category": "messaging",
+        "auth_type": "basic_auth",
+        "base_url": "https://api.twilio.com/2010-04-01",
+        "health_check_url": null,
+        "docs_url": "https://www.twilio.com/docs/sms/api",
+        "required_secrets": ["twilio_auth_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "AccountSid": {"type": "string", "description": "Twilio Account SID"},
+          "To": {"type": "string", "description": "Destination phone number"},
+          "From": {"type": "string", "description": "Twilio phone number"},
+          "Body": {"type": "string", "description": "Message body"}
+        },
+        "required": ["AccountSid", "To", "From", "Body"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "sid": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}
+      },
+      "tool_profile": {
+        "description": "Sends an SMS message via Twilio",
+        "risk_level": "medium",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "twilio.list_messages",
+      "name": "List Messages",
+      "provider": {
+        "id": "twilio",
+        "name": "Twilio",
+        "category": "messaging",
+        "auth_type": "basic_auth",
+        "base_url": "https://api.twilio.com/2010-04-01",
+        "health_check_url": null,
+        "docs_url": "https://www.twilio.com/docs/sms/api",
+        "required_secrets": ["twilio_auth_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "AccountSid": {"type": "string", "description": "Twilio Account SID"},
+          "PageSize": {"type": "integer", "description": "Number of messages per page"}
+        },
+        "required": ["AccountSid"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "messages": {"type": "array"}
+        }
+      },
+      "execution": {
+        "url": "https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists recent messages from Twilio",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "twilio.send_whatsapp",
+      "name": "Send WhatsApp Message",
+      "provider": {
+        "id": "twilio",
+        "name": "Twilio",
+        "category": "messaging",
+        "auth_type": "basic_auth",
+        "base_url": "https://api.twilio.com/2010-04-01",
+        "health_check_url": null,
+        "docs_url": "https://www.twilio.com/docs/whatsapp/api",
+        "required_secrets": ["twilio_auth_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "AccountSid": {"type": "string", "description": "Twilio Account SID"},
+          "To": {"type": "string", "description": "WhatsApp number (whatsapp:+1234567890)"},
+          "From": {"type": "string", "description": "Twilio WhatsApp number"},
+          "Body": {"type": "string", "description": "Message body"}
+        },
+        "required": ["AccountSid", "To", "From", "Body"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "sid": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}
+      },
+      "tool_profile": {
+        "description": "Sends a WhatsApp message via Twilio",
+        "risk_level": "medium",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "github.create_issue",
+      "name": "Create Issue",
+      "provider": {
+        "id": "github",
+        "name": "GitHub",
+        "category": "devtools",
+        "auth_type": "api_key",
+        "base_url": "https://api.github.com",
+        "health_check_url": "https://api.github.com/zen",
+        "docs_url": "https://docs.github.com/en/rest",
+        "required_secrets": ["github_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "owner": {"type": "string", "description": "Repository owner"},
+          "repo": {"type": "string", "description": "Repository name"},
+          "title": {"type": "string", "description": "Issue title"},
+          "body": {"type": "string", "description": "Issue body"},
+          "labels": {"type": "array", "items": {"type": "string"}, "description": "Labels to add"}
+        },
+        "required": ["owner", "repo", "title"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "number": {"type": "integer"},
+          "html_url": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.github.com/repos/{owner}/{repo}/issues",
+        "method": "POST",
+        "headers": {"Accept": "application/vnd.github+json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new issue in a GitHub repository",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "devtools"
+      }
+    },
+    {
+      "id": "github.list_issues",
+      "name": "List Issues",
+      "provider": {
+        "id": "github",
+        "name": "GitHub",
+        "category": "devtools",
+        "auth_type": "api_key",
+        "base_url": "https://api.github.com",
+        "health_check_url": "https://api.github.com/zen",
+        "docs_url": "https://docs.github.com/en/rest",
+        "required_secrets": ["github_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "owner": {"type": "string", "description": "Repository owner"},
+          "repo": {"type": "string", "description": "Repository name"},
+          "state": {"type": "string", "description": "State filter: open, closed, all"}
+        },
+        "required": ["owner", "repo"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "issues": {"type": "array"}
+        }
+      },
+      "execution": {
+        "url": "https://api.github.com/repos/{owner}/{repo}/issues",
+        "method": "GET",
+        "headers": {"Accept": "application/vnd.github+json"}
+      },
+      "tool_profile": {
+        "description": "Lists issues in a GitHub repository",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "devtools"
+      }
+    },
+    {
+      "id": "github.create_repo",
+      "name": "Create Repository",
+      "provider": {
+        "id": "github",
+        "name": "GitHub",
+        "category": "devtools",
+        "auth_type": "api_key",
+        "base_url": "https://api.github.com",
+        "health_check_url": "https://api.github.com/zen",
+        "docs_url": "https://docs.github.com/en/rest",
+        "required_secrets": ["github_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "description": "Repository name"},
+          "description": {"type": "string", "description": "Repository description"},
+          "private": {"type": "boolean", "description": "Whether the repo is private"}
+        },
+        "required": ["name"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "html_url": {"type": "string"}
+        }
+      },
+      "execution": {
+        "url": "https://api.github.com/user/repos",
+        "method": "POST",
+        "headers": {"Accept": "application/vnd.github+json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new GitHub repository",
+        "risk_level": "medium",
+        "requires_approval": true,
+        "category": "devtools"
+      }
+    },
+    {
+      "id": "github.list_pull_requests",
+      "name": "List Pull Requests",
+      "provider": {
+        "id": "github",
+        "name": "GitHub",
+        "category": "devtools",
+        "auth_type": "api_key",
+        "base_url": "https://api.github.com",
+        "health_check_url": "https://api.github.com/zen",
+        "docs_url": "https://docs.github.com/en/rest",
+        "required_secrets": ["github_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "owner": {"type": "string", "description": "Repository owner"},
+          "repo": {"type": "string", "description": "Repository name"},
+          "state": {"type": "string", "description": "State filter"}
+        },
+        "required": ["owner", "repo"]
+      },
+      "output_schema": {"type": "object", "properties": {"pull_requests": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.github.com/repos/{owner}/{repo}/pulls",
+        "method": "GET",
+        "headers": {"Accept": "application/vnd.github+json"}
+      },
+      "tool_profile": {
+        "description": "Lists pull requests in a GitHub repository",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "devtools"
+      }
+    },
+    {
+      "id": "slack.post_message",
+      "name": "Post Message",
+      "provider": {
+        "id": "slack",
+        "name": "Slack",
+        "category": "messaging",
+        "auth_type": "oauth2",
+        "base_url": "https://slack.com/api",
+        "health_check_url": "https://slack.com/api/api.test",
+        "docs_url": "https://api.slack.com/methods",
+        "required_secrets": ["slack_bot_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "channel": {"type": "string", "description": "Channel ID"},
+          "text": {"type": "string", "description": "Message text"}
+        },
+        "required": ["channel", "text"]
+      },
+      "output_schema": {"type": "object", "properties": {"ok": {"type": "boolean"}, "ts": {"type": "string"}}},
+      "execution": {
+        "url": "https://slack.com/api/chat.postMessage",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Posts a message to a Slack channel",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "slack.list_channels",
+      "name": "List Channels",
+      "provider": {
+        "id": "slack",
+        "name": "Slack",
+        "category": "messaging",
+        "auth_type": "oauth2",
+        "base_url": "https://slack.com/api",
+        "health_check_url": "https://slack.com/api/api.test",
+        "docs_url": "https://api.slack.com/methods",
+        "required_secrets": ["slack_bot_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {"type": "integer", "description": "Number of channels to return"}
+        },
+        "required": []
+      },
+      "output_schema": {"type": "object", "properties": {"ok": {"type": "boolean"}, "channels": {"type": "array"}}},
+      "execution": {
+        "url": "https://slack.com/api/conversations.list",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists Slack channels",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "slack.upload_file",
+      "name": "Upload File",
+      "provider": {
+        "id": "slack",
+        "name": "Slack",
+        "category": "messaging",
+        "auth_type": "oauth2",
+        "base_url": "https://slack.com/api",
+        "health_check_url": "https://slack.com/api/api.test",
+        "docs_url": "https://api.slack.com/methods",
+        "required_secrets": ["slack_bot_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "channels": {"type": "string", "description": "Comma-separated channel IDs"},
+          "content": {"type": "string", "description": "File content"},
+          "filename": {"type": "string", "description": "Filename"},
+          "title": {"type": "string", "description": "File title"}
+        },
+        "required": ["channels", "content"]
+      },
+      "output_schema": {"type": "object", "properties": {"ok": {"type": "boolean"}}},
+      "execution": {
+        "url": "https://slack.com/api/files.upload",
+        "method": "POST",
+        "headers": {"Content-Type": "application/x-www-form-urlencoded"}
+      },
+      "tool_profile": {
+        "description": "Uploads a file to Slack",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "sendgrid.send_email",
+      "name": "Send Email",
+      "provider": {
+        "id": "sendgrid",
+        "name": "SendGrid",
+        "category": "email",
+        "auth_type": "api_key",
+        "base_url": "https://api.sendgrid.com/v3",
+        "health_check_url": null,
+        "docs_url": "https://docs.sendgrid.com/api-reference",
+        "required_secrets": ["sendgrid_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "Recipient email"},
+          "from": {"type": "string", "description": "Sender email"},
+          "subject": {"type": "string", "description": "Email subject"},
+          "content": {"type": "string", "description": "Email body (plain text)"}
+        },
+        "required": ["to", "from", "subject", "content"]
+      },
+      "output_schema": {"type": "object", "properties": {"status": {"type": "string"}}},
+      "execution": {
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Sends an email via SendGrid",
+        "risk_level": "medium",
+        "requires_approval": false,
+        "category": "email"
+      }
+    },
+    {
+      "id": "sendgrid.list_templates",
+      "name": "List Templates",
+      "provider": {
+        "id": "sendgrid",
+        "name": "SendGrid",
+        "category": "email",
+        "auth_type": "api_key",
+        "base_url": "https://api.sendgrid.com/v3",
+        "health_check_url": null,
+        "docs_url": "https://docs.sendgrid.com/api-reference",
+        "required_secrets": ["sendgrid_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "generations": {"type": "string", "description": "Template generation: legacy or dynamic"}
+        },
+        "required": []
+      },
+      "output_schema": {"type": "object", "properties": {"templates": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.sendgrid.com/v3/templates",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists email templates in SendGrid",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "email"
+      }
+    },
+    {
+      "id": "shopify.list_products",
+      "name": "List Products",
+      "provider": {
+        "id": "shopify",
+        "name": "Shopify",
+        "category": "ecommerce",
+        "auth_type": "api_key",
+        "base_url": "https://{shop}.myshopify.com/admin/api/2024-01",
+        "health_check_url": null,
+        "docs_url": "https://shopify.dev/docs/api/admin-rest",
+        "required_secrets": ["shopify_access_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shop": {"type": "string", "description": "Shopify store name"},
+          "limit": {"type": "integer", "description": "Number of products"}
+        },
+        "required": ["shop"]
+      },
+      "output_schema": {"type": "object", "properties": {"products": {"type": "array"}}},
+      "execution": {
+        "url": "https://{shop}.myshopify.com/admin/api/2024-01/products.json",
+        "method": "GET",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Lists products from a Shopify store",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "ecommerce"
+      }
+    },
+    {
+      "id": "shopify.create_product",
+      "name": "Create Product",
+      "provider": {
+        "id": "shopify",
+        "name": "Shopify",
+        "category": "ecommerce",
+        "auth_type": "api_key",
+        "base_url": "https://{shop}.myshopify.com/admin/api/2024-01",
+        "health_check_url": null,
+        "docs_url": "https://shopify.dev/docs/api/admin-rest",
+        "required_secrets": ["shopify_access_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shop": {"type": "string", "description": "Shopify store name"},
+          "title": {"type": "string", "description": "Product title"},
+          "body_html": {"type": "string", "description": "Product description HTML"},
+          "vendor": {"type": "string", "description": "Product vendor"}
+        },
+        "required": ["shop", "title"]
+      },
+      "output_schema": {"type": "object", "properties": {"product": {"type": "object"}}},
+      "execution": {
+        "url": "https://{shop}.myshopify.com/admin/api/2024-01/products.json",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new product in Shopify",
+        "risk_level": "medium",
+        "requires_approval": true,
+        "category": "ecommerce"
+      }
+    },
+    {
+      "id": "shopify.list_orders",
+      "name": "List Orders",
+      "provider": {
+        "id": "shopify",
+        "name": "Shopify",
+        "category": "ecommerce",
+        "auth_type": "api_key",
+        "base_url": "https://{shop}.myshopify.com/admin/api/2024-01",
+        "health_check_url": null,
+        "docs_url": "https://shopify.dev/docs/api/admin-rest",
+        "required_secrets": ["shopify_access_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shop": {"type": "string", "description": "Shopify store name"},
+          "status": {"type": "string", "description": "Order status filter"}
+        },
+        "required": ["shop"]
+      },
+      "output_schema": {"type": "object", "properties": {"orders": {"type": "array"}}},
+      "execution": {
+        "url": "https://{shop}.myshopify.com/admin/api/2024-01/orders.json",
+        "method": "GET",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Lists orders from a Shopify store",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "ecommerce"
+      }
+    },
+    {
+      "id": "openai.chat_completion",
+      "name": "Chat Completion",
+      "provider": {
+        "id": "openai",
+        "name": "OpenAI",
+        "category": "ai",
+        "auth_type": "api_key",
+        "base_url": "https://api.openai.com/v1",
+        "health_check_url": "https://api.openai.com/v1/models",
+        "docs_url": "https://platform.openai.com/docs/api-reference",
+        "required_secrets": ["openai_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "model": {"type": "string", "description": "Model ID"},
+          "messages": {"type": "array", "description": "Chat messages"},
+          "temperature": {"type": "number", "description": "Sampling temperature"}
+        },
+        "required": ["model", "messages"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}, "choices": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Generates a chat completion via OpenAI",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "ai"
+      }
+    },
+    {
+      "id": "openai.create_embedding",
+      "name": "Create Embedding",
+      "provider": {
+        "id": "openai",
+        "name": "OpenAI",
+        "category": "ai",
+        "auth_type": "api_key",
+        "base_url": "https://api.openai.com/v1",
+        "health_check_url": "https://api.openai.com/v1/models",
+        "docs_url": "https://platform.openai.com/docs/api-reference",
+        "required_secrets": ["openai_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "model": {"type": "string", "description": "Model ID"},
+          "input": {"type": "string", "description": "Text to embed"}
+        },
+        "required": ["model", "input"]
+      },
+      "output_schema": {"type": "object", "properties": {"data": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.openai.com/v1/embeddings",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates text embeddings via OpenAI",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "ai"
+      }
+    },
+    {
+      "id": "openai.list_models",
+      "name": "List Models",
+      "provider": {
+        "id": "openai",
+        "name": "OpenAI",
+        "category": "ai",
+        "auth_type": "api_key",
+        "base_url": "https://api.openai.com/v1",
+        "health_check_url": "https://api.openai.com/v1/models",
+        "docs_url": "https://platform.openai.com/docs/api-reference",
+        "required_secrets": ["openai_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {"type": "object", "properties": {}, "required": []},
+      "output_schema": {"type": "object", "properties": {"data": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.openai.com/v1/models",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists available OpenAI models",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "ai"
+      }
+    },
+    {
+      "id": "notion.create_page",
+      "name": "Create Page",
+      "provider": {
+        "id": "notion",
+        "name": "Notion",
+        "category": "productivity",
+        "auth_type": "api_key",
+        "base_url": "https://api.notion.com/v1",
+        "health_check_url": "https://api.notion.com/v1/users/me",
+        "docs_url": "https://developers.notion.com/reference",
+        "required_secrets": ["notion_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "parent": {"type": "object", "description": "Parent page or database"},
+          "properties": {"type": "object", "description": "Page properties"}
+        },
+        "required": ["parent", "properties"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}, "url": {"type": "string"}}},
+      "execution": {
+        "url": "https://api.notion.com/v1/pages",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "Notion-Version": "2022-06-28"}
+      },
+      "tool_profile": {
+        "description": "Creates a new page in Notion",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "notion.query_database",
+      "name": "Query Database",
+      "provider": {
+        "id": "notion",
+        "name": "Notion",
+        "category": "productivity",
+        "auth_type": "api_key",
+        "base_url": "https://api.notion.com/v1",
+        "health_check_url": "https://api.notion.com/v1/users/me",
+        "docs_url": "https://developers.notion.com/reference",
+        "required_secrets": ["notion_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "database_id": {"type": "string", "description": "Database ID"},
+          "filter": {"type": "object", "description": "Query filter"},
+          "page_size": {"type": "integer", "description": "Number of results"}
+        },
+        "required": ["database_id"]
+      },
+      "output_schema": {"type": "object", "properties": {"results": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.notion.com/v1/databases/{database_id}/query",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "Notion-Version": "2022-06-28"}
+      },
+      "tool_profile": {
+        "description": "Queries a Notion database",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "notion.search",
+      "name": "Search",
+      "provider": {
+        "id": "notion",
+        "name": "Notion",
+        "category": "productivity",
+        "auth_type": "api_key",
+        "base_url": "https://api.notion.com/v1",
+        "health_check_url": "https://api.notion.com/v1/users/me",
+        "docs_url": "https://developers.notion.com/reference",
+        "required_secrets": ["notion_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Search query"}
+        },
+        "required": []
+      },
+      "output_schema": {"type": "object", "properties": {"results": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.notion.com/v1/search",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json", "Notion-Version": "2022-06-28"}
+      },
+      "tool_profile": {
+        "description": "Searches pages and databases in Notion",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "jira.create_issue",
+      "name": "Create Issue",
+      "provider": {
+        "id": "jira",
+        "name": "Jira",
+        "category": "project_management",
+        "auth_type": "basic_auth",
+        "base_url": "https://{domain}.atlassian.net/rest/api/3",
+        "health_check_url": null,
+        "docs_url": "https://developer.atlassian.com/cloud/jira/platform/rest/v3",
+        "required_secrets": ["jira_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "string", "description": "Jira domain"},
+          "project_key": {"type": "string", "description": "Project key"},
+          "summary": {"type": "string", "description": "Issue summary"},
+          "issuetype": {"type": "string", "description": "Issue type (Task, Bug, Story)"},
+          "description": {"type": "string", "description": "Issue description"}
+        },
+        "required": ["domain", "project_key", "summary", "issuetype"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}, "key": {"type": "string"}}},
+      "execution": {
+        "url": "https://{domain}.atlassian.net/rest/api/3/issue",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new issue in Jira",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "project_management"
+      }
+    },
+    {
+      "id": "jira.search_issues",
+      "name": "Search Issues",
+      "provider": {
+        "id": "jira",
+        "name": "Jira",
+        "category": "project_management",
+        "auth_type": "basic_auth",
+        "base_url": "https://{domain}.atlassian.net/rest/api/3",
+        "health_check_url": null,
+        "docs_url": "https://developer.atlassian.com/cloud/jira/platform/rest/v3",
+        "required_secrets": ["jira_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "string", "description": "Jira domain"},
+          "jql": {"type": "string", "description": "JQL query"},
+          "maxResults": {"type": "integer", "description": "Max results to return"}
+        },
+        "required": ["domain", "jql"]
+      },
+      "output_schema": {"type": "object", "properties": {"issues": {"type": "array"}, "total": {"type": "integer"}}},
+      "execution": {
+        "url": "https://{domain}.atlassian.net/rest/api/3/search",
+        "method": "GET",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Searches issues in Jira using JQL",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "project_management"
+      }
+    },
+    {
+      "id": "jira.get_issue",
+      "name": "Get Issue",
+      "provider": {
+        "id": "jira",
+        "name": "Jira",
+        "category": "project_management",
+        "auth_type": "basic_auth",
+        "base_url": "https://{domain}.atlassian.net/rest/api/3",
+        "health_check_url": null,
+        "docs_url": "https://developer.atlassian.com/cloud/jira/platform/rest/v3",
+        "required_secrets": ["jira_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "string", "description": "Jira domain"},
+          "issue_key": {"type": "string", "description": "Issue key (e.g. PROJ-123)"}
+        },
+        "required": ["domain", "issue_key"]
+      },
+      "output_schema": {"type": "object", "properties": {"key": {"type": "string"}, "fields": {"type": "object"}}},
+      "execution": {
+        "url": "https://{domain}.atlassian.net/rest/api/3/issue/{issue_key}",
+        "method": "GET",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Gets details of a Jira issue",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "project_management"
+      }
+    },
+    {
+      "id": "hubspot.create_contact",
+      "name": "Create Contact",
+      "provider": {
+        "id": "hubspot",
+        "name": "HubSpot",
+        "category": "crm",
+        "auth_type": "api_key",
+        "base_url": "https://api.hubapi.com",
+        "health_check_url": null,
+        "docs_url": "https://developers.hubspot.com/docs/api",
+        "required_secrets": ["hubspot_access_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "email": {"type": "string", "description": "Contact email"},
+          "firstname": {"type": "string", "description": "First name"},
+          "lastname": {"type": "string", "description": "Last name"},
+          "company": {"type": "string", "description": "Company name"}
+        },
+        "required": ["email"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}}},
+      "execution": {
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new contact in HubSpot CRM",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "crm"
+      }
+    },
+    {
+      "id": "hubspot.list_contacts",
+      "name": "List Contacts",
+      "provider": {
+        "id": "hubspot",
+        "name": "HubSpot",
+        "category": "crm",
+        "auth_type": "api_key",
+        "base_url": "https://api.hubapi.com",
+        "health_check_url": null,
+        "docs_url": "https://developers.hubspot.com/docs/api",
+        "required_secrets": ["hubspot_access_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {"type": "integer", "description": "Number of contacts to return"}
+        },
+        "required": []
+      },
+      "output_schema": {"type": "object", "properties": {"results": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists contacts from HubSpot CRM",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "crm"
+      }
+    },
+    {
+      "id": "hubspot.create_deal",
+      "name": "Create Deal",
+      "provider": {
+        "id": "hubspot",
+        "name": "HubSpot",
+        "category": "crm",
+        "auth_type": "api_key",
+        "base_url": "https://api.hubapi.com",
+        "health_check_url": null,
+        "docs_url": "https://developers.hubspot.com/docs/api",
+        "required_secrets": ["hubspot_access_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "dealname": {"type": "string", "description": "Deal name"},
+          "amount": {"type": "string", "description": "Deal amount"},
+          "pipeline": {"type": "string", "description": "Pipeline ID"},
+          "dealstage": {"type": "string", "description": "Deal stage ID"}
+        },
+        "required": ["dealname"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}}},
+      "execution": {
+        "url": "https://api.hubapi.com/crm/v3/objects/deals",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new deal in HubSpot CRM",
+        "risk_level": "medium",
+        "requires_approval": true,
+        "category": "crm"
+      }
+    },
+    {
+      "id": "airtable.list_records",
+      "name": "List Records",
+      "provider": {
+        "id": "airtable",
+        "name": "Airtable",
+        "category": "productivity",
+        "auth_type": "api_key",
+        "base_url": "https://api.airtable.com/v0",
+        "health_check_url": null,
+        "docs_url": "https://airtable.com/developers/web/api",
+        "required_secrets": ["airtable_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "base_id": {"type": "string", "description": "Airtable base ID"},
+          "table_name": {"type": "string", "description": "Table name"},
+          "maxRecords": {"type": "integer", "description": "Max records to return"}
+        },
+        "required": ["base_id", "table_name"]
+      },
+      "output_schema": {"type": "object", "properties": {"records": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.airtable.com/v0/{base_id}/{table_name}",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists records from an Airtable table",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "airtable.create_record",
+      "name": "Create Record",
+      "provider": {
+        "id": "airtable",
+        "name": "Airtable",
+        "category": "productivity",
+        "auth_type": "api_key",
+        "base_url": "https://api.airtable.com/v0",
+        "health_check_url": null,
+        "docs_url": "https://airtable.com/developers/web/api",
+        "required_secrets": ["airtable_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "base_id": {"type": "string", "description": "Airtable base ID"},
+          "table_name": {"type": "string", "description": "Table name"},
+          "fields": {"type": "object", "description": "Record fields"}
+        },
+        "required": ["base_id", "table_name", "fields"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}, "fields": {"type": "object"}}},
+      "execution": {
+        "url": "https://api.airtable.com/v0/{base_id}/{table_name}",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new record in Airtable",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "google_sheets.get_values",
+      "name": "Get Values",
+      "provider": {
+        "id": "google_sheets",
+        "name": "Google Sheets",
+        "category": "productivity",
+        "auth_type": "oauth2",
+        "base_url": "https://sheets.googleapis.com/v4",
+        "health_check_url": null,
+        "docs_url": "https://developers.google.com/sheets/api",
+        "required_secrets": ["google_oauth_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "spreadsheet_id": {"type": "string", "description": "Spreadsheet ID"},
+          "range": {"type": "string", "description": "Cell range (e.g. Sheet1!A1:D10)"}
+        },
+        "required": ["spreadsheet_id", "range"]
+      },
+      "output_schema": {"type": "object", "properties": {"values": {"type": "array"}}},
+      "execution": {
+        "url": "https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range}",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Gets cell values from Google Sheets",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "google_sheets.append_values",
+      "name": "Append Values",
+      "provider": {
+        "id": "google_sheets",
+        "name": "Google Sheets",
+        "category": "productivity",
+        "auth_type": "oauth2",
+        "base_url": "https://sheets.googleapis.com/v4",
+        "health_check_url": null,
+        "docs_url": "https://developers.google.com/sheets/api",
+        "required_secrets": ["google_oauth_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "spreadsheet_id": {"type": "string", "description": "Spreadsheet ID"},
+          "range": {"type": "string", "description": "Range to append to"},
+          "values": {"type": "array", "description": "Rows of values to append"}
+        },
+        "required": ["spreadsheet_id", "range", "values"]
+      },
+      "output_schema": {"type": "object", "properties": {"updates": {"type": "object"}}},
+      "execution": {
+        "url": "https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range}:append?valueInputOption=USER_ENTERED",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Appends rows to a Google Sheet",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "productivity"
+      }
+    },
+    {
+      "id": "mailchimp.add_member",
+      "name": "Add List Member",
+      "provider": {
+        "id": "mailchimp",
+        "name": "Mailchimp",
+        "category": "marketing",
+        "auth_type": "api_key",
+        "base_url": "https://{dc}.api.mailchimp.com/3.0",
+        "health_check_url": null,
+        "docs_url": "https://mailchimp.com/developer/marketing/api",
+        "required_secrets": ["mailchimp_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "dc": {"type": "string", "description": "Mailchimp data center (e.g. us1)"},
+          "list_id": {"type": "string", "description": "Audience list ID"},
+          "email_address": {"type": "string", "description": "Email to subscribe"},
+          "status": {"type": "string", "description": "Subscription status"}
+        },
+        "required": ["dc", "list_id", "email_address", "status"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}, "status": {"type": "string"}}},
+      "execution": {
+        "url": "https://{dc}.api.mailchimp.com/3.0/lists/{list_id}/members",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Adds a member to a Mailchimp audience list",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "marketing"
+      }
+    },
+    {
+      "id": "mailchimp.list_campaigns",
+      "name": "List Campaigns",
+      "provider": {
+        "id": "mailchimp",
+        "name": "Mailchimp",
+        "category": "marketing",
+        "auth_type": "api_key",
+        "base_url": "https://{dc}.api.mailchimp.com/3.0",
+        "health_check_url": null,
+        "docs_url": "https://mailchimp.com/developer/marketing/api",
+        "required_secrets": ["mailchimp_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "dc": {"type": "string", "description": "Mailchimp data center"},
+          "count": {"type": "integer", "description": "Number of campaigns to return"}
+        },
+        "required": ["dc"]
+      },
+      "output_schema": {"type": "object", "properties": {"campaigns": {"type": "array"}}},
+      "execution": {
+        "url": "https://{dc}.api.mailchimp.com/3.0/campaigns",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists Mailchimp campaigns",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "marketing"
+      }
+    },
+    {
+      "id": "zendesk.create_ticket",
+      "name": "Create Ticket",
+      "provider": {
+        "id": "zendesk",
+        "name": "Zendesk",
+        "category": "support",
+        "auth_type": "api_key",
+        "base_url": "https://{subdomain}.zendesk.com/api/v2",
+        "health_check_url": null,
+        "docs_url": "https://developer.zendesk.com/api-reference",
+        "required_secrets": ["zendesk_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "subdomain": {"type": "string", "description": "Zendesk subdomain"},
+          "subject": {"type": "string", "description": "Ticket subject"},
+          "description": {"type": "string", "description": "Ticket description"},
+          "priority": {"type": "string", "description": "Priority: urgent, high, normal, low"}
+        },
+        "required": ["subdomain", "subject", "description"]
+      },
+      "output_schema": {"type": "object", "properties": {"ticket": {"type": "object"}}},
+      "execution": {
+        "url": "https://{subdomain}.zendesk.com/api/v2/tickets.json",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a support ticket in Zendesk",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "support"
+      }
+    },
+    {
+      "id": "zendesk.list_tickets",
+      "name": "List Tickets",
+      "provider": {
+        "id": "zendesk",
+        "name": "Zendesk",
+        "category": "support",
+        "auth_type": "api_key",
+        "base_url": "https://{subdomain}.zendesk.com/api/v2",
+        "health_check_url": null,
+        "docs_url": "https://developer.zendesk.com/api-reference",
+        "required_secrets": ["zendesk_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "subdomain": {"type": "string", "description": "Zendesk subdomain"}
+        },
+        "required": ["subdomain"]
+      },
+      "output_schema": {"type": "object", "properties": {"tickets": {"type": "array"}}},
+      "execution": {
+        "url": "https://{subdomain}.zendesk.com/api/v2/tickets.json",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists tickets from Zendesk",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "support"
+      }
+    },
+    {
+      "id": "linear.create_issue",
+      "name": "Create Issue",
+      "provider": {
+        "id": "linear",
+        "name": "Linear",
+        "category": "project_management",
+        "auth_type": "api_key",
+        "base_url": "https://api.linear.app",
+        "health_check_url": null,
+        "docs_url": "https://developers.linear.app/docs",
+        "required_secrets": ["linear_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "Issue title"},
+          "description": {"type": "string", "description": "Issue description"},
+          "teamId": {"type": "string", "description": "Team ID"},
+          "priority": {"type": "integer", "description": "Priority (0-4)"}
+        },
+        "required": ["title", "teamId"]
+      },
+      "output_schema": {"type": "object", "properties": {"data": {"type": "object"}}},
+      "execution": {
+        "url": "https://api.linear.app/graphql",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Creates a new issue in Linear",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "project_management"
+      }
+    },
+    {
+      "id": "linear.list_issues",
+      "name": "List Issues",
+      "provider": {
+        "id": "linear",
+        "name": "Linear",
+        "category": "project_management",
+        "auth_type": "api_key",
+        "base_url": "https://api.linear.app",
+        "health_check_url": null,
+        "docs_url": "https://developers.linear.app/docs",
+        "required_secrets": ["linear_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "first": {"type": "integer", "description": "Number of issues to return"}
+        },
+        "required": []
+      },
+      "output_schema": {"type": "object", "properties": {"data": {"type": "object"}}},
+      "execution": {
+        "url": "https://api.linear.app/graphql",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Lists issues from Linear",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "project_management"
+      }
+    },
+    {
+      "id": "discord.send_message",
+      "name": "Send Message",
+      "provider": {
+        "id": "discord",
+        "name": "Discord",
+        "category": "messaging",
+        "auth_type": "api_key",
+        "base_url": "https://discord.com/api/v10",
+        "health_check_url": null,
+        "docs_url": "https://discord.com/developers/docs",
+        "required_secrets": ["discord_bot_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "channel_id": {"type": "string", "description": "Channel ID"},
+          "content": {"type": "string", "description": "Message content"}
+        },
+        "required": ["channel_id", "content"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}}},
+      "execution": {
+        "url": "https://discord.com/api/v10/channels/{channel_id}/messages",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Sends a message to a Discord channel",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "discord.list_channels",
+      "name": "List Channels",
+      "provider": {
+        "id": "discord",
+        "name": "Discord",
+        "category": "messaging",
+        "auth_type": "api_key",
+        "base_url": "https://discord.com/api/v10",
+        "health_check_url": null,
+        "docs_url": "https://discord.com/developers/docs",
+        "required_secrets": ["discord_bot_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "guild_id": {"type": "string", "description": "Server (guild) ID"}
+        },
+        "required": ["guild_id"]
+      },
+      "output_schema": {"type": "object", "properties": {"channels": {"type": "array"}}},
+      "execution": {
+        "url": "https://discord.com/api/v10/guilds/{guild_id}/channels",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists channels in a Discord server",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "messaging"
+      }
+    },
+    {
+      "id": "firebase.send_notification",
+      "name": "Send Push Notification",
+      "provider": {
+        "id": "firebase",
+        "name": "Firebase",
+        "category": "notifications",
+        "auth_type": "oauth2",
+        "base_url": "https://fcm.googleapis.com/v1",
+        "health_check_url": null,
+        "docs_url": "https://firebase.google.com/docs/cloud-messaging/",
+        "required_secrets": ["firebase_service_account"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {"type": "string", "description": "Firebase project ID"},
+          "token": {"type": "string", "description": "Device FCM token"},
+          "title": {"type": "string", "description": "Notification title"},
+          "body": {"type": "string", "description": "Notification body"}
+        },
+        "required": ["project_id", "token", "title", "body"]
+      },
+      "output_schema": {"type": "object", "properties": {"name": {"type": "string"}}},
+      "execution": {
+        "url": "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Sends a push notification via Firebase Cloud Messaging",
+        "risk_level": "medium",
+        "requires_approval": false,
+        "category": "notifications"
+      }
+    },
+    {
+      "id": "cloudflare.list_zones",
+      "name": "List Zones",
+      "provider": {
+        "id": "cloudflare",
+        "name": "Cloudflare",
+        "category": "infrastructure",
+        "auth_type": "api_key",
+        "base_url": "https://api.cloudflare.com/client/v4",
+        "health_check_url": null,
+        "docs_url": "https://developers.cloudflare.com/api",
+        "required_secrets": ["cloudflare_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {"type": "object", "properties": {}, "required": []},
+      "output_schema": {"type": "object", "properties": {"result": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.cloudflare.com/client/v4/zones",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists DNS zones in Cloudflare",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "infrastructure"
+      }
+    },
+    {
+      "id": "cloudflare.purge_cache",
+      "name": "Purge Cache",
+      "provider": {
+        "id": "cloudflare",
+        "name": "Cloudflare",
+        "category": "infrastructure",
+        "auth_type": "api_key",
+        "base_url": "https://api.cloudflare.com/client/v4",
+        "health_check_url": null,
+        "docs_url": "https://developers.cloudflare.com/api",
+        "required_secrets": ["cloudflare_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "zone_id": {"type": "string", "description": "Zone ID"},
+          "purge_everything": {"type": "boolean", "description": "Purge all cached content"}
+        },
+        "required": ["zone_id"]
+      },
+      "output_schema": {"type": "object", "properties": {"success": {"type": "boolean"}}},
+      "execution": {
+        "url": "https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Purges the cache for a Cloudflare zone",
+        "risk_level": "high",
+        "requires_approval": true,
+        "category": "infrastructure"
+      }
+    },
+    {
+      "id": "resend.send_email",
+      "name": "Send Email",
+      "provider": {
+        "id": "resend",
+        "name": "Resend",
+        "category": "email",
+        "auth_type": "api_key",
+        "base_url": "https://api.resend.com",
+        "health_check_url": null,
+        "docs_url": "https://resend.com/docs/api-reference",
+        "required_secrets": ["resend_api_key"]
+      },
+      "version": "1.0.0",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "from": {"type": "string", "description": "Sender email"},
+          "to": {"type": "string", "description": "Recipient email"},
+          "subject": {"type": "string", "description": "Email subject"},
+          "html": {"type": "string", "description": "HTML body"}
+        },
+        "required": ["from", "to", "subject"]
+      },
+      "output_schema": {"type": "object", "properties": {"id": {"type": "string"}}},
+      "execution": {
+        "url": "https://api.resend.com/emails",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"}
+      },
+      "tool_profile": {
+        "description": "Sends an email via Resend",
+        "risk_level": "medium",
+        "requires_approval": false,
+        "category": "email"
+      }
+    },
+    {
+      "id": "vercel.list_deployments",
+      "name": "List Deployments",
+      "provider": {
+        "id": "vercel",
+        "name": "Vercel",
+        "category": "infrastructure",
+        "auth_type": "api_key",
+        "base_url": "https://api.vercel.com",
+        "health_check_url": null,
+        "docs_url": "https://vercel.com/docs/rest-api",
+        "required_secrets": ["vercel_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}, "required": []},
+      "output_schema": {"type": "object", "properties": {"deployments": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.vercel.com/v6/deployments",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists deployments from Vercel",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "infrastructure"
+      }
+    },
+    {
+      "id": "vercel.list_projects",
+      "name": "List Projects",
+      "provider": {
+        "id": "vercel",
+        "name": "Vercel",
+        "category": "infrastructure",
+        "auth_type": "api_key",
+        "base_url": "https://api.vercel.com",
+        "health_check_url": null,
+        "docs_url": "https://vercel.com/docs/rest-api",
+        "required_secrets": ["vercel_api_token"]
+      },
+      "version": "1.0.0",
+      "input_schema": {"type": "object", "properties": {}, "required": []},
+      "output_schema": {"type": "object", "properties": {"projects": {"type": "array"}}},
+      "execution": {
+        "url": "https://api.vercel.com/v9/projects",
+        "method": "GET",
+        "headers": {}
+      },
+      "tool_profile": {
+        "description": "Lists projects from Vercel",
+        "risk_level": "low",
+        "requires_approval": false,
+        "category": "infrastructure"
+      }
+    }
+  ]
+}
