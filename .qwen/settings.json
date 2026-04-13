@@ -25,7 +25,9 @@
       "Bash(.venv\\scripts\\python.exe *)",
       "Bash(findstr *)",
       "Bash(mkdir *)",
-      "Bash(dir *)"
+      "Bash(dir *)",
+      "Bash(sed *)",
+      "Bash(powershell *)"
     ]
   },
   "$version": 3

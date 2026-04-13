@@ -1,18 +1,20 @@
-"""src/api/routes/analytical_chat.py — Chat analítico con acceso a SQL y EventStore.
+"""src/api/routes/analytical_chat.py — Chat analítico con IA (Intent Classifier + Tools + Synthesizer).
 
-POST /analytical/ask — Recibe pregunta NL, ejecuta análisis y responde.
+POST /analytical/ask — Recibe pregunta NL, clasifica intención con LLM, ejecuta consulta y responde narrativamente.
 GET  /analytical/queries — Lista consultas analíticas disponibles.
 """
 
 from __future__ import annotations
 
 import logging
+import time
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from ..middleware import require_org_id
-from ...crews.analytical_crew import AnalyticalCrew, ALLOWED_ANALYTICAL_QUERIES
+from ...crews.analytical_crew import AnalyticalCrew
+from ...crews.analytical_queries import ALLOWED_ANALYTICAL_QUERIES
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytical", tags=["analytical"])
@@ -23,7 +25,7 @@ class AnalyticalAskRequest(BaseModel):
     question: str = Field(..., min_length=1, description="Pregunta en lenguaje natural")
     query_type: Optional[str] = Field(
         None,
-        description="Tipo de consulta específico (opcional, si no se provee se infiere de la pregunta)",
+        description="Tipo de consulta específico (opcional, si no se provee se clasifica con LLM)",
     )
 
 
@@ -57,6 +59,37 @@ QUERY_DESCRIPTIONS: Dict[str, str] = {
 }
 
 
+# ── Rate limiter simple por org ──────────────────────────────────
+
+_rate_limit_store: Dict[str, list] = {}
+_RATE_LIMIT_MAX = 10  # requests por minuto
+_RATE_LIMIT_WINDOW = 60  # segundos
+
+
+def _check_rate_limit(org_id: str) -> None:
+    """Verificar rate limit: max 10 requests/min por org."""
+    now = time.time()
+
+    if org_id not in _rate_limit_store:
+        _rate_limit_store[org_id] = []
+
+    # Limpiar timestamps viejos
+    _rate_limit_store[org_id] = [
+        t for t in _rate_limit_store[org_id] if now - t < _RATE_LIMIT_WINDOW
+    ]
+
+    if len(_rate_limit_store[org_id]) >= _RATE_LIMIT_MAX:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "message": "Demasiadas consultas analíticas. Esperá un momento.",
+                "retry_after": _RATE_LIMIT_WINDOW,
+            },
+        )
+
+    _rate_limit_store[org_id].append(now)
+
+
 @router.post("/ask", response_model=AnalyticalAskResponse)
 async def ask_analytical(
     request: AnalyticalAskRequest,
@@ -65,48 +98,57 @@ async def ask_analytical(
     """
     Responder una pregunta analítica en lenguaje natural.
 
-    Phase 4: El asistente analítico ejecuta consultas pre-validadas sobre
-    datos históricos de la organización.
+    Phase 4 (upgrade): El asistente analítico usa LLM para:
+    1. Clasificar la intención de la pregunta
+    2. Ejecutar consultas pre-validadas con herramientas
+    3. Sintetizar una respuesta narrativa en Markdown
 
-    En MVP, el usuario puede:
-    1. Especificar query_type directamente (recomendado)
-    2. O dejar que el sistema infiera de la pregunta (simple keyword matching)
+    Si query_type se proporciona, se usa directamente (override).
+    Si no, el sistema clasifica la intención con LLM (fallback: keywords).
     """
-    # Determinar query_type
-    query_type = request.query_type
-    if not query_type:
-        query_type = _infer_query_type(request.question)
+    # Rate limiting
+    _check_rate_limit(org_id)
 
-    if query_type not in ALLOWED_ANALYTICAL_QUERIES:
+    # Si el usuario proporcionó query_type explícito, validarlo
+    if request.query_type and request.query_type not in ALLOWED_ANALYTICAL_QUERIES:
         raise HTTPException(
             status_code=400,
             detail={
-                "message": f"No se pudo determinar el tipo de consulta para: '{request.question}'",
+                "message": f"Query type '{request.query_type}' no es válido.",
                 "available_queries": list(ALLOWED_ANALYTICAL_QUERIES.keys()),
-                "hint": "Especificá query_type explícitamente o reformulá tu pregunta.",
             },
         )
 
-    # Ejecutar análisis
+    # Ejecutar análisis con el pipeline LLM
     crew = AnalyticalCrew(org_id=org_id)
     try:
-        result = await crew.analyze(query_type=query_type)
+        result = await crew.ask(
+            question=request.question,
+            query_type_hint=request.query_type,
+        )
     except Exception as exc:
-        logger.error("Error en consulta analítica %s: %s", query_type, exc)
+        logger.error("Error en consulta analítica: %s", exc)
         raise HTTPException(
             status_code=500,
             detail=f"Error ejecutando análisis: {str(exc)}",
         )
 
-    # Generar resumen narrativo
-    summary = _generate_summary(query_type, result)
+    # Si el intent fue unknown, retornar error amigable
+    if result["query_type"] == "unknown":
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": result["summary"],
+                "available_queries": list(ALLOWED_ANALYTICAL_QUERIES.keys()),
+            },
+        )
 
     return AnalyticalAskResponse(
-        question=request.question,
-        query_type=query_type,
-        data=result.get("data", []),
-        summary=summary,
-        metadata=result.get("metadata", {}),
+        question=result["question"],
+        query_type=result["query_type"],
+        data=result["data"],
+        summary=result["summary"],
+        metadata=result["metadata"],
     )
 
 
@@ -118,81 +160,3 @@ async def list_analytical_queries():
         for key, desc in QUERY_DESCRIPTIONS.items()
     ]
     return AnalyticalQueriesResponse(queries=queries)
-
-
-# ── Helpers ───────────────────────────────────────────────────────
-
-def _infer_query_type(question: str) -> str:
-    """Inferir tipo de consulta a partir de keywords en la pregunta.
-
-    SUPUESTO: Para MVP usamos matching simple por keywords.
-    En producción se usaría un LLM para clasificación de intents.
-    """
-    q = question.lower()
-
-    if any(kw in q for kw in ["agente", "agent", "éxito", "success", "mejor", "tasa"]):
-        return "agent_success_rate"
-    if any(kw in q for kw in ["ticket", "estado", "status", "distribución"]):
-        return "tickets_by_status"
-    if any(kw in q for kw in ["token", "consumo", "gasto", "costo", "llm"]):
-        return "flow_token_consumption"
-    if any(kw in q for kw in ["evento", "event", "reciente", "recent", "24", "hoy"]):
-        return "recent_events_summary"
-    if any(kw in q for kw in ["tarea", "task", "flow", "tipo"]):
-        return "tasks_by_flow_type"
-
-    # Default: retornar None para que el endpoint lance error útil
-    return "unknown"
-
-
-def _generate_summary(query_type: str, result: Dict[str, Any]) -> str:
-    """Generar resumen narrativo de los resultados."""
-    data = result.get("data", [])
-    row_count = len(data) if isinstance(data, list) else 0
-
-    if query_type == "agent_success_rate":
-        if not data:
-            return "No hay datos de agentes en los últimos 7 días."
-        top = data[0] if data else {}
-        return (
-            f"El agente con mayor tasa de éxito es **{top.get('role', 'N/A')}** "
-            f"con {top.get('success_rate', 0)}% de éxito "
-            f"({top.get('completed_tasks', 0)}/{top.get('total_tasks', 0)} tareas)."
-        )
-
-    if query_type == "tickets_by_status":
-        if not data:
-            return "No hay tickets registrados."
-        total = sum(d.get("count", 0) for d in data)
-        done = next((d["count"] for d in data if d.get("status") == "done"), 0)
-        return (
-            f"Hay **{total} tickets** en total. "
-            f"**{done}** completados exitosamente."
-        )
-
-    if query_type == "flow_token_consumption":
-        if not data:
-            return "No hay datos de consumo de tokens."
-        total_tokens = sum(d.get("total_tokens", 0) for d in data)
-        return (
-            f"El consumo total de tokens es de **{total_tokens:,}**. "
-            f"El flow con mayor consumo es **{data[0].get('flow_type', 'N/A')}** "
-            f"con {data[0].get('total_tokens', 0):,} tokens."
-        )
-
-    if query_type == "recent_events_summary":
-        if not data:
-            return "No hay eventos en las últimas 24 horas."
-        total = sum(d.get("count", 0) for d in data)
-        return (
-            f"Se registraron **{total} eventos** en las últimas 24 horas, "
-            f"de **{row_count} tipos** diferentes."
-        )
-
-    if query_type == "tasks_by_flow_type":
-        if not data:
-            return "No hay tareas registradas."
-        total = sum(d.get("count", 0) for d in data)
-        return f"Hay **{total} tareas** registradas en **{row_count} combinaciones** de flow/estado."
-
-    return f"Consulta ejecutada: {row_count} filas retornadas."

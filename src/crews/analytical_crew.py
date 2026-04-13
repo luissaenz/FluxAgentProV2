@@ -1,392 +1,340 @@
-"""AnalyticalCrew — Agente especializado con acceso a herramientas SQL y EventStore.
+"""AnalyticalCrew — Agente analitico con CrewAI, herramientas SQL y EventStore.
 
-Phase 4: Crew analítico que procesa consultas complejas sobre datos históricos
-de la organización. Permite responder preguntas como:
-- "¿Cuál es el agente con mayor tasa de éxito en la última semana?"
-- "¿Cuántos tickets se completaron exitosamente este mes?"
-- "¿Qué flow tiene el mayor consumo de tokens?"
+Phase 4: Crew analitico que procesa consultas en lenguaje natural usando:
+1. Intent Classification via LLM para clasificar la pregunta del usuario
+2. Herramientas CrewAI (SQLAnalyticalTool, EventStoreTool) para ejecutar consultas
+3. Synthesis via LLM para generar respuestas narrativas con insights
 
-El agente tiene acceso a:
-1. Consultas SQL seguras (pre-validadas contra un allowlist)
-2. EventStore para análisis de eventos de dominio
-3. LLM para interpretar preguntas en lenguaje natural y generar respuestas
+Pipeline: Question -> Intent Classifier (LLM) -> Tool Execution -> Synthesizer (LLM) -> Response
+
+Seguridad:
+- SQL dinamico prohibido: solo consultas del ALLOWED_ANALYTICAL_QUERIES
+- Multi-tenancy: org_id inyectado automaticamente en las herramientas
+- Fallback por keywords si el LLM falla
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
+from crewai import LLM
+
 from .base_crew import BaseCrew
-from ..db.session import get_tenant_client
-from ..events.store import EventStore
+from .analytical_queries import ALLOWED_ANALYTICAL_QUERIES
+from ..config import get_settings
+from ..tools.analytical import SQLAnalyticalTool, EventStoreTool
 
 logger = logging.getLogger(__name__)
 
-# ── Consultas SQL pre-validadas (allowlist de seguridad) ─────────
+# ── Intentos de clasificacion por keywords (fallback) ─────────────
 
-ALLOWED_ANALYTICAL_QUERIES: Dict[str, str] = {
-    "agent_success_rate": """
-        SELECT
-            ac.role,
-            COUNT(t.id) as total_tasks,
-            SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks,
-            ROUND(
-                100.0 * SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) / NULLIF(COUNT(t.id), 0),
-                2
-            ) as success_rate
-        FROM tasks t
-        JOIN agent_catalog ac ON t.assigned_agent_role = ac.role AND t.org_id = ac.org_id
-        WHERE t.org_id = '{org_id}'
-          AND t.created_at >= NOW() - INTERVAL '7 days'
-        GROUP BY ac.role
-        ORDER BY success_rate DESC
-        LIMIT 10
-    """,
-    "tickets_by_status": """
-        SELECT
-            status,
-            COUNT(*) as count
-        FROM tickets
-        WHERE org_id = '{org_id}'
-        GROUP BY status
-        ORDER BY count DESC
-    """,
-    "flow_token_consumption": """
-        SELECT
-            flow_type,
-            COUNT(*) as total_runs,
-            SUM(tokens_used) as total_tokens,
-            ROUND(AVG(tokens_used), 2) as avg_tokens
-        FROM tasks
-        WHERE org_id = '{org_id}'
-          AND tokens_used > 0
-        GROUP BY flow_type
-        ORDER BY total_tokens DESC
-        LIMIT 10
-    """,
-    "recent_events_summary": """
-        SELECT
-            event_type,
-            COUNT(*) as count
-        FROM domain_events
-        WHERE org_id = '{org_id}'
-          AND created_at >= NOW() - INTERVAL '24 hours'
-        GROUP BY event_type
-        ORDER BY count DESC
-        LIMIT 20
-    """,
-    "tasks_by_flow_type": """
-        SELECT
-            flow_type,
-            status,
-            COUNT(*) as count
-        FROM tasks
-        WHERE org_id = '{org_id}'
-        GROUP BY flow_type, status
-        ORDER BY flow_type, count DESC
-    """,
+_INTENT_KEYWORDS: Dict[str, List[str]] = {
+    "agent_success_rate": ["agente", "agent", "exito", "success", "mejor", "tasa", "eficiente", "eficiencia"],
+    "tickets_by_status": ["ticket", "estado", "status", "distribucion"],
+    "flow_token_consumption": ["token", "consumo", "gasto", "costo", "llm"],
+    "recent_events_summary": ["evento", "event", "reciente", "recent", "24", "hoy"],
+    "tasks_by_flow_type": ["tarea", "task", "flow", "tipo"],
 }
+
+_AVAILABLE_INTENTS = ", ".join(ALLOWED_ANALYTICAL_QUERIES.keys())
 
 
 class AnalyticalCrew(BaseCrew):
-    """Crew analítico especializado con acceso a SQL y EventStore.
+    """Crew analitico con CrewAI Agent y herramientas SQL/EventStore.
 
-    Este crew no sigue el patrón estándar de BaseCrew porque:
-    1. No ejecuta tareas genéricas de CrewAI
-    2. Tiene acceso directo a consultas SQL pre-validadas
-    3. Puede consultar el EventStore para análisis temporal
-
-    Uso::
-
-        crew = AnalyticalCrew(org_id="org-uuid")
-        result = await crew.analyze(
-            query_type="agent_success_rate",
-            params={"timeframe": "7d"}
-        )
+    Implementa el pipeline: Intent Classifier -> Tool Execution -> Synthesizer
     """
 
     def __init__(self, org_id: str, user_id: Optional[str] = None) -> None:
-        self.org_id = org_id
+        # FIX ID-005: Inicializamos la clase base con un role analitico generico.
+        super().__init__(org_id, role="analytical_analyst")
         self.user_id = user_id
-        self._event_store: Optional[EventStore] = None
+        # FIX ID-009: Inicializar _last_tokens_used para evitar AttributeError
+        # en el path de fallback cuando _synthesize no llama al LLM.
+        self._last_tokens_used = 0
 
-    @property
-    def event_store(self) -> EventStore:
-        """Lazy-init del EventStore."""
-        if self._event_store is None:
-            self._event_store = EventStore(self.org_id, self.user_id)
-        return self._event_store
+    # ── Helpers LLM no bloqueantes ────────────────────────────────
+
+    def _build_llm(self, temperature: float = 0.2, max_tokens: int = 500) -> LLM:
+        """Crear un LLM configurado con los parametros adecuados.
+
+        FIX ID-012: Crear LLM directamente en lugar de clonar via type(llm).
+        """
+        settings = get_settings()
+        return LLM(
+            model=settings.groq_model,
+            temperature=temperature,
+            max_completion_tokens=max_tokens,
+            api_key=settings.groq_api_key,
+        )
+
+    async def _llm_call_async(self, llm: LLM, messages: list[dict]) -> str:
+        """Llamar al LLM de forma no bloqueante.
+
+        FIX ID-010: llm.call() es sincrono y bloquea el event loop.
+        Lo ejecutamos en un thread pool para no bloquear FastAPI.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: llm.call(messages=messages),
+        )
+
+    # ── Metodos publicos ───────────────────────────────────────────
 
     async def analyze(
         self,
         query_type: str,
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Ejecutar un análisis pre-definido.
-
-        Args:
-            query_type: Nombre de la consulta allowlisted
-            params: Parámetros adicionales (timeframe, filters, etc.)
-
-        Returns:
-            Dict con resultados del análisis y metadata
-
-        Raises:
-            ValueError: Si query_type no está en el allowlist
-        """
+        """Ejecutar un analisis pre-definido (metodo legacy compatible)."""
         if query_type not in ALLOWED_ANALYTICAL_QUERIES:
             raise ValueError(
                 f"Query type '{query_type}' not allowed. "
                 f"Available: {list(ALLOWED_ANALYTICAL_QUERIES.keys())}"
             )
 
-        # Ejecutar consulta SQL segura
-        sql_result = await self._execute_safe_query(query_type, params or {})
+        tool = SQLAnalyticalTool(org_id=self.org_id)
+        params_json = json.dumps(params or {})
+        raw_result = tool._run(query_type=query_type, params=params_json)
+        data = json.loads(raw_result)
 
-        # Enriquecer con metadata
         return {
             "query_type": query_type,
             "executed_at": datetime.now(timezone.utc).isoformat(),
             "org_id": self.org_id,
-            "data": sql_result,
+            "data": data.get("data", []),
             "metadata": {
-                "row_count": len(sql_result) if isinstance(sql_result, list) else 0,
+                "row_count": data.get("row_count", 0),
                 "query_template": ALLOWED_ANALYTICAL_QUERIES[query_type][:100] + "...",
             },
         }
 
-    async def _execute_safe_query(
-        self,
-        query_type: str,
-        params: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
-        """Ejecutar una consulta SQL pre-validada de forma segura.
+    async def ask(self, question: str, query_type_hint: Optional[str] = None) -> Dict[str, Any]:
+        """Procesar pregunta en lenguaje natural con el pipeline completo."""
+        # Paso 1: Clasificar intencion (LLM o fallback)
+        intent = query_type_hint or await self._classify_intent(question)
 
-        SUPUESTO: Supabase client no soporta ejecución de SQL raw directamente.
-        Se usa un enfoque de consultas parametrizadas con el tenant client.
-        Para queries complejas, se usa RPC o vistas materializadas.
+        # Validar que el intent es valido
+        if intent not in ALLOWED_ANALYTICAL_QUERIES:
+            return {
+                "question": question,
+                "query_type": "unknown",
+                "data": [],
+                "summary": (
+                    f"No tengo acceso a datos para la pregunta: '{question}'.\n\n"
+                    f"Puedo ayudarte con: {_AVAILABLE_INTENTS}."
+                ),
+                "metadata": {"tokens_used": 0, "row_count": 0},
+            }
 
-        En MVP, simulamos la ejecución con consultas seguras via tenant client.
-        """
-        # SUPUESTO: Para MVP, usamos el tenant client con consultas directas
-        # a las tablas, ya que Supabase no permite SQL raw sin RPC.
-        # En producción real, se crearían RPC functions para cada query.
+        # Paso 2: Ejecutar herramienta
+        tool = SQLAnalyticalTool(org_id=self.org_id)
+        raw_result = tool._run(query_type=intent, params="{}")
+        query_data = json.loads(raw_result)
 
-        with get_tenant_client(self.org_id, self.user_id) as db:
-            if query_type == "agent_success_rate":
-                return await self._query_agent_success_rate(db)
-            elif query_type == "tickets_by_status":
-                return await self._query_tickets_by_status(db)
-            elif query_type == "flow_token_consumption":
-                return await self._query_flow_tokens(db)
-            elif query_type == "recent_events_summary":
-                return await self._query_recent_events(db)
-            elif query_type == "tasks_by_flow_type":
-                return await self._query_tasks_by_flow(db)
-            else:
-                return []
+        data = query_data.get("data", [])
+        row_count = query_data.get("row_count", 0)
 
-    async def _query_agent_success_rate(self, db) -> List[Dict[str, Any]]:
-        """Agente con mayor tasa de éxito."""
-        # SUPUESTO: Como Supabase no permite SQL raw, usamos consultas
-        # directas a las tablas y hacemos el agregado en Python.
-        # Esto es aceptable para MVP con volúmenes bajos.
-        from datetime import timedelta
+        # Si no hay datos, retornar mensaje informativo sin llamar al LLM
+        if not data:
+            return {
+                "question": question,
+                "query_type": intent,
+                "data": [],
+                "summary": query_data.get(
+                    "message",
+                    f"No hay datos disponibles para {intent}.",
+                ),
+                "metadata": {"tokens_used": 0, "row_count": 0},
+            }
 
-        seven_days_ago = (
-            datetime.now(timezone.utc) - timedelta(days=7)
-        ).isoformat()
+        # Paso 3: Enriquecer con EventStore si es relevante
+        event_context = ""
+        if intent in ("agent_success_rate", "tasks_by_flow_type"):
+            event_tool = EventStoreTool(org_id=self.org_id)
+            event_raw = event_tool._run(limit=10)
+            event_data = json.loads(event_raw)
+            if event_data.get("count", 0) > 0:
+                event_context = (
+                    f"\nContexto de eventos recientes: "
+                    f"{json.dumps(event_data.get('events', [])[:3], ensure_ascii=False)}"
+                )
 
-        result = (
-            db.table("tasks")
-            .select("id, flow_type, status, assigned_agent_role, tokens_used")
-            .gte("created_at", seven_days_ago)
-            .execute()
-        )
+        # Paso 4: Sintetizar respuesta narrativa con LLM
+        summary = await self._synthesize(question, intent, data, event_context)
 
-        tasks = result.data or []
-        stats: Dict[str, Dict[str, int]] = {}
+        return {
+            "question": question,
+            "query_type": intent,
+            "data": data,
+            "summary": summary,
+            "metadata": {
+                "tokens_used": self._last_tokens_used,
+                "row_count": row_count,
+            },
+        }
 
-        for task in tasks:
-            role = task.get("assigned_agent_role", "unknown")
-            if role not in stats:
-                stats[role] = {"total": 0, "completed": 0}
-            stats[role]["total"] += 1
-            if task.get("status") == "completed":
-                stats[role]["completed"] += 1
+    # ── Intent Classifier ──────────────────────────────────────────
 
-        # Calcular tasas y ordenar
-        result_list = []
-        for role, data in stats.items():
-            rate = round(100.0 * data["completed"] / data["total"], 2) if data["total"] > 0 else 0
-            result_list.append({
-                "role": role,
-                "total_tasks": data["total"],
-                "completed_tasks": data["completed"],
-                "success_rate": rate,
-            })
-
-        result_list.sort(key=lambda x: x["success_rate"], reverse=True)
-        return result_list[:10]
-
-    async def _query_tickets_by_status(self, db) -> List[Dict[str, Any]]:
-        """Tickets agrupados por estado."""
-        result = (
-            db.table("tickets")
-            .select("id, status")
-            .execute()
-        )
-
-        tickets = result.data or []
-        stats: Dict[str, int] = {}
-
-        for ticket in tickets:
-            status = ticket.get("status", "unknown")
-            stats[status] = stats.get(status, 0) + 1
-
-        return [
-            {"status": status, "count": count}
-            for status, count in sorted(stats.items(), key=lambda x: x[1], reverse=True)
-        ]
-
-    async def _query_flow_tokens(self, db) -> List[Dict[str, Any]]:
-        """Consumo de tokens por flow type."""
-        result = (
-            db.table("tasks")
-            .select("id, flow_type, tokens_used")
-            .not_.is_("tokens_used", "null")
-            .execute()
-        )
-
-        tasks = result.data or []
-        stats: Dict[str, Dict[str, Any]] = {}
-
-        for task in tasks:
-            flow = task.get("flow_type", "unknown")
-            tokens = task.get("tokens_used") or 0
-            if tokens == 0:
-                continue
-
-            if flow not in stats:
-                stats[flow] = {"total_tokens": 0, "runs": 0}
-            stats[flow]["total_tokens"] += tokens
-            stats[flow]["runs"] += 1
-
-        result_list = []
-        for flow, data in stats.items():
-            result_list.append({
-                "flow_type": flow,
-                "total_runs": data["runs"],
-                "total_tokens": data["total_tokens"],
-                "avg_tokens": round(data["total_tokens"] / data["runs"], 2) if data["runs"] > 0 else 0,
-            })
-
-        result_list.sort(key=lambda x: x["total_tokens"], reverse=True)
-        return result_list[:10]
-
-    async def _query_recent_events(self, db) -> List[Dict[str, Any]]:
-        """Resumen de eventos recientes (últimas 24h)."""
-        from datetime import timedelta
-
-        twenty_four_hours_ago = (
-            datetime.now(timezone.utc) - timedelta(hours=24)
-        ).isoformat()
-
-        result = (
-            db.table("domain_events")
-            .select("id, event_type, created_at")
-            .gte("created_at", twenty_four_hours_ago)
-            .execute()
-        )
-
-        events = result.data or []
-        stats: Dict[str, int] = {}
-
-        for event in events:
-            event_type = event.get("event_type", "unknown")
-            stats[event_type] = stats.get(event_type, 0) + 1
-
-        return [
-            {"event_type": event_type, "count": count}
-            for event_type, count in sorted(stats.items(), key=lambda x: x[1], reverse=True)
-        ][:20]
-
-    async def _query_tasks_by_flow(self, db) -> List[Dict[str, Any]]:
-        """Tareas agrupadas por flow type y estado."""
-        result = (
-            db.table("tasks")
-            .select("id, flow_type, status")
-            .execute()
-        )
-
-        tasks = result.data or []
-        stats: Dict[str, Dict[str, int]] = {}
-
-        for task in tasks:
-            flow = task.get("flow_type", "unknown")
-            status = task.get("status", "unknown")
-
-            if flow not in stats:
-                stats[flow] = {}
-            if status not in stats[flow]:
-                stats[flow][status] = 0
-            stats[flow][status] += 1
-
-        result_list = []
-        for flow, status_counts in stats.items():
-            for status, count in status_counts.items():
-                result_list.append({
-                    "flow_type": flow,
-                    "status": status,
-                    "count": count,
-                })
-
-        result_list.sort(key=lambda x: (x["flow_type"], -x["count"]))
-        return result_list
-
-    async def query_events(
-        self,
-        event_type: Optional[str] = None,
-        aggregate_type: Optional[str] = None,
-        limit: int = 100,
-    ) -> List[Dict[str, Any]]:
-        """Consulta directa al EventStore para análisis ad-hoc.
-
-        Args:
-            event_type: Filtrar por tipo de evento
-            aggregate_type: Filtrar por tipo de agregado
-            limit: Máximo de eventos a retornar
-
-        Returns:
-            Lista de eventos con metadata
-        """
-        events = []
+    async def _classify_intent(self, question: str) -> str:
+        """Clasificar la intencion de la pregunta usando LLM con fallback por keywords."""
         try:
-            # Intentar obtener eventos del store en memoria primero
-            if self._event_store and hasattr(self._event_store, '_pending'):
-                events = list(getattr(self._event_store, '_pending', []))
-        except Exception:
-            pass
+            return await self._classify_intent_llm(question)
+        except Exception as exc:
+            logger.warning("LLM intent classification failed, falling back to keywords: %s", exc)
+            return self._classify_intent_keywords(question)
 
-        # Complementar con eventos de la base de datos
-        with get_tenant_client(self.org_id, self.user_id) as db:
-            query = db.table("domain_events").select(
-                "id, event_type, aggregate_type, aggregate_id, payload, sequence, created_at"
+    async def _classify_intent_llm(self, question: str) -> str:
+        """Usar LLM para clasificar la intencion de la pregunta."""
+        llm = self._build_llm(temperature=0.0, max_tokens=30)
+
+        system_prompt = (
+            "Eres un clasificador de intenciones para un asistente analitico.\n"
+            f"Debes clasificar la pregunta del usuario en UNO de estos intents: {_AVAILABLE_INTENTS}.\n"
+            "Responde SOLO con el nombre del intent, sin explicaciones.\n"
+            "Si la pregunta no encaja con ninguno, responde 'unknown'."
+        )
+
+        # FIX ID-010: Llamada async no bloqueante
+        response = await self._llm_call_async(llm, [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question},
+        ])
+
+        intent = response.strip().lower() if isinstance(response, str) else ""
+
+        if intent in ALLOWED_ANALYTICAL_QUERIES:
+            return intent
+
+        return "unknown"
+
+    def _classify_intent_keywords(self, question: str) -> str:
+        """Fallback: clasificar por keywords simple."""
+        q = question.lower()
+        for intent, keywords in _INTENT_KEYWORDS.items():
+            if any(kw in q for kw in keywords):
+                return intent
+        return "unknown"
+
+    # ── Synthesizer ────────────────────────────────────────────────
+
+    async def _synthesize(
+        self,
+        question: str,
+        intent: str,
+        data: List[Dict[str, Any]],
+        event_context: str = "",
+    ) -> str:
+        """Generar respuesta narrativa con LLM a partir de los datos."""
+        llm = self._build_llm(temperature=0.2, max_tokens=500)
+
+        data_json = json.dumps(data, ensure_ascii=False, indent=2)
+
+        system_prompt = (
+            "Eres un asistente analitico que responde preguntas con datos concretos.\n"
+            "REGLAS ESTRICTAS:\n"
+            "1. SOLO usa los datos proporcionados - NUNCA inventes numeros.\n"
+            "2. Si los datos estan vacios, informa que no hay informacion disponible.\n"
+            "3. Responde en espanol con formato Markdown.\n"
+            "4. Destaca los numeros mas importantes en **negrita**.\n"
+            "5. Se conciso pero informativo - maximo 3-4 oraciones.\n"
+            "6. Menciona el agente/flow/item mas destacado si aplica."
+        )
+
+        user_content = (
+            f"Pregunta: {question}\n"
+            f"Intent: {intent}\n"
+            f"Datos:\n```json\n{data_json}\n```"
+        )
+        if event_context:
+            user_content += event_context
+
+        try:
+            # FIX ID-010: Llamada async no bloqueante
+            response = await self._llm_call_async(llm, [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ])
+            summary = response.strip() if isinstance(response, str) else ""
+
+            # FIX ID-004: Capturar tokens usados
+            if summary:
+                self._last_tokens_used = self._estimate_tokens(summary)
+                return summary
+        except Exception as exc:
+            logger.warning("LLM synthesis failed, using fallback template: %s", exc)
+
+        return self._synthesize_fallback(intent, data)
+
+    @staticmethod
+    def _estimate_tokens(summary: str) -> int:
+        """Estimar tokens usados basado en la longitud del resumen.
+
+        Regla practica: ~4 caracteres por token en promedio.
+        """
+        return max(1, len(summary) // 4)
+
+    def _synthesize_fallback(
+        self,
+        intent: str,
+        data: List[Dict[str, Any]],
+    ) -> str:
+        """Fallback narrativo sin LLM - templates hardcoded."""
+        row_count = len(data)
+
+        if intent == "agent_success_rate":
+            if not data:
+                return "No hay datos de agentes en los ultimos 7 dias."
+            top = data[0]
+            role = top.get("role") or "N/A"
+            return (
+                f"El agente con mayor tasa de exito es **{role}** "
+                f"con **{top.get('success_rate', 0)}%** de exito "
+                f"({top.get('completed_tasks', 0)}/{top.get('total_tasks', 0)} tareas)."
             )
 
-            if event_type:
-                query = query.eq("event_type", event_type)
-            if aggregate_type:
-                query = query.eq("aggregate_type", aggregate_type)
-
-            result = (
-                query.order("created_at", desc=True)
-                .limit(limit)
-                .execute()
+        if intent == "tickets_by_status":
+            if not data:
+                return "No hay tickets registrados."
+            total = sum(d.get("count", 0) for d in data)
+            done = next((d["count"] for d in data if d.get("status") == "done"), 0)
+            return (
+                f"Hay **{total} tickets** en total. "
+                f"**{done}** completados exitosamente."
             )
 
-            events.extend(result.data or [])
+        if intent == "flow_token_consumption":
+            if not data:
+                return "No hay datos de consumo de tokens."
+            total_tokens = sum(d.get("total_tokens", 0) for d in data)
+            flow_name = data[0].get("flow_type") or "N/A"
+            return (
+                f"El consumo total de tokens es de **{total_tokens:,}**. "
+                f"El flow con mayor consumo es **{flow_name}** "
+                f"con {data[0].get('total_tokens', 0):,} tokens."
+            )
 
-        return events[:limit]
+        if intent == "recent_events_summary":
+            if not data:
+                return "No hay eventos en las ultimas 24 horas."
+            total = sum(d.get("count", 0) for d in data)
+            return (
+                f"Se registraron **{total} eventos** en las ultimas 24 horas, "
+                f"de **{row_count} tipos** diferentes."
+            )
+
+        if intent == "tasks_by_flow_type":
+            if not data:
+                return "No hay tareas registradas."
+            total = sum(d.get("count", 0) for d in data)
+            return (
+                f"Hay **{total} tareas** registradas en "
+                f"**{row_count} combinaciones** de flow/estado."
+            )
+
+        return f"Consulta ejecutada: {row_count} filas retornadas."
