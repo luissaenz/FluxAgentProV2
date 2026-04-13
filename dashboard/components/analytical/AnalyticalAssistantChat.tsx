@@ -68,7 +68,8 @@ export function AnalyticalAssistantChat() {
   // Mutación para enviar pregunta
   const askMutation = useMutation({
     mutationFn: (question: string) =>
-      api.post('/analytical/ask', { question }),
+      // SUPUESTO: El servidor puede tardar por el procesamiento de IA, se aplica timeout de 30s.
+      api.post('/analytical/ask', { question }, { signal: AbortSignal.timeout(30000) }),
     onSuccess: (data) => {
       setMessages((prev) => [
         ...prev,
@@ -83,8 +84,21 @@ export function AnalyticalAssistantChat() {
       queryClient.invalidateQueries({ queryKey: ['analytical-queries'] })
     },
     onError: (error: any) => {
-      const errorMessage =
-        error?.detail?.message || error?.message || 'Error al procesar la consulta.'
+      console.error('Error in AnalyticalAssistant:', error)
+      
+      let errorMessage = 'Error al procesar la consulta.'
+      
+      // Manejo específico de errores según el contrato MVP
+      if (error?.status === 429) {
+        errorMessage = 'Demasiadas consultas analíticas. Esperá un momento.'
+      } else if (error?.status === 400) {
+        errorMessage = 'No puedo responder a esa pregunta específica. ¿Probás con una de las consultas rápidas?'
+      } else if (error?.code === 'ECONNABORTED') {
+        errorMessage = 'La consulta está tardando demasiado. Volvé a intentar en unos segundos.'
+      } else {
+        errorMessage = error?.detail?.message || error?.message || errorMessage
+      }
+
       setMessages((prev) => [
         ...prev,
         {
@@ -135,11 +149,16 @@ export function AnalyticalAssistantChat() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
-          variant="outline"
+          variant="default"
           size="icon"
-          className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
+          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 bg-primary text-primary-foreground border-none"
+          title="Asistente Analítico"
         >
-          <Brain className="h-5 w-5" />
+          <Brain className="h-6 w-6" />
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-sky-500"></span>
+          </span>
         </Button>
       </SheetTrigger>
 

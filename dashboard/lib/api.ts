@@ -47,12 +47,14 @@ export async function fapFetch(
 }
 
 export const api = {
-  get: (path: string) => fapFetch(path, { method: 'GET' }),
-  post: (path: string, body?: unknown) =>
-    fapFetch(path, { method: 'POST', body: JSON.stringify(body) }),
-  put: (path: string, body?: unknown) =>
-    fapFetch(path, { method: 'PUT', body: JSON.stringify(body) }),
-  patch: (path: string, body?: unknown) =>
-    fapFetch(path, { method: 'PATCH', body: JSON.stringify(body) }),
-  delete: (path: string) => fapFetch(path, { method: 'DELETE' }),
+  get: (path: string, options: Partial<RequestInit> = {}) => 
+    fapFetch(path, { method: 'GET', ...options }),
+  post: (path: string, body?: unknown, options: Partial<RequestInit> = {}) =>
+    fapFetch(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined, ...options }),
+  put: (path: string, body?: unknown, options: Partial<RequestInit> = {}) =>
+    fapFetch(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined, ...options }),
+  patch: (path: string, body?: unknown, options: Partial<RequestInit> = {}) =>
+    fapFetch(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined, ...options }),
+  delete: (path: string, options: Partial<RequestInit> = {}) => 
+    fapFetch(path, { method: 'DELETE', ...options }),
 }

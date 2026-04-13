@@ -6,6 +6,8 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
 import { useRealtimeDashboard } from '@/hooks/useRealtimeDashboard'
 
+import { AnalyticalAssistantChat } from '@/components/analytical/AnalyticalAssistantChat'
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { orgId } = useCurrentOrg()
   useRealtimeDashboard(orgId)
@@ -23,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </SidebarInset>
+      <AnalyticalAssistantChat />
     </SidebarProvider>
   )
 }
