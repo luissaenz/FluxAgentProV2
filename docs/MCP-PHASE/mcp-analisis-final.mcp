@@ -1,0 +1,108 @@
+# Análisis Final Consolidado: Ecosistema Agéntico FAP ↔ MCP
+
+## 1. Resumen Ejecutivo (Visión 2026)
+
+FluxAgentPro (FAP) ha demostrado ser una plataforma robusta para la orquestación de agentes internos. Este análisis confirma que la infraestructura actual está preparada para evolucionar de un sistema cerrado a un **Ecosistema Agéntico Abierto** mediante el **Model Context Protocol (MCP)**. 
+
+FAP no solo expondrá herramientas de ejecución, sino que actuará como un **Productor de Agentes y Workflows** para entidades externas (como Claude, agML o agentes autónomos en el edge), consolidándose como el "Sistema Operativo" de la automatización empresarial multitenant.
+
+---
+
+## 2. Estado del Arte en el Proyecto
+
+| Componente | Rol en MCP | Nivel de Madurez |
+| :--- | :--- | :--- |
+| **ArchitectFlow** | Generador de Tools | ✅ **ALTA** (Listo para integrar como System Tool) |
+| **FlowRegistry** | Catálogo de Capacidades | ✅ **ALTA** (Requiere interfaz de reflexión) |
+| **MCPPool** | Consumidor de Edge | ✅ **ALTA** (Probado como cliente) |
+| **TenantClient** | Aislamiento RLS | ✅ **PRODUCCIÓN** (Base de la seguridad MCP) |
+| **BaseFlow** | Orquestador HITL | ✅ **ALTA** (Protocolo de pausa/reinicio listo) |
+
+---
+
+## 3. Arquitectura del Servidor MCP (FAP-X)
+
+### 3.1 Entry Point y Transporte
+Se implementará un servidor dual en `src/mcp/server.py`:
+- **Stdio**: Para integración nativa de ultra-baja latencia con Claude Desktop.
+- **SSE (Server-Sent Events)**: Para integración remota y dashboards agénticos.
+
+> [!IMPORTANT]
+> Se utilizará el SDK oficial de MCP (`mcp>=1.0.0`) y el `MCPServerAdapter` de `crewai-tools` para garantizar compatibilidad total con el estándar JSON-RPC 2.0.
+
+### 3.2 Herramientas Críticas a Exponer
+
+#### A. Herramientas de Sistema (Integración Arquitectónica)
+- `create_workflow(description: str)`: Llama a **ArchitectFlow** para generar un nuevo flujo desde lenguaje natural. Claude podrá "auto-mejorar" el sistema creando sus propias herramientas.
+- `list_capabilities()`: Retorna el catálogo completo de flujos y agentes activos.
+
+#### B. Herramientas de Ejecución (Operativas)
+- `execute_flow(name, input)`: Ejecución de flujos registrados.
+- `poll_task(task_id)`: Monitoreo de estado para flujos asíncronos.
+- `approve_step(task_id, decision)`: Resolución de puntos HITL (Human-In-The-Loop).
+
+---
+
+## 4. Desafío: El Puente de Identidad (Auth Bridge)
+
+Para mantener el aislamiento multitenant, el servidor MCP implementará un decorador de contexto en `src/mcp/auth.py`:
+
+```python
+# Propuesta de flujo de seguridad
+async def mcp_security_context(token: str, org_id: str):
+    # 1. Valida JWT Supabase
+    # 2. Inyecta org_id en el TenantClient
+    # 3. Configura RLS para la sesión actual del agente
+```
+
+> [!CAUTION]
+> Cada conexión MCP (especialmente vía Stdio) debe recibir explícitamente el `org_id` al inicio para evitar fugas de contexto entre organizaciones en entornos compartidos.
+
+---
+
+## 5. Roadmap de Implementación Consolidado
+
+### Fase 1: Conectividad y Reflexión (⏱️ 4h)
+- Inicializar `src/mcp/` y `server.py`.
+- Implementar `flow_to_tool.py` para mapear automáticamente el `FlowRegistry`.
+- **Hito**: Listar herramientas de FAP dentro de Claude Desktop.
+
+### Fase 2: Agencia Productiva (⏱️ 6h)
+- Implementar Handlers para `execute_flow` y `create_workflow` (ArchitectFlow).
+- Configurar el Auth Bridge básico.
+- **Hito**: Claude construye y ejecuta un flujo simple en FAP desde el chat.
+
+### Fase 3: Ecosistema Full-Stack (⏱️ 6h)
+- Endpoint SSE en FastAPI para streaming de eventos.
+- Soporte para inputs complejos (imágenes/archivos) vía MCP.
+- **Hito**: Integración completa con el Dashboard de Approvals.
+
+---
+
+## 6. Configuración Claude Desktop (Blueprint)
+
+```json
+{
+  "mcpServers": {
+    "FluxAgentPro-V2": {
+      "command": "python.exe",
+      "args": ["-m", "src.mcp.server", "--org-id", "UUID_ORG"],
+      "env": {
+        "SUPABASE_URL": "...",
+        "SUPABASE_SERVICE_KEY": "...",
+        "ANTHROPIC_API_KEY": "..."
+      }
+    }
+  }
+}
+```
+
+---
+
+## 7. Conclusión
+
+La actualización de este análisis confirma que la pieza más potente para el sistema agéntico es el **ArchitectFlow**. Al exponerlo vía MCP, FAP deja de ser un ejecutor estático y se convierte en una plataforma de software que se construye a sí misma a través del diálogo con el agente.
+
+---
+*Reporte Final v2.0 - Actualizado 2026-04-13*
+*Basado en la unificación de criterios de ATG, Claude, Kilo y OC.*

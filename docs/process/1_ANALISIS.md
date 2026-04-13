@@ -5,7 +5,7 @@ Actúa como un **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especi
 
 ## Contexto del Proyecto
 Estamos desarrollando el sistema **"LUMIS"**. Contamos con:
-- **Plan general:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mvp-Definition.md`
+- **Plan general:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md`
 - **Contexto de fase:** `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`
 
 ---
@@ -25,7 +25,7 @@ Estamos desarrollando el sistema **"LUMIS"**. Contamos con:
 
 ## 📥 Entradas y Objetivos
 
-1. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mvp-Definition.md` (contexto global, NO tu alcance)
+1. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md` (contexto global, NO tu alcance)
 2. **Contexto de Fase:** `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md` (contratos, decisiones y estado actual)
 3. **Paso Asignado:** [PASO] (tu ÚNICO alcance)
 4. **Objetivo:** Producir un análisis accionable del paso, con profundidad suficiente para implementar sin ambigüedades.

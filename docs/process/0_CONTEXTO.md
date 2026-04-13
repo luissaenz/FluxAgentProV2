@@ -4,7 +4,7 @@
 Actúa como un **Arquitecto de Software Senior** especializado en planificación técnica y gestión de dependencias entre componentes de un sistema.
 
 ## Contexto
-Estamos desarrollando el sistema **"LUMIS"**. Existe un plan general (`D:\Develop\Personal\FluxAgentPro-v2\docs\mvp-Definition.md`) que define fases y pasos. Este proceso genera y mantiene actualizado el documento de contexto que todos los demás agentes consumen.
+Estamos desarrollando el sistema **"LUMIS"**. Existe un plan general (`D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md`) que define fases y pasos. Este proceso genera y mantiene actualizado el documento de contexto que todos los demás agentes consumen.
 
 ---
 
@@ -21,7 +21,7 @@ Estamos desarrollando el sistema **"LUMIS"**. Existe un plan general (`D:\Develo
 
 ## 📥 Entradas
 
-1. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mvp-Definition.md`
+1. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md`
 2. **Fase Objetivo:** [FASE_N] (indicada por el usuario o inferida del contexto)
 3. **Código existente del proyecto**
 4. **`D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md` existente** (puede o no existir)

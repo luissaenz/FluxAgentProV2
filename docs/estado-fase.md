@@ -1,53 +1,107 @@
-# 🗺️ ESTADO DE FASE: FASE 4 - CAPA DE INTELIGENCIA VISUAL Y ANALÍTICA 🏗️
+# 🗺️ ESTADO DE FASE: FASE 5 - ECOSISTEMA AGÉNTICO (MCP) 🏗️
 
 ## 1. Resumen de Fase
-- **Objetivo:** Dotar al sistema de herramientas avanzadas de supervisión, modelado de procesos de negocio y diagnóstico basado en IA, permitiendo entender no solo *qué* está pasando, sino *cómo* se conectan los procesos y qué dicen los datos históricos.
-- **Fase Anterior:** Fase 3 - Real-time Run Transcripts [FINALIZADA ✅]
-- **Pasos de la Fase 4:**
-    1. **4.1 [Framework]:** Metadata de Escalamiento en el `registry.py`. [COMPLETADO ✅]
-    2. **4.2 [Frontend]:** Implementar `FlowHierarchyView.tsx`. [COMPLETADO ✅]
-    3. **4.3 [Backend]:** Implementar `AnalyticalCrew`. [COMPLETADO ✅]
-    4. **4.4 [Frontend]:** Implementar `AnalyticalAssistantChat.tsx`. [COMPLETADO ✅]
-    5. **4.5 [Validación]:** Test de Precisión Analítica. [COMPLETADO ✅]
-    6. **FASE FINALIZADA ✅** Podrás encontrar la documentación de la Fase 5 en el plan general.
+- **Objetivo:** Transformar FluxAgentPro de un ejecutor estático a una plataforma agéntica que agentes externos (Claude, GPT, etc.) puedan operar vía el estándar Model Context Protocol (MCP). Incluye la exposición de flows como herramientas MCP, autenticación inter-agente, y un catálogo formal de integraciones REST (TIPO C).
+- **Fase Anterior:** Fase 4 - Capa de Inteligencia Visual y Analítica [FINALIZADA ✅]
+- **Pasos de la Fase 5:**
+    1. **5.0 [Diseño]:** Análisis y blueprint de integración MCP. [COMPLETADO ✅]
+    2. **5.0.1 [Prerrequisitos]:** `get_secret_async`, dependencia `mcp>=1.0.0`, enriquecer FlowRegistry. [PENDIENTE]
+    3. **5.1 [Backend]:** Servidor MCP Stdio + Flow-to-Tool adapter. [PENDIENTE]
+    4. **5.2 [Backend]:** Handlers de ejecución + Auth Bridge (PyJWT). [PENDIENTE]
+    5. **5.2.5 [DB+Backend]:** Service Catalog TIPO C (3 tablas + import + ServiceConnectorTool). [PENDIENTE]
+    6. **5.3 [Backend+Frontend]:** Endpoint SSE + HITL completo + MCPConfig. [PENDIENTE]
+- **Dependencias entre pasos:** 5.0 → 5.0.1 → 5.1 → 5.2 → 5.2.5 (puede ir en paralelo con 5.2) → 5.3
 
 ## 2. Estado Actual del Proyecto
-- **Implementado y Funcional:**
-    - **Asistente Analítico Integral (Step 4.4):** Componente `AnalyticalAssistantChat` desplegado globalmente como un FAB (Floating Action Button) en el dashboard. Permite interacción fluida con el `AnalyticalCrew` mediante lenguaje natural y consultas rápidas (Quick Queries).
-    - **IA Analítica y Consultas Naturales (Step 4.3):** Implementación del `AnalyticalCrew` operativo. Soporta clasificación de intenciones vía LLM con fallback por keywords, ejecución de consultas analíticas pre-validadas y síntesis narrativa de resultados con insights en Markdown.
-    - **Herramientas de Análisis:** Disponibilidad de `SQLAnalyticalTool` (para métricas de negocio) y `EventStoreTool` (para trazabilidad de eventos) con aislamiento multi-tenant estricto vía `org_id`.
-    - **API de Chat Analítico:** Endpoint `POST /analytical/ask` habilitado con soporte para rate limiting por organización (10 req/min) y trazabilidad de consumo de tokens.
-    - **Visualización de Jerarquía (Step 4.2):** Componente `FlowHierarchyView` desplegado. Agrupa flows por categorías, visualiza dependencias y resalta errores de grafo.
-    - **Registro Enriquecido (Step 4.1):** Soporte para metadatos de jerarquía y dependencias con validación automática (DFS Cycle Detection) en el arranque del servidor.
-    - **Validación de Precisión (Step 4.5):** Certificación de precisión analítica completada mediante script de seeding, alcanzando un 95% de coincidencia con el Golden Set de métricas.
-    - **Fase 3 Completa:** Streaming de eventos en tiempo real (Transcripts) funcional con latencia < 500ms y visualización animada en el timeline.
+
+- **Implementado y Funcional (heredado de Fases 1-4):**
+    - **FlowRegistry** (`src/flows/registry.py`): Registro centralizado con `list_flows()`, `get_metadata()` (retorna `depends_on`, `category`), `get_hierarchy()`. Validación DFS de ciclos al arranque.
+    - **BaseFlow** (`src/flows/base_flow.py`): Lifecycle completo con HITL (`request_approval()`, `resume()`), snapshot/restore de estado, y tracking de tokens.
+    - **ArchitectFlow** (`src/flows/architect_flow.py`): Genera workflows desde NL, persiste en `workflow_templates`, crea agentes en `agent_catalog`, registra dinámicamente en `FLOW_REGISTRY`.
+    - **MCPPool** (`src/tools/mcp_pool.py`): Singleton con circuit breaker (5 fallos → 60s pausa), retry exponencial, resolución de secretos del Vault como env vars. Conexión a servidores MCP externos (TIPO B).
+    - **Vault** (`src/db/vault.py`): Gestión de secretos cifrados per-org. Cumple Regla R3 (secretos nunca llegan al LLM). Solo expone `get_secret()` síncrono.
+    - **OrgBaseTool** (`src/tools/base_tool.py`): Clase base para herramientas con resolución automática de secretos y aislamiento por `org_id`.
+    - **ToolRegistry** (`src/tools/registry.py`): Metadatos operacionales por herramienta (timeout, retry, tags).
+    - **Auth/JWT** (`src/api/middleware.py`): Verificación JWT con ES256 (JWKS) + HS256 (secret), `verify_org_membership()`, soporte `fap_admin` cross-org. Usa **PyJWT** (no python-jose).
+    - **API REST completa:** Endpoints para flows, tasks, approvals, agents, webhooks, chat, analytical.
+    - **Fases 1-4 completas:** Tickets, Agent Panel, Real-time Transcripts, Visual Analytics.
 
 - **Parcialmente Implementado:**
-    - **Optimización de Prompts:** Evaluado inicialmente en 4.5, se deja como mejora continua para la Fase 5 para reducir variabilidad en resúmenes narrativos.
+    - **`get_secret_async`:** Se importa en `mcp_pool.py` pero **no está definida** en `vault.py`. Solo existe la versión síncrona. Debe crearse un wrapper async (prerrequisito 5.0.1).
+    - **`FLOW_INPUT_SCHEMAS`:** Definidos como diccionario estático en `src/api/routes/flows.py` (líneas 70-130). No están integrados en `FlowRegistry.get_metadata()` — el Flow-to-Tool adapter (5.1) deberá combinar ambas fuentes.
+
+- **No Existe Aún:**
+    - **`src/mcp/`:** Directorio del servidor MCP (server.py, handlers.py, tools.py, flow_to_tool.py, auth.py, config.py, sanitizer.py).
+    - **Service Catalog (TIPO C):** Tablas `service_catalog`, `org_service_integrations`, `service_tools`.
+    - **`ServiceConnectorTool`:** OrgBaseTool genérico para integraciones TIPO C.
+    - **Dependencia directa `mcp>=1.0.0`:** Solo existe como transitiva vía `crewai-tools`.
+
+- **Documentación de Diseño (completada ✅):**
+    - `docs/mcp-analisis-final.md` — Consolidación inicial (60KB).
+    - `docs/mcp-analisis-finalV2.md` — Plan detallado de Service Catalog TIPO C (26KB, 740 líneas).
+    - `docs/MCP-PHASE/` — 6 análisis individuales (ATG, Claude, Kilo, OC, y 2 finales fusionados).
+    - `LAST/mcp-analisis-final-v3.mcp` — Blueprint definitivo v3.3, verificado contra código fuente.
 
 ## 3. Contratos Técnicos Vigentes
-- **API Analítica (`POST /analytical/ask`):**
-    - Request: `{ "question": str, "query_type": Optional[str] }`
-    - Response: `{ "question": str, "query_type": str, "data": List, "summary": str, "metadata": { "tokens_used": int, "row_count": int } }`
-- **Lista de Consultas (`GET /analytical/queries`):** Devuelve las plantillas y descripciones para las Quick Queries del frontend.
-- **Allowlist Analítico (`analytical_queries.py`):** Plantillas SQL pre-aprobadas para: `agent_success_rate`, `tickets_by_status`, `flow_token_consumption`, `recent_events_summary`, y `tasks_by_flow_type`.
-- **Metadata de Registro (`registry.py`):** Campos `category` y `depends_on` para modelado de jerarquía.
-- **API Hierarchy (`GET /flows/hierarchy`):** Entrega el mapa de procesos con estatus de validación integrado.
+
+- **API existente reutilizable por MCP:**
+    - `POST /webhooks/trigger` → handler `execute_flow`
+    - `GET /flows/available` → handler `list_flows`
+    - `GET /flows/hierarchy` → handler `get_flow_hierarchy`
+    - `POST /flows/{flow_type}/run` → handler `execute_flow` (alternativo)
+    - `GET /tasks/{task_id}` → handler `get_task`
+    - `POST /approvals/{task_id}` → handler `approve_task` / `reject_task`
+    - `GET /agents/{id}/detail` → handler `get_agent_detail`
+    - `POST /chat/architect` → handler `create_workflow`
+- **Tablas de DB existentes relevantes:**
+    - `org_mcp_servers` — Config de servidores MCP externos por org (TIPO B).
+    - `secrets` — Credenciales cifradas con RLS per-org.
+    - `agent_catalog` — Definición de agentes con SOUL, tools y modelo.
+    - `workflow_templates` — Templates de workflows generados por ArchitectFlow.
+    - `tasks` — Ejecuciones de flows con estado y payload.
+    - `pending_approvals` — HITL approvals con aislamiento por org.
+- **Tablas NUEVAS (pendientes de migración `024_service_catalog.sql`):**
+    - `service_catalog` — Catálogo global de proveedores (Stripe, WhatsApp, etc.). SIN RLS.
+    - `org_service_integrations` — Servicios habilitados per-org. CON RLS. FK → `organizations` (⚠️ verificar nombre real de tabla).
+    - `service_tools` — Definiciones de herramientas por proveedor (~50 tools). SIN RLS.
+- **Dependencias instaladas:**
+    - `anthropic>=0.40.0` — SDK con soporte MCP built-in.
+    - `crewai>=0.100.0` — **Opcional** (en `[project.optional-dependencies].crew`). Requiere `pip install -e ".[crew]"`.
+    - `crewai-tools>=0.20.0` — **Opcional**. Trae `mcp>=1.0.0` como transitiva.
+    - **PENDIENTE:** Agregar `mcp>=1.0.0` como dependencia directa en `pyproject.toml`.
+- **Estructura de carpetas (módulo MCP, a crear):**
+    ```
+    src/mcp/
+    ├── __init__.py
+    ├── server.py          # Servidor dual (Stdio + SSE)
+    ├── handlers.py        # Lógica de cada handler MCP
+    ├── tools.py           # Definiciones de las 15 tools
+    ├── flow_to_tool.py    # Traductor FlowRegistry → MCP Tools
+    ├── auth.py            # Auth Bridge (PyJWT ES256/HS256 + org membership)
+    ├── config.py          # MCPConfig settings
+    ├── sanitizer.py       # Output sanitizer (Regla R3)
+    └── exceptions.py      # Mapeo FAP → JSON-RPC error codes
+    ```
 
 ## 4. Decisiones de Arquitectura Tomadas
-- **Integración Global vía Layout (Paso 4.4):** El chat analítico se inyecta en el `layout.tsx` del dashboard para estar disponible en cualquier contexto de navegación sin interferir con la vista principal (usando `Sheet` de Radix UI).
-- **UX Reactiva (Paso 4.4):** Implementación de auto-scroll, placeholders de carga y manejo de errores 429 (Rate Limit) con feedback narrativo al usuario.
-- **Asincronía en CrewAI (Paso 4.3):** Las llamadas al LLM se ejecutan mediante `run_in_executor` para evitar el bloqueo del event loop de FastAPI durante la inferencia, garantizando la responsividad del resto de la API.
-- **Robustez Multi-fallback (Paso 4.3):** Implementación de pipelines de reserva basados en heurísticas locales (keywords) para garantizar una respuesta (aunque sea simplificada) ante fallos de conectividad con el proveedor de LLM.
-- **Aislamiento por Herramienta (Paso 4.3):** El `org_id` se inyecta directamente en las instancias de las herramientas analíticas (heredando de `OrgBaseTool`), garantizando que el LLM solo procese datos del tenant solicitante.
-- **Code-as-Schema (Paso 4.1):** Definición de dependencias en decoradores para evitar desincronización con la base de datos.
-- **Validación Basada en Golden Set (Paso 4.5):** Uso de scripts de seeding dinámicos para crear escenarios deterministas (90% success, 50% success) que permiten certificar la precisión numérica del LLM sin depender de datos de producción ruidosos.
-- **Protocolo de "Seeding de Precisión" (Paso 4.5):** Implementada la capacidad de limpiar e inyectar tareas sintéticas por agente para validar la capa de inteligencia de forma aislada.
+- **Servidor MCP Dual (Paso 5.0):** Stdio para Claude Desktop (sesiones locales) y SSE para Claude API / integraciones remotas. Ambos comparten el mismo core de handlers.
+- **Auth Bridge con PyJWT (Paso 5.0):** Reutiliza el singleton `_get_jwks_client()` del middleware existente. Soporta ES256 (JWKS) + HS256 (legacy). Verifica membresía org vía `org_members` — no usa el claim `org_id` del token (que no existe en Supabase JWT).
+- **Flow-to-Tool combina dos fuentes (Paso 5.0):** `FlowRegistry.get_metadata()` aporta `category` y `depends_on`; `FLOW_INPUT_SCHEMAS` aporta los JSON Schemas de input. Mejora futura: enriquecer `register()` para unificar.
+- **Regla R3 — Defensa en profundidad (Paso 5.0):** Los secretos se resuelven server-side (Vault → env var o header). El output al agente pasa por `sanitizer.py` como última línea de defensa con regex patterns para tokens conocidos.
+- **Identidad por CLI flag (Paso 5.0):** Para Stdio, el `org_id` se recibe como `--org-id` al iniciar el servidor. Para SSE, como header `X-Org-ID`. No se implementa `switch_org` en MVP.
+- **Service Catalog TIPO C separado de TIPO B (Paso 5.0):** TIPO B (MCPPool, `org_mcp_servers`) es para servidores MCP externos. TIPO C (`service_catalog`, `ServiceConnectorTool`) es para APIs REST genéricas definidas en DB.
+- **Migraciones SQL incrementales:** La próxima migración será `024_service_catalog.sql` (siguiendo la secuencia 001-023 existente).
 
 ## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
+| 5.0  | ✅ | `LAST/mcp-analisis-final-v3.mcp` (v3.3), `docs/mcp-analisis-final.md`, `docs/mcp-analisis-finalV2.md`, `docs/MCP-PHASE/` (6 archivos) | Servidor dual, PyJWT auth, FLOW_INPUT_SCHEMAS, Regla R3 sanitizer, estimaciones ajustadas 32-41h | Blueprint verificado contra código real. 7 discrepancias identificadas y corregidas en v3.3. |
+| 5.0.1 | ⏳ | — | `get_secret_async` wrapper, `mcp>=1.0.0` como dep directa | Prerrequisitos técnicos antes de Fase 5.1 |
+| 5.1  | ⏳ | — | — | Servidor Stdio + Flow-to-Tool + `tools/list` |
+| 5.2  | ⏳ | — | — | Handlers + Auth Bridge |
+| 5.2.5  | ⏳ | — | — | Service Catalog TIPO C |
+| 5.3  | ⏳ | — | — | SSE + HITL completo |
 | 4.5  | ✅ | `test_4_5_precision.py`, `seed_precision_data.py` | Golden Set Validation / Controlled Seeding | Precisión certificada (Success Rate 90/50). |
 | 4.4  | ✅ | `AnalyticalAssistantChat.tsx`, `layout.tsx`, `analytical_chat.py` | FAB Global / Sheet UI | Chat analítico operativo y validado. |
 | 4.3  | ✅ | `analytical_crew.py`, `analytical.py`, `analytical_chat.py` | Asincronía LLM / Multi-fallback | Backend analítico certificado. |
@@ -55,12 +109,15 @@
 | 4.1  | ✅ | `registry.py`, `main.py`, `flows.py`, `architect_flow.py` | Code-as-Schema / DFS Cycle Detection | Jerarquía de procesos validada. |
 | 3.5  | ✅ | `test_3_5_latency.py`, `get_server_time.sql` | Certificación de Latencia P95 | Validado tras resolver issues de Cold Start. |
 
-## 6. Criterios Generales de Aceptación MVP (Fase 4)
-- [✅] El sistema debe ser capaz de representar visualmente las dependencias entre flows (Step 4.2).
-- [✅] El backend analítico responde preguntas sobre el Event Store y métricas de negocio usando lenguaje natural (Step 4.3).
-- [✅] El chat analítico lateral es accesible y funcional desde el dashboard del frontend (Step 4.4).
-- [✅] Los errores en el grafo de procesos no deben impedir el funcionamiento del resto del sistema.
-- [✅] Validación de precisión en respuestas analíticas (Step 4.5).
+## 6. Criterios Generales de Aceptación MVP (Fase 5)
+- [ ] **5.0.1:** `import mcp` funciona y `get_secret_async()` resuelve secretos correctamente.
+- [ ] **5.1:** `tools/list` retorna ≥3 herramientas al conectar desde Claude Desktop vía Stdio.
+- [ ] **5.2:** Claude construye y ejecuta un flujo simple en FAP desde el chat (E2E).
+- [ ] **5.2.5:** Un agente ejecuta `stripe.create_customer` leyendo la definición de `service_tools` y resolviendo el secreto del Vault, sin código hardcodeado para Stripe.
+- [ ] **5.3:** Flujo HITL end-to-end funcional desde Claude con aprobación vía Dashboard.
+- [ ] Los errores MCP se mapean a códigos JSON-RPC estándar sin exponer internals.
+- [ ] La Regla R3 se mantiene en todas las respuestas al agente externo (sanitizer activo).
 
 ---
-*Documento actualizado por el protocolo CONTEXTO tras la certificación exitosa de la Fase 4.*
+*Documento actualizado por el protocolo CONTEXTO — Transición de Fase 4 (COMPLETADA) a Fase 5 (ECOSISTEMA AGÉNTICO MCP).*
+*Última actualización: 2026-04-13*

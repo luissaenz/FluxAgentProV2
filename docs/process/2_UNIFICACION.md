@@ -23,7 +23,7 @@ Se han generado múltiples análisis independientes sobre el mismo paso de un si
 
 1. **Análisis individuales:** Todos los `D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-[AGENTE].md` en `D:\Develop\Personal\FluxAgentPro-v2\LAST\`
 2. **Contexto de Fase:** `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`
-3. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mvp-Definition.md`
+3. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md`
 4. **Objetivo:** Generar un documento final unificado, consistente, sin contradicciones y técnicamente sólido.
 
 ---

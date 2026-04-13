@@ -23,7 +23,7 @@ Partimos de un documento técnico consolidado que define qué construir. Tu misi
 
 1. **Fuente de Verdad:** `D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-FINAL.md`
 2. **Contexto de Fase:** `D:\Develop\Personal\FluxAgentPro-v2\LAST\estado-fase.md`
-3. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mvp-Definition.md` (referencia contextual)
+3. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md` (referencia contextual)
 4. **Código existente del proyecto**
 
 ---

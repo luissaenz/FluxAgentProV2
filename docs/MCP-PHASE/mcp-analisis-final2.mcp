@@ -1,0 +1,80 @@
+# REPORTE FINAL: ARQUITECTURA AGÉNTICA FAP ↔ CLAUDE (MCP)
+
+Este documento representa la síntesis técnica definitiva de los análisis realizados por los agentes **ATG, Claude, Kilo y OC**. Define el blueprint para transformar FluxAgentPro (FAP) en un ecosistema agéntico interoperable mediante el **Model Context Protocol (MCP)**.
+
+---
+
+## 1. VISIÓN ESTRATÉGICA
+Actualmente, FAP es un orquestador que "consume" herramientas. El objetivo de esta fase es convertir a FAP en un **Proveedor de Capacidades (MCP Server)**. Esto permitirá que agentes externos (como Claude Desktop o agentes autónomos vía API) puedan "operar" el backend de FAP, ejecutar flujos de negocio y gestionar tareas con un nivel de inteligencia superior.
+
+## 2. MATRIZ DE COMPONENTES CRÍTICOS (GAPS)
+
+| Componente | Estado Actual | Requerimiento MCP | Impacto |
+| :--- | :--- | :--- | :--- |
+| **Transporte** | REST/FastAPI | **Stdio + SSE** | Habilita la conexión JSON-RPC 2.0. |
+| **Herramientas** | `FlowRegistry` interno | **Flow-to-Tool Adapter** | Expone los flujos como herramientas MCP tipadas. |
+| **Auth** | JWT Supabase (Headers) | **Context Bridge** | Inyecta `org_id` en la sesión MCP (vía CLI o Tools). |
+| **Esquemas** | Dinámicos (JSON) | **Pydantic Schemas** | Permite a Claude entender los inputs requeridos. |
+| **Polling** | Manual / Webhooks | **Task Monitor Tool** | Permite al agente esperar por flujos asíncronos. |
+
+---
+
+## 3. ARQUITECTURA PROPUESTA
+
+### 3.1 Estructura del Servidor MCP (`src/mcp/`)
+Se propone la creación de un nuevo módulo dedicado para evitar contaminar la lógica de negocio core:
+```text
+src/mcp/
+├── server.py        # Entry point: Maneja StdioServer/SSEServer.
+├── handlers.py      # Lógica de las herramientas (execute_flow, list_tasks).
+├── tools.py         # Definiciones de herramientas y conversión de metadatos.
+├── auth.py          # Validación de JWT y aislamiento multitenant.
+└── config.py        # Configuraciones específicas de MCP.
+```
+
+### 3.2 Herramientas a Exponer (Fase 1)
+1. `list_available_flows()`: Consulta el `FlowRegistry` y retorna los flujos disponibles con sus descripciones.
+2. `execute_flow(name, input)`: Trigger de ejecución. Para flujos síncronos retorna el resultado; para asíncronos retorna un `task_id`.
+3. `get_task_status(task_id)`: Permite al agente monitorear el progreso de una tarea.
+4. `list_pending_approvals()`: Consulta flujos pausados por HITL (Human-In-The-Loop).
+
+---
+
+## 4. DESAFÍOS TÉCNICOS Y SOLUCIONES
+
+### A. Gestión Multitenant en MCP
+**Problema:** MCP fue diseñado originalmente para sesiones de usuario único. FAP es multi-empresa.
+**Solución:** Inyectar el `org_id` como argumento de línea de comandos en la configuración del servidor (Claude Desktop) o proveer una herramienta `set_context(org_id)` que valide el JWT mediante el `auth.py`.
+
+### B. Esfuerzo de Tipado
+**Problema:** Muchos flujos actuales reciben `dict` genéricos.
+**Solución:** Migrar gradualmente los flujos a `FlowInputSchema` usando **Pydantic**. El servidor MCP usará estos modelos para generar los `JSON Schema` que Claude requiere para no "alucinar" en los inputs.
+
+---
+
+## 5. ROADMAP DE IMPLEMENTACIÓN
+
+### Fase 1: Cimiento y Descubrimiento (MVP)
+*   **Implementar `src/mcp/server.py`** usando el SDK oficial de MCP.
+*   **Exponer `list_flows`**: Que Claude pueda decir "¿Qué puedes hacer?" y reciba la lista del `FlowRegistry`.
+*   **Configuración Claude Desktop**: Crear el JSON de configuración para pruebas locales.
+
+### Fase 2: Ejecución Controlada
+*   **Handler `execute_flow`**: Conexión con los endpoints de ejecución existentes.
+*   **Auth Bridge**: Validación de JWT Supabase para asegurar RLS.
+*   **Manejo de Errores**: Mapeo de excepciones FAP a códigos JSON-RPC.
+
+### Fase 3: Interacción Avanzada (HITL)
+*   **Transporte SSE**: Habilitar streaming para flujos largos.
+*   **Gestión de Aprobaciones**: Permitir que el agente presente una cotización y la apruebe directamente.
+
+---
+
+## 6. CONCLUSIÓN
+La infraestructura de FAP está **90% lista** para ser agéntica. Las piezas fundamentales (`FlowRegistry`, `BaseFlow`, `TenantClient`) ya existen. El esfuerzo restante reside exclusivamente en la **capa de exposición (MCP Server)**. 
+
+**Próximo Paso Recomendado:** Iniciar el desarrollo de `src/mcp/server.py` y exponer una herramienta de prueba para validar la conectividad con Claude Desktop.
+
+---
+*Documento generado automáticamente por el Sistema de Unificación de Agentes FAP.*
+*Referencia: mcp-analisis-final2.mcp (v1.0)*
