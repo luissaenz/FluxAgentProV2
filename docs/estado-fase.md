@@ -8,10 +8,11 @@
   3. Creación de UI en Dashboard para gestión de aprobaciones (`/approvals`).
   4. Creación de panel de configuración MCP (`/settings/mcp`).
   5. Conexión de Health Checks al lifespan de FastAPI.
+  6. Endpoint POST `/api/mcp/generate-pin` (Iniciando Sprint 5).
 - **Dependencias:**
   - Sprint 1, 2, 3 ✅ (Core Handlers OK).
   - Sprint 4 ✅ (SSE + HITL OK).
-  - Sprint 5 ⏳ (Despliegue y Pulido).
+  - Sprint 5 🔄 (Auth PIN MCP en curso).
 
 ## 2. Estado Actual del Proyecto
 
@@ -27,12 +28,14 @@
   - **Manejo de Secretos:** Los tokens JWT para SSE son internos; falta integración con un secret manager para rotación automática (Phase 5).
 
 - **Qué no existe aún:**
+  - **Endpoint de Autenticación MCP:** POST `/api/mcp/generate-pin` (Planeado en Sprint 5).
   - **Streaming de Tokens LLM vía SSE:** Actualmente la respuesta se envía completa al finalizar.
   - **Observabilidad MCP:** Trazas detalladas de mensajes JSON-RPC en el Dashboard.
 
 - **Discrepancias plan vs código:**
   - 📝 **CORRECCIÓN:** El plan original indicaba `PyJWT`; el código ha sido **unificado a `python-jose`** en todo el proyecto (Auth & Middleware).
   - 📝 **CORRECCIÓN:** El plan mencionaba rutas Windows; el proyecto está estandarizado en Linux/Unix paths.
+  - ⚠️ **VERIFICAR:** El `plan.md` asume la existencia de `secure-pin.ts`, pero no fue hallado en `src/` ni en `dashboard/`.
 
 ## 3. Contratos Técnicos Vigentes
 
