@@ -4185,5 +4185,422 @@
       "risk_level": "low",
       "requires_approval": false
     }
+  },
+  {
+    "tool_id": "github.create_pull_request",
+    "name": "GitHub Create PR",
+    "version": "v3",
+    "provider": "GitHub",
+    "category": "devops",
+    "auth": { "type": "oauth2", "scopes": ["repo"] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "owner": { "type": "string" },
+        "repo": { "type": "string" },
+        "title": { "type": "string" },
+        "head": { "type": "string" },
+        "base": { "type": "string" },
+        "body": { "type": "string" }
+      },
+      "required": ["owner", "repo", "title", "head", "base"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.github.com/repos/{owner}/{repo}/pulls",
+      "headers": { "Accept": "application/vnd.github.v3+json" }
+    },
+    "tool_profile": {
+      "description": "Crea un Pull Request en un repositorio de GitHub.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "github.add_comment",
+    "name": "GitHub Add Comment",
+    "version": "v3",
+    "provider": "GitHub",
+    "category": "devops",
+    "auth": { "type": "oauth2", "scopes": ["repo"] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "owner": { "type": "string" },
+        "repo": { "type": "string" },
+        "issue_number": { "type": "number" },
+        "body": { "type": "string" }
+      },
+      "required": ["owner", "repo", "issue_number", "body"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments",
+      "headers": { "Accept": "application/vnd.github.v3+json" }
+    },
+    "tool_profile": {
+      "description": "Agrega un comentario a un issue o PR existente.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "linear.create_issue",
+    "name": "Linear Create Issue",
+    "version": "v1",
+    "provider": "Linear",
+    "category": "project_management",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "teamId": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["title", "teamId"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.linear.app/graphql",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea una nueva tarea (Issue) en Linear vía GraphQL.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "resend.send_email",
+    "name": "Resend Send Email",
+    "version": "v1",
+    "provider": "Resend",
+    "category": "communication",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "array", "items": { "type": "string" } },
+        "subject": { "type": "string" },
+        "html": { "type": "string" }
+      },
+      "required": ["from", "to", "subject", "html"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.resend.com/emails",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Envía correos electrónicos transaccionales usando Resend.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "lemonsqueezy.get_license",
+    "name": "LemonSqueezy Get License",
+    "version": "v1",
+    "provider": "LemonSqueezy",
+    "category": "ecommerce",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "license_key": { "type": "string" }
+      },
+      "required": ["license_key"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.lemonsqueezy.com/v1/licenses/validate",
+      "headers": { "Accept": "application/vnd.api+json" }
+    },
+    "tool_profile": {
+      "description": "Valida una clave de licencia en Lemon Squeezy.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "twilio.send_whatsapp",
+    "name": "Twilio WhatsApp",
+    "version": "v1",
+    "provider": "Twilio",
+    "category": "communication",
+    "auth": { "type": "basic_auth" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "To": { "type": "string" },
+        "From": { "type": "string" },
+        "Body": { "type": "string" }
+      },
+      "required": ["To", "From", "Body"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json",
+      "headers": { "Content-Type": "application/x-www-form-urlencoded" }
+    },
+    "tool_profile": {
+      "description": "Envía mensajes vía WhatsApp usando el sandbox de Twilio.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "posthog.capture",
+    "name": "PostHog Capture Event",
+    "version": "v1",
+    "provider": "PostHog",
+    "category": "analytics",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "event": { "type": "string" },
+        "properties": { "type": "object" },
+        "distinct_id": { "type": "string" }
+      },
+      "required": ["event", "distinct_id"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://app.posthog.com/capture/",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Envía eventos de telemetría a PostHog.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "sentry.list_errors",
+    "name": "Sentry List Errors",
+    "version": "v1",
+    "provider": "Sentry",
+    "category": "devops",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "organization_slug": { "type": "string" },
+        "project_slug": { "type": "string" }
+      },
+      "required": ["organization_slug", "project_slug"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://sentry.io/api/0/projects/{organization_slug}/{project_slug}/issues/",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Lista errores recientes capturados en un proyecto de Sentry.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "docusign.create_envelope",
+    "name": "DocuSign Create Envelope",
+    "version": "v2.1",
+    "provider": "DocuSign",
+    "category": "legaltech",
+    "auth": { "type": "oauth2" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "emailSubject": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["emailSubject", "status"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://demo.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea un sobre de firma digital en DocuSign.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "zoom.create_meeting",
+    "name": "Zoom Create Meeting",
+    "version": "v2",
+    "provider": "Zoom",
+    "category": "meetings",
+    "auth": { "type": "oauth2" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "topic": { "type": "string" },
+        "type": { "type": "number" },
+        "start_time": { "type": "string" }
+      },
+      "required": ["topic"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.zoom.us/v2/users/me/meetings",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea una reunión de Zoom para el usuario actual.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "bitbucket.create_repo",
+    "name": "Bitbucket Create Repo",
+    "version": "v2",
+    "provider": "Bitbucket",
+    "category": "devops",
+    "auth": { "type": "oauth2" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "workspace": { "type": "string" },
+        "repo_slug": { "type": "string" }
+      },
+      "required": ["workspace", "repo_slug"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea un repositorio en Bitbucket.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "ghost.create_post",
+    "name": "Ghost Create Post",
+    "version": "v5",
+    "provider": "Ghost",
+    "category": "cms",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "html": { "type": "string" }
+      },
+      "required": ["title"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{site_url}/ghost/api/admin/posts/",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea una nueva entrada en Ghost CMS.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mailgun.send_email",
+    "name": "Mailgun Send Email",
+    "version": "v3",
+    "provider": "Mailgun",
+    "category": "communication",
+    "auth": { "type": "basic_auth" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "subject": { "type": "string" },
+        "text": { "type": "string" }
+      },
+      "required": ["from", "to", "subject", "text"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mailgun.net/v3/{domain}/messages",
+      "headers": { "Content-Type": "application/x-www-form-urlencoded" }
+    },
+    "tool_profile": {
+      "description": "Envía un correo a través de la API de Mailgun.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "replicate.run_model",
+    "name": "Replicate Run Model",
+    "version": "v1",
+    "provider": "Replicate",
+    "category": "ai",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "input": { "type": "object" }
+      },
+      "required": ["version", "input"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.replicate.com/v1/predictions",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Ejecuta un modelo de IA en Replicate.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "framer.get_project",
+    "name": "Framer Get Project",
+    "version": "v1",
+    "provider": "Framer",
+    "category": "design",
+    "auth": { "type": "api_key" },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" }
+      },
+      "required": ["projectId"]
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.framer.com/v1/projects/{projectId}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene detalles de un proyecto en Framer.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
   }
 ]

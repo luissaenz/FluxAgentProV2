@@ -1,0 +1,620 @@
+[
+  {
+    "tool_id": "netsuite.get_customer",
+    "name": "Obtener Cliente NetSuite",
+    "version": "v1",
+    "provider": "NetSuite",
+    "category": "erp",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["rest_webservices"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID interno del cliente" }
+      },
+      "required": ["id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "entityId": { "type": "string" },
+        "companyName": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://{account_id}.suitetalk.api.netsuite.com/services/rest/record/v1/customer/{id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera la información detallada de un registro de cliente desde el ERP NetSuite.",
+      "example_prompt": "Traeme la info del cliente 1234 de NetSuite.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ms_teams.send_channel_message",
+    "name": "Mensaje Canal Teams",
+    "version": "v1.0",
+    "provider": "Microsoft Teams",
+    "category": "communication",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Group.ReadWrite.All", "Chat.ReadWrite"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "team_id": { "type": "string" },
+        "channel_id": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "required": ["team_id", "channel_id", "content"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.microsoft.com/v1.0/teams/{team_id}/channels/{channel_id}/messages",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Publica un mensaje en un canal específico de un equipo en Microsoft Teams.",
+      "example_prompt": "Avisa en el canal general de Teams que ya terminó el reporte.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "plaid.get_accounts",
+    "name": "Cuentas Bancarias Plaid",
+    "version": "2020-09-14",
+    "provider": "Plaid",
+    "category": "open_banking",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "access_token": { "type": "string" }
+      },
+      "required": ["access_token"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "accounts": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{environment}.plaid.com/accounts/get",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera la lista de cuentas bancarias asociadas a un item autenticado mediante Plaid.",
+      "example_prompt": "Listame las cuentas bancarias conectadas a Plaid.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "nylas.sync_calendar",
+    "name": "Sincronizar Calendario Nylas",
+    "version": "v3",
+    "provider": "Nylas",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["calendar"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "grant_id": { "type": "string" }
+      },
+      "required": ["grant_id"]
+    },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.us.nylas.com/v3/grants/{grant_id}/calendars",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Utiliza la API unificada de Nylas para sincronizar datos de Google, Outlook e iCloud.",
+      "example_prompt": "Sincroniza mis calendarios de Outlook y Google vía Nylas.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "enode.list_vehicles",
+    "name": "Listar Vehículos Eléctricos",
+    "version": "v1",
+    "provider": "Enode",
+    "category": "energy",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["vehicles:read"]
+    },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.enode.io/vehicles",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Conecta con vehículos eléctricos para leer estado de carga y telemetría mediante Enode.",
+      "example_prompt": "Dime cuánta batería le queda al Tesla según Enode.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "rippling.get_employee",
+    "name": "Ficha Empleado Rippling",
+    "version": "v1",
+    "provider": "Rippling",
+    "category": "hris",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["employee:read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.rippling.com/platform/api/employees/{id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Extrae los datos laborales y de perfil de un colaborador en Rippling HRIS.",
+      "example_prompt": "Busca los datos de Pedro en Rippling.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "hibob.list_employees",
+    "name": "Listado Personal HiBob",
+    "version": "v1",
+    "provider": "HiBob",
+    "category": "hris",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.hibob.com/v1/people",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene la nómina activa de empleados de la plataforma moderna de RRHH HiBob.",
+      "example_prompt": "Listame a todos los empleados en HiBob.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "codat.get_company_data",
+    "name": "Datos Contables Codat",
+    "version": "v1",
+    "provider": "Codat",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "company_id": { "type": "string" }
+      },
+      "required": ["company_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.codat.io/companies/{company_id}/data/info",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "API unificada para acceder a datos de comercio y contabilidad de PYMEs vía Codat.",
+      "example_prompt": "Traeme la info financiera de la empresa X desde Codat.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "playwright.browse_page",
+    "name": "Navegar con Playwright",
+    "version": "mcp",
+    "provider": "Playwright",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" }
+      },
+      "required": ["url"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "snapshot": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.fap.proxy/mcp/playwright/browse",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Habilita a los LLM para interactuar con páginas web mediante snapshots de accesibilidad usando Playwright.",
+      "example_prompt": "Navega a la web de ejemplo y dime qué botones hay usando Playwright.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "strava.get_athlete_stats",
+    "name": "Estadísticas Strava",
+    "version": "v3",
+    "provider": "Strava",
+    "category": "multimedia",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID del atleta" }
+      },
+      "required": ["id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://www.strava.com/api/v3/athletes/{id}/stats",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera totales de carrera, ciclismo y natación de un perfil de Strava.",
+      "example_prompt": "¿Cuántos km corrí este año según Strava?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "etsy.get_shop_listings",
+    "name": "Listado de Tienda Etsy",
+    "version": "v3",
+    "provider": "Etsy",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["listings_r"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shop_id": { "type": "number" }
+      },
+      "required": ["shop_id"]
+    },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://openapi.etsy.com/v3/application/shops/{shop_id}/listings/active",
+      "headers": { "x-api-key": "{api_key}" }
+    },
+    "tool_profile": {
+      "description": "Consulta los productos activos en una tienda del marketplace artesanal Etsy.",
+      "example_prompt": "Mostrame qué tengo publicado en mi tienda de Etsy.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "habitica.create_task",
+    "name": "Nueva Tarea Habitica",
+    "version": "v3",
+    "provider": "Habitica",
+    "category": "productivity",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["todo", "daily", "habit"] }
+      },
+      "required": ["text", "type"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://habitica.com/api/v3/tasks/user",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea una tarea gamificada en Habitica para seguimiento de hábitos.",
+      "example_prompt": "Agrega 'Beber agua' como hábito en Habitica.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pdfco.html_to_pdf",
+    "name": "Generar PDF desde HTML",
+    "version": "v1",
+    "provider": "PDF.co",
+    "category": "productivity",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "html": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["html"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.pdf.co/v1/pdf/convert/from/html",
+      "headers": { "Content-Type": "application/json", "x-api-key": "{api_key}" }
+    },
+    "tool_profile": {
+      "description": "Convierte código HTML crudo en un documento PDF profesional usando PDF.co.",
+      "example_prompt": "Convertí este HTML en un PDF con PDF.co.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "make.run_scenario",
+    "name": "Ejecutar Escenario Make",
+    "version": "v2",
+    "provider": "Make",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "scenario_id": { "type": "number" }
+      },
+      "required": ["scenario_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.make.com/v2/scenarios/{scenario_id}/run",
+      "headers": { "Authorization": "Token {api_key}" }
+    },
+    "tool_profile": {
+      "description": "Dispara manualmente la ejecución de un flujo de automatización (escenario) en Make.com.",
+      "example_prompt": "Corre el escenario 555 de Make ahora.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "n8n.get_workflows",
+    "name": "Listar Flujos n8n",
+    "version": "v1",
+    "provider": "n8n",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://{instance_url}/api/v1/workflows",
+      "headers": { "X-N8N-API-KEY": "{api_key}" }
+    },
+    "tool_profile": {
+      "description": "Enumera los flujos de trabajo configurados en una instancia de n8n.",
+      "example_prompt": "¿Qué workflows tengo en n8n?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tray.trigger_workflow",
+    "name": "Disparar Workflow Tray",
+    "version": "v1",
+    "provider": "Tray.io",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "workflow_id": { "type": "string" },
+        "data": { "type": "object" }
+      },
+      "required": ["workflow_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.tray.io/v1/workflows/{workflow_id}/trigger",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inicia un flujo de trabajo empresarial en la plataforma Tray.io enviando datos de entrada.",
+      "example_prompt": "Dispara el workflow de Tray con estos datos.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "truelayer.get_balances",
+    "name": "Saldos TrueLayer",
+    "version": "v1",
+    "provider": "TrueLayer",
+    "category": "open_banking",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["info", "accounts", "balance"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": { "type": "string" }
+      },
+      "required": ["account_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.truelayer.com/data/v1/accounts/{account_id}/balance",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Consulta el saldo disponible y contable de una cuenta bancaria vía TrueLayer.",
+      "example_prompt": "Dime el saldo de mi cuenta conectada en TrueLayer.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "tink.list_providers",
+    "name": "Proveedores Tink",
+    "version": "v1",
+    "provider": "Tink",
+    "category": "open_banking",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tink.com/api/v1/providers",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Lista las instituciones financieras soportadas por Tink para agregación bancaria.",
+      "example_prompt": "¿Qué bancos soporta Tink en mi región?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ibanity.get_financial_institutions",
+    "name": "Bancos Ibanity",
+    "version": "v1",
+    "provider": "Ibanity",
+    "category": "open_banking",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.ibanity.com/xs2a/financial-institutions",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera la lista de bancos disponibles para Open Banking mediante Ibanity.",
+      "example_prompt": "Dame la lista de bancos de Ibanity.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "boomi.execute_process",
+    "name": "Ejecutar Proceso Boomi",
+    "version": "v1",
+    "provider": "Boomi",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "process_id": { "type": "string" },
+        "atom_id": { "type": "string" }
+      },
+      "required": ["process_id", "atom_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.boomi.com/api/rest/v1/{account_id}/executeProcess",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inicia la ejecución de un proceso de integración en un Atom de Boomi.",
+      "example_prompt": "Lanza el proceso de integración en Boomi.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  }
+]

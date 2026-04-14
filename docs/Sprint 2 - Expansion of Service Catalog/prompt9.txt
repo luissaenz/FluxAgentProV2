@@ -1,0 +1,1379 @@
+[
+  {
+    "tool_id": "sage_intacct.get_customer",
+    "name": "Obtener Cliente Sage Intacct",
+    "version": "v3.0",
+    "provider": "Sage Intacct",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "customer_id": { "type": "string", "description": "ID del cliente en Sage" }
+      },
+      "required": ["customer_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": { "name": { "type": "string" }, "status": { "type": "string" } }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.intacct.com/ia/xml/xmlgw.phtml",
+      "headers": { "Content-Type": "application/xml" }
+    },
+    "tool_profile": {
+      "description": "Recupera los datos maestros de un cliente en el sistema contable Sage Intacct.",
+      "example_prompt": "Busca la ficha del cliente C100 en Sage Intacct.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "meta_api.list_connectors",
+    "name": "Listar Conectores Meta API",
+    "version": "v1",
+    "provider": "Meta API",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://dashboard.meta-api.io/api/connectors",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Lista todas las integraciones y conectores disponibles en el directorio de Meta API.",
+      "example_prompt": "Dime qué conectores tiene disponibles Meta API.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "scorce.get_latam_apis",
+    "name": "Marketplace APIs LATAM Scorce",
+    "version": "v1",
+    "provider": "Scorce",
+    "category": "marketplace",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.scorce.io/v1/marketplace/latam",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Accede al hub de APIs específicas para el mercado de Latinoamérica a través de Scorce.",
+      "example_prompt": "Busca APIs de logística para Chile en Scorce.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "lead_router.route_lead",
+    "name": "Enrutar Lead Zapier",
+    "version": "beta",
+    "provider": "Lead Router",
+    "category": "marketing",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "lead_data": { "type": "object" },
+        "routing_rules": { "type": "string" }
+      },
+      "required": ["lead_data"]
+    },
+    "output_schema": { "type": "object", "properties": { "assigned_to": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.zapier.com/v1/lead-router/route",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Procesa un lead entrante y lo asigna automáticamente según las reglas de negocio definidas en Zapier Lead Router.",
+      "example_prompt": "Enruta este nuevo lead según las reglas de ventas de la empresa.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "airbyte_cloud.create_source",
+    "name": "Crear Origen Airbyte",
+    "version": "v1",
+    "provider": "Airbyte Cloud",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "source_type": { "type": "string" },
+        "connection_configuration": { "type": "object" }
+      },
+      "required": ["name", "source_type", "connection_configuration"]
+    },
+    "output_schema": { "type": "object", "properties": { "source_id": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.airbyte.com/v1/sources",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Configura una nueva fuente de datos (SaaS o base de datos) para replicación en Airbyte Cloud.",
+      "example_prompt": "Configura una nueva fuente de Salesforce en Airbyte Cloud.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "truefoundry.deploy_model",
+    "name": "Desplegar Modelo TrueFoundry",
+    "version": "v1",
+    "provider": "TrueFoundry",
+    "category": "ai",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model_name": { "type": "string" },
+        "image_url": { "type": "string" },
+        "resources": { "type": "object" }
+      },
+      "required": ["model_name", "image_url"]
+    },
+    "output_schema": { "type": "object", "properties": { "deployment_id": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{tenant}.truefoundry.cloud/api/v1/deployments",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Lanza un servicio de inferencia de IA en la infraestructura de TrueFoundry.",
+      "example_prompt": "Despliega el modelo de clasificación de imágenes en producción con TrueFoundry.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "exa.search_web",
+    "name": "Búsqueda Semántica Exa",
+    "version": "v1",
+    "provider": "Exa",
+    "category": "ai",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" },
+        "num_results": { "type": "number", "default": 5 }
+      },
+      "required": ["query"]
+    },
+    "output_schema": { "type": "object", "properties": { "results": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.exa.ai/search",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Realiza búsquedas inteligentes y rastreo web enfocado en resultados de alta calidad para agentes.",
+      "example_prompt": "Busca los perfiles de LinkedIn de directores de IA en Londres usando Exa.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "browserbase.control_browser",
+    "name": "Navegación Remota Browserbase",
+    "version": "v1",
+    "provider": "Browserbase",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "action": { "type": "string", "description": "click, type, or extract" }
+      },
+      "required": ["url"]
+    },
+    "output_schema": { "type": "object", "properties": { "snapshot": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.browserbase.com/v1/sessions",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Controla un navegador web remoto para realizar acciones de automatización complejas.",
+      "example_prompt": "Usa Browserbase para entrar en el portal y descargar el extracto.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "manticore_search.execute_sql",
+    "name": "Consulta SQL Manticore",
+    "version": "v1",
+    "provider": "Manticore Search",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string", "description": "Consulta SQL para el motor de búsqueda" }
+      },
+      "required": ["query"]
+    },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{host}/sql",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Ejecuta consultas de alto rendimiento sobre el motor de búsqueda Manticore.",
+      "example_prompt": "Busca en la base de datos de documentos usando SQL con Manticore.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "snowflake.run_query",
+    "name": "Ejecutar SQL Snowflake",
+    "version": "v1",
+    "provider": "Snowflake",
+    "category": "data",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "statement": { "type": "string" },
+        "database": { "type": "string" }
+      },
+      "required": ["statement"]
+    },
+    "output_schema": { "type": "object", "properties": { "data": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{account}.snowflakecomputing.com/api/v2/statements",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Envía comandos SQL al almacén de datos Snowflake para análisis masivo de información.",
+      "example_prompt": "Trae el reporte de ventas por región desde Snowflake.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "parabola.run_flow",
+    "name": "Ejecutar Flujo Parabola",
+    "version": "v1",
+    "provider": "Parabola",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "flow_id": { "type": "string" }
+      },
+      "required": ["flow_id"]
+    },
+    "output_schema": { "type": "object", "properties": { "status": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.parabola.io/v1/flows/{flow_id}/runs",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inicia un flujo de procesamiento de datos visual en Parabola.",
+      "example_prompt": "Corre el flujo de limpieza de datos en Parabola.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "bugsnag.list_errors",
+    "name": "Errores BugSnag",
+    "version": "v2",
+    "provider": "BugSnag",
+    "category": "monitoring",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "project_id": { "type": "string" }
+      },
+      "required": ["project_id"]
+    },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bugsnag.com/projects/{project_id}/errors",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Consulta el listado de excepciones y fallos críticos reportados en BugSnag.",
+      "example_prompt": "¿Qué errores nuevos han aparecido en BugSnag hoy?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gaudio_lab.separate_audio",
+    "name": "Separar Pistas Audio AI",
+    "version": "v1",
+    "provider": "Gaudio Lab",
+    "category": "ai",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "audio_url": { "type": "string" },
+        "mode": { "type": "string", "enum": ["vocal", "instrumental"] }
+      },
+      "required": ["audio_url"]
+    },
+    "output_schema": { "type": "object", "properties": { "result_url": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.gaudiolab.com/v1/separate",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Utiliza inteligencia artificial de Gaudio Lab para separar voces de instrumentos en un archivo de audio.",
+      "example_prompt": "Extrae la voz de esta canción usando Gaudio Lab.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pubrio.search_companies",
+    "name": "Buscador Empresas Pubrio",
+    "version": "v1",
+    "provider": "Pubrio",
+    "category": "data",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "domain": { "type": "string" },
+        "location": { "type": "string" }
+      }
+    },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.pubrio.com/v1/companies/search",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Encuentra y enriquece datos de empresas globales utilizando la base de inteligencia B2B de Pubrio.",
+      "example_prompt": "Busca empresas de software en Argentina con Pubrio.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gitopia.list_proposals",
+    "name": "Propuestas DAO Gitopia",
+    "version": "v1",
+    "provider": "Gitopia",
+    "category": "vcs",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.gitopia.com/v1/proposals",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera propuestas de gobernanza en la red descentralizada Gitopia.",
+      "example_prompt": "Dime qué propuestas activas hay en Gitopia.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "wopee.run_test",
+    "name": "Ejecutar Test Wopee",
+    "version": "v1",
+    "provider": "Wopee.io",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "test_id": { "type": "string" }
+      },
+      "required": ["test_id"]
+    },
+    "output_schema": { "type": "object", "properties": { "status": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.wopee.io/v1/tests/run",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Dispara una suite de pruebas funcionales automatizadas mediante Wopee.io.",
+      "example_prompt": "Corre los tests de login en Wopee.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "oil_price.get_latest",
+    "name": "Precio Petróleo OilPriceAPI",
+    "version": "v1",
+    "provider": "OilPriceAPI",
+    "category": "data",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "commodity": { "type": "string", "default": "BRENT" }
+      }
+    },
+    "output_schema": { "type": "object", "properties": { "price": { "type": "number" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.oilpriceapi.com/v1/prices/latest",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene la cotización en tiempo real del petróleo y otras commodities energéticas.",
+      "example_prompt": "¿A cuánto está el barril de Brent hoy?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "adamik.get_insights",
+    "name": "Insights Blockchain Adamik",
+    "version": "v1",
+    "provider": "Adamik",
+    "category": "data",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": { "type": "string" }
+      },
+      "required": ["account_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.adamik.io/v1/account/{account_id}/insights",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Analiza y devuelve métricas detalladas de una cuenta a través de múltiples redes blockchain compatibles con Adamik.",
+      "example_prompt": "Dame el balance y actividad de esta wallet usando Adamik.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "scite.search_papers",
+    "name": "Investigación Científica Scite",
+    "version": "v1",
+    "provider": "Scite",
+    "category": "search",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" }
+      },
+      "required": ["query"]
+    },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.scite.ai/v1/search?q={query}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Busca artículos académicos y literatura científica validando sus citas con Scite.",
+      "example_prompt": "Busca papers sobre los efectos del sueño en la memoria con Scite.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "market_genius.get_tools",
+    "name": "Herramientas Inversión Marketgenius",
+    "version": "v1",
+    "provider": "Marketgenius",
+    "category": "finance",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.marketgenius.io/mcp/tools",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Accede al catálogo de herramientas interactivas de inversión de Marketgenius.",
+      "example_prompt": "¿Qué herramientas de análisis financiero tiene Marketgenius?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "creative_claw.generate_asset",
+    "name": "Generar Asset Creative Claw",
+    "version": "v1.0.0",
+    "provider": "Creative Claw",
+    "category": "creative",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["image", "video", "audio", "3d"] },
+        "prompt": { "type": "string" }
+      },
+      "required": ["type", "prompt"]
+    },
+    "output_schema": { "type": "object", "properties": { "url": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.creativeclaw.co/v1/generate",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea contenido multimedia (imágenes, audio, video) mediante IA generativa con Creative Claw.",
+      "example_prompt": "Genera un logo 3D moderno para una fintech con Creative Claw.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "finn.search_cars",
+    "name": "Suscripción Autos FINN",
+    "version": "v1.0.0",
+    "provider": "FINN",
+    "category": "ecommerce",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "brand": { "type": "string" },
+        "max_price": { "type": "number" }
+      }
+    },
+    "output_schema": { "type": "array", "items": { "type": "object" } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.finn.www/v1/cars/search",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Busca y gestiona opciones de suscripción de vehículos en la plataforma FINN.",
+      "example_prompt": "Busca suscripciones de autos eléctricos en FINN por menos de 500 euros.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "reflect.run_test",
+    "name": "Test QA Reflect",
+    "version": "v1",
+    "provider": "Reflect",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "test_name": { "type": "string" }
+      },
+      "required": ["test_name"]
+    },
+    "output_schema": { "type": "object", "properties": { "result": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.reflect.io/v1/tests/run",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Ejecuta pruebas automatizadas de interfaz de usuario sin código en Reflect.",
+      "example_prompt": "Ejecuta la suite de pruebas de checkout en Reflect.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pact_flow.list_pacts",
+    "name": "Ver Pacts en PactFlow",
+    "version": "v1",
+    "provider": "PactFlow",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.pactflow.io/v1/pacts",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Gestiona los contratos de API y verficaciones en PactFlow.",
+      "example_prompt": "Mostrame los últimos pacts de PactFlow.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mcp_shield.scan_server",
+    "name": "Escanear Seguridad MCP",
+    "version": "v2.0.2",
+    "provider": "MCPShield",
+    "category": "security",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "server_url": { "type": "string" }
+      },
+      "required": ["server_url"]
+    },
+    "output_schema": { "type": "object", "properties": { "vulnerabilities": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mcpshield.io/v1/scan",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Escanea servidores MCP en busca de inyecciones de herramientas o código malicioso.",
+      "example_prompt": "Escanea el servidor MCP X para ver si es seguro con MCPShield.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "qr_maker.generate_qr",
+    "name": "Crear QR Estilizado",
+    "version": "v0.1.1",
+    "provider": "QrMakerIO",
+    "category": "creative",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "style": { "type": "string" }
+      },
+      "required": ["text"]
+    },
+    "output_schema": { "type": "object", "properties": { "qr_url": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.qrmaker.io/v1/generate",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Genera códigos QR personalizados y estilizados con QrMakerIO.",
+      "example_prompt": "Crea un código QR para mi web con estilo minimalista.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tandem.search_docs",
+    "name": "Buscador Documentación Tandem",
+    "version": "v0.3.1",
+    "provider": "Tandem",
+    "category": "search",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" }
+      },
+      "required": ["query"]
+    },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tandem.ac/v1/docs/search?q={query}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Busca en la documentación oficial, SDKs y guías de Tandem.",
+      "example_prompt": "Busca cómo configurar un agente en Tandem.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "lona.analyze_portfolio",
+    "name": "Analizar Portafolio Lona",
+    "version": "v2.0.0",
+    "provider": "Lona",
+    "category": "finance",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "holdings": { "type": "array" }
+      },
+      "required": ["holdings"]
+    },
+    "output_schema": { "type": "object", "properties": { "risk_score": { "type": "number" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.lona.agency/v1/portfolio/analyze",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Analiza carteras de inversión y estrategias de trading con Lona.",
+      "example_prompt": "Calcula el riesgo de mi cartera actual en Lona.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "aarna.get_crypto_signals",
+    "name": "Señales Cripto Aarna",
+    "version": "v0.1.0",
+    "provider": "Aarna",
+    "category": "finance",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string" }
+      },
+      "required": ["symbol"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.aarna.ai/v1/signals/{symbol}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene señales técnicas e indicadores de sentimiento para activos criptográficos de Aarna.",
+      "example_prompt": "¿Cuáles son las señales de trading para BTC hoy según Aarna?",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ad_advisor.get_meta_performance",
+    "name": "Métricas Meta Ads AdAdvisor",
+    "version": "v1.0.1",
+    "provider": "AdAdvisor",
+    "category": "marketing",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": { "type": "string" }
+      },
+      "required": ["account_id"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.adadvisor.ai/v1/meta/performance/{account_id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Consulta el rendimiento de campañas de Meta Ads a través de AdAdvisor.",
+      "example_prompt": "Dame el ROAS de mi cuenta de Meta Ads de AdAdvisor.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ad_ramp.manage_google_ads",
+    "name": "Gestión Google Ads AdRamp",
+    "version": "v1.0.3",
+    "provider": "AdRamp",
+    "category": "marketing",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "campaign_id": { "type": "string" },
+        "budget": { "type": "number" }
+      }
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.adramp.ai/v1/google-ads/manage",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Gestiona pujas y presupuestos en Google Ads con AdRamp.",
+      "example_prompt": "Ajusta el presupuesto de mi campaña de Google Ads en AdRamp.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "adweave.analyze_campaigns",
+    "name": "Auditoría Campañas Adweave",
+    "version": "v1.0.0",
+    "provider": "Adweave",
+    "category": "marketing",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "platform": { "type": "string" }
+      }
+    },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.adweave.ai/v1/campaigns/analyze",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Realiza auditorías automatizadas de creativos y audiencias con Adweave.",
+      "example_prompt": "Analiza qué anuncios están funcionando mejor con Adweave.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "agent_dm.send_agent_message",
+    "name": "Mensajería Inter-Agente AgentDM",
+    "version": "v1.0.0",
+    "provider": "AgentDM",
+    "category": "communication",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "target_agent_id": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "required": ["target_agent_id", "message"]
+    },
+    "output_schema": { "type": "object", "properties": { "status": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.agentdm.ai/v1/send",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Plataforma de comunicación directa entre agentes autónomos usando AgentDM.",
+      "example_prompt": "Envía una solicitud de colaboración al Agente 505 por AgentDM.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "agentic_news.get_briefing",
+    "name": "Resumen Noticias IA Agentic-News",
+    "version": "v1.0.0",
+    "provider": "Agentic-News",
+    "category": "search",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "topic": { "type": "string" }
+      },
+      "required": ["topic"]
+    },
+    "output_schema": { "type": "object", "properties": { "briefing": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.agenticnews.ai/v1/briefing?topic={topic}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Genera resúmenes ejecutivos y monitoreo inteligente de noticias con Agentic-News.",
+      "example_prompt": "Hazme un resumen de las noticias sobre semiconductores de Agentic-News.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "agentra_pay.verify_identity",
+    "name": "Verificación Oráculo AgentraPay",
+    "version": "v1.0.0",
+    "provider": "AgentraPay",
+    "category": "security",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "agent_address": { "type": "string" }
+      },
+      "required": ["agent_address"]
+    },
+    "output_schema": { "type": "object", "properties": { "trust_score": { "type": "number" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.agentrapay.ai/v1/verify",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Capa de identidad y confianza para pagos entre agentes autónomos (KYA) en AgentraPay.",
+      "example_prompt": "Verifica la identidad del agente emisor en AgentraPay.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "agent_trust.check_reputation",
+    "name": "Reputación Agentes AgentTrust",
+    "version": "v1.1.1",
+    "provider": "AgentTrust",
+    "category": "security",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "agent_id": { "type": "string" }
+      },
+      "required": ["agent_id"]
+    },
+    "output_schema": { "type": "object", "properties": { "status": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.agenttrust.ai/v1/reputation/{agent_id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Servicio de orquestación de confianza A2A para agentes inteligentes en AgentTrust.",
+      "example_prompt": "¿Es confiable este agente según AgentTrust?",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "spot_db.query_sandbox",
+    "name": "Sandbox Datos SpotDB",
+    "version": "v0.1.0",
+    "provider": "SpotDB",
+    "category": "data",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sql_query": { "type": "string" }
+      },
+      "required": ["sql_query"]
+    },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.spotdb.ai/v1/query",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Entorno seguro y efímero para análisis de datos por IA en SpotDB.",
+      "example_prompt": "Corre esta consulta SQL en el sandbox de SpotDB.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "alpic.check_deployment",
+    "name": "Monitoreo Servers Alpic",
+    "version": "v0.0.1",
+    "provider": "Alpic",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.alpic.mcp/v1/status",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Monitorea la salud y analíticas de despliegues de servidores MCP en Alpic.",
+      "example_prompt": "¿Cómo están los servidores de Alpic?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "anzenna.list_assets",
+    "name": "Gestión Activos Anzenna",
+    "version": "v0.1",
+    "provider": "Anzenna",
+    "category": "monitoring",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": { "type": "object", "properties": {} },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.anzenna.ai/v1/assets",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Gestiona la visibilidad y activos en la plataforma de seguridad Anzenna.",
+      "example_prompt": "Dame la lista de activos de Anzenna.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "app_deploy.create_app",
+    "name": "Desplegar App AppDeploy",
+    "version": "v1.0.0",
+    "provider": "AppDeploy",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "app_idea": { "type": "string" }
+      },
+      "required": ["app_idea"]
+    },
+    "output_schema": { "type": "object", "properties": { "app_url": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.appdeploy.ai/v1/create",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Transforma ideas descritas en lenguaje natural en aplicaciones web funcionales con AppDeploy.",
+      "example_prompt": "Crea una app de notas compartidas en AppDeploy.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "arti_drop.publish_url",
+    "name": "Publicar Link ArtiDrop",
+    "version": "v1.0.0",
+    "provider": "ArtiDrop",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "format": { "type": "string", "default": "markdown" }
+      },
+      "required": ["content"]
+    },
+    "output_schema": { "type": "object", "properties": { "share_url": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.artidrop.ai/v1/publish",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Capa de publicación para agentes; convierte Markdown en URLs públicas instantáneamente con ArtiDrop.",
+      "example_prompt": "Convierte este reporte Markdown en un link público con ArtiDrop.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "aut_eng.render_diagram",
+    "name": "Diagramas Mermaid AutEng",
+    "version": "v1.1.0",
+    "provider": "AutEng",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "mermaid_code": { "type": "string" }
+      },
+      "required": ["mermaid_code"]
+    },
+    "output_schema": { "type": "object", "properties": { "image_url": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.auteng.ai/v1/diagrams/render",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Renderiza diagramas de flujo y técnicos basados en código Mermaid con AutEng.",
+      "example_prompt": "Genera el diagrama de flujo para este proceso técnico en AutEng.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "autoblocks.manage_context",
+    "name": "Contexto Personal Autoblocks",
+    "version": "v0.0.3",
+    "provider": "Autoblocks",
+    "category": "productivity",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "user_fact": { "type": "string" }
+      },
+      "required": ["user_fact"]
+    },
+    "output_schema": { "type": "object", "properties": { "status": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.autoblocks.ai/v1/context",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Gestiona la memoria y el contexto personal del usuario para asistentes de IA en Autoblocks.",
+      "example_prompt": "Recuerda que prefiero reportes cortos en Autoblocks.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "bezal.search_local",
+    "name": "Comercio Local Bezal",
+    "version": "v1.0.0",
+    "provider": "Bezal",
+    "category": "search",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["category", "location"]
+    },
+    "output_schema": { "type": "array" },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bezal.ai/v1/search?cat={category}&loc={location}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Busca entre miles de negocios locales por categoría y ubicación con Bezal.",
+      "example_prompt": "Busca plomeros recomendados en Madrid con Bezal.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "blue_nexus.universal_connect",
+    "name": "Conector Universal BlueNexus",
+    "version": "v0.13.0",
+    "provider": "BlueNexus",
+    "category": "data",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" }
+      },
+      "required": ["source"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.bluenexus.ai/v1/connect",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Conecta y unifica datos de más de 200 fuentes con BlueNexus.",
+      "example_prompt": "Conecta mis datos de Shopify y HubSpot mediante BlueNexus.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "boreal_host.manage_dns",
+    "name": "DNS Hosting BorealHost",
+    "version": "v0.1.3",
+    "provider": "BorealHost",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "domain": { "type": "string" },
+        "record": { "type": "object" }
+      },
+      "required": ["domain"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.borealhost.com/v1/dns/manage",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Gestiona registros DNS y despliegues de sitios web en BorealHost.",
+      "example_prompt": "Añade un registro A para mi dominio en BorealHost.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "byte_ray.scan_binary",
+    "name": "Vulnerabilidades ByteRay",
+    "version": "v1.0.1",
+    "provider": "ByteRay",
+    "category": "security",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "binary_url": { "type": "string" }
+      },
+      "required": ["binary_url"]
+    },
+    "output_schema": { "type": "object", "properties": { "threats": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.byteray.ai/v1/scan",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Analiza binarios en busca de vulnerabilidades de día cero usando IA con ByteRay.",
+      "example_prompt": "Busca vulnerabilidades en este ejecutable con ByteRay.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "cirra.manage_salesforce",
+    "name": "Administración Salesforce Cirra",
+    "version": "v1.0.0",
+    "provider": "Cirra",
+    "category": "data",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "object_type": { "type": "string" }
+      }
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.cirra.ai/v1/salesforce/manage",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Capacidades avanzadas de administración y limpieza de datos en Salesforce con Cirra.",
+      "example_prompt": "Limpia los contactos duplicados en Salesforce usando Cirra.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "clarid.check_compliance",
+    "name": "Cumplimiento Bancario Clarid",
+    "version": "v1.0.0",
+    "provider": "Clarid",
+    "category": "security",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "document_text": { "type": "string" }
+      },
+      "required": ["document_text"]
+    },
+    "output_schema": { "type": "object", "properties": { "compliance_report": { "type": "object" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.clarid.ai/v1/compliance/check",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Valida que el marketing bancario cumpla con regulaciones como FDIC y GDPR con Clarid.",
+      "example_prompt": "Revisa si este anuncio bancario cumple con las normas en Clarid.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "contabo.cloud_provision",
+    "name": "Cloud Provisioning Contabo",
+    "version": "v0.6.0",
+    "provider": "Contabo",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "server_spec": { "type": "object" }
+      },
+      "required": ["server_spec"]
+    },
+    "output_schema": { "type": "object" },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.contabo.com/v1/servers",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "API para el aprovisionamiento y gestión de servidores en la nube de Contabo.",
+      "example_prompt": "Crea un servidor VPS en Contabo con 8GB de RAM.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  }
+]

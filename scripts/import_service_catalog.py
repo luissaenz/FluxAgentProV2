@@ -110,6 +110,11 @@ def extract_tools(tools: list[dict]) -> list[dict]:
                 elif field == "requires_approval":
                     tool_profile["requires_approval"] = False
 
+        # 🚨 VALIDATION: HTTPS Mandatory (Sprint 5)
+        exec_url = execution.get("url", "")
+        if exec_url and not exec_url.startswith("https://"):
+            raise ValueError(f"CRITICAL: Tool {tool['id']} uses insecure protocol in {exec_url}. HTTPS mandatory.")
+
         tool_records.append({
             "id": tool["id"],
             "service_id": tool["provider"]["id"],

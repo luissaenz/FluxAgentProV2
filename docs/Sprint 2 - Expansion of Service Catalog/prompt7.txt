@@ -1,0 +1,1054 @@
+[
+  {
+    "tool_id": "moneybird.create_contact",
+    "name": "Crear Contacto MoneyBird",
+    "version": "v2",
+    "provider": "MoneyBird",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["contact"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "company_name": { "type": "string" },
+        "firstname": { "type": "string" },
+        "lastname": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["company_name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://moneybird.com/api/v2/{administration_id}/contacts",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Agrega un nuevo cliente o proveedor a la administración de MoneyBird.",
+      "example_prompt": "Crea un contacto para 'Tech Solutions' en MoneyBird.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "moneybird.get_invoices",
+    "name": "Listar Facturas MoneyBird",
+    "version": "v2",
+    "provider": "MoneyBird",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["sales_invoice"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "filter": { "type": "string", "description": "state:all, draft, open, etc." }
+      }
+    },
+    "output_schema": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://moneybird.com/api/v2/{administration_id}/sales_invoices",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera las facturas de venta emitidas en MoneyBird.",
+      "example_prompt": "Traeme las facturas pendientes de MoneyBird.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "duffel.search_flights",
+    "name": "Buscar Vuelos Duffel",
+    "version": "v1",
+    "provider": "Duffel",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "slices": { "type": "array", "description": "Origen, destino y fecha" },
+        "passengers": { "type": "array" },
+        "cabin_class": { "type": "string" }
+      },
+      "required": ["slices", "passengers"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "offers": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.duffel.com/air/offer_requests",
+      "headers": { "Duffel-Version": "v1", "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Busca ofertas de vuelos en tiempo real a través de la API unificada de Duffel.",
+      "example_prompt": "Busca vuelos de Buenos Aires a Madrid para el 20 de mayo.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "duffel.create_order",
+    "name": "Reservar Vuelo Duffel",
+    "version": "v1",
+    "provider": "Duffel",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "selected_offers": { "type": "array" },
+        "passengers": { "type": "array" },
+        "type": { "type": "string", "default": "instant" }
+      },
+      "required": ["selected_offers", "passengers"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "booking_reference": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.duffel.com/air/orders",
+      "headers": { "Duffel-Version": "v1", "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Crea una reserva confirmada (orden) para un vuelo seleccionado en Duffel.",
+      "example_prompt": "Confirma la reserva del vuelo con la oferta ID_OFFER.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "finch.get_directory",
+    "name": "Directorio de Empleados Finch",
+    "version": "v1",
+    "provider": "Finch",
+    "category": "hris",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["directory"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "individuals": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tryfinch.com/employer/directory",
+      "headers": { "Finch-API-Version": "2020-09-17" }
+    },
+    "tool_profile": {
+      "description": "Obtiene la lista completa de empleados desde cualquier sistema HRIS conectado vía Finch.",
+      "example_prompt": "Dame la lista de empleados de la empresa.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "finch.get_payroll",
+    "name": "Consultar Nómina Finch",
+    "version": "v1",
+    "provider": "Finch",
+    "category": "hris",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["payroll"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "start_date": { "type": "string" },
+        "end_date": { "type": "string" }
+      }
+    },
+    "output_schema": {
+      "type": "array"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tryfinch.com/employer/payment",
+      "headers": { "Finch-API-Version": "2020-09-17" }
+    },
+    "tool_profile": {
+      "description": "Recupera datos de pagos y liquidaciones de sueldo procesadas en el HRIS.",
+      "example_prompt": "Traeme los pagos de nómina del mes pasado.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "todoist.create_task",
+    "name": "Crear Tarea Todoist",
+    "version": "v2",
+    "provider": "Todoist",
+    "category": "productivity",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["task:add"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "description": { "type": "string" },
+        "due_string": { "type": "string", "description": "Ej: 'tomorrow at 12:00'" },
+        "priority": { "type": "integer", "description": "1 (low) to 4 (very high)" }
+      },
+      "required": ["content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.todoist.com/rest/v2/tasks",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Agrega una nueva tarea personal o de equipo a Todoist.",
+      "example_prompt": "Agregá 'Comprar café' a Todoist para mañana.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "todoist.get_projects",
+    "name": "Listar Proyectos Todoist",
+    "version": "v2",
+    "provider": "Todoist",
+    "category": "productivity",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["data:read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "output_schema": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.todoist.com/rest/v2/projects",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene todos los proyectos activos del usuario en Todoist.",
+      "example_prompt": "¿Qué proyectos tengo en Todoist?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "spotify.add_to_playlist",
+    "name": "Agregar a Playlist Spotify",
+    "version": "v1",
+    "provider": "Spotify",
+    "category": "multimedia",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["playlist-modify-public", "playlist-modify-private"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "playlist_id": { "type": "string" },
+        "uris": { "type": "array", "description": "Lista de Spotify URIs de canciones" }
+      },
+      "required": ["playlist_id", "uris"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "snapshot_id": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.spotify.com/v1/playlists/{playlist_id}/tracks",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inserta una o más canciones en una lista de reproducción de Spotify.",
+      "example_prompt": "Agregá esta canción a mi playlist de Spotify.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "spotify.get_track",
+    "name": "Detalles de Canción Spotify",
+    "version": "v1",
+    "provider": "Spotify",
+    "category": "multimedia",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "track_id": { "type": "string" }
+      },
+      "required": ["track_id"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.spotify.com/v1/tracks/{track_id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene metadatos (artista, álbum, duración) de una canción en Spotify.",
+      "example_prompt": "Dame la info de la canción con ID X en Spotify.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "digitalocean.create_droplet",
+    "name": "Crear Servidor DigitalOcean",
+    "version": "v2",
+    "provider": "DigitalOcean",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "region": { "type": "string" },
+        "size": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["name", "region", "size", "image"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "droplet": { "type": "object" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.digitalocean.com/v2/droplets",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Lanza una nueva instancia de servidor virtual (Droplet) en DigitalOcean.",
+      "example_prompt": "Crea un Droplet básico en la región de Nueva York.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "digitalocean.list_images",
+    "name": "Listar Imágenes DigitalOcean",
+    "version": "v2",
+    "provider": "DigitalOcean",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "distribution o application" }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "images": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.digitalocean.com/v2/images",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera las imágenes de sistema operativo o aplicaciones disponibles para crear Droplets.",
+      "example_prompt": "Mostrame las imágenes de Ubuntu disponibles en DigitalOcean.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "reddit.submit_post",
+    "name": "Publicar en Reddit",
+    "version": "v1",
+    "provider": "Reddit",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["submit"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sr": { "type": "string", "description": "Nombre del subreddit" },
+        "kind": { "type": "string", "description": "self, link" },
+        "title": { "type": "string" },
+        "text": { "type": "string" }
+      },
+      "required": ["sr", "kind", "title"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://oauth.reddit.com/api/submit",
+      "headers": { "Content-Type": "application/x-www-form-urlencoded" }
+    },
+    "tool_profile": {
+      "description": "Crea una nueva publicación de texto o enlace en un subreddit específico.",
+      "example_prompt": "Postea en r/test un saludo desde FAP.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "reddit.get_subreddit_new",
+    "name": "Nuevos Posts Subreddit",
+    "version": "v1",
+    "provider": "Reddit",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "subreddit": { "type": "string" },
+        "limit": { "type": "integer", "default": 25 }
+      },
+      "required": ["subreddit"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://oauth.reddit.com/r/{subreddit}/new",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene las publicaciones más recientes de un subreddit dado.",
+      "example_prompt": "¿Cuáles son los últimos posts en r/technology?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "perplexity.ask",
+    "name": "Consultar Perplexity AI",
+    "version": "v1",
+    "provider": "Perplexity",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model": { "type": "string", "default": "llama-3-sonar-large-32k-online" },
+        "messages": { "type": "array" }
+      },
+      "required": ["messages"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "choices": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.perplexity.ai/chat/completions",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Realiza búsquedas y razonamiento en tiempo real usando los modelos online de Perplexity.",
+      "example_prompt": "Preguntale a Perplexity cuáles son las tendencias en IA de hoy.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "runway.generate_video",
+    "name": "Generar Video Runway",
+    "version": "v1",
+    "provider": "Runway",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string" },
+        "image_url": { "type": "string" },
+        "model": { "type": "string", "default": "gen-2" }
+      },
+      "required": ["prompt"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.runwayml.com/v1/tasks",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inicia una tarea de generación de video a partir de texto o imagen usando Runway AI.",
+      "example_prompt": "Genera un video de un bosque nevado en Runway.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "box.upload_file",
+    "name": "Subir Archivo Box",
+    "version": "v2",
+    "provider": "Box",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["root_readwrite"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "parent_id": { "type": "string", "default": "0" },
+        "name": { "type": "string" },
+        "file_content": { "type": "string" }
+      },
+      "required": ["name", "file_content"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://upload.box.com/api/2.0/files/content",
+      "headers": { "Content-Type": "multipart/form-data" }
+    },
+    "tool_profile": {
+      "description": "Carga un archivo al almacenamiento en la nube de Box.",
+      "example_prompt": "Sube el archivo 'reporte.docx' a Box.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "servicenow.create_incident",
+    "name": "Abrir Incidente ServiceNow",
+    "version": "v2",
+    "provider": "ServiceNow",
+    "category": "productivity",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "short_description": { "type": "string" },
+        "priority": { "type": "string" },
+        "caller_id": { "type": "string" }
+      },
+      "required": ["short_description"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "result": { "type": "object" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{instance}.service-now.com/api/now/table/incident",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Registra un nuevo ticket de incidente en la plataforma ITSM de ServiceNow.",
+      "example_prompt": "Crea un incidente por falla de red en ServiceNow.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "workday.get_worker",
+    "name": "Datos de Trabajador Workday",
+    "version": "v1",
+    "provider": "Workday",
+    "category": "hris",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "worker_id": { "type": "string" }
+      },
+      "required": ["worker_id"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://{tenant}.workday.com/api/v1/workers/{worker_id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera la ficha de un empleado en el sistema ERP/HR de Workday.",
+      "example_prompt": "Traeme los datos del trabajador ID 123 en Workday.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "marketo.create_lead",
+    "name": "Crear Lead Marketo",
+    "version": "v1",
+    "provider": "Marketo",
+    "category": "marketing",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "input": { "type": "array", "description": "Lista de leads con email y atributos" }
+      },
+      "required": ["input"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{munchkin_id}.mktorest.com/rest/v1/leads.json",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inyecta nuevos prospectos a la base de marketing automation de Marketo.",
+      "example_prompt": "Agrega este nuevo lead a Marketo.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gong.get_calls",
+    "name": "Listar Llamadas Gong",
+    "version": "v2",
+    "provider": "Gong",
+    "category": "multimedia",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "fromDateTime": { "type": "string" },
+        "toDateTime": { "type": "string" }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "calls": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.gong.io/v2/calls",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene las grabaciones y transcripciones de llamadas comerciales de Gong.",
+      "example_prompt": "Dame las llamadas grabadas de ayer en Gong.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "altmetric.get_research",
+    "name": "Métricas de Investigación Altmetric",
+    "version": "v1",
+    "provider": "Altmetric",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "doi": { "type": "string", "description": "Identificador de objeto digital" }
+      },
+      "required": ["doi"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.altmetric.com/v1/doi/{doi}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Consulta el impacto y atención en redes/noticias de un artículo científico vía Altmetric.",
+      "example_prompt": "Busca las métricas del DOI 10.1234/567 en Altmetric.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "timescale.get_service",
+    "name": "Estado Base de Datos Timescale",
+    "version": "v1",
+    "provider": "Timescale",
+    "category": "database",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "service_id": { "type": "string" }
+      },
+      "required": ["service_id"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://portal.timescale.cloud/api/v1/services/{service_id}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Verifica el estado y configuración de una instancia de base de datos en Timescale Cloud.",
+      "example_prompt": "¿Cómo está el servicio de Timescale ID_SERVICE?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "hetzner.list_servers",
+    "name": "Listar Servidores Hetzner",
+    "version": "v1",
+    "provider": "Hetzner",
+    "category": "infrastructure",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "servers": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.hetzner.cloud/v1/servers",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene la lista de servidores Cloud activos en la cuenta de Hetzner.",
+      "example_prompt": "¿Qué servidores tenemos en Hetzner?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "polymarket.get_markets",
+    "name": "Mercados Predictivos Polymarket",
+    "version": "v1",
+    "provider": "Polymarket",
+    "category": "multimedia",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "active": { "type": "boolean", "default": true }
+      }
+    },
+    "output_schema": {
+      "type": "array"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://clob.polymarket.com/markets",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Consulta los mercados de apuestas y predicciones activos en Polymarket.",
+      "example_prompt": "Traeme los mercados de Polymarket sobre las elecciones.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "robinhood.get_quote",
+    "name": "Cotización Bolsa Robinhood",
+    "version": "v1",
+    "provider": "Robinhood",
+    "category": "multimedia",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string", "description": "Ticker de la acción, ej: AAPL" }
+      },
+      "required": ["symbol"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.robinhood.com/quotes/{symbol}/",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene el precio actual de mercado de una acción en Robinhood.",
+      "example_prompt": "¿A cuánto cotiza Tesla en Robinhood?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "yuki.get_administration",
+    "name": "Datos Administración Yuki",
+    "version": "v1",
+    "provider": "Yuki",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "AccessKey": { "type": "string" }
+      },
+      "required": ["AccessKey"]
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.yuki.nl/services/Administration.asmx",
+      "headers": { "Content-Type": "text/xml" }
+    },
+    "tool_profile": {
+      "description": "Conecta con los webservices SOAP de Yuki para gestionar administraciones contables.",
+      "example_prompt": "Busca mi administración en Yuki.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zenrows.scrape",
+    "name": "Scrapear Web ZenRows",
+    "version": "v1",
+    "provider": "ZenRows",
+    "category": "multimedia",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "js_render": { "type": "boolean", "default": true },
+        "premium_proxy": { "type": "boolean", "default": false }
+      },
+      "required": ["url"]
+    },
+    "output_schema": {
+      "type": "string",
+      "description": "HTML o Markdown limpio de la página"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.zenrows.com/v1/?apikey={api_key}&url={url}&js_render={js_render}",
+      "headers": { "Accept": "text/html" }
+    },
+    "tool_profile": {
+      "description": "Extrae contenido de cualquier sitio web evadiendo bloqueos anti-bot mediante ZenRows.",
+      "example_prompt": "Scrapea el contenido de amazon.com con ZenRows.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "memori.recall",
+    "name": "Recuperar Memoria AI",
+    "version": "v1",
+    "provider": "Memori",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" },
+        "session_id": { "type": "string" }
+      },
+      "required": ["query"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "memories": { "type": "array" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.memori.ai/v1/recall",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Busca hechos y preferencias del usuario almacenados en sesiones previas para dar contexto a la IA.",
+      "example_prompt": "Recupera lo que hablamos sobre el presupuesto del proyecto en Memori.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "salesflare.list_accounts",
+    "name": "Listar Cuentas Salesflare",
+    "version": "v1",
+    "provider": "Salesflare",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "q": { "type": "string", "description": "Query de búsqueda" }
+      }
+    },
+    "output_schema": {
+      "type": "array"
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.salesflare.com/accounts",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene la lista de cuentas comerciales registradas en el CRM Salesflare.",
+      "example_prompt": "Dame la lista de mis clientes en Salesflare.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  }
+]

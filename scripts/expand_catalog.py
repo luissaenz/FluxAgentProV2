@@ -1,14 +1,11 @@
 import json
 import re
-import os
-import sys
 from pathlib import Path
 from urllib.parse import urlparse
-from collections import OrderedDict
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).parent.parent
-DOCS_DIR = BASE_DIR / "docs"
+DOCS_DIR = BASE_DIR / "docs" / "Sprint 2 - Expansion of Service Catalog"
 DATA_DIR = BASE_DIR / "data"
 SEED_PATH = DATA_DIR / "service_catalog_seed.json"
 
@@ -112,9 +109,9 @@ def main():
             except Exception as e:
                 print(f"Warning: Error loading seed: {e}. Starting empty catalog.")
     
-    # 2. Procesar Prompts (1 a 5)
-    # Orden de precedencia: prompt5 > prompt4 > prompt3 > prompt2 > prompt1 > seed
-    for i in range(1, 6):
+    # 2. Procesar Prompts (1 a 9)
+    # Orden de precedencia: prompt9 > prompt8 > ... > seed
+    for i in range(1, 10):
         prompt_file = DOCS_DIR / f"prompt{i}.txt"
         if not prompt_file.exists():
             print(f"Warning: File {prompt_file.name} not found. Skipping.")

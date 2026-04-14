@@ -1,0 +1,581 @@
+[
+  {
+    "tool_id": "activecampaign.create_contact",
+    "name": "Crear Contacto ActiveCampaign",
+    "version": "v3",
+    "provider": "ActiveCampaign",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "Correo del contacto" },
+        "firstName": { "type": "string", "description": "Nombre" },
+        "lastName": { "type": "string", "description": "Apellido" },
+        "phone": { "type": "string", "description": "Teléfono" }
+      },
+      "required": ["email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "contact": { "type": "object", "description": "Objeto contacto creado" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{account}.api-activecampaign.com/api/3/contacts",
+      "headers": { "Api-Token": "{api_key}", "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Agrega un nuevo contacto a la base de marketing de ActiveCampaign.",
+      "example_prompt": "Crea un contacto para hola@cliente.com en ActiveCampaign.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "afip.create_invoice_afip",
+    "name": "Emitir Factura AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cuit_emisor": { "type": "string" },
+        "punto_venta": { "type": "number" },
+        "cbte_tipo": { "type": "number", "description": "1=A, 6=B, 11=C" },
+        "doc_nro": { "type": "string", "description": "CUIT/DNI cliente" },
+        "importe_total": { "type": "number" }
+      },
+      "required": ["cuit_emisor", "punto_venta", "cbte_tipo", "doc_nro", "importe_total"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "cae": { "type": "string" },
+        "cae_vto": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.afip.gob.ar/wsfev1/factura",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Genera una factura electrónica legal ante la AFIP en Argentina obteniendo el CAE.",
+      "example_prompt": "Emití una factura C por 5000 pesos al CUIT del cliente.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "airtable.create_record",
+    "name": "Crear Registro Airtable",
+    "version": "v0",
+    "provider": "Airtable",
+    "category": "productivity",
+    "auth": { "type": "oauth2", "scopes": ["data.records:write"] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "baseId": { "type": "string" },
+        "tableId": { "type": "string" },
+        "fields": { "type": "object", "description": "Mapeo de columnas y valores" }
+      },
+      "required": ["baseId", "tableId", "fields"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.airtable.com/v0/{baseId}/{tableId}",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Inserta una nueva fila en una base de datos de Airtable con validación de campos.",
+      "example_prompt": "Agregá una fila a la tabla de Leads en Airtable.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amazon_ses.send_email",
+    "name": "Enviar Email AWS SES",
+    "version": "v2",
+    "provider": "Amazon SES",
+    "category": "email",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "From": { "type": "string" },
+        "To": { "type": "array", "items": { "type": "string" } },
+        "Subject": { "type": "string" },
+        "Body": { "type": "string" }
+      },
+      "required": ["From", "To", "Subject", "Body"]
+    },
+    "output_schema": { "type": "object", "properties": { "MessageId": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://email.{region}.amazonaws.com/v2/email/outbound-emails",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Envía correos electrónicos transaccionales usando la infraestructura de Amazon SES.",
+      "example_prompt": "Mandá un correo de confirmación por Amazon SES.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amazon_sp.get_orders",
+    "name": "Obtener Pedidos Amazon",
+    "version": "v0",
+    "provider": "Amazon SP API",
+    "category": "ecommerce",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "MarketplaceIds": { "type": "string" },
+        "CreatedAfter": { "type": "string" }
+      },
+      "required": ["MarketplaceIds"]
+    },
+    "output_schema": { "type": "object", "properties": { "Orders": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://sellingpartnerapi-na.amazon.com/orders/v0/orders",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Sincroniza las ventas realizadas en el Marketplace de Amazon a través de Selling Partner API.",
+      "example_prompt": "Traeme los pedidos de Amazon de hoy.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amplitude.track_event",
+    "name": "Trackear Evento Amplitude",
+    "version": "v2",
+    "provider": "Amplitude",
+    "category": "analytics",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "event_type": { "type": "string" },
+        "event_properties": { "type": "object" }
+      },
+      "required": ["user_id", "event_type"]
+    },
+    "output_schema": { "type": "object", "properties": { "code": { "type": "number" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api2.amplitude.com/2/httpapi",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Registra comportamientos de usuario para análisis de producto en Amplitude.",
+      "example_prompt": "Trackea el evento 'Compra Finalizada' en Amplitude.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "andreani.create_shipment",
+    "name": "Generar Envío Andreani",
+    "version": "v2",
+    "provider": "Andreani",
+    "category": "logistics",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contrato": { "type": "string" },
+        "destino": { "type": "object" },
+        "bultos": { "type": "array" }
+      },
+      "required": ["contrato", "destino", "bultos"]
+    },
+    "output_schema": { "type": "object", "properties": { "numeroDeEnvio": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://apis.andreani.com/v2/ordenes-de-envio",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Solicita el despacho de paquetería y genera la etiqueta de Andreani para Argentina.",
+      "example_prompt": "Generá un envío de Andreani para este pedido.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "anthropic.create_message",
+    "name": "Completar con Claude",
+    "version": "v1",
+    "provider": "Anthropic",
+    "category": "ai",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model": { "type": "string", "default": "claude-3-5-sonnet-latest" },
+        "messages": { "type": "array", "items": { "type": "object" } },
+        "max_tokens": { "type": "number", "default": 1024 }
+      },
+      "required": ["model", "messages"]
+    },
+    "output_schema": { "type": "object", "properties": { "content": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "headers": { "x-api-key": "{api_key}", "anthropic-version": "2023-06-01", "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Genera respuestas inteligentes utilizando el modelo Claude de Anthropic.",
+      "example_prompt": "Pedile a Claude que analice este feedback.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "asana.create_task",
+    "name": "Crear Tarea Asana",
+    "version": "v1.0",
+    "provider": "Asana",
+    "category": "project_management",
+    "auth": { "type": "oauth2", "scopes": ["default"] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "projects": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" }
+      },
+      "required": ["name", "projects"]
+    },
+    "output_schema": { "type": "object", "properties": { "data": { "type": "object" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://app.asana.com/api/1.0/tasks",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Asigna una nueva tarea dentro de un proyecto específico en Asana.",
+      "example_prompt": "Crea una tarea en Asana: 'Revisar landing page'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "aws_s3.put_object",
+    "name": "Subir a AWS S3",
+    "version": "v1",
+    "provider": "AWS S3",
+    "category": "storage",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "Bucket": { "type": "string" },
+        "Key": { "type": "string", "description": "Ruta/nombre del archivo" },
+        "Body": { "type": "string", "description": "Contenido en Base64 o texto" }
+      },
+      "required": ["Bucket", "Key", "Body"]
+    },
+    "output_schema": { "type": "object", "properties": { "ETag": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://{Bucket}.s3.{region}.amazonaws.com/{Key}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Almacena archivos u objetos en la nube de Amazon Web Services.",
+      "example_prompt": "Subí el reporte PDF al bucket 'finanzas' de S3.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "azure_blob.upload_blob",
+    "name": "Subir a Azure Blob",
+    "version": "v2020-04-08",
+    "provider": "Azure Blob",
+    "category": "storage",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "container": { "type": "string" },
+        "blobName": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "required": ["container", "blobName", "content"]
+    },
+    "output_schema": { "type": "object", "properties": {} },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://{account}.blob.core.windows.net/{container}/{blobName}",
+      "headers": { "x-ms-blob-type": "BlockBlob" }
+    },
+    "tool_profile": {
+      "description": "Carga archivos al almacenamiento de objetos de Microsoft Azure.",
+      "example_prompt": "Cargá la imagen al contenedor de Azure.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "bamboohr.get_employee",
+    "name": "Detalles Empleado BambooHR",
+    "version": "v1",
+    "provider": "BambooHR",
+    "category": "hris",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "fields": { "type": "string", "description": "Campos separados por coma" }
+      },
+      "required": ["employeeId"]
+    },
+    "output_schema": { "type": "object", "properties": { "firstName": { "type": "string" }, "lastName": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bamboohr.com/api/gateway.php/{company}/v1/employees/{employeeId}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Recupera la ficha técnica y datos laborales de un colaborador en BambooHR.",
+      "example_prompt": "Traeme los datos de Juan en BambooHR.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "galicia.get_balance",
+    "name": "Saldo Banco Galicia",
+    "version": "v1",
+    "provider": "Banco Galicia API",
+    "category": "payments",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": { "account_id": { "type": "string" } },
+      "required": ["account_id"]
+    },
+    "output_schema": { "type": "object", "properties": { "balances": { "type": "object" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bancogalicia.com.ar/v1/accounts/{account_id}/balance",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Consulta el saldo en tiempo real de cuentas corporativas en Banco Galicia (Argentina).",
+      "example_prompt": "¿Cuánto dinero hay en la cuenta del Galicia?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "bitbucket.list_repositories",
+    "name": "Listar Repos Bitbucket",
+    "version": "v2.0",
+    "provider": "Bitbucket",
+    "category": "vcs",
+    "auth": { "type": "oauth2", "scopes": ["repository"] },
+    "input_schema": {
+      "type": "object",
+      "properties": { "workspace": { "type": "string" } },
+      "required": ["workspace"]
+    },
+    "output_schema": { "type": "object", "properties": { "values": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bitbucket.org/2.0/repositories/{workspace}",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Enumera los repositorios de código disponibles en un espacio de trabajo de Bitbucket.",
+      "example_prompt": "Listame los proyectos de Bitbucket.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "brevo.send_email",
+    "name": "Enviar Email Brevo",
+    "version": "v3",
+    "provider": "Brevo",
+    "category": "email",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sender": { "type": "object" },
+        "to": { "type": "array" },
+        "htmlContent": { "type": "string" },
+        "subject": { "type": "string" }
+      },
+      "required": ["sender", "to", "htmlContent", "subject"]
+    },
+    "output_schema": { "type": "object", "properties": { "messageId": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.brevo.com/v3/smtp/email",
+      "headers": { "api-key": "{api_key}", "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Despacha correos electrónicos transaccionales o de marketing vía Brevo (ex Sendinblue).",
+      "example_prompt": "Enviá el newsletter por Brevo.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "calendly.list_events",
+    "name": "Listar Citas Calendly",
+    "version": "v2",
+    "provider": "Calendly",
+    "category": "calendar",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": { "user": { "type": "string", "description": "URI del usuario" } },
+      "required": ["user"]
+    },
+    "output_schema": { "type": "object", "properties": { "collection": { "type": "array" } } },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.calendly.com/scheduled_events",
+      "headers": { "Accept": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Obtiene la agenda de reuniones programadas por clientes en Calendly.",
+      "example_prompt": "¿Qué reuniones tengo agendadas en Calendly?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "clickup.create_task",
+    "name": "Crear Tarea ClickUp",
+    "version": "v2",
+    "provider": "ClickUp",
+    "category": "project_management",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "list_id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["list_id", "name"]
+    },
+    "output_schema": { "type": "object", "properties": { "id": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.clickup.com/api/v2/list/{list_id}/task",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Genera una nueva tarea en una lista de trabajo de ClickUp.",
+      "example_prompt": "Agregá una tarea a ClickUp: 'Llamar a proveedor'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "cloudflare.purge_cache",
+    "name": "Purgar Cache Cloudflare",
+    "version": "v4",
+    "provider": "Cloudflare",
+    "category": "infrastructure",
+    "auth": { "type": "api_key", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "zone_id": { "type": "string" },
+        "purge_everything": { "type": "boolean", "default": true }
+      },
+      "required": ["zone_id"]
+    },
+    "output_schema": { "type": "object", "properties": { "success": { "type": "boolean" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Limpia la memoria caché de un sitio web en la red de Cloudflare.",
+      "example_prompt": "Purgá todo el cache de Cloudflare para la zona X.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "contabilium.create_invoice",
+    "name": "Facturar en Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": { "type": "oauth2", "scopes": [] },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "IdTipoComprobante": { "type": "number" },
+        "IdCliente": { "type": "number" },
+        "Items": { "type": "array" }
+      },
+      "required": ["IdTipoComprobante", "IdCliente", "Items"]
+    },
+    "output_schema": { "type": "object", "properties": { "Numero": { "type": "string" } } },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://rest.contabilium.com/api/comprobantes",
+      "headers": { "Content-Type": "application/json" }
+    },
+    "tool_profile": {
+      "description": "Sincroniza ventas y emite comprobantes fiscales en el ERP Contabilium (Argentina).",
+      "example_prompt": "Facturá el pedido en Contabilium.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  }
+]
