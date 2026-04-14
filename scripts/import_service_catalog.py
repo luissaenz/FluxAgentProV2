@@ -133,16 +133,16 @@ def import_to_supabase(
 
     # 1. Insert providers into service_catalog
     provider_list = list(providers.values())
-    print(f"\nInserting {len(provider_list)} providers into service_catalog...")
+    print(f"\nImporting {len(provider_list)} providers into service_catalog...")
     for provider in provider_list:
         db.table("service_catalog").upsert(provider, on_conflict="id").execute()
-    print(f"  ✅ {len(provider_list)} providers upserted")
+    print(f"  OK: {len(provider_list)} providers upserted")
 
     # 2. Insert tools into service_tools
-    print(f"\nInserting {len(tool_records)} tools into service_tools...")
+    print(f"\nImporting {len(tool_records)} tools into service_tools...")
     for tool in tool_records:
         db.table("service_tools").upsert(tool, on_conflict="id").execute()
-    print(f"  ✅ {len(tool_records)} tools upserted")
+    print(f"  OK: {len(tool_records)} tools upserted")
 
 
 def verify_integrity(db: Client, expected_tools: int) -> bool:
@@ -153,22 +153,22 @@ def verify_integrity(db: Client, expected_tools: int) -> bool:
     # Count providers
     result = db.table("service_catalog").select("id", count="exact").execute()
     provider_count = result.count if result.count is not None else len(result.data)
-    print(f"Providers: {provider_count} (expected: ≥15)")
+    print(f"Providers: {provider_count} (expected: at least 15)")
     if provider_count < 15:
-        print("  ❌ FAIL: fewer than 15 providers")
+        print("  FAIL: fewer than 15 providers")
         success = False
     else:
-        print("  ✅ OK")
+        print("  OK")
 
     # Count tools
     result = db.table("service_tools").select("id", count="exact").execute()
     tool_count = result.count if result.count is not None else len(result.data)
     print(f"Tools: {tool_count} (expected: {expected_tools})")
     if tool_count != expected_tools:
-        print(f"  ❌ FAIL: expected {expected_tools}, got {tool_count}")
+        print(f"  FAIL: expected {expected_tools}, got {tool_count}")
         success = False
     else:
-        print("  ✅ OK")
+        print("  OK")
 
     # Check orphans (tools without valid service_id)
     orphans = (
@@ -181,10 +181,10 @@ def verify_integrity(db: Client, expected_tools: int) -> bool:
     orphan_tools = [t for t in all_tools.data if t["service_id"] not in provider_ids]
     print(f"Orphan tools: {len(orphan_tools)} (expected: 0)")
     if orphan_tools:
-        print(f"  ❌ FAIL: orphan tools found: {[t['id'] for t in orphan_tools]}")
+        print(f"  FAIL: orphan tools found: {[t['id'] for t in orphan_tools]}")
         success = False
     else:
-        print("  ✅ OK")
+        print("  OK")
 
     # Check tool_profile completeness
     all_tools_full = db.table("service_tools").select("id, tool_profile").execute()
@@ -198,10 +198,10 @@ def verify_integrity(db: Client, expected_tools: int) -> bool:
 
     print(f"Incomplete tool_profiles: {len(incomplete)} (expected: 0)")
     if incomplete:
-        print(f"  ❌ FAIL: {incomplete}")
+        print(f"  FAIL: {incomplete}")
         success = False
     else:
-        print("  ✅ OK")
+        print("  OK")
 
     return success
 
@@ -233,9 +233,9 @@ def main() -> None:
     ok = verify_integrity(db, len(tool_records))
 
     if ok:
-        print("\n✅ Import completed successfully!")
+        print("\nSUCCESS: Service catalog import complete.")
     else:
-        print("\n❌ Import completed with errors — review above")
+        print("\nFAIL: Import completed with errors — review above")
         sys.exit(1)
 
 

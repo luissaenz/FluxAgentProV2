@@ -1,0 +1,3224 @@
+PROMPT 1:
+Contexto: Ya tengo 50 tools documentadas en mi plataforma FAP cubriendo estas categorías: crm, payments, messaging, email, storage, calendar, analytics, social, ecommerce, project_management, ai.
+
+
+Necesito expandir el catálogo con CATEGORÍAS NUEVAS que no tengo. Generá tools para estas categorías adicionales, priorizando servicios con APIs REST públicas bien documentadas:
+
+
+
+accounting (8 tools): QuickBooks, Xero, Contabilium, FreshBooks
+
+hr (6 tools): BambooHR, Factorial, Gusto
+
+logistics (8 tools): FedEx, DHL, Shippo, MercadoEnvíos
+
+support (8 tools): Zendesk, Freshdesk, Intercom
+
+forms (5 tools): Typeform, Google Forms, JotForm
+
+signatures (4 tools): DocuSign, SignNow
+
+meetings (6 tools): Zoom, Google Meet, Calendly (ya tengo scheduling, necesito meetings/video)
+
+databases (6 tools): Airtable, Google Sheets API, Firebase Firestore
+
+marketing_automation (6 tools): ActiveCampaign, Brevo, Klaviyo
+
+dns_hosting (4 tools): Cloudflare, Vercel
+
+
+Usá EXACTAMENTE este esquema JSON para cada tool (sin agregar ni omitir campos):
+
+
+{
+"tool_id": ".",
+"name": "",
+"version": "<semver o versión API real>",
+"provider": "",
+"category": "<categoría de la lista de arriba>",
+"auth": {
+"type": "<oauth2 | api_key | none>",
+"scopes": []
+},
+"input_schema": {
+"type": "object",
+"properties": { ... },
+"required": [""]
+},
+"output_schema": {
+"type": "object",
+"properties": { ... }
+},
+"execution": {
+"type": "http",
+"method": "<GET | POST | PUT | PATCH | DELETE>",
+"url": "",
+"headers": {}
+},
+"tool_profile": {
+"description": "<qué hace, para que un LLM sepa cuándo usarla>",
+"example_prompt": "<ejemplo de instrucción en lenguaje natural>",
+"risk_level": "<low | medium | high>",
+"requires_approval": false
+}
+}
+
+
+REGLAS:
+
+
+
+auth.type SOLO: "oauth2", "api_key", o "none"
+
+input_schema.required debe ser un ARRAY de strings al nivel del schema, NO booleanos dentro de properties
+
+Solo tools que HACEN algo útil para un negocio
+
+tool_profile.description debe ser útil para que un LLM decida cuándo usar la tool
+
+Devolver JSON array puro, sin markdown, sin explicaciones
+
+
+Target: ~61 tools nuevas distribuidas en las 10 categorías.
+
+RESULTADO:
+[
+  {
+    "tool_id": "quickbooks.create_invoice",
+    "name": "Crear Factura en QuickBooks",
+    "version": "v3",
+    "provider": "QuickBooks",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["com.intuit.quickbooks.accounting"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "CustomerRef": {
+          "type": "object",
+          "description": "Referencia al cliente (id y name)"
+        },
+        "Line": {
+          "type": "array",
+          "description": "Líneas de detalle de la factura"
+        }
+      },
+      "required": ["CustomerRef", "Line"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Invoice": {
+          "type": "object",
+          "description": "Detalles de la factura creada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://quickbooks.api.intuit.com/v3/company/{company_id}/invoice",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una nueva factura (invoice) de venta en QuickBooks Online.",
+      "example_prompt": "Crea una factura en QuickBooks para el cliente ID 5 con un servicio de consultoría por $1000.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "quickbooks.create_customer",
+    "name": "Crear Cliente en QuickBooks",
+    "version": "v3",
+    "provider": "QuickBooks",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["com.intuit.quickbooks.accounting"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "DisplayName": {
+          "type": "string",
+          "description": "Nombre a mostrar del cliente"
+        },
+        "PrimaryEmailAddr": {
+          "type": "object",
+          "description": "Dirección de correo electrónico principal"
+        }
+      },
+      "required": ["DisplayName"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Customer": {
+          "type": "object",
+          "description": "Objeto cliente creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://quickbooks.api.intuit.com/v3/company/{company_id}/customer",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Registra un nuevo cliente en el sistema de contabilidad de QuickBooks.",
+      "example_prompt": "Añade a la empresa 'Tech Solutions' como nuevo cliente en QuickBooks.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "xero.create_invoice",
+    "name": "Crear Factura en Xero",
+    "version": "2.0",
+    "provider": "Xero",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["accounting.transactions"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "description": "Tipo de factura, ej. ACCREC (Cuentas por cobrar)"
+        },
+        "Contact": {
+          "type": "object",
+          "description": "Contacto asociado a la factura"
+        },
+        "LineItems": {
+          "type": "array",
+          "description": "Artículos o servicios facturados"
+        }
+      },
+      "required": ["Type", "Contact", "LineItems"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Invoices": {
+          "type": "array",
+          "description": "Lista de facturas creadas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.xero.com/api.xro/2.0/Invoices",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una factura de venta o compra en Xero.",
+      "example_prompt": "Crea una factura de venta en Xero para John Doe por el concepto de 'Soporte Técnico'.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "xero.create_contact",
+    "name": "Crear Contacto en Xero",
+    "version": "2.0",
+    "provider": "Xero",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["accounting.contacts"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "Name": {
+          "type": "string",
+          "description": "Nombre completo o razón social"
+        },
+        "EmailAddress": {
+          "type": "string",
+          "description": "Correo electrónico del contacto"
+        }
+      },
+      "required": ["Name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Contacts": {
+          "type": "array",
+          "description": "Datos del contacto creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.xero.com/api.xro/2.0/Contacts",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un nuevo cliente o proveedor (contacto) en Xero.",
+      "example_prompt": "Registra a 'Acme Corp' como contacto en Xero con email billing@acme.com.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "contabilium.create_invoice",
+    "name": "Crear Comprobante en Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "IdTipoComprobante": {
+          "type": "number",
+          "description": "ID del tipo de factura o comprobante"
+        },
+        "IdCliente": {
+          "type": "number",
+          "description": "Identificador del cliente"
+        },
+        "Items": {
+          "type": "array",
+          "description": "Detalle de conceptos facturados"
+        }
+      },
+      "required": ["IdTipoComprobante", "IdCliente", "Items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Id": {
+          "type": "number",
+          "description": "ID interno del comprobante creado"
+        },
+        "Numero": {
+          "type": "string",
+          "description": "Número de factura emitido"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://rest.contabilium.com/api/comprobantes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera un nuevo comprobante o factura fiscal en Contabilium.",
+      "example_prompt": "Emitir factura B en Contabilium para el cliente 8891.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "contabilium.create_client",
+    "name": "Crear Cliente en Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "RazonSocial": {
+          "type": "string",
+          "description": "Razón social del cliente"
+        },
+        "NroDocumento": {
+          "type": "string",
+          "description": "CUIT o DNI"
+        },
+        "IdCondicionIva": {
+          "type": "number",
+          "description": "Condición frente al IVA"
+        }
+      },
+      "required": ["RazonSocial", "NroDocumento"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Id": {
+          "type": "number",
+          "description": "ID del cliente creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://rest.contabilium.com/api/clientes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Registra un nuevo cliente con sus datos fiscales en Contabilium.",
+      "example_prompt": "Crea al cliente 'Empresa SA' con CUIT 30-11111111-2 en Contabilium.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "freshbooks.create_client",
+    "name": "Crear Cliente en FreshBooks",
+    "version": "alpha",
+    "provider": "FreshBooks",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["profile:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "client": {
+          "type": "object",
+          "description": "Datos del cliente (organization, email, fname, lname)"
+        }
+      },
+      "required": ["client"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "response": {
+          "type": "object",
+          "description": "Detalles del cliente creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.freshbooks.com/accounting/account/{account_id}/users/clients",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea un registro de cliente nuevo en FreshBooks.",
+      "example_prompt": "Agrega un cliente llamado Jane Smith en FreshBooks.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "freshbooks.create_invoice",
+    "name": "Crear Factura en FreshBooks",
+    "version": "alpha",
+    "provider": "FreshBooks",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["profile:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "invoice": {
+          "type": "object",
+          "description": "Detalle de la factura (customerid, lines)"
+        }
+      },
+      "required": ["invoice"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "response": {
+          "type": "object",
+          "description": "Detalles de la factura generada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.freshbooks.com/accounting/account/{account_id}/invoices/invoices",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una factura (invoice) comercial en FreshBooks.",
+      "example_prompt": "Crea una factura para el cliente 1234 en FreshBooks por servicios de diseño.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "bamboohr.add_employee",
+    "name": "Añadir Empleado en BambooHR",
+    "version": "v1",
+    "provider": "BambooHR",
+    "category": "hr",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "Nombre del empleado"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Apellido del empleado"
+        },
+        "hireDate": {
+          "type": "string",
+          "description": "Fecha de contratación (YYYY-MM-DD)"
+        }
+      },
+      "required": ["firstName", "lastName"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "employeeId": {
+          "type": "string",
+          "description": "ID asignado al nuevo empleado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.bamboohr.com/api/gateway.php/{companyDomain}/v1/employees",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea un nuevo registro de empleado en BambooHR.",
+      "example_prompt": "Da de alta a Laura Gomez en BambooHR con fecha de ingreso de hoy.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "bamboohr.request_time_off",
+    "name": "Solicitar Tiempo Libre BambooHR",
+    "version": "v1",
+    "provider": "BambooHR",
+    "category": "hr",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "employeeId": {
+          "type": "number",
+          "description": "ID del empleado"
+        },
+        "timeOffTypeId": {
+          "type": "number",
+          "description": "ID del tipo de ausencia (ej. vacaciones, enfermedad)"
+        },
+        "start": {
+          "type": "string",
+          "description": "Fecha inicial YYYY-MM-DD"
+        },
+        "end": {
+          "type": "string",
+          "description": "Fecha final YYYY-MM-DD"
+        }
+      },
+      "required": ["employeeId", "timeOffTypeId", "start", "end"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "number",
+          "description": "ID de la solicitud de ausencia creada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://api.bamboohr.com/api/gateway.php/{companyDomain}/v1/time_off/requests",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Solicita días de ausencia (vacaciones/licencia) para un empleado en BambooHR.",
+      "example_prompt": "Solicita vacaciones para el empleado 45 del 1 de Nov al 5 de Nov.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "factorial.create_employee",
+    "name": "Crear Empleado en Factorial",
+    "version": "v1",
+    "provider": "Factorial",
+    "category": "hr",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write:employees"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "description": "Nombre"
+        },
+        "last_name": {
+          "type": "string",
+          "description": "Apellido"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email laboral"
+        }
+      },
+      "required": ["first_name", "last_name", "email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID de Factorial"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.factorialhr.com/api/v1/employees",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega un usuario/empleado nuevo a la plataforma Factorial HR.",
+      "example_prompt": "Añade a j.doe@empresa.com a Factorial como Juan Doe.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "factorial.create_leave",
+    "name": "Registrar Ausencia Factorial",
+    "version": "v1",
+    "provider": "Factorial",
+    "category": "hr",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write:leaves"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "employee_id": {
+          "type": "number",
+          "description": "ID del empleado"
+        },
+        "leave_type_id": {
+          "type": "number",
+          "description": "ID del tipo de política de ausencia"
+        },
+        "start_on": {
+          "type": "string",
+          "description": "Día de inicio de ausencia"
+        },
+        "finish_on": {
+          "type": "string",
+          "description": "Día final de ausencia"
+        }
+      },
+      "required": ["employee_id", "leave_type_id", "start_on", "finish_on"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Identificador de la licencia"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.factorialhr.com/api/v1/leaves",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una petición de vacaciones o baja médica en Factorial HR.",
+      "example_prompt": "Registra una baja para el empleado 12 desde hoy hasta mañana.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gusto.create_employee",
+    "name": "Crear Empleado Gusto",
+    "version": "v1",
+    "provider": "Gusto",
+    "category": "hr",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["employees:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "description": "First name of employee"
+        },
+        "last_name": {
+          "type": "string",
+          "description": "Last name of employee"
+        },
+        "date_of_birth": {
+          "type": "string",
+          "description": "DOB format YYYY-MM-DD"
+        }
+      },
+      "required": ["first_name", "last_name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "description": "Identificador único en Gusto"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.gusto.com/v1/companies/{company_id}/employees",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inserta a un empleado en una empresa gestionada por Gusto.",
+      "example_prompt": "Contrata a Michael Scott en el sistema HR de Gusto.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "gusto.create_compensation",
+    "name": "Asignar Compensación Gusto",
+    "version": "v1",
+    "provider": "Gusto",
+    "category": "hr",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["compensations:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "rate": {
+          "type": "string",
+          "description": "Monto de salario"
+        },
+        "payment_unit": {
+          "type": "string",
+          "description": "Hora, Semana, Mes, Año (Hour, Week, Month, Year)"
+        }
+      },
+      "required": ["rate", "payment_unit"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "description": "ID de la compensación"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.gusto.com/v1/jobs/{job_id}/compensations",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Fija o actualiza el salario (compensación) de un cargo en Gusto.",
+      "example_prompt": "Añade una compensación de 80000 Year al job ID X en Gusto.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "fedex.create_shipment",
+    "name": "Crear Envío FedEx",
+    "version": "v1",
+    "provider": "FedEx",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "requestedShipment": {
+          "type": "object",
+          "description": "Detalles completos de la solicitud de envío, direcciones y peso"
+        },
+        "accountNumber": {
+          "type": "object",
+          "description": "Número de cuenta de facturación"
+        }
+      },
+      "required": ["requestedShipment", "accountNumber"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string",
+          "description": "ID de transacción"
+        },
+        "output": {
+          "type": "object",
+          "description": "Detalles del label y número de rastreo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://apis.fedex.com/ship/v1/shipments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una guía de embarque o etiqueta (label) de FedEx y devuelve el tracking.",
+      "example_prompt": "Genera una etiqueta de FedEx para enviar el paquete a Miami.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "fedex.track_shipment",
+    "name": "Rastrear Envío FedEx",
+    "version": "v1",
+    "provider": "FedEx",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "trackingInfo": {
+          "type": "array",
+          "description": "Lista de números de guía (tracking) a consultar"
+        },
+        "includeDetailedScans": {
+          "type": "boolean",
+          "description": "Si retorna cada evento de tránsito"
+        }
+      },
+      "required": ["trackingInfo"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "output": {
+          "type": "object",
+          "description": "Información con el estado actual del paquete"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://apis.fedex.com/track/v1/trackingnumbers",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta el estado en tiempo real de uno o más envíos de FedEx.",
+      "example_prompt": "Rastrea el paquete de FedEx con número 123456789.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "dhl.create_shipment",
+    "name": "Crear Envío DHL",
+    "version": "v4",
+    "provider": "DHL",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "plannedShippingDateAndTime": {
+          "type": "string",
+          "description": "Fecha de recolección en ISO 8601"
+        },
+        "pickup": {
+          "type": "object",
+          "description": "Información del origen"
+        },
+        "productCode": {
+          "type": "string",
+          "description": "Código de producto DHL (ej. 'P')"
+        },
+        "packages": {
+          "type": "array",
+          "description": "Dimensiones y peso de bultos"
+        }
+      },
+      "required": ["plannedShippingDateAndTime", "pickup", "productCode", "packages"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "shipmentTrackingNumber": {
+          "type": "string",
+          "description": "Número de rastreo generado (AWB)"
+        },
+        "documents": {
+          "type": "array",
+          "description": "Etiquetas generadas en base64"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://express.api.dhl.com/mydhlapi/shipments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una guía electrónica de DHL Express para despachar mercancía.",
+      "example_prompt": "Crea una guía de DHL para el paquete dirigido a Berlín.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "dhl.track_shipment",
+    "name": "Rastrear Envío DHL",
+    "version": "v4",
+    "provider": "DHL",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "trackingNumber": {
+          "type": "string",
+          "description": "Número de vía de embarque (AWB)"
+        }
+      },
+      "required": ["trackingNumber"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "shipments": {
+          "type": "array",
+          "description": "Eventos de ruta y estado de la guía"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://express.api.dhl.com/mydhlapi/tracking?trackingNumber={trackingNumber}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Verifica dónde está y en qué estado se encuentra un envío de DHL.",
+      "example_prompt": "¿Por dónde va mi paquete de DHL con guía 987654321?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "shippo.create_transaction",
+    "name": "Comprar Label Shippo",
+    "version": "v1",
+    "provider": "Shippo",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "rate": {
+          "type": "string",
+          "description": "El object ID de la tarifa (Rate) a comprar"
+        },
+        "label_file_type": {
+          "type": "string",
+          "description": "Formato deseado (PDF, PNG, ZPLII)"
+        }
+      },
+      "required": ["rate"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "object_id": {
+          "type": "string",
+          "description": "ID de transacción de Shippo"
+        },
+        "tracking_number": {
+          "type": "string",
+          "description": "Número de rastreo de la compañía transportista"
+        },
+        "label_url": {
+          "type": "string",
+          "description": "Enlace directo para imprimir etiqueta"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.goshippo.com/transactions/",
+      "headers": {
+        "Content-Type": "application/json",
+        "Shippo-API-Version": "2018-02-08"
+      }
+    },
+    "tool_profile": {
+      "description": "Realiza la compra de un label de envío seleccionado previamente a través de Shippo.",
+      "example_prompt": "Compra la etiqueta en Shippo para la tarifa seleccionada.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "shippo.track_shipment",
+    "name": "Rastrear Paquete Shippo",
+    "version": "v1",
+    "provider": "Shippo",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "carrier": {
+          "type": "string",
+          "description": "El código del transportista (ej. usps, fedex)"
+        },
+        "tracking_number": {
+          "type": "string",
+          "description": "Número de rastreo"
+        }
+      },
+      "required": ["carrier", "tracking_number"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "tracking_status": {
+          "type": "object",
+          "description": "Estado general (UNKNOWN, TRANSIT, DELIVERED)"
+        },
+        "tracking_history": {
+          "type": "array",
+          "description": "Listado de eventos del carrier"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.goshippo.com/tracks/{carrier}/{tracking_number}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta el seguimiento de cualquier transportista utilizando la API unificada de Shippo.",
+      "example_prompt": "Dime el estatus en Shippo del paquete de usps número 920559016491.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.create_shipment",
+    "name": "Despachar Paquete MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shipment_id": {
+          "type": "string",
+          "description": "El ID del envío asignado por la compra"
+        }
+      },
+      "required": ["shipment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Nuevo estado (ej. ready_to_ship)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadolibre.com/shipments/{shipment_id}/ready_to_ship",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Marca un pedido de MercadoLibre / MercadoEnvíos como listo para imprimir etiqueta y despachar.",
+      "example_prompt": "Prepara para despacho el envío 444333222 de MercadoEnvíos.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.track_shipment",
+    "name": "Rastrear Envío MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shipment_id": {
+          "type": "string",
+          "description": "ID del envío de ME"
+        }
+      },
+      "required": ["shipment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estado logístico"
+        },
+        "tracking_number": {
+          "type": "string",
+          "description": "Número de correo asignado"
+        },
+        "tracking_method": {
+          "type": "string",
+          "description": "Nombre de la logística (ej. Correo Argentino)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/shipments/{shipment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Obtiene la información de tránsito y empresa de mensajería encargada de un pedido de MercadoEnvíos.",
+      "example_prompt": "Revisa por dónde va la entrega del envío ID 444333222.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zendesk.create_ticket",
+    "name": "Crear Ticket Zendesk",
+    "version": "v2",
+    "provider": "Zendesk",
+    "category": "support",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["tickets:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "type": "object",
+          "description": "El objeto del ticket conteniendo subject, comment (body), y priority",
+          "required": ["subject", "comment"]
+        }
+      },
+      "required": ["ticket"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "type": "object",
+          "description": "Detalles del ticket generado y su ID asignado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{subdomain}.zendesk.com/api/v2/tickets.json",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Abre un nuevo ticket o incidente en la plataforma de atención al cliente Zendesk.",
+      "example_prompt": "Abre un ticket en Zendesk sobre el problema del router para el cliente.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zendesk.update_ticket",
+    "name": "Actualizar Ticket Zendesk",
+    "version": "v2",
+    "provider": "Zendesk",
+    "category": "support",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["tickets:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ticket_id": {
+          "type": "number",
+          "description": "ID del ticket"
+        },
+        "ticket": {
+          "type": "object",
+          "description": "Propiedades a modificar (ej. status = 'solved', o comment = public: true/false)"
+        }
+      },
+      "required": ["ticket_id", "ticket"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "type": "object",
+          "description": "Estado actualizado del ticket"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://{subdomain}.zendesk.com/api/v2/tickets/{ticket_id}.json",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un comentario interno/público o cambia el estado de un ticket de Zendesk existente.",
+      "example_prompt": "Cierra el ticket número 144 de Zendesk marcándolo como resuelto.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zendesk.create_user",
+    "name": "Crear Usuario en Zendesk",
+    "version": "v2",
+    "provider": "Zendesk",
+    "category": "support",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["users:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "object",
+          "description": "Datos del usuario (name, email, role)"
+        }
+      },
+      "required": ["user"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "object",
+          "description": "ID y propiedades del usuario"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{subdomain}.zendesk.com/api/v2/users.json",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea a un usuario (end-user o agente) en el directorio de Zendesk.",
+      "example_prompt": "Agrega a cliente@correo.com como usuario en Zendesk.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "freshdesk.create_ticket",
+    "name": "Crear Ticket Freshdesk",
+    "version": "v2",
+    "provider": "Freshdesk",
+    "category": "support",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Asunto del ticket"
+        },
+        "description": {
+          "type": "string",
+          "description": "Cuerpo del ticket (HTML permitido)"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email del solicitante"
+        },
+        "priority": {
+          "type": "number",
+          "description": "Nivel de prioridad (1=Low, 2=Med, 3=High, 4=Urgent)"
+        },
+        "status": {
+          "type": "number",
+          "description": "Estado inicial (2=Open, 3=Pending)"
+        }
+      },
+      "required": ["subject", "description", "email", "priority", "status"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID del ticket"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}.freshdesk.com/api/v2/tickets",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una incidencia o solicitud de soporte nueva en Freshdesk.",
+      "example_prompt": "Crea un ticket en Freshdesk para luis@empresa.com pidiendo reinicio de clave.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "freshdesk.add_note",
+    "name": "Añadir Nota Freshdesk",
+    "version": "v2",
+    "provider": "Freshdesk",
+    "category": "support",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ticket_id": {
+          "type": "number",
+          "description": "ID del ticket al que agregar la nota"
+        },
+        "body": {
+          "type": "string",
+          "description": "Contenido de la nota"
+        },
+        "private": {
+          "type": "boolean",
+          "description": "Si la nota es privada (solo agentes) o visible al cliente"
+        }
+      },
+      "required": ["ticket_id", "body"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID de la nota insertada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}.freshdesk.com/api/v2/tickets/{ticket_id}/notes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega comentarios públicos o internos a la conversación de un ticket de Freshdesk.",
+      "example_prompt": "Añade una nota privada al ticket 99 diciendo que falta enviar el archivo.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "freshdesk.create_contact",
+    "name": "Crear Contacto Freshdesk",
+    "version": "v2",
+    "provider": "Freshdesk",
+    "category": "support",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nombre de la persona"
+        },
+        "email": {
+          "type": "string",
+          "description": "Dirección de correo electrónico"
+        }
+      },
+      "required": ["name", "email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID del registro de contacto en Freshdesk"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}.freshdesk.com/api/v2/contacts",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega a una persona a la libreta de contactos de Freshdesk.",
+      "example_prompt": "Registra a María López como contacto en Freshdesk con el email maria@mail.com.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "intercom.create_contact",
+    "name": "Crear Contacto Intercom",
+    "version": "2.8",
+    "provider": "Intercom",
+    "category": "support",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "Rol del contacto (ej. 'user' o 'lead')"
+        },
+        "email": {
+          "type": "string",
+          "description": "Correo electrónico"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nombre del cliente"
+        }
+      },
+      "required": ["role", "email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "El tipo de objeto retornado ('contact')"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID en Intercom"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.intercom.io/contacts",
+      "headers": {
+        "Content-Type": "application/json",
+        "Intercom-Version": "2.8"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un nuevo 'Lead' o 'User' a tu workspace de Intercom.",
+      "example_prompt": "Crea a un usuario en Intercom llamado Roberto con el email roberto@test.com.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "intercom.send_message",
+    "name": "Enviar Mensaje Intercom",
+    "version": "2.8",
+    "provider": "Intercom",
+    "category": "support",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "message_type": {
+          "type": "string",
+          "description": "Tipo de mensaje (ej. 'email', 'inapp')"
+        },
+        "from": {
+          "type": "object",
+          "description": "Administrador o remitente que origina el mensaje",
+          "required": ["type", "id"]
+        },
+        "to": {
+          "type": "object",
+          "description": "Destinatario del mensaje",
+          "required": ["type", "id"]
+        },
+        "body": {
+          "type": "string",
+          "description": "Cuerpo del mensaje en HTML o texto"
+        }
+      },
+      "required": ["message_type", "from", "to", "body"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "'message'"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID del mensaje"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.intercom.io/messages",
+      "headers": {
+        "Content-Type": "application/json",
+        "Intercom-Version": "2.8"
+      }
+    },
+    "tool_profile": {
+      "description": "Inicia una conversación directa y envía un mensaje a un cliente vía Intercom.",
+      "example_prompt": "Envíale un mensaje inapp al usuario 123 desde Intercom dándole la bienvenida.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "typeform.get_responses",
+    "name": "Obtener Respuestas Typeform",
+    "version": "v2",
+    "provider": "Typeform",
+    "category": "forms",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["responses:read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "form_id": {
+          "type": "string",
+          "description": "ID único del formulario de Typeform"
+        },
+        "page_size": {
+          "type": "number",
+          "description": "Número de respuestas a devolver (máx 1000)"
+        }
+      },
+      "required": ["form_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "total_items": {
+          "type": "number",
+          "description": "Total de envíos recopilados"
+        },
+        "items": {
+          "type": "array",
+          "description": "Respuestas detalladas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.typeform.com/forms/{form_id}/responses",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae un lote de las respuestas enviadas al contestar un formulario de Typeform.",
+      "example_prompt": "Trae las últimas 10 respuestas del Typeform de feedback.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "typeform.create_form",
+    "name": "Crear Formulario Typeform",
+    "version": "v2",
+    "provider": "Typeform",
+    "category": "forms",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["forms:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Título del formulario"
+        },
+        "fields": {
+          "type": "array",
+          "description": "Bloques y preguntas a incluir en la encuesta"
+        }
+      },
+      "required": ["title"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Form ID creado"
+        },
+        "_links": {
+          "type": "object",
+          "description": "Enlaces para visualización del cuestionario"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.typeform.com/forms",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera de manera programática un nuevo cuestionario o encuesta en Typeform.",
+      "example_prompt": "Crea una encuesta en Typeform con título 'Sondeo Anual'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_forms.get_responses",
+    "name": "Obtener Respuestas Google Forms",
+    "version": "v1",
+    "provider": "Google Forms",
+    "category": "forms",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/forms.responses.readonly"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "formId": {
+          "type": "string",
+          "description": "El ID alfanumérico largo del formulario"
+        }
+      },
+      "required": ["formId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "responses": {
+          "type": "array",
+          "description": "Cada elemento es una respuesta enviada con marca de tiempo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://forms.googleapis.com/v1/forms/{formId}/responses",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta las respuestas rellenadas por los usuarios en un formulario de Google Forms.",
+      "example_prompt": "Consulta las respuestas enviadas al formulario de registro del evento en Google Forms.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "jotform.get_submissions",
+    "name": "Obtener Envíos JotForm",
+    "version": "v1",
+    "provider": "JotForm",
+    "category": "forms",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "formID": {
+          "type": "string",
+          "description": "ID numérico del form en Jotform"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Máximo de envíos a devolver"
+        }
+      },
+      "required": ["formID"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "array",
+          "description": "Array con información de las presentaciones recibidas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.jotform.com/form/{formID}/submissions",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Retorna la lista de todas las respuestas enviadas (submissions) de un formulario específico en JotForm.",
+      "example_prompt": "Trae los registros que enviaron al Jotform número 123.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "jotform.create_submission",
+    "name": "Crear Envío JotForm",
+    "version": "v1",
+    "provider": "JotForm",
+    "category": "forms",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "formID": {
+          "type": "string",
+          "description": "Form ID destino"
+        },
+        "submission": {
+          "type": "object",
+          "description": "Diccionario donde la llave es ID de pregunta y valor es la respuesta"
+        }
+      },
+      "required": ["formID", "submission"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "object",
+          "description": "Información de ID de la sumisión (submissionID) e injección exitosa"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.jotform.com/form/{formID}/submissions",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Forza una sumisión artificial en el formulario como si un usuario lo hubiese rellenado manualmente.",
+      "example_prompt": "Registra una nueva respuesta de prueba en el JotForm.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "docusign.create_envelope",
+    "name": "Enviar Sobre DocuSign",
+    "version": "v2.1",
+    "provider": "DocuSign",
+    "category": "signatures",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["signature"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "emailSubject": {
+          "type": "string",
+          "description": "Asunto del correo electrónico"
+        },
+        "documents": {
+          "type": "array",
+          "description": "Documentos PDF codificados en Base64"
+        },
+        "recipients": {
+          "type": "object",
+          "description": "Sección con los firmantes (signers, carbonCopies, etc.)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Definir como 'sent' para despacharlo de inmediato, o 'created' para borrador"
+        }
+      },
+      "required": ["emailSubject", "documents", "recipients", "status"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "envelopeId": {
+          "type": "string",
+          "description": "ID del sobre enviado"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado actual de los despachos"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{server}.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inicia la firma digital de un documento subiéndolo a un sobre (envelope) de DocuSign.",
+      "example_prompt": "Prepara un sobre en DocuSign con el contrato adjunto y envíalo para firma de Carlos.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "docusign.get_envelope_status",
+    "name": "Consultar Estado DocuSign",
+    "version": "v2.1",
+    "provider": "DocuSign",
+    "category": "signatures",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["signature"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "envelopeId": {
+          "type": "string",
+          "description": "El código del sobre"
+        }
+      },
+      "required": ["envelopeId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estado como 'completed', 'sent', 'declined'"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://{server}.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae el estado actual del envío o la firma (completado, pendiente, etc.) en DocuSign.",
+      "example_prompt": "¿El cliente ya firmó el documento enviado por DocuSign (ID del sobre X)?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "signnow.create_document",
+    "name": "Subir Documento SignNow",
+    "version": "2.0",
+    "provider": "SignNow",
+    "category": "signatures",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "Contenido binario multipart o base64 del PDF"
+        }
+      },
+      "required": ["file"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del documento alojado en la nube"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.signnow.com/document",
+      "headers": {
+        "Content-Type": "multipart/form-data"
+      }
+    },
+    "tool_profile": {
+      "description": "Carga un PDF o archivo compatible al servicio SignNow para ser firmado posteriormente.",
+      "example_prompt": "Sube este PDF de la póliza a SignNow.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "signnow.invite_to_sign",
+    "name": "Invitar a Firmar SignNow",
+    "version": "2.0",
+    "provider": "SignNow",
+    "category": "signatures",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "ID del documento en SignNow"
+        },
+        "to": {
+          "type": "array",
+          "description": "Lista de destinatarios (roles y correos) con permisos de firma"
+        },
+        "from": {
+          "type": "string",
+          "description": "Correo del emisor de la petición"
+        }
+      },
+      "required": ["document_id", "to", "from"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Resultado exitoso de la invitación"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.signnow.com/document/{document_id}/invite",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Envía el email de invitación pidiendo formalmente a alguien firmar el documento en SignNow.",
+      "example_prompt": "Manda a pedir la firma de pedro@test.com para el documento con ID 123 en SignNow.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "zoom.create_meeting",
+    "name": "Crear Reunión Zoom",
+    "version": "v2",
+    "provider": "Zoom",
+    "category": "meetings",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["meeting:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string",
+          "description": "Motivo o título del encuentro"
+        },
+        "type": {
+          "type": "number",
+          "description": "Tipo (1 = instantánea, 2 = agendada, 3 = recurrente, 8 = fija)"
+        },
+        "start_time": {
+          "type": "string",
+          "description": "Hora de inicio YYYY-MM-DDTHH:MM:SS"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duración de la llamada en minutos"
+        }
+      },
+      "required": ["topic", "type"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID único numérico de la sala Zoom"
+        },
+        "join_url": {
+          "type": "string",
+          "description": "El link web de la reunión"
+        },
+        "password": {
+          "type": "string",
+          "description": "Código de acceso (passcode)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.zoom.us/v2/users/me/meetings",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Programa una videollamada y devuelve la invitación y credenciales de Zoom.",
+      "example_prompt": "Crea una reunión de Zoom de 45 minutos para el viernes con el equipo de ventas.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zoom.delete_meeting",
+    "name": "Cancelar Reunión Zoom",
+    "version": "v2",
+    "provider": "Zoom",
+    "category": "meetings",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["meeting:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "meetingId": {
+          "type": "number",
+          "description": "El ID de la llamada que debe anularse"
+        }
+      },
+      "required": ["meetingId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://api.zoom.us/v2/meetings/{meetingId}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Elimina de la agenda permanentemente una reunión de Zoom registrada.",
+      "example_prompt": "Cancela la sala de Zoom ID 9988776655.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "zoom.get_meeting",
+    "name": "Consultar Reunión Zoom",
+    "version": "v2",
+    "provider": "Zoom",
+    "category": "meetings",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["meeting:read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "meetingId": {
+          "type": "number",
+          "description": "ID de la reunión"
+        }
+      },
+      "required": ["meetingId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID consultado"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado de la llamada (waiting, started, finished)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.zoom.us/v2/meetings/{meetingId}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Recupera los datos completos (link, hora, duración, asistentes registrados) de un Zoom.",
+      "example_prompt": "¿Cuáles son los detalles y la url del Zoom que preparaste?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_meet.create_meeting",
+    "name": "Crear Llamada Google Meet",
+    "version": "v3",
+    "provider": "Google Meet",
+    "category": "meetings",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/calendar.events"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Nombre de la invitación al Meet"
+        },
+        "start": {
+          "type": "object",
+          "description": "Horario inicial (dateTime, timeZone)"
+        },
+        "end": {
+          "type": "object",
+          "description": "Horario de término (dateTime, timeZone)"
+        },
+        "conferenceData": {
+          "type": "object",
+          "description": "Estructura para forzar el anexo de Meet a la cita"
+        }
+      },
+      "required": ["summary", "start", "end", "conferenceData"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "hangoutLink": {
+          "type": "string",
+          "description": "URL directa de Google Meet generada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una cita agendada de Google Calendar inyectándole una videoconferencia de Google Meet.",
+      "example_prompt": "Arma un Google Meet para mañana a las 5PM y dame el link hangoutLink.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_meet.update_meeting",
+    "name": "Modificar Llamada Google Meet",
+    "version": "v3",
+    "provider": "Google Meet",
+    "category": "meetings",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/calendar.events"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "description": "El ID del evento en Calendar"
+        },
+        "start": {
+          "type": "object",
+          "description": "Nuevo inicio"
+        },
+        "end": {
+          "type": "object",
+          "description": "Nuevo fin"
+        }
+      },
+      "required": ["eventId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "hangoutLink": {
+          "type": "string",
+          "description": "La url original o nueva de Meet"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PATCH",
+      "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events/{eventId}?conferenceDataVersion=1",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Edita un evento de Google Calendar ya asociado a un Meet (como un cambio de hora).",
+      "example_prompt": "Pospone el Meet de hoy pasándolo para las 6PM.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "calendly.get_event_invitees",
+    "name": "Ver Invitados Calendly",
+    "version": "v2",
+    "provider": "Calendly",
+    "category": "meetings",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "event_uuid": {
+          "type": "string",
+          "description": "El ID interno del suceso/evento"
+        }
+      },
+      "required": ["event_uuid"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "array",
+          "description": "Personas que reservaron el horario (emails, respuetas al formulario)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.calendly.com/scheduled_events/{event_uuid}/invitees",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve la información de los asistentes que hayan confirmado y agendado una hora particular en Calendly.",
+      "example_prompt": "Revisa el evento ID X en Calendly para ver los detalles de los participantes.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "airtable.create_record",
+    "name": "Crear Fila Airtable",
+    "version": "v0",
+    "provider": "Airtable",
+    "category": "databases",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["data.records:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "baseId": {
+          "type": "string",
+          "description": "El identificador de la base (base ID) de Airtable"
+        },
+        "tableIdOrName": {
+          "type": "string",
+          "description": "El nombre o ID de la tabla"
+        },
+        "records": {
+          "type": "array",
+          "description": "Matriz de objetos con campos a insertar",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": ["baseId", "tableIdOrName", "records"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "description": "Listado de datos creados en Airtable incluyendo el 'id' único de fila"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.airtable.com/v0/{baseId}/{tableIdOrName}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega una o más filas (records) nuevos a una base de datos tabular de Airtable.",
+      "example_prompt": "Inserta una fila en la Base X Tabla Y de Airtable con el nombre 'María'.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "airtable.update_record",
+    "name": "Modificar Fila Airtable",
+    "version": "v0",
+    "provider": "Airtable",
+    "category": "databases",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["data.records:write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "baseId": {
+          "type": "string",
+          "description": "Base ID"
+        },
+        "tableIdOrName": {
+          "type": "string",
+          "description": "ID de la Tabla"
+        },
+        "records": {
+          "type": "array",
+          "description": "Una lista de objetos conteniendo la llave 'id' obligatoria por fila y los 'fields' a alterar."
+        }
+      },
+      "required": ["baseId", "tableIdOrName", "records"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "description": "Filas confirmadas y consolidadas en Airtable tras el patch"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PATCH",
+      "url": "https://api.airtable.com/v0/{baseId}/{tableIdOrName}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite sobrescribir campos en registros de Airtable ya existentes, siempre y cuando se provea el Record ID.",
+      "example_prompt": "Actualiza la columna 'Status' de la fila rec123 en Airtable a 'Completado'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_sheets.append_row",
+    "name": "Agregar Fila en Google Sheets",
+    "version": "v4",
+    "provider": "Google Sheets API",
+    "category": "databases",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/spreadsheets"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "spreadsheetId": {
+          "type": "string",
+          "description": "El ID en la URL de la hoja de cálculo de Google"
+        },
+        "range": {
+          "type": "string",
+          "description": "Rango donde insertar, usualmente 'NombreHoja!A1'"
+        },
+        "valueInputOption": {
+          "type": "string",
+          "description": "RAW o USER_ENTERED (permite formateo lógico de fechas/números)"
+        },
+        "values": {
+          "type": "array",
+          "description": "Matriz de matrices. Cada matriz interna es una fila nueva."
+        }
+      },
+      "required": ["spreadsheetId", "range", "valueInputOption", "values"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "updates": {
+          "type": "object",
+          "description": "Celdas adjuntadas (updatedRange, updatedRows)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}:append?valueInputOption={valueInputOption}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade una fila nueva con valores al final del listado de una hoja de Google Sheets.",
+      "example_prompt": "Agrega en la hoja de cálculo de Reportes la fila con Fecha, Importe y Concepto.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_sheets.update_cell",
+    "name": "Actualizar Rango en Google Sheets",
+    "version": "v4",
+    "provider": "Google Sheets API",
+    "category": "databases",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/spreadsheets"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "spreadsheetId": {
+          "type": "string",
+          "description": "ID del Sheet"
+        },
+        "range": {
+          "type": "string",
+          "description": "Rango preciso que será forzado/modificado, ej: 'Hoja1!C4:D4'"
+        },
+        "valueInputOption": {
+          "type": "string",
+          "description": "USER_ENTERED o RAW"
+        },
+        "values": {
+          "type": "array",
+          "description": "Los nuevos valores que deben ser depositados"
+        }
+      },
+      "required": ["spreadsheetId", "range", "valueInputOption", "values"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "updatedRange": {
+          "type": "string",
+          "description": "El bloque procesado"
+        },
+        "updatedCells": {
+          "type": "number",
+          "description": "Total de cajas manipuladas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}?valueInputOption={valueInputOption}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Sobrescribe la información contenida en celdas exactas o filas estáticas en Sheets.",
+      "example_prompt": "Cambia el estado en la celda C5 a APROBADO en la planilla.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "firestore.create_document",
+    "name": "Añadir Documento Firestore",
+    "version": "v1",
+    "provider": "Firebase Firestore",
+    "category": "databases",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/datastore"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "description": "El ID de proyecto GCP / Firebase"
+        },
+        "collectionId": {
+          "type": "string",
+          "description": "Ruta de la colección, ej. 'users'"
+        },
+        "fields": {
+          "type": "object",
+          "description": "Campos formateados para Firestore (llaves envolviendo valores como stringValue, integerValue)"
+        }
+      },
+      "required": ["projectId", "collectionId", "fields"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "URI del documento en Firestore"
+        },
+        "createTime": {
+          "type": "string",
+          "description": "Momento de la persistencia"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://firestore.googleapis.com/v1/projects/{projectId}/databases/(default)/documents/{collectionId}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una nueva entrada (document) auto-generada en una base de datos NoSQL de Firebase.",
+      "example_prompt": "Guarda a este nuevo usuario en la colección 'clientes' de Firestore.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "firestore.update_document",
+    "name": "Actualizar o Hacer Patch Firestore",
+    "version": "v1",
+    "provider": "Firebase Firestore",
+    "category": "databases",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/datastore"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "description": "ID del proyecto Google"
+        },
+        "documentPath": {
+          "type": "string",
+          "description": "Ruta desde la base para encontrar al doc (ej 'users/123xyz')"
+        },
+        "updateMask": {
+          "type": "array",
+          "description": "Nombres de los atributos a aplicar o sobrescribir"
+        },
+        "fields": {
+          "type": "object",
+          "description": "Estructura anidada con las propiedades nuevas"
+        }
+      },
+      "required": ["projectId", "documentPath", "fields"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "updateTime": {
+          "type": "string",
+          "description": "Timestamp de la operación en Base de Datos"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PATCH",
+      "url": "https://firestore.googleapis.com/v1/projects/{projectId}/databases/(default)/documents/{documentPath}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite realizar una escritura parcial sobre un objeto/documento de Firestore existente.",
+      "example_prompt": "Cambia el parámetro 'activo' a false para el documento 'users/u_999' de Firestore.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "activecampaign.create_contact",
+    "name": "Agregar Contacto a ActiveCampaign",
+    "version": "v3",
+    "provider": "ActiveCampaign",
+    "category": "marketing_automation",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contact": {
+          "type": "object",
+          "description": "El objeto principal. Soporta firstName, lastName, phone y email.",
+          "required": ["email"]
+        }
+      },
+      "required": ["contact"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "contact": {
+          "type": "object",
+          "description": "Respuesta con el ID interno asignado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{account_name}.api-us1.com/api/3/contacts",
+      "headers": {
+        "Content-Type": "application/json",
+        "Api-Token": "{api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega un registro individual de usuario a ActiveCampaign para envíos publicitarios.",
+      "example_prompt": "Mete a jose@hotmail.com a nuestra base de ActiveCampaign.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "activecampaign.add_contact_to_list",
+    "name": "Inscribir a Lista ActiveCampaign",
+    "version": "v3",
+    "provider": "ActiveCampaign",
+    "category": "marketing_automation",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contactList": {
+          "type": "object",
+          "description": "Debe definir contact (ID), list (ID) y status (1 para activar)",
+          "required": ["contact", "list", "status"]
+        }
+      },
+      "required": ["contactList"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "contactsList": {
+          "type": "object",
+          "description": "Comprobante de adhesión a la lista"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{account_name}.api-us1.com/api/3/contactLists",
+      "headers": {
+        "Content-Type": "application/json",
+        "Api-Token": "{api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Inyecta un perfil ya pre-creado en ActiveCampaign a un canal o lista de difusión concreta.",
+      "example_prompt": "Apúntalo a la lista de 'Compradores recurrentes' (ID 4) de AC.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "brevo.create_contact",
+    "name": "Crear Contacto Brevo",
+    "version": "v3",
+    "provider": "Brevo",
+    "category": "marketing_automation",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email principal a registrar"
+        },
+        "attributes": {
+          "type": "object",
+          "description": "Valores a insertar, usualmente NOMBRE y APELLIDO"
+        },
+        "listIds": {
+          "type": "array",
+          "description": "IDs correspondientes a las listas de correo"
+        }
+      },
+      "required": ["email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Nuevo ID global del contacto Brevo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.brevo.com/v3/contacts",
+      "headers": {
+        "Content-Type": "application/json",
+        "api-key": "{api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Adhiere un contacto y sus atributos (nombre, tel, listas) a la audiencia de Brevo.",
+      "example_prompt": "Genera el alta del cliente pablo@demo.com a mis listas 1 y 2 en Brevo.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "brevo.send_transactional_email",
+    "name": "Mandar Correo Transaccional Brevo",
+    "version": "v3",
+    "provider": "Brevo",
+    "category": "marketing_automation",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "object",
+          "description": "Definición del originador (nombre, email)"
+        },
+        "to": {
+          "type": "array",
+          "description": "Listado de correos que van a recibirlo",
+          "items": { "type": "object" }
+        },
+        "templateId": {
+          "type": "number",
+          "description": "Número del diseño de molde de correo en Brevo"
+        },
+        "params": {
+          "type": "object",
+          "description": "Variables a reemplazar en la plantilla"
+        }
+      },
+      "required": ["sender", "to", "templateId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "string",
+          "description": "Rastreo asignado por Brevo del despacho de mail"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.brevo.com/v3/smtp/email",
+      "headers": {
+        "Content-Type": "application/json",
+        "api-key": "{api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Efectúa un envío transaccional con una plantilla (como facturas, recuperación) a un destinatario vía Brevo.",
+      "example_prompt": "Mándale al usuario un email transaccional usando la plantilla de recuperar contraseña en Brevo.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "klaviyo.create_profile",
+    "name": "Alta de Perfil Klaviyo",
+    "version": "2024-02-15",
+    "provider": "Klaviyo",
+    "category": "marketing_automation",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "La estructura obligatoria type='profile' y sus atributos con la info como el correo",
+          "required": ["type", "attributes"]
+        }
+      },
+      "required": ["data"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Devolución con el ID 'profile_id' generado en Klaviyo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://a.klaviyo.com/api/profiles/",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Klaviyo-API-Key {api_key}",
+        "revision": "2024-02-15"
+      }
+    },
+    "tool_profile": {
+      "description": "Graba individualmente a una persona o perfil de consumidor en tu instancia Klaviyo.",
+      "example_prompt": "Construye el perfil de un consumidor en Klaviyo que tiene el mail marta@tienda.com.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "klaviyo.track_event",
+    "name": "Trazar Evento Klaviyo",
+    "version": "2024-02-15",
+    "provider": "Klaviyo",
+    "category": "marketing_automation",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Estructura (type='event') que anexa un perfil de un consumidor con un nombre de métrica",
+          "required": ["type", "attributes"]
+        }
+      },
+      "required": ["data"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Información sobre el track o evento recibido con éxito"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://a.klaviyo.com/api/events/",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Klaviyo-API-Key {api_key}",
+        "revision": "2024-02-15"
+      }
+    },
+    "tool_profile": {
+      "description": "Desencadena eventos e inputs en métricas para el CRM analítico de Marketing (carritos, compras) Klaviyo.",
+      "example_prompt": "Activa el trigger Evento 'Placed Order' en Klaviyo para el usuario X.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "cloudflare.create_dns_record",
+    "name": "Añadir DNS Cloudflare",
+    "version": "v4",
+    "provider": "Cloudflare",
+    "category": "dns_hosting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "zone_id": {
+          "type": "string",
+          "description": "El ID criptográfico de la zona en CF"
+        },
+        "type": {
+          "type": "string",
+          "description": "Ejemplo: A, AAAA, CNAME, TXT"
+        },
+        "name": {
+          "type": "string",
+          "description": "Subdominio o nombre como 'api.dominio.com'"
+        },
+        "content": {
+          "type": "string",
+          "description": "Valor o ruta al cual apuntará, como una IP"
+        },
+        "proxied": {
+          "type": "boolean",
+          "description": "Hacer proxy a través de Cloudflare o sólo resolver"
+        }
+      },
+      "required": ["zone_id", "type", "name", "content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Verdadero o falso"
+        },
+        "result": {
+          "type": "object",
+          "description": "Objeto retornado del registro con ID"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea una entrada o mapeo nuevo de DNS directamente en el dominio configurado en Cloudflare.",
+      "example_prompt": "Agrega un registro CNAME en Cloudflare para www apuntando a mi servidor.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "cloudflare.delete_dns_record",
+    "name": "Eliminar Registro Cloudflare",
+    "version": "v4",
+    "provider": "Cloudflare",
+    "category": "dns_hosting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "zone_id": {
+          "type": "string",
+          "description": "Zona asociada al dominio general"
+        },
+        "identifier": {
+          "type": "string",
+          "description": "ID asignado a la línea DNS que se piensa destruir"
+        }
+      },
+      "required": ["zone_id", "identifier"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Afirma la erradicación"
+        },
+        "result": {
+          "type": "object",
+          "description": "ID removido"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{identifier}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Supresiona una configuración de enrutamiento web (DNS) individual desde los ajustes de la zona.",
+      "example_prompt": "Borra el DNS de pruebas (ID 987X) en mi Cloudflare.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "vercel.create_deployment",
+    "name": "Pushear Deploy a Vercel",
+    "version": "v9",
+    "provider": "Vercel",
+    "category": "dns_hosting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nombre de tu proyecto o instancia en la que volcar contenido"
+        },
+        "files": {
+          "type": "array",
+          "description": "Archivos a construir y hostear en Vercel."
+        }
+      },
+      "required": ["name", "files"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del build process"
+        },
+        "url": {
+          "type": "string",
+          "description": "Subdominio vercel.app proporcionado para el build"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.vercel.com/v13/deployments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Despliega una infraestructura, archivos compilables estáticos o serverless funcs a Vercel Hosting.",
+      "example_prompt": "Crea un nuevo deployment en mi instancia de Vercel con estos recursos estáticos.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "vercel.create_project",
+    "name": "Construir App Vercel",
+    "version": "v9",
+    "provider": "Vercel",
+    "category": "dns_hosting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "El naming/etiqueta técnica del nuevo panel u obra de arte Vercel."
+        },
+        "framework": {
+          "type": "string",
+          "description": "Next.js, Create React App, Hugo u otro que el motor debe usar. Nulo por defecto."
+        }
+      },
+      "required": ["name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Hash identificador"
+        },
+        "accountId": {
+          "type": "string",
+          "description": "Team referenciado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.vercel.com/v9/projects",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Funda de cero un repositorio organizativo en forma de 'Project' dentro de un perfil en Vercel.",
+      "example_prompt": "Inicializa un proyecto Next.js en Vercel titulado mi-blog-genial.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  }
+]

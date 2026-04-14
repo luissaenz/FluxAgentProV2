@@ -1,0 +1,4189 @@
+[
+  {
+    "tool_id": "zoho_crm.create_lead",
+    "name": "Crear Lead en Zoho CRM",
+    "version": "v3",
+    "provider": "Zoho CRM",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["ZohoCRM.modules.leads.CREATE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "Last_Name": {
+          "type": "string",
+          "description": "Apellido del lead"
+        },
+        "Company": {
+          "type": "string",
+          "description": "Empresa del lead"
+        },
+        "Email": {
+          "type": "string",
+          "description": "Correo electrónico"
+        }
+      },
+      "required": ["Last_Name", "Company"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Detalles del lead creado, incluyendo el ID"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://www.zohoapis.com/crm/v3/Leads",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea un nuevo prospecto o lead en Zoho CRM.",
+      "example_prompt": "Agrega a Juan Pérez de la empresa Acme Corp como lead en Zoho.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zoho_crm.get_contact",
+    "name": "Obtener Contacto Zoho CRM",
+    "version": "v3",
+    "provider": "Zoho CRM",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["ZohoCRM.modules.contacts.READ"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contact_id": {
+          "type": "string",
+          "description": "ID del contacto en Zoho CRM"
+        }
+      },
+      "required": ["contact_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Información detallada del contacto recuperado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://www.zohoapis.com/crm/v3/Contacts/{contact_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Recupera la información completa de un contacto específico en Zoho CRM usando su ID.",
+      "example_prompt": "Trae los datos del contacto con ID 123456789 en Zoho CRM.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zoho_crm.update_deal",
+    "name": "Actualizar Trato Zoho CRM",
+    "version": "v3",
+    "provider": "Zoho CRM",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["ZohoCRM.modules.deals.UPDATE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "deal_id": {
+          "type": "string",
+          "description": "ID del trato (Deal) a modificar"
+        },
+        "Stage": {
+          "type": "string",
+          "description": "Nueva etapa del embudo de ventas"
+        },
+        "Amount": {
+          "type": "number",
+          "description": "Monto actualizado del trato"
+        }
+      },
+      "required": ["deal_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Confirmación de la actualización del trato"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://www.zohoapis.com/crm/v3/Deals/{deal_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Actualiza el estado, etapa o monto de un trato comercial en Zoho CRM.",
+      "example_prompt": "Mueve el trato ID 987 a la etapa 'Closed Won'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "monday.create_item",
+    "name": "Crear Item en Monday",
+    "version": "2024-01",
+    "provider": "Monday CRM",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "board_id": {
+          "type": "number",
+          "description": "ID del tablero de Monday"
+        },
+        "item_name": {
+          "type": "string",
+          "description": "Nombre de la fila o tarea"
+        },
+        "column_values": {
+          "type": "string",
+          "description": "Valores de columnas en formato JSON stringificado"
+        }
+      },
+      "required": ["board_id", "item_name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Respuesta GraphQL con el ID del nuevo item"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.monday.com/v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un nuevo elemento (fila, lead o tarea) a un tablero específico de Monday.com vía GraphQL.",
+      "example_prompt": "Agrega un nuevo item llamado 'Revisar Contrato' en el tablero 12345 de Monday.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "monday.update_board",
+    "name": "Actualizar Tablero en Monday",
+    "version": "2024-01",
+    "provider": "Monday CRM",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "board_id": {
+          "type": "number",
+          "description": "ID del tablero a modificar"
+        },
+        "board_attribute": {
+          "type": "string",
+          "description": "Atributo a cambiar (ej. name, description)"
+        },
+        "new_value": {
+          "type": "string",
+          "description": "Nuevo valor a asignar"
+        }
+      },
+      "required": ["board_id", "board_attribute", "new_value"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Resultado de la mutación GraphQL"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.monday.com/v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Modifica atributos a nivel de tablero en Monday.com, como cambiarle el nombre o la descripción.",
+      "example_prompt": "Cambia el nombre del tablero ID 123 a 'Ventas Q3'.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "monday.add_update",
+    "name": "Agregar Comentario (Update) Monday",
+    "version": "2024-01",
+    "provider": "Monday CRM",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "number",
+          "description": "ID del item al cual agregar el update"
+        },
+        "body": {
+          "type": "string",
+          "description": "Contenido del mensaje (HTML/Texto)"
+        }
+      },
+      "required": ["item_id", "body"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Confirmación del comentario creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.monday.com/v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Escribe un 'Update' o comentario interno en un item de Monday para mantener registro o historial.",
+      "example_prompt": "Deja un comentario en el item 4455 diciendo que el cliente ya firmó.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "square.create_payment",
+    "name": "Procesar Pago Square",
+    "version": "2024-03-20",
+    "provider": "Square",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["PAYMENTS_WRITE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "description": "Token de la tarjeta o fuente de fondos"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Clave única para evitar pagos duplicados"
+        },
+        "amount_money": {
+          "type": "object",
+          "description": "Monto a cobrar y moneda (amount, currency)"
+        }
+      },
+      "required": ["source_id", "idempotency_key", "amount_money"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment": {
+          "type": "object",
+          "description": "Detalles del pago ejecutado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://connect.squareup.com/v2/payments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Procesa un cargo o cobro a una tarjeta o fuente de pago utilizando Square API.",
+      "example_prompt": "Realiza un cargo de 50 USD usando el source_id de la tarjeta del cliente.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "square.create_customer",
+    "name": "Crear Cliente Square",
+    "version": "2024-03-20",
+    "provider": "Square",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["CUSTOMERS_WRITE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "given_name": {
+          "type": "string",
+          "description": "Nombre"
+        },
+        "family_name": {
+          "type": "string",
+          "description": "Apellido"
+        },
+        "email_address": {
+          "type": "string",
+          "description": "Correo electrónico"
+        }
+      },
+      "required": ["given_name", "email_address"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "customer": {
+          "type": "object",
+          "description": "Perfil del cliente generado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://connect.squareup.com/v2/customers",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Da de alta a un comprador en la base de datos de clientes de Square.",
+      "example_prompt": "Agrega a Maria Lopez a Square con su correo.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe.list_charges",
+    "name": "Listar Cargos Stripe",
+    "version": "v1",
+    "provider": "Stripe",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number",
+          "description": "Cantidad máxima a devolver (ej. 10 a 100)"
+        },
+        "customer": {
+          "type": "string",
+          "description": "ID del cliente para filtrar sus cargos"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Listado de objetos Charge en Stripe"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.stripe.com/v1/charges",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve un historial de cargos (charges) pasados realizados en Stripe.",
+      "example_prompt": "Busca los últimos 10 pagos o cargos hechos en Stripe.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe.create_refund",
+    "name": "Crear Reembolso Stripe",
+    "version": "v1",
+    "provider": "Stripe",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "charge": {
+          "type": "string",
+          "description": "ID del cargo (ch_...) a reembolsar"
+        },
+        "payment_intent": {
+          "type": "string",
+          "description": "ID de PaymentIntent (pi_...) a reembolsar"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Cantidad a devolver en centavos (ej. 1000 para $10.00). Si se omite, es total."
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del Refund creado"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado del reembolso"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.stripe.com/v1/refunds",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve parcial o totalmente el dinero de un cargo previamente cobrado en Stripe.",
+      "example_prompt": "Procesa un reembolso total para el cargo ch_12345 en Stripe.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "stripe_checkout.create_session",
+    "name": "Crear Link de Pago",
+    "version": "v1",
+    "provider": "Stripe Checkout",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "success_url": {
+          "type": "string",
+          "description": "Donde redirigir al cobrar"
+        },
+        "line_items": {
+          "type": "array",
+          "description": "Cantidades y referencias de precio"
+        },
+        "mode": {
+          "type": "string",
+          "description": "payment o subscription"
+        }
+      },
+      "required": ["success_url", "line_items", "mode"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID de Checkout"
+        },
+        "url": {
+          "type": "string",
+          "description": "Enlace que le mandas al usuario para pagar"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.stripe.com/v1/checkout/sessions",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una URL alojada por Stripe donde el usuario ingresará los datos de su tarjeta para pagar online.",
+      "example_prompt": "Crea una sesión de checkout de Stripe para cobrar $10.",
+      "risk_level": "high",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe_checkout.retrieve_session",
+    "name": "Validar Checkout Stripe",
+    "version": "v1",
+    "provider": "Stripe Checkout",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "ID de la sesión compartida (cs_test...)"
+        }
+      },
+      "required": ["session_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment_status": {
+          "type": "string",
+          "description": "paid, unpaid o no_payment_required"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.stripe.com/v1/checkout/sessions/{session_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inspecciona el ID de un Link de Pago de Stripe para ver si el cliente introdujo tarjeta y el balance fue saldado.",
+      "example_prompt": "Verifica si el checkout de Stripe ID X ya fue pagado.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "telegram.send_message",
+    "name": "Enviar Mensaje Telegram",
+    "version": "v6.6",
+    "provider": "Telegram Bot API",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "chat_id": {
+          "type": "string",
+          "description": "ID del chat o @username del canal"
+        },
+        "text": {
+          "type": "string",
+          "description": "Texto del mensaje"
+        },
+        "parse_mode": {
+          "type": "string",
+          "description": "Markdown o HTML"
+        }
+      },
+      "required": ["chat_id", "text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "Status de la ejecución"
+        },
+        "result": {
+          "type": "object",
+          "description": "El mensaje despachado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.telegram.org/bot{api_key}/sendMessage",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Emite un mensaje de texto a un chat o canal en Telegram mediante un Bot.",
+      "example_prompt": "Envía un mensaje de alerta por Telegram al chat ID 999.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "telegram.get_updates",
+    "name": "Obtener Actualizaciones Telegram",
+    "version": "v6.6",
+    "provider": "Telegram Bot API",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "offset": {
+          "type": "number",
+          "description": "Puntero para no traer mensajes viejos ya leídos"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Tope de mensajes a bajar (1-100)"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "array",
+          "description": "Lista de objetos 'Update' entrantes"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.telegram.org/bot{api_key}/getUpdates",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Chequea nuevos mensajes entrantes o interacciones con tu Bot de Telegram.",
+      "example_prompt": "Revisa si alguien mandó un mensaje nuevo al bot de Telegram.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "discord.send_message",
+    "name": "Enviar Mensaje en Discord",
+    "version": "v10",
+    "provider": "Discord",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "description": "Snowflake ID del canal destino"
+        },
+        "content": {
+          "type": "string",
+          "description": "El mensaje a mandar"
+        }
+      },
+      "required": ["channel_id", "content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Message ID"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://discord.com/api/v10/channels/{channel_id}/messages",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bot {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Postea un mensaje en un canal específico de un servidor de Discord.",
+      "example_prompt": "Envía 'Hola a todos' al canal general de Discord.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "discord.create_channel",
+    "name": "Crear Canal Discord",
+    "version": "v10",
+    "provider": "Discord",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "guild_id": {
+          "type": "string",
+          "description": "El ID del Servidor (Guild)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nombre del nuevo canal"
+        },
+        "type": {
+          "type": "number",
+          "description": "0 = texto, 2 = voz, etc."
+        }
+      },
+      "required": ["guild_id", "name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del Canal creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://discord.com/api/v10/guilds/{guild_id}/channels",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bot {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega un canal de texto o voz nuevo a una comunidad o Guild en Discord.",
+      "example_prompt": "Crea el canal 'soporte-urgente' en Discord.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "resend.send_email",
+    "name": "Enviar Email con Resend",
+    "version": "v1",
+    "provider": "Resend",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Correo del emisor autorizado"
+        },
+        "to": {
+          "type": "array",
+          "description": "Arreglo de correos destinatarios"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Asunto"
+        },
+        "html": {
+          "type": "string",
+          "description": "Cuerpo en HTML"
+        }
+      },
+      "required": ["from", "to", "subject", "html"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID de transacción del envío"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.resend.com/emails",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Despacha un correo electrónico seguro mediante la API moderna de Resend.",
+      "example_prompt": "Mándale un correo a juan@mail.com avisándole de la promo desde soporte@miempresa.com con Resend.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "resend.get_contact",
+    "name": "Obtener Contacto Resend",
+    "version": "v1",
+    "provider": "Resend",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "audience_id": {
+          "type": "string",
+          "description": "Identificador de la audiencia"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID único del contacto en Resend"
+        }
+      },
+      "required": ["audience_id", "id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Correo"
+        },
+        "first_name": {
+          "type": "string",
+          "description": "Nombre"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.resend.com/audiences/{audience_id}/contacts/{id}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae los datos de suscripción de un contacto que está en tus audiencias de Resend.",
+      "example_prompt": "Busca la info del contacto ID 987 en Resend.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amazon_ses.send_email",
+    "name": "Enviar Email AWS SES",
+    "version": "v2",
+    "provider": "Amazon SES",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "FromEmailAddress": {
+          "type": "string",
+          "description": "Identidad validada remitente"
+        },
+        "Destination": {
+          "type": "object",
+          "description": "Objeto con ToAddresses"
+        },
+        "Content": {
+          "type": "object",
+          "description": "Asunto y cuerpo del mensaje (Simple, Raw o Template)"
+        }
+      },
+      "required": ["FromEmailAddress", "Destination", "Content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "MessageId": {
+          "type": "string",
+          "description": "ID de rastro"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://email.{region}.amazonaws.com/v2/email/outbound-emails",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Transmite correo por la infraestructura enterprise de Amazon Simple Email Service (SES v2).",
+      "example_prompt": "Haz un envío de correo por AWS SES al equipo reportando la caída.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amazon_ses.get_send_statistics",
+    "name": "Métricas de Envío AWS SES",
+    "version": "v2",
+    "provider": "Amazon SES",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "SendDataPoints": {
+          "type": "array",
+          "description": "Métricas agregadas (bounces, complaints, rejects) de las últimas dos semanas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://email.{region}.amazonaws.com/v1/get-send-statistics",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta el volumen, la reputación y estadísticas generales de la cuota de AWS SES.",
+      "example_prompt": "¿Cuáles son las estadísticas de rebotes de nuestro Amazon SES?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gcs.upload_object",
+    "name": "Subir Archivo GCS",
+    "version": "v1",
+    "provider": "Google Cloud Storage",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/devstorage.read_write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Nombre del bucket GCP"
+        },
+        "name": {
+          "type": "string",
+          "description": "Ruta y nombre del archivo destino (Object name)"
+        },
+        "data": {
+          "type": "string",
+          "description": "Contenido o archivo base64 a guardar"
+        }
+      },
+      "required": ["bucket", "name", "data"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Uri única de GCS"
+        },
+        "mediaLink": {
+          "type": "string",
+          "description": "Link directo de bajada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://storage.googleapis.com/upload/storage/v1/b/{bucket}/o?uploadType=media&name={name}",
+      "headers": {
+        "Content-Type": "application/octet-stream"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade o sobreescribe un bloque de información cruda en un Bucket de Storage de Google.",
+      "example_prompt": "Carga la base de datos en JSON en el bucket de backups como 'data.json'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gcs.get_object",
+    "name": "Descargar Objeto GCS",
+    "version": "v1",
+    "provider": "Google Cloud Storage",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/devstorage.read_only"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Bucket name"
+        },
+        "object": {
+          "type": "string",
+          "description": "URL-encoded object name"
+        }
+      },
+      "required": ["bucket", "object"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "La data cruda del blob"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://storage.googleapis.com/storage/v1/b/{bucket}/o/{object}?alt=media",
+      "headers": {
+        "Accept": "*/*"
+      }
+    },
+    "tool_profile": {
+      "description": "Baja a memoria o extrae el contenido de un archivo hosteado en Google Cloud Storage.",
+      "example_prompt": "Trae el contenido del archivo 'config.yaml' en GCS.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "azure_blob.upload_blob",
+    "name": "Cargar Azure Blob",
+    "version": "2020-04-08",
+    "provider": "Azure Blob",
+    "category": "storage",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string",
+          "description": "Nombre de cuenta Storage"
+        },
+        "container": {
+          "type": "string",
+          "description": "Contenedor de Blob"
+        },
+        "blob": {
+          "type": "string",
+          "description": "Ruta y nombre del blob"
+        },
+        "content": {
+          "type": "string",
+          "description": "La payload en raw"
+        }
+      },
+      "required": ["account_name", "container", "blob", "content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://{account_name}.blob.core.windows.net/{container}/{blob}",
+      "headers": {
+        "x-ms-blob-type": "BlockBlob"
+      }
+    },
+    "tool_profile": {
+      "description": "Inserta directamente un nuevo blob de bloque a la nube de Microsoft Azure Storage.",
+      "example_prompt": "Carga el script en el blob 'scripts/start.sh' del contenedor principal de Azure.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "azure_blob.delete_blob",
+    "name": "Eliminar Blob en Azure",
+    "version": "2020-04-08",
+    "provider": "Azure Blob",
+    "category": "storage",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string",
+          "description": "Nombre de cuenta"
+        },
+        "container": {
+          "type": "string",
+          "description": "Contenedor"
+        },
+        "blob": {
+          "type": "string",
+          "description": "Nombre del archivo blob"
+        }
+      },
+      "required": ["account_name", "container", "blob"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://{account_name}.blob.core.windows.net/{container}/{blob}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Purga y elimina un archivo u objeto almacenado en Azure Blob Storage de forma irreversible.",
+      "example_prompt": "Borra la imagen 'temp.png' de Azure Storage.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "outlook.create_event",
+    "name": "Agendar Evento Outlook",
+    "version": "v1.0",
+    "provider": "Microsoft Outlook Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Calendars.ReadWrite"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Asunto de la cita"
+        },
+        "start": {
+          "type": "object",
+          "description": "Fecha y zona horaria de inicio (dateTime, timeZone)"
+        },
+        "end": {
+          "type": "object",
+          "description": "Fecha de término"
+        },
+        "attendees": {
+          "type": "array",
+          "description": "Lista de invitados a la reunión"
+        }
+      },
+      "required": ["subject", "start", "end"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Event ID generado en Graph"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.microsoft.com/v1.0/me/events",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade una junta, evento o bloque de tiempo en el Calendario oficial de Microsoft 365 / Outlook.",
+      "example_prompt": "Crea una reunión en Outlook para el viernes sobre Presupuesto.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "outlook.list_events",
+    "name": "Ver Calendario Outlook",
+    "version": "v1.0",
+    "provider": "Microsoft Outlook Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Calendars.Read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "startDateTime": {
+          "type": "string",
+          "description": "Filtro inicial en ISO 8601"
+        },
+        "endDateTime": {
+          "type": "string",
+          "description": "Filtro final"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "description": "Conjunto de eventos agendados"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://graph.microsoft.com/v1.0/me/calendarview?startDateTime={startDateTime}&endDateTime={endDateTime}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Escanea el calendario de Outlook para recuperar los horarios ocupados y citas entre dos fechas.",
+      "example_prompt": "¿Qué reuniones tengo hoy agendadas en Outlook?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "outlook.delete_event",
+    "name": "Cancelar Evento Outlook",
+    "version": "v1.0",
+    "provider": "Microsoft Outlook Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Calendars.ReadWrite"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "description": "Identificador base 64 de la cita"
+        }
+      },
+      "required": ["event_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://graph.microsoft.com/v1.0/me/events/{event_id}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Anula un evento previamente bloqueado en el Outlook Calendar.",
+      "example_prompt": "Elimina del calendario de Outlook el evento con ID XYZ.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amplitude.track_event",
+    "name": "Registrar Evento Amplitude",
+    "version": "v2",
+    "provider": "Amplitude",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "description": "Listado de interacciones (user_id, event_type, event_properties)"
+        }
+      },
+      "required": ["events"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "description": "200 si se importó con éxito"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api2.amplitude.com/2/httpapi",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inyecta la analítica de comportamientos de clientes (Eventos) a Amplitude.",
+      "example_prompt": "Registra el evento 'Button Click' en Amplitude para el user 505.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amplitude.identify_user",
+    "name": "Identificar Usuario Amplitude",
+    "version": "v2",
+    "provider": "Amplitude",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "identification": {
+          "type": "string",
+          "description": "El JSON serializado con user_id y user_properties"
+        }
+      },
+      "required": ["identification"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "description": "Confirmación HTTP"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api2.amplitude.com/identify",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Enriquece o setea parámetros permanentes (traits) de un usuario en el CRM de Amplitude.",
+      "example_prompt": "Añade la propiedad 'Plan = Premium' al user_id 505 en Amplitude.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "plausible.get_realtime",
+    "name": "Visitantes Activos Plausible",
+    "version": "v1",
+    "provider": "Plausible",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "El dominio monitoreado, ej. midominio.com"
+        }
+      },
+      "required": ["site_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Cantidad de personas mirando la página ahora mismo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://plausible.io/api/v1/stats/realtime?site_id={site_id}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve la cuenta instantánea de visitantes conectados a la página web observada.",
+      "example_prompt": "¿Cuántas personas hay ahora mismo en el sitio según Plausible?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "plausible.get_timeseries",
+    "name": "Gráfico de Tráfico Plausible",
+    "version": "v1",
+    "provider": "Plausible",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "El dominio de Plausible"
+        },
+        "period": {
+          "type": "string",
+          "description": "Marco de tiempo, p.ej. 30d o 7d"
+        }
+      },
+      "required": ["site_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "Historial con fechas y visitas únicas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://plausible.io/api/v1/stats/timeseries?site_id={site_id}&period={period}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Exporta la serie de datos diaria de visitantes y sesiones contabilizadas en un portal web.",
+      "example_prompt": "Dame el histórico de tráfico de los últimos 30 días desde Plausible.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "twitter.create_tweet",
+    "name": "Publicar un Tweet",
+    "version": "v2",
+    "provider": "X/Twitter API",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["tweet.write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Contenido del post"
+        }
+      },
+      "required": ["text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "El ID y el texto generado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.twitter.com/2/tweets",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Escribe y emite una nueva publicación en el perfil autenticado de X (Twitter).",
+      "example_prompt": "Publica un Tweet diciendo '¡Lanzamos una nueva función en la app!'.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "twitter.delete_tweet",
+    "name": "Eliminar un Tweet",
+    "version": "v2",
+    "provider": "X/Twitter API",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["tweet.write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "tweet_id": {
+          "type": "string",
+          "description": "El ID numérico del tuit"
+        }
+      },
+      "required": ["tweet_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Status booleano 'deleted'"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://api.twitter.com/2/tweets/{tweet_id}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Oculta y retira una publicación previamente hecha de la red pública en Twitter.",
+      "example_prompt": "Borra el tweet que publiqué por error (ID XYZ).",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "tiktok.get_campaign",
+    "name": "Buscar Campaña TikTok",
+    "version": "v1.3",
+    "provider": "TikTok Business",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "description": "ID de la cuenta de anunciante de TikTok"
+        }
+      },
+      "required": ["advertiser_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Detalles de las campañas halladas (lista)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://business-api.tiktok.com/open_api/v1.3/campaign/get/?advertiser_id={advertiser_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Muestra las métricas y la estructura macro de un esfuerzo publicitario activo en TikTok Ads.",
+      "example_prompt": "Revisa mis campañas activas en la cuenta publicitaria de TikTok.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiktok.create_ad",
+    "name": "Armar Anuncio TikTok",
+    "version": "v1.3",
+    "provider": "TikTok Business",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "description": "Owner del negocio"
+        },
+        "adgroup_id": {
+          "type": "string",
+          "description": "AdGroup al que pertenece la pieza"
+        },
+        "creatives": {
+          "type": "array",
+          "description": "Textos y referencias al material multimedia del anuncio"
+        }
+      },
+      "required": ["advertiser_id", "adgroup_id", "creatives"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "El asset ID inyectado en plataforma"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://business-api.tiktok.com/open_api/v1.3/ad/create/",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega de forma programática un anuncio/creativo a un adset publicitario de TikTok.",
+      "example_prompt": "Crea el anuncio con el nuevo video en el grupo de anuncios de TikTok.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amazon_sp.get_orders",
+    "name": "Pedidos Recientes de Amazon",
+    "version": "v0",
+    "provider": "Amazon SP API",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "CreatedAfter": {
+          "type": "string",
+          "description": "Rango de tiempo desde el cual traer info ISO 8601"
+        },
+        "MarketplaceIds": {
+          "type": "string",
+          "description": "Código de país / mercado de Amazon"
+        }
+      },
+      "required": ["CreatedAfter", "MarketplaceIds"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payload": {
+          "type": "object",
+          "description": "Órdenes retornadas por el seller partner"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://sellingpartnerapi-na.amazon.com/orders/v0/orders?CreatedAfter={CreatedAfter}&MarketplaceIds={MarketplaceIds}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Accede al reporte de envíos y carritos de compra que han ingresado por la tienda Amazon Seller.",
+      "example_prompt": "Tráeme las órdenes hechas en Amazon US en las últimas 24 horas.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amazon_sp.get_catalog_item",
+    "name": "Revisar Item en Catálogo Amazon",
+    "version": "2022-04-01",
+    "provider": "Amazon SP API",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "asin": {
+          "type": "string",
+          "description": "El código único de producto en Amazon (ASIN)"
+        },
+        "marketplaceIds": {
+          "type": "string",
+          "description": "El mercado"
+        }
+      },
+      "required": ["asin", "marketplaceIds"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "summaries": {
+          "type": "array",
+          "description": "Atributos del artículo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://sellingpartnerapi-na.amazon.com/catalog/2022-04-01/items/{asin}?marketplaceIds={marketplaceIds}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Comprueba el inventario o las propiedades de un producto referenciado en la red de Amazon.",
+      "example_prompt": "Busca la información del ASIN B08X12345 en Amazon USA.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiendanube.create_product",
+    "name": "Subir Producto Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write_products"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID de la tienda"
+        },
+        "name": {
+          "type": "object",
+          "description": "Traducciones del nombre del producto (es, pt, en)"
+        },
+        "price": {
+          "type": "string",
+          "description": "Precio original formateado como string numérico"
+        }
+      },
+      "required": ["store_id", "name", "price"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "El ID global del producto en el catálogo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.tiendanube.com/v1/{store_id}/products",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Carga un nuevo artículo publicable con su nombre base y precio en la plataforma de e-commerce de Tiendanube.",
+      "example_prompt": "Crea una 'Campera' en Tiendanube con un precio de 50000.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiendanube.update_stock",
+    "name": "Sincronizar Stock Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write_products"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID de la tienda"
+        },
+        "product_id": {
+          "type": "number",
+          "description": "ID del producto padre"
+        },
+        "variant_id": {
+          "type": "number",
+          "description": "ID de la variante de talla o color"
+        },
+        "stock": {
+          "type": "number",
+          "description": "Unidades disponibles"
+        }
+      },
+      "required": ["store_id", "product_id", "variant_id", "stock"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Identificador de variante modificada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://api.tiendanube.com/v1/{store_id}/products/{product_id}/variants/{variant_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Ajusta la cantidad disponible de un producto y su variante específica en el stock de Tiendanube.",
+      "example_prompt": "Actualiza el inventario a 5 de la variante 202 del producto 101 en Tiendanube.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "tiendanube.get_orders",
+    "name": "Leer Pedidos Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read_orders"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "Identificador del e-commerce"
+        },
+        "payment_status": {
+          "type": "string",
+          "description": "Filtrar por 'paid', 'pending', 'abandoned'"
+        }
+      },
+      "required": ["store_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "description": "Colección de carritos con transacciones efectuadas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tiendanube.com/v1/{store_id}/orders?payment_status={payment_status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae el historial de transacciones de venta completadas y cobradas en una cuenta de Tiendanube.",
+      "example_prompt": "Tráeme la información de los últimos pedidos cobrados en Tiendanube.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "linear.create_issue",
+    "name": "Levantar Issue Linear",
+    "version": "graphql",
+    "provider": "Linear",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "String del issueCreate mutation"
+        },
+        "variables": {
+          "type": "object",
+          "description": "teamId, title y description de la tarea"
+        }
+      },
+      "required": ["query", "variables"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "GraphQL respuesta conteniendo el número del Issue (ej. APP-14)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.linear.app/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un reporte de error, tarjeta o ticket a un ciclo de desarrollo técnico en Linear.",
+      "example_prompt": "Crea un ticket en Linear que diga 'Arreglar login de Google'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "linear.update_issue",
+    "name": "Mover Estado en Linear",
+    "version": "graphql",
+    "provider": "Linear",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "issueUpdate mutation con el ID como argumento"
+        },
+        "variables": {
+          "type": "object",
+          "description": "id del task y el stateId para transicionar"
+        }
+      },
+      "required": ["query", "variables"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Estatus booleano validando la operación de Linear"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.linear.app/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Asigna, descarta o transita a completado una tarjeta rastreada en el flujo de Linear.",
+      "example_prompt": "Mueve el issue APP-14 en Linear a In Progress.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "clickup.create_task",
+    "name": "Asignar Tarea ClickUp",
+    "version": "v2",
+    "provider": "ClickUp",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "list_id": {
+          "type": "string",
+          "description": "El id de la vista de lista destino"
+        },
+        "name": {
+          "type": "string",
+          "description": "La misión a resolver"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detalles ampliados"
+        }
+      },
+      "required": ["list_id", "name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Hash asignado en ClickUp para el nuevo elemento"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.clickup.com/api/v2/list/{list_id}/task",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Programa una asignación formal a un tablero/lista de ClickUp.",
+      "example_prompt": "Agrega una tarea llamada 'Aprobar diseño' a mi lista de ClickUp.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "clickup.add_task_comment",
+    "name": "Anotar en Tarea ClickUp",
+    "version": "v2",
+    "provider": "ClickUp",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "ID hash de la tarea original"
+        },
+        "comment_text": {
+          "type": "string",
+          "description": "Texto inyectado al hilo"
+        }
+      },
+      "required": ["task_id", "comment_text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador de la nota inyectada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.clickup.com/api/v2/task/{task_id}/comment",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Anexa detalles o un comentario en formato chat dentro del view lateral de una Task en ClickUp.",
+      "example_prompt": "Añade un comentario en ClickUp a la tarea 'Aprobar diseño' que diga que lo veré mañana.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "jira.create_issue",
+    "name": "Abrir Ticket de Jira",
+    "version": "v3",
+    "provider": "Jira",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write:jira-work"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "Subdominio de atlassian.net"
+        },
+        "fields": {
+          "type": "object",
+          "description": "JSON de Atlassian conteniendo project (key), summary, issuetype y description"
+        }
+      },
+      "required": ["domain", "fields"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "El PK de la BBDD"
+        },
+        "key": {
+          "type": "string",
+          "description": "El ticket ID legible como DEV-101"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}.atlassian.net/rest/api/3/issue",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Despacha un defecto, epic o tarea al control de trabajo ágil de Atlassian Jira.",
+      "example_prompt": "Crea el ticket en Jira para el fallo en la base de datos.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gemini.generate_content",
+    "name": "Inferencia de LLM Gemini",
+    "version": "v1beta",
+    "provider": "Google Gemini",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "array",
+          "description": "El historial de diálogo o los roles de system/user"
+        }
+      },
+      "required": ["contents"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "description": "Partes de la devolución y tokens consumidos"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={api_key}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Envía un requerimiento de inteligencia artificial conversacional a Google Gemini 1.5 Pro.",
+      "example_prompt": "Pregúntale a Gemini que resuma el texto en viñetas.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gemini.count_tokens",
+    "name": "Medir Texto con Gemini",
+    "version": "v1beta",
+    "provider": "Google Gemini",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "array",
+          "description": "String a evaluar su tamaño y costo"
+        }
+      },
+      "required": ["contents"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "totalTokens": {
+          "type": "number",
+          "description": "Talla exacta contabilizada por el tokenizer"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:countTokens?key={api_key}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Usa la biblioteca de tokenización de Google para calcular qué tan largo es un documento en parámetros LLM.",
+      "example_prompt": "Cuenta cuántos tokens de Gemini hay en este largo reporte.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mistral.chat_completion",
+    "name": "Prompting Mistral LLM",
+    "version": "v1",
+    "provider": "Mistral",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Ejemplo: mistral-large-latest"
+        },
+        "messages": {
+          "type": "array",
+          "description": "Contexto role/content"
+        }
+      },
+      "required": ["model", "messages"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "choices": {
+          "type": "array",
+          "description": "Respuesta predictiva del modelo base europeo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mistral.ai/v1/chat/completions",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae lógica y generación de contenido semántico del modelo cognitivo de Mistral AI.",
+      "example_prompt": "Usa Mistral para que escriba un código en Python.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mistral.create_embeddings",
+    "name": "Vectores con Mistral",
+    "version": "v1",
+    "provider": "Mistral",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "P.ej. mistral-embed"
+        },
+        "input": {
+          "type": "array",
+          "description": "Textos paralelos a calcular su índice n-dimensional"
+        }
+      },
+      "required": ["model", "input"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Puntos cardinales"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mistral.ai/v1/embeddings",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Toma un bloque textual libre y genera embeddings representativos vectoriales por la API de Mistral.",
+      "example_prompt": "Saca el embedding de Mistral para la palabra 'Manzana'.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.create_preference",
+    "name": "Link de Pago MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "title, quantity, unit_price, currency_id"
+        }
+      },
+      "required": ["items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "init_point": {
+          "type": "string",
+          "description": "URL base para enviar al consumidor"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID de la preferencia generada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadopago.com/checkout/preferences",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Instancia un cobro por checkout (preferencia) en Mercado Pago de LATAM para mandar a pagar.",
+      "example_prompt": "Arma un link de pago en MercadoPago por 1500 ARS para el artículo 'Zapatillas'.",
+      "risk_level": "high",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.get_payment",
+    "name": "Verificar Pago MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID numérico de la liquidación en MP"
+        }
+      },
+      "required": ["id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estados como approved, pending, o rejected"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadopago.com/v1/payments/{id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Audita el estado fidedigno de una transacción ingresada en el ecosistema Mercado Pago.",
+      "example_prompt": "¿El pago de MP con ID 999111 ya está 'approved'?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.create_qr_payment",
+    "name": "Cobrar con QR MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "external_reference": {
+          "type": "string",
+          "description": "Referencia interna del sistema del comercio"
+        },
+        "total_amount": {
+          "type": "number",
+          "description": "Monto total a cobrar en el punto de venta"
+        },
+        "items": {
+          "type": "array",
+          "description": "Detalles de los productos a cobrar"
+        }
+      },
+      "required": ["external_reference", "total_amount", "items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "in_store_order_id": {
+          "type": "string",
+          "description": "ID de la orden presencial generada"
+        },
+        "qr_data": {
+          "type": "string",
+          "description": "String de datos para renderizar el código QR"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadopago.com/instore/orders/qr/seller/collectors/{collector_id}/pos/{pos_id}/qrs",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una orden de pago presencial atada a un código QR de MercadoPago para cobros en tiendas físicas.",
+      "example_prompt": "Crea un cobro por QR en MercadoPago de 5000 ARS para el POS de la caja 1.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadopago.search_payments",
+    "name": "Buscar Pagos MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "begin_date": {
+          "type": "string",
+          "description": "Fecha de inicio (ISO 8601)"
+        },
+        "end_date": {
+          "type": "string",
+          "description": "Fecha de fin (ISO 8601)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado del pago (approved, pending, rejected)"
+        }
+      },
+      "required": ["begin_date", "end_date"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "Lista de pagos que coinciden con los criterios de búsqueda"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadopago.com/v1/payments/search?begin_date={begin_date}&end_date={end_date}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Busca y filtra el historial de pagos recibidos en una cuenta de MercadoPago en un rango de fechas.",
+      "example_prompt": "Buscame todos los pagos aprobados de MercadoPago desde el lunes pasado hasta hoy.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.create_subscription",
+    "name": "Crear Suscripción MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "preapproval_plan_id": {
+          "type": "string",
+          "description": "ID del plan de suscripción base"
+        },
+        "payer_email": {
+          "type": "string",
+          "description": "Correo del cliente que se suscribe"
+        },
+        "card_token_id": {
+          "type": "string",
+          "description": "Token de la tarjeta a adherir"
+        }
+      },
+      "required": ["preapproval_plan_id", "payer_email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID de la suscripción (preapproval) generada"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado de la suscripción (authorized, pending)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadopago.com/preapproval",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Adhiere a un cliente a un plan de cobro recurrente o suscripción mensual usando MercadoPago.",
+      "example_prompt": "Suscribe al usuario juan@correo.com al plan de gimnasio en MercadoPago.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadolibre.get_orders",
+    "name": "Obtener Órdenes MercadoLibre",
+    "version": "v3",
+    "provider": "MercadoLibre",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "seller_id": {
+          "type": "string",
+          "description": "El ID del vendedor en MercadoLibre"
+        },
+        "order_status": {
+          "type": "string",
+          "description": "Estado de las órdenes (ej. paid, cancelled)"
+        }
+      },
+      "required": ["seller_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "Lista de transacciones de compra registradas en la tienda Meli"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/orders/search?seller={seller_id}&order.status={order_status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Trae el listado de ventas (órdenes) que un vendedor ha recibido en el marketplace de MercadoLibre.",
+      "example_prompt": "Tráeme los últimos pedidos cobrados en mi cuenta de MercadoLibre.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadolibre.update_stock",
+    "name": "Actualizar Stock MercadoLibre",
+    "version": "v3",
+    "provider": "MercadoLibre",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "description": "ID de la publicación (ej. MLA123456)"
+        },
+        "available_quantity": {
+          "type": "number",
+          "description": "Nuevo stock disponible para la venta"
+        }
+      },
+      "required": ["item_id", "available_quantity"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del item modificado"
+        },
+        "available_quantity": {
+          "type": "number",
+          "description": "Stock confirmado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://api.mercadolibre.com/items/{item_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Modifica la cantidad disponible (stock) de un producto publicado en MercadoLibre.",
+      "example_prompt": "Actualiza el stock de la publicación MLA99999 a 15 unidades.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadolibre.answer_question",
+    "name": "Responder Pregunta MercadoLibre",
+    "version": "v3",
+    "provider": "MercadoLibre",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "question_id": {
+          "type": "number",
+          "description": "ID de la pregunta recibida"
+        },
+        "text": {
+          "type": "string",
+          "description": "El contenido de la respuesta enviada al comprador"
+        }
+      },
+      "required": ["question_id", "text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estado de la respuesta (ANSWERED)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadolibre.com/answers",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Publica la respuesta oficial del vendedor a una consulta hecha por un usuario en una publicación de MercadoLibre.",
+      "example_prompt": "Respondele al usuario de MercadoLibre en la pregunta 555 que sí tenemos stock en color azul.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.create_shipment",
+    "name": "Generar Etiqueta MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shipment_id": {
+          "type": "string",
+          "description": "ID del envío atado a la compra"
+        }
+      },
+      "required": ["shipment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "file_url": {
+          "type": "string",
+          "description": "Enlace temporal del PDF de la etiqueta (label) para imprimir"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/shipment_labels?shipment_ids={shipment_id}&response_type=pdf",
+      "headers": {
+        "Accept": "application/pdf"
+      }
+    },
+    "tool_profile": {
+      "description": "Imprime o solicita el documento PDF de la etiqueta de MercadoEnvíos lista para pegar en el paquete.",
+      "example_prompt": "Descargame la etiqueta de despacho para el envío de MercadoEnvíos número 40001.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.get_tracking",
+    "name": "Consultar Tracking MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shipment_id": {
+          "type": "string",
+          "description": "El identificador del envío"
+        }
+      },
+      "required": ["shipment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "tracking_number": {
+          "type": "string",
+          "description": "Número de rastreo de la empresa postal"
+        },
+        "tracking_events": {
+          "type": "array",
+          "description": "El historial de movimiento del paquete (admisión, en viaje, entregado)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/shipments/{shipment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Recupera la línea de tiempo y ubicación en tiempo real de un paquete despachado mediante MercadoEnvíos.",
+      "example_prompt": "¿Dónde está actualmente el pedido con envío ID 445566 de Meli?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.get_shipping_options",
+    "name": "Cotizar Envío MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "zip_code_from": {
+          "type": "string",
+          "description": "Código postal de origen"
+        },
+        "zip_code_to": {
+          "type": "string",
+          "description": "Código postal de destino"
+        },
+        "dimensions": {
+          "type": "string",
+          "description": "Dimensiones en formato alto x ancho x largo,peso (ej. 10x10x20,500)"
+        }
+      },
+      "required": ["zip_code_from", "zip_code_to", "dimensions"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "type": "array",
+          "description": "Tarifas de envío, tipo (express, normal) y estimación de entrega"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/users/{user_id}/shipping_options?zip_code_from={zip_code_from}&zip_code_to={zip_code_to}&dimensions={dimensions}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Cotiza costos y tiempos logísticos entre dos códigos postales utilizando el calculador de MercadoEnvíos.",
+      "example_prompt": "Cotiza un paquete de 10x10x10,500g desde CP 1000 a CP 2000 por MercadoEnvíos.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "afip.create_invoice_afip",
+    "name": "Emitir Factura AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cuit_emisor": {
+          "type": "string",
+          "description": "CUIT del emisor"
+        },
+        "punto_venta": {
+          "type": "number",
+          "description": "Punto de venta asociado"
+        },
+        "cbte_tipo": {
+          "type": "number",
+          "description": "Tipo de comprobante (ej. 11 para Factura C)"
+        },
+        "doc_tipo": {
+          "type": "number",
+          "description": "Tipo de documento del cliente (ej. 80 para CUIT, 96 para DNI)"
+        },
+        "doc_nro": {
+          "type": "string",
+          "description": "Número de documento o CUIT del cliente"
+        },
+        "importe_total": {
+          "type": "number",
+          "description": "Monto total facturado"
+        }
+      },
+      "required": ["cuit_emisor", "punto_venta", "cbte_tipo", "doc_tipo", "doc_nro", "importe_total"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "cae": {
+          "type": "string",
+          "description": "Código de Autorización Electrónico (CAE) otorgado por AFIP"
+        },
+        "cae_vto": {
+          "type": "string",
+          "description": "Vencimiento del CAE"
+        },
+        "comprobante_numero": {
+          "type": "number",
+          "description": "Número de factura emitido correlativamente"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.afip.gob.ar/wsfev1/factura",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Contacta los web services (WSFEv1) de AFIP para emitir un comprobante fiscal legal (Factura electrónica) obteniendo un CAE en Argentina.",
+      "example_prompt": "Emito una Factura C por 15000 pesos al DNI 35000000 desde el punto de venta 3.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "afip.get_cae",
+    "name": "Consultar CAE Factura AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "punto_venta": {
+          "type": "number",
+          "description": "Punto de venta emisor"
+        },
+        "cbte_tipo": {
+          "type": "number",
+          "description": "Id del tipo de factura (ej. 1=A, 6=B, 11=C)"
+        },
+        "cbte_nro": {
+          "type": "number",
+          "description": "Número consecutivo de la factura que se desea chequear"
+        }
+      },
+      "required": ["punto_venta", "cbte_tipo", "cbte_nro"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "cae": {
+          "type": "string",
+          "description": "El CAE de ese comprobante validado"
+        },
+        "emision_fecha": {
+          "type": "string",
+          "description": "Día que fue emitido"
+        },
+        "importe": {
+          "type": "number",
+          "description": "Valor monetario que fue informado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.afip.gob.ar/wsfev1/factura/{cbte_nro}/cae?punto_venta={punto_venta}&tipo={cbte_tipo}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Verifica si una factura ya fue emitida legalmente ante AFIP recuperando sus datos y su CAE vigente.",
+      "example_prompt": "¿Cuál es el CAE y el monto de la Factura C número 104 del punto de venta 2?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "afip.validate_cuit",
+    "name": "Consultar Padrón CUIT AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cuit": {
+          "type": "string",
+          "description": "Identificación tributaria a consultar (ej. 30111111118 sin guiones)"
+        }
+      },
+      "required": ["cuit"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "description": "Razón social o Nombre de la persona física"
+        },
+        "estado": {
+          "type": "string",
+          "description": "Estado impositivo (ej. ACTIVO)"
+        },
+        "impuestos": {
+          "type": "array",
+          "description": "Detalle de IVA, Ganancias, Monotributo, etc."
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.afip.gob.ar/ws_sr-padron/v1/persona/{cuit}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite acceder al padrón alcance 13 de AFIP para verificar la razón social y la situación fiscal (IVA, Monotributo) vinculada a un CUIT.",
+      "example_prompt": "Consultá el estado fiscal del CUIT 30-71234567-8 en AFIP.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "rappi.get_orders",
+    "name": "Bandeja de Pedidos Rappi",
+    "version": "v2",
+    "provider": "Rappi",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID del restaurante en el hub"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado para consultar: 'new', 'in_progress', 'ready_for_pickup'"
+        }
+      },
+      "required": ["store_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "description": "JSON de las solicitudes de delivery hechas por clientes a Rappi"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://microservices.rappi.com/api/v2/restaurants/orders?store_id={store_id}&status={status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Revisa los pedidos de comida a domicilio entrantes para un restaurante o tienda registrado en Rappi.",
+      "example_prompt": "Verifica si cayeron nuevos pedidos para mi restaurante en Rappi.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "rappi.update_order_status",
+    "name": "Mover Estado Orden Rappi",
+    "version": "v2",
+    "provider": "Rappi",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "Código de comanda de la orden entrante"
+        },
+        "status": {
+          "type": "string",
+          "description": "Transición, por ejemplo 'cooking', 'ready', 'cancel'"
+        }
+      },
+      "required": ["order_id", "status"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Notificación push enviada al repartidor de Rappi con éxito"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://microservices.rappi.com/api/v2/restaurants/orders/{order_id}/status",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite aceptar, despachar o marcar un pedido como listo en el hub de atención de Rappi.",
+      "example_prompt": "Marca el pedido 999123 de Rappi como listo para retirar por el repartidor.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "pedidosya.get_orders",
+    "name": "Bandeja Pedidos PedidosYa",
+    "version": "v1",
+    "provider": "PedidosYa",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "restaurant_id": {
+          "type": "string",
+          "description": "El ID interno del comercio en el portal de PeYa"
+        }
+      },
+      "required": ["restaurant_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Nuevos pedidos y comensales procesados"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://partners.pedidosya.com/v1/orders?restaurant_id={restaurant_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consigue las solicitudes gastronómicas y carritos generados por clientes dentro de la app PedidosYa.",
+      "example_prompt": "Dame los pedidos activos de mi local en PedidosYa.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pedidosya.confirm_order",
+    "name": "Aceptar Orden PedidosYa",
+    "version": "v1",
+    "provider": "PedidosYa",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "ID del ticket"
+        },
+        "delivery_time": {
+          "type": "number",
+          "description": "Tiempo calculado para despachar (minutos)"
+        }
+      },
+      "required": ["order_id", "delivery_time"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Aprobación notificada al cliente"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://partners.pedidosya.com/v1/orders/{order_id}/confirm",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Aprueba y notifica formalmente al cliente de PedidosYa que su orden será preparada, informando una demora.",
+      "example_prompt": "Confirma el pedido PEYA-500 y define 30 minutos de entrega.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "contabilium.create_invoice",
+    "name": "Facturar en Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "IdTipoComprobante": {
+          "type": "number",
+          "description": "Indica si es FC, Ticket, NC, etc."
+        },
+        "IdCliente": {
+          "type": "number",
+          "description": "El ID en base de datos del comprador"
+        },
+        "Items": {
+          "type": "array",
+          "description": "Las filas de compra con ID de producto, precio y cantidad"
+        }
+      },
+      "required": ["IdTipoComprobante", "IdCliente", "Items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Id": {
+          "type": "number",
+          "description": "Nro interno del sistema"
+        },
+        "Numero": {
+          "type": "string",
+          "description": "Número de comprobante validado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://rest.contabilium.com/api/comprobantes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera de manera automática un comprobante o factura legal (afectando stock) en el ERP argentino Contabilium.",
+      "example_prompt": "Crea una Factura C para el cliente 8891 con 2 unidades del artículo 90 en Contabilium.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "contabilium.get_balance",
+    "name": "Consultar Cuenta Corriente Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "IdCliente": {
+          "type": "number",
+          "description": "ID o legajo del cliente registrado"
+        }
+      },
+      "required": ["IdCliente"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Saldo": {
+          "type": "number",
+          "description": "Deuda en cuenta corriente que el cliente mantiene"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://rest.contabilium.com/api/clientes/{IdCliente}/saldo",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta cuánto dinero le adeuda o le sobra a un cliente particular (Saldo) en Contabilium.",
+      "example_prompt": "Verifica qué saldo pendiente tiene el cliente ID 1500 en Contabilium.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mobbex.create_checkout",
+    "name": "Enlace de Cobro Mobbex",
+    "version": "v1",
+    "provider": "Mobbex",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "number",
+          "description": "Importe total del cobro a recibir"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Modena (ARS)"
+        },
+        "reference": {
+          "type": "string",
+          "description": "Referencia unívoca de tu pedido"
+        },
+        "description": {
+          "type": "string",
+          "description": "Razones del cobro visualizadas por el cliente"
+        }
+      },
+      "required": ["total", "currency", "reference", "description"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Contiene el uid del checkout y la 'url' para cobrar"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mobbex.com/p/checkout",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Levanta un Checkout transparente o URL de pago seguro en la red de Mobbex Argentina para tarjetas de crédito.",
+      "example_prompt": "Genera un link de pago Mobbex de 500 ARS para el pedido REF123.",
+      "risk_level": "high",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mobbex.get_payment_status",
+    "name": "Validar Operación Mobbex",
+    "version": "v1",
+    "provider": "Mobbex",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "El ID público de transacción Mobbex"
+        }
+      },
+      "required": ["uid"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Comprobantes y status (ej. 2 para aprobado)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mobbex.com/p/operations/{uid}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Controla si un enlace de Checkout emitido por Mobbex fue abonado de manera aprobada por el comprador.",
+      "example_prompt": "¿El pago con uid xyz en Mobbex ya está acreditado?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "andreani.create_shipment",
+    "name": "Imponer Envíos Andreani",
+    "version": "v2",
+    "provider": "Andreani",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contrato": {
+          "type": "string",
+          "description": "Número de contrato B2B de Andreani"
+        },
+        "origen": {
+          "type": "object",
+          "description": "Datos completos de la sucursal o pickup de salida"
+        },
+        "destino": {
+          "type": "object",
+          "description": "Destinatario, código postal e información de domicilio"
+        },
+        "bultos": {
+          "type": "array",
+          "description": "Medidas (cm), peso y valor declarado"
+        }
+      },
+      "required": ["contrato", "origen", "destino", "bultos"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "numeroDeEnvio": {
+          "type": "string",
+          "description": "Identificador de tracking (15 dígitos)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://apis.andreani.com/v2/ordenes-de-envio",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Carga un registro de despacho/paquetería (orden de envío) en la logística de Correo Andreani, generando una etiqueta física.",
+      "example_prompt": "Crea un envío en Andreani para despachar el paquete hacia Córdoba capital.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "andreani.get_tracking",
+    "name": "Buscar Pieza Andreani",
+    "version": "v2",
+    "provider": "Andreani",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "numero_envio": {
+          "type": "string",
+          "description": "Código largo logístico del sobre/paquete Andreani"
+        }
+      },
+      "required": ["numero_envio"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "eventos": {
+          "type": "array",
+          "description": "Estados de sucursal en sucursal del envío"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://apis.andreani.com/v2/envios/{numero_envio}/trazas",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Vuelca la grilla de trazabilidad pública (movimientos) que posee un paquete expedido por Andreani.",
+      "example_prompt": "Tráeme los movimientos del paquete de Andreani número 360000000.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ualabis.create_payment_link",
+    "name": "Link de Pago Ualá Bis",
+    "version": "v1",
+    "provider": "Ualá Bis",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Saldo a pagar a Ualá Bis"
+        },
+        "description": {
+          "type": "string",
+          "description": "Motivo del pago"
+        },
+        "callback_fail": {
+          "type": "string",
+          "description": "Hacia dónde derivar si rechaza"
+        },
+        "callback_success": {
+          "type": "string",
+          "description": "Retorno en caso exitoso"
+        }
+      },
+      "required": ["amount", "description"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "description": "ID del link en Uala"
+        },
+        "checkoutLink": {
+          "type": "string",
+          "description": "URL que se comparte por WP/Email"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://checkout.ualabis.com.ar/api/links",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Expide un token en forma de link de Checkout Web en el ecosistema Fintech Ualá Bis.",
+      "example_prompt": "Crea un link de pago con Ualá Bis por un importe de $1000.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ualabis.get_transactions",
+    "name": "Auditar Liquidaciones Ualá",
+    "version": "v1",
+    "provider": "Ualá Bis",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "description": "Fecha inicial de filtro"
+        },
+        "end_date": {
+          "type": "string",
+          "description": "Límite para analizar cobros"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "Comisiones deducidas y saldo neto depositado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.ualabis.com.ar/1/transactions",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Enumera la lista de depósitos y cobros procesados por la terminal virtual o Links de Ualá Bis.",
+      "example_prompt": "¿Cuáles son las últimas transacciones en Ualá Bis?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "whatsapp.send_template",
+    "name": "Enviar Plantilla Meta WhatsApp",
+    "version": "v16.0",
+    "provider": "WhatsApp Business",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["whatsapp_business_messaging"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "phone_number_id": {
+          "type": "string",
+          "description": "Sender identificador"
+        },
+        "to": {
+          "type": "string",
+          "description": "Número internacional con código país del receptor"
+        },
+        "template": {
+          "type": "object",
+          "description": "Nombre de la plantilla de Meta (name) e idioma (language)"
+        }
+      },
+      "required": ["phone_number_id", "to", "template"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "description": "Contiene los message_id encolados del sistema"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.facebook.com/v16.0/{phone_number_id}/messages",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Fuerza la inyección de una campaña o mensaje saliente oficial estructurado (template) de WhatsApp Cloud API a un cliente.",
+      "example_prompt": "Envía el template de 'bienvenida' a través de WhatsApp al +52123456789.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "whatsapp.send_template_message",
+    "name": "Push Plantilla WhatsApp Business",
+    "version": "v17.0",
+    "provider": "WhatsApp Business",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["whatsapp_business_messaging"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "phone_number_id": {
+          "type": "string",
+          "description": "WABA sender oficial"
+        },
+        "to": {
+          "type": "string",
+          "description": "Destino con código país Ej: 5491100000000"
+        },
+        "template_name": {
+          "type": "string",
+          "description": "Nombre HSM de Meta, ej 'notificacion_envio'"
+        },
+        "language": {
+          "type": "string",
+          "description": "ej: 'es_AR' o 'es'"
+        }
+      },
+      "required": ["phone_number_id", "to", "template_name", "language"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "description": "Message IDs"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.facebook.com/v17.0/{phone_number_id}/messages",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Despacha un mensaje HSM (template pre-aprobado) estructurado (generalmente transaccional) desde el canal Cloud API WhatsApp de una empresa LATAM.",
+      "example_prompt": "Envía el template de 'pago_exitoso' al +54911... por WhatsApp.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "whatsapp.get_template_list",
+    "name": "Templates de WhatsApp",
+    "version": "v17.0",
+    "provider": "WhatsApp Business",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["whatsapp_business_management"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "whatsapp_business_account_id": {
+          "type": "string",
+          "description": "El Business Account general para ver que HSMs están APPROVED"
+        }
+      },
+      "required": ["whatsapp_business_account_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Formatos y variables que exige cada plantilla"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://graph.facebook.com/v17.0/{whatsapp_business_account_id}/message_templates",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Verifica la lista de plantillas HSM subidas al portal Meta WABA de la marca y su estado de aprobación (APPROVED o REJECTED).",
+      "example_prompt": "Fijate qué plantillas tenemos aprobadas en WhatsApp Business API.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "prisma.create_payment",
+    "name": "Autorizar Tarjeta Prisma / Decidir",
+    "version": "v2",
+    "provider": "Fiserv/Prisma",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "Código de comercio Decidir"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Monto de transacción (Payway)"
+        },
+        "currency": {
+          "type": "string",
+          "description": "ARS o USD"
+        },
+        "payment_method": {
+          "type": "object",
+          "description": "Tokenización de la banda magnética/chip ingresada por front"
+        }
+      },
+      "required": ["site_id", "amount", "currency", "payment_method"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador de la captura bancaria"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estatus del Gateway (approved, annuled)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.decidir.com/api/v2/payments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Enruta la captura de una tarjeta de crédito o débito conectándose con el switch adquirente central Prisma / Payway / Decidir (Argentina).",
+      "example_prompt": "Cobra los 8000 ARS usando el token de Prisma en este site_id.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "prisma.get_transaction",
+    "name": "Rastrear Boleto Prisma",
+    "version": "v2",
+    "provider": "Fiserv/Prisma",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "payment_id": {
+          "type": "string",
+          "description": "El código único originado por Decidir v2"
+        }
+      },
+      "required": ["payment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status_details": {
+          "type": "object",
+          "description": "Motivo de rechazo o aprobación del banco emisor"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.decidir.com/api/v2/payments/{payment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Comprueba si un pago enviado hacia el Gateway de Prisma Decidir fue aprobado por Visa o Mastercard.",
+      "example_prompt": "Traeme el status de la transacción Payway/Decidir ID XYZZ.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "galicia.get_account_balance",
+    "name": "Consultar Saldo Banco Galicia",
+    "version": "v1",
+    "provider": "Banco Galicia API",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cbu": {
+          "type": "string",
+          "description": "CBU representativo de la empresa en Galicia"
+        },
+        "account_id": {
+          "type": "string",
+          "description": "Número de Cuenta"
+        }
+      },
+      "required": ["account_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "balances": {
+          "type": "object",
+          "description": "Información contable conteniendo el saldo disponible liquidado de Galicia"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bancogalicia.com.ar/v1/accounts/{account_id}/balance",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite acceder online a los saldos consolidados de tu cuenta corriente o caja de ahorro del Banco Galicia Empresarial (Open Banking).",
+      "example_prompt": "¿Qué saldo tenemos actualmente en la cuenta de Banco Galicia?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "galicia.list_transactions",
+    "name": "Movimientos Banco Galicia",
+    "version": "v1",
+    "provider": "Banco Galicia API",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "ID numérico de la cuenta"
+        },
+        "date_from": {
+          "type": "string",
+          "description": "YYYY-MM-DD"
+        },
+        "date_to": {
+          "type": "string",
+          "description": "YYYY-MM-DD"
+        }
+      },
+      "required": ["account_id", "date_from", "date_to"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transactions": {
+          "type": "array",
+          "description": "Cheques, débitos, eCHEQs y extractos del extracto bancario digital."
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bancogalicia.com.ar/v1/accounts/{account_id}/transactions?date_from={date_from}&date_to={date_to}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Cosecha las transferencias (CBU / Alias) salientes y depósitos entrantes imputados en el Banco Galicia.",
+      "example_prompt": "Listame las transacciones del Banco Galicia de la última semana.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "naranjax.create_payment_link",
+    "name": "Solicitud de Pago Naranja X",
+    "version": "v1",
+    "provider": "Naranja X",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Monto"
+        },
+        "description": {
+          "type": "string",
+          "description": "Concepto comercial en la pasarela NaranjaX"
+        },
+        "currency": {
+          "type": "string",
+          "description": "ARS"
+        }
+      },
+      "required": ["amount", "description", "currency"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment_link_id": {
+          "type": "string",
+          "description": "Identidad para consultar si pagó"
+        },
+        "url": {
+          "type": "string",
+          "description": "Boton de cobro público web"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.naranjax.com/cobros/v1/payment-links",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Abre una ventana de cobro (Link de Pago) oficial para Tarjeta Naranja y su ecosistema fintech (Naranja X).",
+      "example_prompt": "Haceme un link de pago por $3500 en Naranja X por el servicio.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "naranjax.get_payment_status",
+    "name": "Cotejar Pago Naranja X",
+    "version": "v1",
+    "provider": "Naranja X",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "payment_id": {
+          "type": "string",
+          "description": "El ticket asociado a tu link emitido en NaranjaX"
+        }
+      },
+      "required": ["payment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estados como APPROVED o CANCELLED"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.naranjax.com/cobros/v1/payments/{payment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Averigua dinámicamente si el usuario resolvió su checkout digital sobre Naranja X para habilitar el servicio.",
+      "example_prompt": "Dime el status del pago con ID 99912 de Naranja X.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  }
+]

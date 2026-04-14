@@ -1,0 +1,4014 @@
+PROMPT 3: 
+Contexto: Ya tengo tools para estos proveedores: Salesforce, HubSpot, Pipedrive, Stripe, MercadoPago, PayPal, WhatsApp Business, Twilio, Slack, Gmail, SendGrid, Mailchimp, Google Drive, Dropbox, AWS S3, Google Calendar, Calendly, Cal.com, Google Analytics, Mixpanel, Instagram, Facebook, LinkedIn, Shopify, WooCommerce, MercadoLibre, Asana, Trello, Notion, OpenAI, Anthropic.
+
+
+Necesito AMPLIAR con proveedores nuevos en las mismas categorías, y agregar MÁS ACCIONES para proveedores que ya tengo pero con pocas tools:
+
+
+CRM (6 nuevas): Zoho CRM (3), Monday CRM (3)
+Payments (4 nuevas): Square (2), Stripe — list_charges, create_refund
+Messaging (4 nuevas): Telegram Bot API (2), Discord (2)
+Email (4 nuevas): Resend (2), Amazon SES (2)
+Storage (4 nuevas): Google Cloud Storage (2), Azure Blob (2)
+Calendar (3 nuevas): Microsoft Outlook Calendar (3)
+Analytics (4 nuevas): Amplitude (2), Plausible (2)
+Social (4 nuevas): X/Twitter API (2), TikTok Business (2)
+Ecommerce (6 nuevas): Amazon SP API (2), Tiendanube (2), Stripe Checkout (2)
+Project Management (5 nuevas): Linear (2), ClickUp (2), Jira (1)
+AI (4 nuevas): Google Gemini (2), Mistral (2)
+
+
+Mismo esquema JSON exacto que antes. Solo JSON array, sin texto adicional.
+
+
+Target: ~48 tools nuevas + ~32 acciones adicionales para proveedores existentes = ~80 tools.
+
+
+RESULTADO:
+[
+  {
+    "tool_id": "zoho_crm.create_lead",
+    "name": "Crear Lead en Zoho CRM",
+    "version": "v3",
+    "provider": "Zoho CRM",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["ZohoCRM.modules.leads.CREATE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "Last_Name": {
+          "type": "string",
+          "description": "Apellido del lead"
+        },
+        "Company": {
+          "type": "string",
+          "description": "Empresa del lead"
+        },
+        "Email": {
+          "type": "string",
+          "description": "Correo electrónico"
+        }
+      },
+      "required": ["Last_Name", "Company"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Detalles del lead creado, incluyendo el ID"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://www.zohoapis.com/crm/v3/Leads",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Crea un nuevo prospecto o lead en Zoho CRM.",
+      "example_prompt": "Agrega a Juan Pérez de la empresa Acme Corp como lead en Zoho.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zoho_crm.get_contact",
+    "name": "Obtener Contacto Zoho CRM",
+    "version": "v3",
+    "provider": "Zoho CRM",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["ZohoCRM.modules.contacts.READ"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contact_id": {
+          "type": "string",
+          "description": "ID del contacto en Zoho CRM"
+        }
+      },
+      "required": ["contact_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Información detallada del contacto recuperado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://www.zohoapis.com/crm/v3/Contacts/{contact_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Recupera la información completa de un contacto específico en Zoho CRM usando su ID.",
+      "example_prompt": "Trae los datos del contacto con ID 123456789 en Zoho CRM.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "zoho_crm.update_deal",
+    "name": "Actualizar Trato Zoho CRM",
+    "version": "v3",
+    "provider": "Zoho CRM",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["ZohoCRM.modules.deals.UPDATE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "deal_id": {
+          "type": "string",
+          "description": "ID del trato (Deal) a modificar"
+        },
+        "Stage": {
+          "type": "string",
+          "description": "Nueva etapa del embudo de ventas"
+        },
+        "Amount": {
+          "type": "number",
+          "description": "Monto actualizado del trato"
+        }
+      },
+      "required": ["deal_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Confirmación de la actualización del trato"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://www.zohoapis.com/crm/v3/Deals/{deal_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Actualiza el estado, etapa o monto de un trato comercial en Zoho CRM.",
+      "example_prompt": "Mueve el trato ID 987 a la etapa 'Closed Won'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "monday.create_item",
+    "name": "Crear Item en Monday",
+    "version": "2024-01",
+    "provider": "Monday CRM",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "board_id": {
+          "type": "number",
+          "description": "ID del tablero de Monday"
+        },
+        "item_name": {
+          "type": "string",
+          "description": "Nombre de la fila o tarea"
+        },
+        "column_values": {
+          "type": "string",
+          "description": "Valores de columnas en formato JSON stringificado"
+        }
+      },
+      "required": ["board_id", "item_name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Respuesta GraphQL con el ID del nuevo item"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.monday.com/v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un nuevo elemento (fila, lead o tarea) a un tablero específico de Monday.com vía GraphQL.",
+      "example_prompt": "Agrega un nuevo item llamado 'Revisar Contrato' en el tablero 12345 de Monday.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "monday.update_board",
+    "name": "Actualizar Tablero en Monday",
+    "version": "2024-01",
+    "provider": "Monday CRM",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "board_id": {
+          "type": "number",
+          "description": "ID del tablero a modificar"
+        },
+        "board_attribute": {
+          "type": "string",
+          "description": "Atributo a cambiar (ej. name, description)"
+        },
+        "new_value": {
+          "type": "string",
+          "description": "Nuevo valor a asignar"
+        }
+      },
+      "required": ["board_id", "board_attribute", "new_value"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Resultado de la mutación GraphQL"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.monday.com/v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Modifica atributos a nivel de tablero en Monday.com, como cambiarle el nombre o la descripción.",
+      "example_prompt": "Cambia el nombre del tablero ID 123 a 'Ventas Q3'.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "monday.add_update",
+    "name": "Agregar Comentario (Update) Monday",
+    "version": "2024-01",
+    "provider": "Monday CRM",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "number",
+          "description": "ID del item al cual agregar el update"
+        },
+        "body": {
+          "type": "string",
+          "description": "Contenido del mensaje (HTML/Texto)"
+        }
+      },
+      "required": ["item_id", "body"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Confirmación del comentario creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.monday.com/v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Escribe un 'Update' o comentario interno en un item de Monday para mantener registro o historial.",
+      "example_prompt": "Deja un comentario en el item 4455 diciendo que el cliente ya firmó.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "square.create_payment",
+    "name": "Procesar Pago Square",
+    "version": "2024-03-20",
+    "provider": "Square",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["PAYMENTS_WRITE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "description": "Token de la tarjeta o fuente de fondos"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Clave única para evitar pagos duplicados"
+        },
+        "amount_money": {
+          "type": "object",
+          "description": "Monto a cobrar y moneda (amount, currency)"
+        }
+      },
+      "required": ["source_id", "idempotency_key", "amount_money"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment": {
+          "type": "object",
+          "description": "Detalles del pago ejecutado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://connect.squareup.com/v2/payments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Procesa un cargo o cobro a una tarjeta o fuente de pago utilizando Square API.",
+      "example_prompt": "Realiza un cargo de 50 USD usando el source_id de la tarjeta del cliente.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "square.create_customer",
+    "name": "Crear Cliente Square",
+    "version": "2024-03-20",
+    "provider": "Square",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["CUSTOMERS_WRITE"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "given_name": {
+          "type": "string",
+          "description": "Nombre"
+        },
+        "family_name": {
+          "type": "string",
+          "description": "Apellido"
+        },
+        "email_address": {
+          "type": "string",
+          "description": "Correo electrónico"
+        }
+      },
+      "required": ["given_name", "email_address"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "customer": {
+          "type": "object",
+          "description": "Perfil del cliente generado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://connect.squareup.com/v2/customers",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Da de alta a un comprador en la base de datos de clientes de Square.",
+      "example_prompt": "Agrega a Maria Lopez a Square con su correo.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe.list_charges",
+    "name": "Listar Cargos Stripe",
+    "version": "v1",
+    "provider": "Stripe",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number",
+          "description": "Cantidad máxima a devolver (ej. 10 a 100)"
+        },
+        "customer": {
+          "type": "string",
+          "description": "ID del cliente para filtrar sus cargos"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Listado de objetos Charge en Stripe"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.stripe.com/v1/charges",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve un historial de cargos (charges) pasados realizados en Stripe.",
+      "example_prompt": "Busca los últimos 10 pagos o cargos hechos en Stripe.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe.create_refund",
+    "name": "Crear Reembolso Stripe",
+    "version": "v1",
+    "provider": "Stripe",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "charge": {
+          "type": "string",
+          "description": "ID del cargo (ch_...) a reembolsar"
+        },
+        "payment_intent": {
+          "type": "string",
+          "description": "ID de PaymentIntent (pi_...) a reembolsar"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Cantidad a devolver en centavos (ej. 1000 para $10.00). Si se omite, es total."
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del Refund creado"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado del reembolso"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.stripe.com/v1/refunds",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve parcial o totalmente el dinero de un cargo previamente cobrado en Stripe.",
+      "example_prompt": "Procesa un reembolso total para el cargo ch_12345 en Stripe.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "telegram.send_message",
+    "name": "Enviar Mensaje Telegram",
+    "version": "v6.6",
+    "provider": "Telegram Bot API",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "chat_id": {
+          "type": "string",
+          "description": "ID del chat o @username del canal"
+        },
+        "text": {
+          "type": "string",
+          "description": "Texto del mensaje"
+        },
+        "parse_mode": {
+          "type": "string",
+          "description": "Markdown o HTML"
+        }
+      },
+      "required": ["chat_id", "text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "Status de la ejecución"
+        },
+        "result": {
+          "type": "object",
+          "description": "El mensaje despachado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.telegram.org/bot{api_key}/sendMessage",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Emite un mensaje de texto a un chat o canal en Telegram mediante un Bot.",
+      "example_prompt": "Envía un mensaje de alerta por Telegram al chat ID 999.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "telegram.get_updates",
+    "name": "Obtener Actualizaciones Telegram",
+    "version": "v6.6",
+    "provider": "Telegram Bot API",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "offset": {
+          "type": "number",
+          "description": "Puntero para no traer mensajes viejos ya leídos"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Tope de mensajes a bajar (1-100)"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "array",
+          "description": "Lista de objetos 'Update' entrantes"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.telegram.org/bot{api_key}/getUpdates",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Chequea nuevos mensajes entrantes o interacciones con tu Bot de Telegram.",
+      "example_prompt": "Revisa si alguien mandó un mensaje nuevo al bot de Telegram.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "discord.send_message",
+    "name": "Enviar Mensaje en Discord",
+    "version": "v10",
+    "provider": "Discord",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "description": "Snowflake ID del canal destino"
+        },
+        "content": {
+          "type": "string",
+          "description": "El mensaje a mandar"
+        }
+      },
+      "required": ["channel_id", "content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Message ID"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://discord.com/api/v10/channels/{channel_id}/messages",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bot {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Postea un mensaje en un canal específico de un servidor de Discord.",
+      "example_prompt": "Envía 'Hola a todos' al canal general de Discord.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "discord.create_channel",
+    "name": "Crear Canal Discord",
+    "version": "v10",
+    "provider": "Discord",
+    "category": "messaging",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "guild_id": {
+          "type": "string",
+          "description": "El ID del Servidor (Guild)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nombre del nuevo canal"
+        },
+        "type": {
+          "type": "number",
+          "description": "0 = texto, 2 = voz, etc."
+        }
+      },
+      "required": ["guild_id", "name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del Canal creado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://discord.com/api/v10/guilds/{guild_id}/channels",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bot {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega un canal de texto o voz nuevo a una comunidad o Guild en Discord.",
+      "example_prompt": "Crea el canal 'soporte-urgente' en Discord.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "resend.send_email",
+    "name": "Enviar Email con Resend",
+    "version": "v1",
+    "provider": "Resend",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Correo del emisor autorizado"
+        },
+        "to": {
+          "type": "array",
+          "description": "Arreglo de correos destinatarios"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Asunto"
+        },
+        "html": {
+          "type": "string",
+          "description": "Cuerpo en HTML"
+        }
+      },
+      "required": ["from", "to", "subject", "html"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID de transacción del envío"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.resend.com/emails",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Despacha un correo electrónico seguro mediante la API moderna de Resend.",
+      "example_prompt": "Mándale un correo a juan@mail.com avisándole de la promo desde soporte@miempresa.com con Resend.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "resend.get_contact",
+    "name": "Obtener Contacto Resend",
+    "version": "v1",
+    "provider": "Resend",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "audience_id": {
+          "type": "string",
+          "description": "Identificador de la audiencia"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID único del contacto en Resend"
+        }
+      },
+      "required": ["audience_id", "id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Correo"
+        },
+        "first_name": {
+          "type": "string",
+          "description": "Nombre"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.resend.com/audiences/{audience_id}/contacts/{id}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae los datos de suscripción de un contacto que está en tus audiencias de Resend.",
+      "example_prompt": "Busca la info del contacto ID 987 en Resend.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amazon_ses.send_email",
+    "name": "Enviar Email AWS SES",
+    "version": "v2",
+    "provider": "Amazon SES",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "FromEmailAddress": {
+          "type": "string",
+          "description": "Identidad validada remitente"
+        },
+        "Destination": {
+          "type": "object",
+          "description": "Objeto con ToAddresses"
+        },
+        "Content": {
+          "type": "object",
+          "description": "Asunto y cuerpo del mensaje (Simple, Raw o Template)"
+        }
+      },
+      "required": ["FromEmailAddress", "Destination", "Content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "MessageId": {
+          "type": "string",
+          "description": "ID de rastro"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://email.{region}.amazonaws.com/v2/email/outbound-emails",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Transmite correo por la infraestructura enterprise de Amazon Simple Email Service (SES v2).",
+      "example_prompt": "Haz un envío de correo por AWS SES al equipo reportando la caída.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amazon_ses.get_send_statistics",
+    "name": "Métricas de Envío AWS SES",
+    "version": "v2",
+    "provider": "Amazon SES",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "SendDataPoints": {
+          "type": "array",
+          "description": "Métricas agregadas (bounces, complaints, rejects) de las últimas dos semanas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://email.{region}.amazonaws.com/v1/get-send-statistics",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta el volumen, la reputación y estadísticas generales de la cuota de AWS SES.",
+      "example_prompt": "¿Cuáles son las estadísticas de rebotes de nuestro Amazon SES?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gcs.upload_object",
+    "name": "Subir Archivo GCS",
+    "version": "v1",
+    "provider": "Google Cloud Storage",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/devstorage.read_write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Nombre del bucket GCP"
+        },
+        "name": {
+          "type": "string",
+          "description": "Ruta y nombre del archivo destino (Object name)"
+        },
+        "data": {
+          "type": "string",
+          "description": "Contenido o archivo base64 a guardar"
+        }
+      },
+      "required": ["bucket", "name", "data"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Uri única de GCS"
+        },
+        "mediaLink": {
+          "type": "string",
+          "description": "Link directo de bajada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://storage.googleapis.com/upload/storage/v1/b/{bucket}/o?uploadType=media&name={name}",
+      "headers": {
+        "Content-Type": "application/octet-stream"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade o sobreescribe un bloque de información cruda en un Bucket de Storage de Google.",
+      "example_prompt": "Carga la base de datos en JSON en el bucket de backups como 'data.json'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gcs.get_object",
+    "name": "Descargar Objeto GCS",
+    "version": "v1",
+    "provider": "Google Cloud Storage",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/devstorage.read_only"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Bucket name"
+        },
+        "object": {
+          "type": "string",
+          "description": "URL-encoded object name"
+        }
+      },
+      "required": ["bucket", "object"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "La data cruda del blob"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://storage.googleapis.com/storage/v1/b/{bucket}/o/{object}?alt=media",
+      "headers": {
+        "Accept": "*/*"
+      }
+    },
+    "tool_profile": {
+      "description": "Baja a memoria o extrae el contenido de un archivo hosteado en Google Cloud Storage.",
+      "example_prompt": "Trae el contenido del archivo 'config.yaml' en GCS.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "azure_blob.upload_blob",
+    "name": "Cargar Azure Blob",
+    "version": "2020-04-08",
+    "provider": "Azure Blob",
+    "category": "storage",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string",
+          "description": "Nombre de cuenta Storage"
+        },
+        "container": {
+          "type": "string",
+          "description": "Contenedor de Blob"
+        },
+        "blob": {
+          "type": "string",
+          "description": "Ruta y nombre del blob"
+        },
+        "content": {
+          "type": "string",
+          "description": "La payload en raw"
+        }
+      },
+      "required": ["account_name", "container", "blob", "content"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://{account_name}.blob.core.windows.net/{container}/{blob}",
+      "headers": {
+        "x-ms-blob-type": "BlockBlob"
+      }
+    },
+    "tool_profile": {
+      "description": "Inserta directamente un nuevo blob de bloque a la nube de Microsoft Azure Storage.",
+      "example_prompt": "Carga el script en el blob 'scripts/start.sh' del contenedor principal de Azure.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "azure_blob.delete_blob",
+    "name": "Eliminar Blob en Azure",
+    "version": "2020-04-08",
+    "provider": "Azure Blob",
+    "category": "storage",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string",
+          "description": "Nombre de cuenta"
+        },
+        "container": {
+          "type": "string",
+          "description": "Contenedor"
+        },
+        "blob": {
+          "type": "string",
+          "description": "Nombre del archivo blob"
+        }
+      },
+      "required": ["account_name", "container", "blob"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://{account_name}.blob.core.windows.net/{container}/{blob}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Purga y elimina un archivo u objeto almacenado en Azure Blob Storage de forma irreversible.",
+      "example_prompt": "Borra la imagen 'temp.png' de Azure Storage.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "outlook.create_event",
+    "name": "Agendar Evento Outlook",
+    "version": "v1.0",
+    "provider": "Microsoft Outlook Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Calendars.ReadWrite"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Asunto de la cita"
+        },
+        "start": {
+          "type": "object",
+          "description": "Fecha y zona horaria de inicio (dateTime, timeZone)"
+        },
+        "end": {
+          "type": "object",
+          "description": "Fecha de término"
+        },
+        "attendees": {
+          "type": "array",
+          "description": "Lista de invitados a la reunión"
+        }
+      },
+      "required": ["subject", "start", "end"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Event ID generado en Graph"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.microsoft.com/v1.0/me/events",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade una junta, evento o bloque de tiempo en el Calendario oficial de Microsoft 365 / Outlook.",
+      "example_prompt": "Crea una reunión en Outlook para el viernes sobre Presupuesto.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "outlook.list_events",
+    "name": "Ver Calendario Outlook",
+    "version": "v1.0",
+    "provider": "Microsoft Outlook Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Calendars.Read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "startDateTime": {
+          "type": "string",
+          "description": "Filtro inicial en ISO 8601"
+        },
+        "endDateTime": {
+          "type": "string",
+          "description": "Filtro final"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "description": "Conjunto de eventos agendados"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://graph.microsoft.com/v1.0/me/calendarview?startDateTime={startDateTime}&endDateTime={endDateTime}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Escanea el calendario de Outlook para recuperar los horarios ocupados y citas entre dos fechas.",
+      "example_prompt": "¿Qué reuniones tengo hoy agendadas en Outlook?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "outlook.delete_event",
+    "name": "Cancelar Evento Outlook",
+    "version": "v1.0",
+    "provider": "Microsoft Outlook Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["Calendars.ReadWrite"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "description": "Identificador base 64 de la cita"
+        }
+      },
+      "required": ["event_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://graph.microsoft.com/v1.0/me/events/{event_id}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Anula un evento previamente bloqueado en el Outlook Calendar.",
+      "example_prompt": "Elimina del calendario de Outlook el evento con ID XYZ.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amplitude.track_event",
+    "name": "Registrar Evento Amplitude",
+    "version": "v2",
+    "provider": "Amplitude",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "description": "Listado de interacciones (user_id, event_type, event_properties)"
+        }
+      },
+      "required": ["events"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "description": "200 si se importó con éxito"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api2.amplitude.com/2/httpapi",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inyecta la analítica de comportamientos de clientes (Eventos) a Amplitude.",
+      "example_prompt": "Registra el evento 'Button Click' en Amplitude para el user 505.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amplitude.identify_user",
+    "name": "Identificar Usuario Amplitude",
+    "version": "v2",
+    "provider": "Amplitude",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "identification": {
+          "type": "string",
+          "description": "El JSON serializado con user_id y user_properties"
+        }
+      },
+      "required": ["identification"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "description": "Confirmación HTTP"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api2.amplitude.com/identify",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Enriquece o setea parámetros permanentes (traits) de un usuario en el CRM de Amplitude.",
+      "example_prompt": "Añade la propiedad 'Plan = Premium' al user_id 505 en Amplitude.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "plausible.get_realtime",
+    "name": "Visitantes Activos Plausible",
+    "version": "v1",
+    "provider": "Plausible",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "El dominio monitoreado, ej. midominio.com"
+        }
+      },
+      "required": ["site_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Cantidad de personas mirando la página ahora mismo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://plausible.io/api/v1/stats/realtime?site_id={site_id}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Devuelve la cuenta instantánea de visitantes conectados a la página web observada.",
+      "example_prompt": "¿Cuántas personas hay ahora mismo en el sitio según Plausible?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "plausible.get_timeseries",
+    "name": "Gráfico de Tráfico Plausible",
+    "version": "v1",
+    "provider": "Plausible",
+    "category": "analytics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "El dominio de Plausible"
+        },
+        "period": {
+          "type": "string",
+          "description": "Marco de tiempo, p.ej. 30d o 7d"
+        }
+      },
+      "required": ["site_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "Historial con fechas y visitas únicas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://plausible.io/api/v1/stats/timeseries?site_id={site_id}&period={period}",
+      "headers": {
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Exporta la serie de datos diaria de visitantes y sesiones contabilizadas en un portal web.",
+      "example_prompt": "Dame el histórico de tráfico de los últimos 30 días desde Plausible.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "twitter.create_tweet",
+    "name": "Publicar un Tweet",
+    "version": "v2",
+    "provider": "X/Twitter API",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["tweet.write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Contenido del post"
+        }
+      },
+      "required": ["text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "El ID y el texto generado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.twitter.com/2/tweets",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Escribe y emite una nueva publicación en el perfil autenticado de X (Twitter).",
+      "example_prompt": "Publica un Tweet diciendo '¡Lanzamos una nueva función en la app!'.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "twitter.delete_tweet",
+    "name": "Eliminar un Tweet",
+    "version": "v2",
+    "provider": "X/Twitter API",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["tweet.write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "tweet_id": {
+          "type": "string",
+          "description": "El ID numérico del tuit"
+        }
+      },
+      "required": ["tweet_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Status booleano 'deleted'"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://api.twitter.com/2/tweets/{tweet_id}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Oculta y retira una publicación previamente hecha de la red pública en Twitter.",
+      "example_prompt": "Borra el tweet que publiqué por error (ID XYZ).",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "tiktok.get_campaign",
+    "name": "Buscar Campaña TikTok",
+    "version": "v1.3",
+    "provider": "TikTok Business",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "description": "ID de la cuenta de anunciante de TikTok"
+        }
+      },
+      "required": ["advertiser_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Detalles de las campañas halladas (lista)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://business-api.tiktok.com/open_api/v1.3/campaign/get/?advertiser_id={advertiser_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Muestra las métricas y la estructura macro de un esfuerzo publicitario activo en TikTok Ads.",
+      "example_prompt": "Revisa mis campañas activas en la cuenta publicitaria de TikTok.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiktok.create_ad",
+    "name": "Armar Anuncio TikTok",
+    "version": "v1.3",
+    "provider": "TikTok Business",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "description": "Owner del negocio"
+        },
+        "adgroup_id": {
+          "type": "string",
+          "description": "AdGroup al que pertenece la pieza"
+        },
+        "creatives": {
+          "type": "array",
+          "description": "Textos y referencias al material multimedia del anuncio"
+        }
+      },
+      "required": ["advertiser_id", "adgroup_id", "creatives"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "El asset ID inyectado en plataforma"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://business-api.tiktok.com/open_api/v1.3/ad/create/",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Agrega de forma programática un anuncio/creativo a un adset publicitario de TikTok.",
+      "example_prompt": "Crea el anuncio con el nuevo video en el grupo de anuncios de TikTok.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "amazon_sp.get_orders",
+    "name": "Pedidos Recientes de Amazon",
+    "version": "v0",
+    "provider": "Amazon SP API",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "CreatedAfter": {
+          "type": "string",
+          "description": "Rango de tiempo desde el cual traer info ISO 8601"
+        },
+        "MarketplaceIds": {
+          "type": "string",
+          "description": "Código de país / mercado de Amazon"
+        }
+      },
+      "required": ["CreatedAfter", "MarketplaceIds"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payload": {
+          "type": "object",
+          "description": "Órdenes retornadas por el seller partner"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://sellingpartnerapi-na.amazon.com/orders/v0/orders?CreatedAfter={CreatedAfter}&MarketplaceIds={MarketplaceIds}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Accede al reporte de envíos y carritos de compra que han ingresado por la tienda Amazon Seller.",
+      "example_prompt": "Tráeme las órdenes hechas en Amazon US en las últimas 24 horas.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "amazon_sp.get_catalog_item",
+    "name": "Revisar Item en Catálogo Amazon",
+    "version": "2022-04-01",
+    "provider": "Amazon SP API",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "asin": {
+          "type": "string",
+          "description": "El código único de producto en Amazon (ASIN)"
+        },
+        "marketplaceIds": {
+          "type": "string",
+          "description": "El mercado"
+        }
+      },
+      "required": ["asin", "marketplaceIds"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "summaries": {
+          "type": "array",
+          "description": "Atributos del artículo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://sellingpartnerapi-na.amazon.com/catalog/2022-04-01/items/{asin}?marketplaceIds={marketplaceIds}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Comprueba el inventario o las propiedades de un producto referenciado en la red de Amazon.",
+      "example_prompt": "Busca la información del ASIN B08X12345 en Amazon USA.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiendanube.create_product",
+    "name": "Publicar Producto Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write_products"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "El ID del comercio asociado a la credencial"
+        },
+        "name": {
+          "type": "object",
+          "description": "Diccionario de idioma (ej. es: 'Remera Negra')"
+        },
+        "variants": {
+          "type": "array",
+          "description": "Precio, stock y SKU"
+        }
+      },
+      "required": ["store_id", "name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "SKU Global asignado por el CMS"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.tiendanube.com/v1/{store_id}/products",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un SKU y título para subir un producto a un storefront de Tiendanube.",
+      "example_prompt": "Sube el producto 'Zapatillas Urbanas' a Tiendanube a $40.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiendanube.get_orders",
+    "name": "Traer Ventas Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read_orders"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID de tu tienda virtual"
+        },
+        "status": {
+          "type": "string",
+          "description": "Filtrar por 'paid', 'open', 'closed'"
+        }
+      },
+      "required": ["store_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "description": "Listado de checkouts procesados en la web"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tiendanube.com/v1/{store_id}/orders?status={status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Lee el listado de ventas confirmadas del día o semana en tu entorno de Tiendanube.",
+      "example_prompt": "Tráeme todas las órdenes pagadas de Tiendanube.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe_checkout.create_session",
+    "name": "Crear Link de Pago",
+    "version": "v1",
+    "provider": "Stripe Checkout",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "success_url": {
+          "type": "string",
+          "description": "Donde redirigir al cobrar"
+        },
+        "line_items": {
+          "type": "array",
+          "description": "Cantidades y referencias de precio"
+        },
+        "mode": {
+          "type": "string",
+          "description": "payment o subscription"
+        }
+      },
+      "required": ["success_url", "line_items", "mode"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID de Checkout"
+        },
+        "url": {
+          "type": "string",
+          "description": "Enlace que le mandas al usuario para pagar"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.stripe.com/v1/checkout/sessions",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una URL alojada por Stripe donde el usuario ingresará los datos de su tarjeta para pagar online.",
+      "example_prompt": "Crea una sesión de checkout de Stripe para cobrar $10.",
+      "risk_level": "high",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "stripe_checkout.retrieve_session",
+    "name": "Validar Checkout Stripe",
+    "version": "v1",
+    "provider": "Stripe Checkout",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "ID de la sesión compartida (cs_test...)"
+        }
+      },
+      "required": ["session_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment_status": {
+          "type": "string",
+          "description": "paid, unpaid o no_payment_required"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.stripe.com/v1/checkout/sessions/{session_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inspecciona el ID de un Link de Pago de Stripe para ver si el cliente introdujo tarjeta y el balance fue saldado.",
+      "example_prompt": "Verifica si el checkout de Stripe ID X ya fue pagado.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "linear.create_issue",
+    "name": "Levantar Issue Linear",
+    "version": "graphql",
+    "provider": "Linear",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "String del issueCreate mutation"
+        },
+        "variables": {
+          "type": "object",
+          "description": "teamId, title y description de la tarea"
+        }
+      },
+      "required": ["query", "variables"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "GraphQL respuesta conteniendo el número del Issue (ej. APP-14)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.linear.app/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade un reporte de error, tarjeta o ticket a un ciclo de desarrollo técnico en Linear.",
+      "example_prompt": "Crea un ticket en Linear que diga 'Arreglar login de Google'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "linear.update_issue",
+    "name": "Mover Estado en Linear",
+    "version": "graphql",
+    "provider": "Linear",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "issueUpdate mutation con el ID como argumento"
+        },
+        "variables": {
+          "type": "object",
+          "description": "id del task y el stateId para transicionar"
+        }
+      },
+      "required": ["query", "variables"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Estatus booleano validando la operación de Linear"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.linear.app/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Asigna, descarta o transita a completado una tarjeta rastreada en el flujo de Linear.",
+      "example_prompt": "Mueve el issue APP-14 en Linear a In Progress.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "clickup.create_task",
+    "name": "Asignar Tarea ClickUp",
+    "version": "v2",
+    "provider": "ClickUp",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "list_id": {
+          "type": "string",
+          "description": "El id de la vista de lista destino"
+        },
+        "name": {
+          "type": "string",
+          "description": "La misión a resolver"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detalles ampliados"
+        }
+      },
+      "required": ["list_id", "name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Hash asignado en ClickUp para el nuevo elemento"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.clickup.com/api/v2/list/{list_id}/task",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Programa una asignación formal a un tablero/lista de ClickUp.",
+      "example_prompt": "Agrega una tarea llamada 'Aprobar diseño' a mi lista de ClickUp.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "clickup.add_task_comment",
+    "name": "Anotar en Tarea ClickUp",
+    "version": "v2",
+    "provider": "ClickUp",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "ID hash de la tarea original"
+        },
+        "comment_text": {
+          "type": "string",
+          "description": "Texto inyectado al hilo"
+        }
+      },
+      "required": ["task_id", "comment_text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador de la nota inyectada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.clickup.com/api/v2/task/{task_id}/comment",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Anexa detalles o un comentario en formato chat dentro del view lateral de una Task en ClickUp.",
+      "example_prompt": "Añade un comentario en ClickUp a la tarea 'Aprobar diseño' que diga que lo veré mañana.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "jira.create_issue",
+    "name": "Abrir Ticket de Jira",
+    "version": "v3",
+    "provider": "Jira",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write:jira-work"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "Subdominio de atlassian.net"
+        },
+        "fields": {
+          "type": "object",
+          "description": "JSON de Atlassian conteniendo project (key), summary, issuetype y description"
+        }
+      },
+      "required": ["domain", "fields"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "El PK de la BBDD"
+        },
+        "key": {
+          "type": "string",
+          "description": "El ticket ID legible como DEV-101"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}.atlassian.net/rest/api/3/issue",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Despacha un defecto, epic o tarea al control de trabajo ágil de Atlassian Jira.",
+      "example_prompt": "Crea el ticket en Jira para el fallo en la base de datos.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gemini.generate_content",
+    "name": "Inferencia de LLM Gemini",
+    "version": "v1beta",
+    "provider": "Google Gemini",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "array",
+          "description": "El historial de diálogo o los roles de system/user"
+        }
+      },
+      "required": ["contents"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "description": "Partes de la devolución y tokens consumidos"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={api_key}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Envía un requerimiento de inteligencia artificial conversacional a Google Gemini 1.5 Pro.",
+      "example_prompt": "Pregúntale a Gemini que resuma el texto en viñetas.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gemini.count_tokens",
+    "name": "Medir Texto con Gemini",
+    "version": "v1beta",
+    "provider": "Google Gemini",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "array",
+          "description": "String a evaluar su tamaño y costo"
+        }
+      },
+      "required": ["contents"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "totalTokens": {
+          "type": "number",
+          "description": "Talla exacta contabilizada por el tokenizer"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:countTokens?key={api_key}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Usa la biblioteca de tokenización de Google para calcular qué tan largo es un documento en parámetros LLM.",
+      "example_prompt": "Cuenta cuántos tokens de Gemini hay en este largo reporte.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mistral.chat_completion",
+    "name": "Prompting Mistral LLM",
+    "version": "v1",
+    "provider": "Mistral",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Ejemplo: mistral-large-latest"
+        },
+        "messages": {
+          "type": "array",
+          "description": "Contexto role/content"
+        }
+      },
+      "required": ["model", "messages"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "choices": {
+          "type": "array",
+          "description": "Respuesta predictiva del modelo base europeo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mistral.ai/v1/chat/completions",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae lógica y generación de contenido semántico del modelo cognitivo de Mistral AI.",
+      "example_prompt": "Usa Mistral para que escriba un código en Python.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mistral.create_embeddings",
+    "name": "Vectores con Mistral",
+    "version": "v1",
+    "provider": "Mistral",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "P.ej. mistral-embed"
+        },
+        "input": {
+          "type": "array",
+          "description": "Textos paralelos a calcular su índice n-dimensional"
+        }
+      },
+      "required": ["model", "input"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Puntos cardinales"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mistral.ai/v1/embeddings",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Toma un bloque textual libre y genera embeddings representativos vectoriales por la API de Mistral.",
+      "example_prompt": "Saca el embedding de Mistral para la palabra 'Manzana'.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "salesforce.create_account",
+    "name": "Crear Cuenta en Salesforce",
+    "version": "v58.0",
+    "provider": "Salesforce",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["api"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "Name": {
+          "type": "string",
+          "description": "Nombre de la empresa o cuenta"
+        },
+        "Phone": {
+          "type": "string",
+          "description": "Número telefónico principal"
+        }
+      },
+      "required": ["Name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Salesforce Account ID (ej. 001...)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}.my.salesforce.com/services/data/v58.0/sobjects/Account/",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una nueva ficha de empresa/cuenta en la base de datos nativa de Salesforce.",
+      "example_prompt": "Registra la cuenta 'Industrias Wayne' en Salesforce.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "salesforce.update_opportunity",
+    "name": "Modificar Oportunidad Salesforce",
+    "version": "v58.0",
+    "provider": "Salesforce",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["api"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "opportunity_id": {
+          "type": "string",
+          "description": "ID de la oportunidad"
+        },
+        "StageName": {
+          "type": "string",
+          "description": "Pipeline stage"
+        }
+      },
+      "required": ["opportunity_id", "StageName"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Respuesta vacía HTTP 204 indica éxito"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PATCH",
+      "url": "https://{domain}.my.salesforce.com/services/data/v58.0/sobjects/Opportunity/{opportunity_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Actualiza el ciclo de una oportunidad de Salesforce, por ejemplo pasarla a Cerrada/Ganada.",
+      "example_prompt": "Actualiza el estado de la oportunidad ID XYZ a 'Closed Won'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "hubspot.create_company",
+    "name": "Insertar Empresa HubSpot",
+    "version": "v3",
+    "provider": "HubSpot",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["crm.objects.companies.write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "properties": {
+          "type": "object",
+          "description": "Estructura de valores conteniendo name y domain"
+        }
+      },
+      "required": ["properties"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "El CRM Object ID de HubSpot"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.hubapi.com/crm/v3/objects/companies",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Añade a una compañía nueva (B2B) al repositorio de empresas de HubSpot.",
+      "example_prompt": "Agrega una compañía llamada Google con el dominio google.com a mi HubSpot.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "hubspot.create_deal",
+    "name": "Alta de Trato en HubSpot",
+    "version": "v3",
+    "provider": "HubSpot",
+    "category": "crm",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["crm.objects.deals.write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "properties": {
+          "type": "object",
+          "description": "Atributos del negocio como dealname, amount y dealstage"
+        }
+      },
+      "required": ["properties"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Hash de deal insertado en HubSpot"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.hubapi.com/crm/v3/objects/deals",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Registra una oportunidad de negocio/trato directamente en tu pipeline de ventas de HubSpot.",
+      "example_prompt": "Crea el deal 'Renovación Licencias' por $5000 en HubSpot.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pipedrive.add_note",
+    "name": "Fijar Nota Pipedrive",
+    "version": "v1",
+    "provider": "Pipedrive",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "Texto detallando interacciones en la venta"
+        },
+        "deal_id": {
+          "type": "number",
+          "description": "Trato a relacionar la nota"
+        }
+      },
+      "required": ["content", "deal_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Identificador de actividad insertada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.pipedrive.com/v1/notes?api_token={api_key}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Engancha bitácoras o resúmenes de venta de forma textual a un negocio en Pipedrive.",
+      "example_prompt": "Agrégale una nota al deal 99 de Pipedrive avisando que pidieron descuento.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pipedrive.create_organization",
+    "name": "Nueva Empresa Pipedrive",
+    "version": "v1",
+    "provider": "Pipedrive",
+    "category": "crm",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "El nombre fiscal o legal a indexar"
+        }
+      },
+      "required": ["name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Metadata de la org (id, nombre validado)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.pipedrive.com/v1/organizations?api_token={api_key}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Carga la tarjeta principal de una compañía B2B como Organización en Pipedrive.",
+      "example_prompt": "Crea la organización Apple Inc en el Pipedrive.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.create_preference",
+    "name": "Link de Pago MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "title, quantity, unit_price, currency_id"
+        }
+      },
+      "required": ["items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "init_point": {
+          "type": "string",
+          "description": "URL base para enviar al consumidor"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID de la preferencia generada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadopago.com/checkout/preferences",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Instancia un cobro por checkout (preferencia) en Mercado Pago de LATAM para mandar a pagar.",
+      "example_prompt": "Arma un link de pago en MercadoPago por 1500 ARS para el artículo 'Zapatillas'.",
+      "risk_level": "high",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.get_payment",
+    "name": "Verificar Pago MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID numérico de la liquidación en MP"
+        }
+      },
+      "required": ["id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estados como approved, pending, o rejected"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadopago.com/v1/payments/{id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Audita el estado fidedigno de una transacción ingresada en el ecosistema Mercado Pago.",
+      "example_prompt": "¿El pago de MP con ID 999111 ya está 'approved'?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "paypal.create_invoice",
+    "name": "Emitir Factura PayPal",
+    "version": "v2",
+    "provider": "PayPal",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://uri.paypal.com/services/invoicing"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "detail": {
+          "type": "object",
+          "description": "Moneda y metadatos de la factura"
+        },
+        "primary_recipients": {
+          "type": "array",
+          "description": "Billing info y email de PayPal a cobrar"
+        },
+        "items": {
+          "type": "array",
+          "description": "Nombres, cantidades y precios en el documento"
+        }
+      },
+      "required": ["detail", "primary_recipients", "items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Invoice ID provisto"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api-m.paypal.com/v2/invoicing/invoices",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Construye una factura estandarizada dentro de la suite B2B del proveedor PayPal Invoicing.",
+      "example_prompt": "Crea una factura de cobro vía PayPal para mi cliente de 50 EUR.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "paypal.get_order",
+    "name": "Info de Orden PayPal",
+    "version": "v2",
+    "provider": "PayPal",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "Alfanumérico representativo del checkout PayPal"
+        }
+      },
+      "required": ["order_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "COMPLETED, APPROVED, SAVED"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api-m.paypal.com/v2/checkout/orders/{order_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Interroga los registros del portal Checkout de PayPal para validar si el dinero se imputó (Status).",
+      "example_prompt": "Dime el estado del ID de orden ABC123DEF de PayPal.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "whatsapp.send_template",
+    "name": "Enviar Plantilla Meta WhatsApp",
+    "version": "v16.0",
+    "provider": "WhatsApp Business",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["whatsapp_business_messaging"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "phone_number_id": {
+          "type": "string",
+          "description": "Sender identificador"
+        },
+        "to": {
+          "type": "string",
+          "description": "Número internacional con código país del receptor"
+        },
+        "template": {
+          "type": "object",
+          "description": "Nombre de la plantilla de Meta (name) e idioma (language)"
+        }
+      },
+      "required": ["phone_number_id", "to", "template"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "description": "Contiene los message_id encolados del sistema"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.facebook.com/v16.0/{phone_number_id}/messages",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Fuerza la inyección de una campaña o mensaje saliente oficial estructurado (template) de WhatsApp Cloud API a un cliente.",
+      "example_prompt": "Envía el template de 'bienvenida' a través de WhatsApp al +52123456789.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "twilio.make_call",
+    "name": "Generar Llamada Twilio",
+    "version": "2010-04-01",
+    "provider": "Twilio",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "AccountSid": {
+          "type": "string",
+          "description": "Cuenta principal Twilio"
+        },
+        "To": {
+          "type": "string",
+          "description": "Teléfono destino"
+        },
+        "From": {
+          "type": "string",
+          "description": "Número comprado a Twilio del que saldrá"
+        },
+        "Twiml": {
+          "type": "string",
+          "description": "Texto inyectado para decir como locución TwiML (<Response><Say>...)"
+        }
+      },
+      "required": ["AccountSid", "To", "From", "Twiml"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "sid": {
+          "type": "string",
+          "description": "El Call SID (ID único)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Calls.json",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    },
+    "tool_profile": {
+      "description": "Apalanca la red telefónica de Twilio para ejecutar una llamada telefónica saliente mediante marcado por TwiML.",
+      "example_prompt": "Llama al jefe con Twilio para que le lea el mensaje en voz alta de que hay una emergencia.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "slack.create_channel",
+    "name": "Construir Canal Slack",
+    "version": "v1",
+    "provider": "Slack",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["channels:manage"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Alias interno en Slack del channel"
+        },
+        "is_private": {
+          "type": "boolean",
+          "description": "Volver invisible la red al público"
+        }
+      },
+      "required": ["name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "object",
+          "description": "Objeto con ID devuelto por el motor de Slack"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://slack.com/api/conversations.create",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8"
+      }
+    },
+    "tool_profile": {
+      "description": "Abre o forja una sala o grupo nuevo de colaboración dentro del Workspace corporativo de Slack.",
+      "example_prompt": "Crea el canal de Slack #lanzamiento-q4.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "slack.invite_user",
+    "name": "Invitar al Canal Slack",
+    "version": "v1",
+    "provider": "Slack",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["channels:manage"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string",
+          "description": "ID alfa-numérico del canal"
+        },
+        "users": {
+          "type": "string",
+          "description": "ID en Slack de usuarios separados por comas"
+        }
+      },
+      "required": ["channel", "users"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "Status verdadero de que ingresaron"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://slack.com/api/conversations.invite",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8"
+      }
+    },
+    "tool_profile": {
+      "description": "Afilia a uno o múltiples usuarios a participar de un canal de Slack para iniciar debate.",
+      "example_prompt": "Invita al usuario ID U12345 al canal #soporte de Slack.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gmail.read_email",
+    "name": "Recuperar Email de Gmail",
+    "version": "v1",
+    "provider": "Gmail",
+    "category": "email",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "string",
+          "description": "Identificador de string o Hex del mensaje en el Inbox"
+        },
+        "format": {
+          "type": "string",
+          "description": "full, metadata, minimal, o raw"
+        }
+      },
+      "required": ["messageId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "snippet": {
+          "type": "string",
+          "description": "Extracto en texto"
+        },
+        "payload": {
+          "type": "object",
+          "description": "Todo el HTML e hilos de headers"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/{messageId}?format={format}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Descarga y analiza de un ID puntual todo el cuerpo y attachments listados del Inbox de Google Mail.",
+      "example_prompt": "Trae el contenido del correo que te pasé con ID XXXXX de Gmail.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "gmail.create_draft",
+    "name": "Confeccionar Borrador Gmail",
+    "version": "v1",
+    "provider": "Gmail",
+    "category": "email",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/gmail.compose"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "object",
+          "description": "El container del raw message stringificado RFC 2822 base64"
+        }
+      },
+      "required": ["message"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID borrador salvado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Pospone y guarda para una posterior edición humana un email estructurado dentro de los Borradores de Google Mail.",
+      "example_prompt": "Crea un borrador en Gmail respondiendo al cliente con el reporte adjunto.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "sendgrid.create_contact",
+    "name": "Alta Lista SendGrid",
+    "version": "v3",
+    "provider": "SendGrid",
+    "category": "email",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contacts": {
+          "type": "array",
+          "description": "Matriz de objetos con email, first_name"
+        }
+      },
+      "required": ["contacts"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "description": "Job async provisto por la API de ingestión"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://api.sendgrid.com/v3/marketing/contacts",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Anota e inserta de forma asincrónica a una audiencia masiva en tus listados de marketing de Twilio SendGrid.",
+      "example_prompt": "Guarda a contacto@test.com como suscriptor de nuestras campañas en SendGrid.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mailchimp.create_campaign",
+    "name": "Montar Campaña Mailchimp",
+    "version": "3.0",
+    "provider": "Mailchimp",
+    "category": "email",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Tipo (regular, plaintext, absplit)"
+        },
+        "recipients": {
+          "type": "object",
+          "description": "ID de la audiencia (list_id)"
+        },
+        "settings": {
+          "type": "object",
+          "description": "Módulos de título y mail emisor"
+        }
+      },
+      "required": ["type", "recipients", "settings"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Código matriz de campaña elaborada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{server}.api.mailchimp.com/3.0/campaigns",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Fabrica programáticamente un boletín promocional (Newsletter) vinculado a una lista en el CRM Mailchimp.",
+      "example_prompt": "Crea una campaña en Mailchimp para enviar nuestro resumen de diciembre.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mailchimp.add_note",
+    "name": "Escribir Log en Mailchimp",
+    "version": "3.0",
+    "provider": "Mailchimp",
+    "category": "email",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "list_id": {
+          "type": "string",
+          "description": "La BBDD donde existe"
+        },
+        "subscriber_hash": {
+          "type": "string",
+          "description": "El email encriptado en MD5 inferior (identificador de user)"
+        },
+        "note": {
+          "type": "string",
+          "description": "Detalles o texto inyectado en el perfil"
+        }
+      },
+      "required": ["list_id", "subscriber_hash", "note"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "ID numérico de la anotación"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{server}.api.mailchimp.com/3.0/lists/{list_id}/members/{subscriber_hash}/notes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Deja apuntes del historial de compra o reclamos a nivel registro/miembro particular en la plataforma.",
+      "example_prompt": "Añade una nota en Mailchimp al usuario X diciendo que ya es VIP.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_drive.create_folder",
+    "name": "Hacer Carpeta GDrive",
+    "version": "v3",
+    "provider": "Google Drive",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/drive"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Titulo del espacio"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "Debe inyectarse 'application/vnd.google-apps.folder'"
+        },
+        "parents": {
+          "type": "array",
+          "description": "ID base del root al cual meter la carpeta"
+        }
+      },
+      "required": ["name", "mimeType"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Referencia Drive de la carpeta hecha"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://www.googleapis.com/drive/v3/files",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Forja una subdivisión jerárquica tipo Directorio en la nube principal de Google Drive.",
+      "example_prompt": "Crea una carpeta en Google Drive llamada 'Facturas 2026'.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_drive.search_files",
+    "name": "Listar Archivos Google Drive",
+    "version": "v3",
+    "provider": "Google Drive",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/drive.readonly"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string",
+          "description": "Búsqueda del explorador, ej: name contains 'Q1'"
+        }
+      },
+      "required": ["q"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "description": "Mapeo de archivos coincidentes"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://www.googleapis.com/drive/v3/files?q={q}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Analiza semánticamente la búsqueda dentro del Drive laboral para encontrar coincidencias de documentos.",
+      "example_prompt": "Busca en mi Google Drive cualquier archivo que se llame 'Presupuesto'.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "dropbox.search_files",
+    "name": "Buscador de Dropbox",
+    "version": "v2",
+    "provider": "Dropbox",
+    "category": "storage",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Texto para match exacto o aproximado"
+        },
+        "options": {
+          "type": "object",
+          "description": "Filtros en el árbol local"
+        }
+      },
+      "required": ["query"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "matches": {
+          "type": "array",
+          "description": "Todos los directorios donde la coincidencia es true"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.dropboxapi.com/2/files/search_v2",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Implementa y navega la API de search de Dropbox para localizar extensiones o ficheros específicos ocultos.",
+      "example_prompt": "Dime qué documentos en Dropbox contienen la palabra 'Contrato'.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "aws_s3.list_objects",
+    "name": "Inventario de Bucket AWS S3",
+    "version": "v2",
+    "provider": "AWS S3",
+    "category": "storage",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Bucket name de Amazon"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Filtrar por 'carpetas' base"
+        }
+      },
+      "required": ["bucket"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Contents": {
+          "type": "array",
+          "description": "Volcado XML transformado a JSON de cada objeto persistido"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://{bucket}.s3.amazonaws.com/?list-type=2&prefix={prefix}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Proyecta los elementos vigentes alojados en un directorio raíz del Storage as a Service en Amazon S3.",
+      "example_prompt": "Lista todos los archivos que haya en el bucket 'archivos-publicos' de S3.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "google_calendar.delete_event",
+    "name": "Bajar Cita de Google",
+    "version": "v3",
+    "provider": "Google Calendar",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/calendar.events"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "calendarId": {
+          "type": "string",
+          "description": "Ej: primary"
+        },
+        "eventId": {
+          "type": "string",
+          "description": "El ID hash extraído de un read de Calendar"
+        }
+      },
+      "required": ["calendarId", "eventId"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "type": "http",
+      "method": "DELETE",
+      "url": "https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}",
+      "headers": {}
+    },
+    "tool_profile": {
+      "description": "Suprime limpiamente una agendación o videollamada registrada que aparezca en tu planner de Google.",
+      "example_prompt": "Elimina del Google Calendar principal la reunión con ID X.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "calendly.cancel_event",
+    "name": "Desestimar Evento Calendly",
+    "version": "v2",
+    "provider": "Calendly",
+    "category": "calendar",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "description": "La variable del suceso confirmado"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Justificación oficial escrita al participante"
+        }
+      },
+      "required": ["uuid"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "resource": {
+          "type": "object",
+          "description": "Status cancelado e informaciones del trigger enviadas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.calendly.com/scheduled_events/{uuid}/cancellation",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Interrumpe la validez de un espacio reservado de un consumidor usando el ID de la URL y dispara un mail informando la baja en Calendly.",
+      "example_prompt": "Cancela el evento de Calendly con ID 123 y avisa que se reprograma.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "google_analytics.get_report",
+    "name": "Reporte de Métricas GA4",
+    "version": "v1beta",
+    "provider": "Google Analytics",
+    "category": "analytics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["https://www.googleapis.com/auth/analytics.readonly"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "property": {
+          "type": "string",
+          "description": "Referencia: properties/12345"
+        },
+        "dateRanges": {
+          "type": "array",
+          "description": "startDate, endDate"
+        },
+        "metrics": {
+          "type": "array",
+          "description": "activeUsers, sessions"
+        }
+      },
+      "required": ["property", "dateRanges", "metrics"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "description": "Tabla de filas procesadas con las analíticas del reporte"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://analyticsdata.googleapis.com/v1beta/{property}:runReport",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Sintetiza matrices complejas de embudos y usuarios diarios desde las propiedades integradas de GA4 Analytics Data.",
+      "example_prompt": "Genera el reporte de sesiones y usuarios de GA4 del mes pasado.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "linkedin.get_profile",
+    "name": "Leer Perfil B2B LinkedIn",
+    "version": "v2",
+    "provider": "LinkedIn",
+    "category": "social",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["r_liteprofile"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "localizedFirstName": {
+          "type": "string",
+          "description": "Nombre"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID hash social interno"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.linkedin.com/v2/me",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Adquiere tu información pública personal provista desde la sesión validada en tu entorno de MS LinkedIn.",
+      "example_prompt": "Busca los datos de perfil de mi cuenta de LinkedIn.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "shopify.create_order",
+    "name": "Fabricar Order Shopify",
+    "version": "2024-01",
+    "provider": "Shopify",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "type": "object",
+          "description": "Detalles del carrito en JSON que envuelven line_items"
+        }
+      },
+      "required": ["order"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "type": "object",
+          "description": "ID logístico retornado para la tienda web de CMS"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{shop}.myshopify.com/admin/api/2024-01/orders.json",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": "{api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Escribe un registro crudo directamente saltando la pantalla de compra en el backoffice de la instancia de Shopify.",
+      "example_prompt": "Genera una orden de compra manual en Shopify para el artículo 'Zapatos' a nombre de Pepe.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "woocommerce.create_product",
+    "name": "Anexar Producto Woo",
+    "version": "v3",
+    "provider": "WooCommerce",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Título del objeto"
+        },
+        "regular_price": {
+          "type": "string",
+          "description": "Tarifa numérica base formateada en texto"
+        },
+        "description": {
+          "type": "string",
+          "description": "HTML de la visual landing"
+        }
+      },
+      "required": ["name", "regular_price"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Id en la base MySQL WP"
+        },
+        "permalink": {
+          "type": "string",
+          "description": "Enlace front end del post"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://{domain}/wp-json/wc/v3/products",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Inserta publicablemente un formato producto en la tienda open-source gestionada de WordPress/WooCommerce.",
+      "example_prompt": "Crea en WooCommerce el producto 'Curso Online' que cuesta $100.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "asana.update_task",
+    "name": "Chequear/Completar Tarea Asana",
+    "version": "1.0",
+    "provider": "Asana",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "task_gid": {
+          "type": "string",
+          "description": "Identificador global ID"
+        },
+        "data": {
+          "type": "object",
+          "description": "Los cambios (ej: completed: true)"
+        }
+      },
+      "required": ["task_gid", "data"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Metadata reconstruida a confirmar si fue efectuada la solicitud"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://app.asana.com/api/1.0/tasks/{task_gid}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Cambia dinámicamente propiedades (deadline, assignee o status) de un pendiente visible en las bandejas de la App de Asana.",
+      "example_prompt": "Marca la tarea 'Mandar reporte' como completada en Asana.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "trello.create_board",
+    "name": "Crear Espacio Tablero Trello",
+    "version": "1",
+    "provider": "Trello",
+    "category": "project_management",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Título organizativo del nuevo dashboard de control de flujos Trello Kanban."
+        }
+      },
+      "required": ["name"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Clave única alfanumérica TrelloBoard ID"
+        },
+        "url": {
+          "type": "string",
+          "description": "Trello Link"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.trello.com/1/boards/?name={name}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Edifica el lienzo macro vacío desde cero dentro de un WorkSpace del gestor de paneles ágil de Trello.",
+      "example_prompt": "Arma un nuevo tablero en Trello llamado 'Planificación 2026'.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "notion.retrieve_block",
+    "name": "Obtener Elemento Notion",
+    "version": "v1",
+    "provider": "Notion",
+    "category": "project_management",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "block_id": {
+          "type": "string",
+          "description": "ID del componente web a traer de las notas estructuradas."
+        }
+      },
+      "required": ["block_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Tipografía JSON del bloque (paragraph, heading_1...)"
+        },
+        "has_children": {
+          "type": "boolean",
+          "description": "Contiene sub items tabulados"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.notion.com/v1/blocks/{block_id}",
+      "headers": {
+        "Notion-Version": "2022-06-28",
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Realiza la extracción cruda de un chunk de texto jerarquizado directamente del DOM API de una página de base en Notion.",
+      "example_prompt": "Muéstrame el contenido del bloque de Notion que te pasé.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "openai.create_image",
+    "name": "Generación Gráfica DALL-E",
+    "version": "v1",
+    "provider": "OpenAI",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "Directiva descriptiva detallada"
+        },
+        "model": {
+          "type": "string",
+          "description": "Ej: dall-e-3"
+        },
+        "size": {
+          "type": "string",
+          "description": "Resolución como 1024x1024"
+        }
+      },
+      "required": ["prompt"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Resultados de la generación de imagen (URL)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.openai.com/v1/images/generations",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {api_key}"
+      }
+    },
+    "tool_profile": {
+      "description": "Sintetiza arte visual inédito o logotipos a través del módulo subyacente creativo de DALL-E conectado en OpenAI.",
+      "example_prompt": "Usa OpenAI para crear una imagen de un astronauta en marte.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "anthropic.count_tokens",
+    "name": "Contador Costo Anthropic Claude",
+    "version": "v1",
+    "provider": "Anthropic",
+    "category": "ai",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "description": "Objeto emulado sin usarlo conversacionalmente pero dimensionando en la librería"
+        },
+        "model": {
+          "type": "string",
+          "description": "Modelo especifico como claude-3-5-sonnet-20241022"
+        }
+      },
+      "required": ["messages", "model"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "input_tokens": {
+          "type": "number",
+          "description": "Conteo estricto resultante por Byte-Pair Encoding BPE algorítmico para pricing"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages/count_tokens",
+      "headers": {
+        "Content-Type": "application/json",
+        "x-api-key": "{api_key}",
+        "anthropic-version": "2023-06-01"
+      }
+    },
+    "tool_profile": {
+      "description": "Estima cuánto cobrará en el input el servidor cognitivo calculando la longitud del documento para la capa fundacional de Anthropic Claude.",
+      "example_prompt": "¿Cuántos tokens me cobraría Claude si le mando esta novela?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  }
+]

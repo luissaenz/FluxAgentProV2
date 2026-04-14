@@ -28,7 +28,8 @@
       "Bash(dir *)",
       "Bash(sed *)",
       "Bash(powershell *)",
-      "Bash(d:\\develop\\personal\\fluxagentpro-v2\\.venv\\scripts\\python.exe *)"
+      "Bash(d:\\develop\\personal\\fluxagentpro-v2\\.venv\\scripts\\python.exe *)",
+      "Bash(node *)"
     ]
   },
   "$version": 3

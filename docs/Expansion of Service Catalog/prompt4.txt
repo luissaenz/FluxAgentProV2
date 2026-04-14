@@ -1,0 +1,1843 @@
+PROMPT 4:
+Contexto: Mi plataforma FAP se lanza primero en Argentina y Latinoamérica. Necesito integraciones específicas para el mercado regional que no tienen equivalente global directo.
+
+
+Generá tools para estos servicios LATAM:
+
+
+
+MercadoPago (3 adicionales): create_qr_payment, search_payments, create_subscription
+
+MercadoLibre (3 adicionales): get_orders, update_stock, answer_question
+
+MercadoEnvíos (3): create_shipment, get_tracking, get_shipping_options
+
+AFIP/Facturación electrónica (3): create_invoice_afip, get_cae, validate_cuit
+
+Tiendanube (3): create_product, update_stock, get_orders
+
+Rappi (2): get_orders, update_order_status
+
+PedidosYa (2): get_orders, confirm_order
+
+Contabilium (2): create_invoice, get_balance
+
+Mobbex (2): create_checkout, get_payment_status
+
+Andreani (2): create_shipment, get_tracking
+
+Ualá Bis (2): create_payment_link, get_transactions
+
+WhatsApp Business — templates LATAM (2): send_template_message, get_template_list
+
+Fiserv/Prisma (2): create_payment, get_transaction
+
+Banco Galicia API (2): get_account_balance, list_transactions
+
+Naranja X (2): create_payment_link, get_payment_status
+
+
+Mismo esquema JSON exacto. Solo JSON array.
+
+
+Target: ~35 tools regionales.
+
+RESULTADO:
+[
+  {
+    "tool_id": "mercadopago.create_qr_payment",
+    "name": "Cobrar con QR MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "external_reference": {
+          "type": "string",
+          "description": "Referencia interna del sistema del comercio"
+        },
+        "total_amount": {
+          "type": "number",
+          "description": "Monto total a cobrar en el punto de venta"
+        },
+        "items": {
+          "type": "array",
+          "description": "Detalles de los productos a cobrar"
+        }
+      },
+      "required": ["external_reference", "total_amount", "items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "in_store_order_id": {
+          "type": "string",
+          "description": "ID de la orden presencial generada"
+        },
+        "qr_data": {
+          "type": "string",
+          "description": "String de datos para renderizar el código QR"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadopago.com/instore/orders/qr/seller/collectors/{collector_id}/pos/{pos_id}/qrs",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera una orden de pago presencial atada a un código QR de MercadoPago para cobros en tiendas físicas.",
+      "example_prompt": "Crea un cobro por QR en MercadoPago de 5000 ARS para el POS de la caja 1.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadopago.search_payments",
+    "name": "Buscar Pagos MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "begin_date": {
+          "type": "string",
+          "description": "Fecha de inicio (ISO 8601)"
+        },
+        "end_date": {
+          "type": "string",
+          "description": "Fecha de fin (ISO 8601)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado del pago (approved, pending, rejected)"
+        }
+      },
+      "required": ["begin_date", "end_date"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "Lista de pagos que coinciden con los criterios de búsqueda"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadopago.com/v1/payments/search?begin_date={begin_date}&end_date={end_date}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Busca y filtra el historial de pagos recibidos en una cuenta de MercadoPago en un rango de fechas.",
+      "example_prompt": "Buscame todos los pagos aprobados de MercadoPago desde el lunes pasado hasta hoy.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadopago.create_subscription",
+    "name": "Crear Suscripción MercadoPago",
+    "version": "v1",
+    "provider": "MercadoPago",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "preapproval_plan_id": {
+          "type": "string",
+          "description": "ID del plan de suscripción base"
+        },
+        "payer_email": {
+          "type": "string",
+          "description": "Correo del cliente que se suscribe"
+        },
+        "card_token_id": {
+          "type": "string",
+          "description": "Token de la tarjeta a adherir"
+        }
+      },
+      "required": ["preapproval_plan_id", "payer_email"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID de la suscripción (preapproval) generada"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado de la suscripción (authorized, pending)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadopago.com/preapproval",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Adhiere a un cliente a un plan de cobro recurrente o suscripción mensual usando MercadoPago.",
+      "example_prompt": "Suscribe al usuario juan@correo.com al plan de gimnasio en MercadoPago.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadolibre.get_orders",
+    "name": "Obtener Órdenes MercadoLibre",
+    "version": "v3",
+    "provider": "MercadoLibre",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "seller_id": {
+          "type": "string",
+          "description": "El ID del vendedor en MercadoLibre"
+        },
+        "order_status": {
+          "type": "string",
+          "description": "Estado de las órdenes (ej. paid, cancelled)"
+        }
+      },
+      "required": ["seller_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "Lista de transacciones de compra registradas en la tienda Meli"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/orders/search?seller={seller_id}&order.status={order_status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Trae el listado de ventas (órdenes) que un vendedor ha recibido en el marketplace de MercadoLibre.",
+      "example_prompt": "Tráeme los últimos pedidos cobrados en mi cuenta de MercadoLibre.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadolibre.update_stock",
+    "name": "Actualizar Stock MercadoLibre",
+    "version": "v3",
+    "provider": "MercadoLibre",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "description": "ID de la publicación (ej. MLA123456)"
+        },
+        "available_quantity": {
+          "type": "number",
+          "description": "Nuevo stock disponible para la venta"
+        }
+      },
+      "required": ["item_id", "available_quantity"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID del item modificado"
+        },
+        "available_quantity": {
+          "type": "number",
+          "description": "Stock confirmado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://api.mercadolibre.com/items/{item_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Modifica la cantidad disponible (stock) de un producto publicado en MercadoLibre.",
+      "example_prompt": "Actualiza el stock de la publicación MLA99999 a 15 unidades.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadolibre.answer_question",
+    "name": "Responder Pregunta MercadoLibre",
+    "version": "v3",
+    "provider": "MercadoLibre",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "question_id": {
+          "type": "number",
+          "description": "ID de la pregunta recibida"
+        },
+        "text": {
+          "type": "string",
+          "description": "El contenido de la respuesta enviada al comprador"
+        }
+      },
+      "required": ["question_id", "text"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estado de la respuesta (ANSWERED)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mercadolibre.com/answers",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Publica la respuesta oficial del vendedor a una consulta hecha por un usuario en una publicación de MercadoLibre.",
+      "example_prompt": "Respondele al usuario de MercadoLibre en la pregunta 555 que sí tenemos stock en color azul.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.create_shipment",
+    "name": "Generar Etiqueta MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shipment_id": {
+          "type": "string",
+          "description": "ID del envío atado a la compra"
+        }
+      },
+      "required": ["shipment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "file_url": {
+          "type": "string",
+          "description": "Enlace temporal del PDF de la etiqueta (label) para imprimir"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/shipment_labels?shipment_ids={shipment_id}&response_type=pdf",
+      "headers": {
+        "Accept": "application/pdf"
+      }
+    },
+    "tool_profile": {
+      "description": "Imprime o solicita el documento PDF de la etiqueta de MercadoEnvíos lista para pegar en el paquete.",
+      "example_prompt": "Descargame la etiqueta de despacho para el envío de MercadoEnvíos número 40001.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.get_tracking",
+    "name": "Consultar Tracking MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "shipment_id": {
+          "type": "string",
+          "description": "El identificador del envío"
+        }
+      },
+      "required": ["shipment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "tracking_number": {
+          "type": "string",
+          "description": "Número de rastreo de la empresa postal"
+        },
+        "tracking_events": {
+          "type": "array",
+          "description": "El historial de movimiento del paquete (admisión, en viaje, entregado)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/shipments/{shipment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Recupera la línea de tiempo y ubicación en tiempo real de un paquete despachado mediante MercadoEnvíos.",
+      "example_prompt": "¿Dónde está actualmente el pedido con envío ID 445566 de Meli?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mercadoenvios.get_shipping_options",
+    "name": "Cotizar Envío MercadoEnvíos",
+    "version": "v1",
+    "provider": "MercadoEnvíos",
+    "category": "logistics",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "zip_code_from": {
+          "type": "string",
+          "description": "Código postal de origen"
+        },
+        "zip_code_to": {
+          "type": "string",
+          "description": "Código postal de destino"
+        },
+        "dimensions": {
+          "type": "string",
+          "description": "Dimensiones en formato alto x ancho x largo,peso (ej. 10x10x20,500)"
+        }
+      },
+      "required": ["zip_code_from", "zip_code_to", "dimensions"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "type": "array",
+          "description": "Tarifas de envío, tipo (express, normal) y estimación de entrega"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mercadolibre.com/users/{user_id}/shipping_options?zip_code_from={zip_code_from}&zip_code_to={zip_code_to}&dimensions={dimensions}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Cotiza costos y tiempos logísticos entre dos códigos postales utilizando el calculador de MercadoEnvíos.",
+      "example_prompt": "Cotiza un paquete de 10x10x10,500g desde CP 1000 a CP 2000 por MercadoEnvíos.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "afip.create_invoice_afip",
+    "name": "Emitir Factura AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cuit_emisor": {
+          "type": "string",
+          "description": "CUIT del emisor"
+        },
+        "punto_venta": {
+          "type": "number",
+          "description": "Punto de venta asociado"
+        },
+        "cbte_tipo": {
+          "type": "number",
+          "description": "Tipo de comprobante (ej. 11 para Factura C)"
+        },
+        "doc_tipo": {
+          "type": "number",
+          "description": "Tipo de documento del cliente (ej. 80 para CUIT, 96 para DNI)"
+        },
+        "doc_nro": {
+          "type": "string",
+          "description": "Número de documento o CUIT del cliente"
+        },
+        "importe_total": {
+          "type": "number",
+          "description": "Monto total facturado"
+        }
+      },
+      "required": ["cuit_emisor", "punto_venta", "cbte_tipo", "doc_tipo", "doc_nro", "importe_total"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "cae": {
+          "type": "string",
+          "description": "Código de Autorización Electrónico (CAE) otorgado por AFIP"
+        },
+        "cae_vto": {
+          "type": "string",
+          "description": "Vencimiento del CAE"
+        },
+        "comprobante_numero": {
+          "type": "number",
+          "description": "Número de factura emitido correlativamente"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.afip.gob.ar/wsfev1/factura",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Contacta los web services (WSFEv1) de AFIP para emitir un comprobante fiscal legal (Factura electrónica) obteniendo un CAE en Argentina.",
+      "example_prompt": "Emito una Factura C por 15000 pesos al DNI 35000000 desde el punto de venta 3.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "afip.get_cae",
+    "name": "Consultar CAE Factura AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "punto_venta": {
+          "type": "number",
+          "description": "Punto de venta emisor"
+        },
+        "cbte_tipo": {
+          "type": "number",
+          "description": "Id del tipo de factura (ej. 1=A, 6=B, 11=C)"
+        },
+        "cbte_nro": {
+          "type": "number",
+          "description": "Número consecutivo de la factura que se desea chequear"
+        }
+      },
+      "required": ["punto_venta", "cbte_tipo", "cbte_nro"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "cae": {
+          "type": "string",
+          "description": "El CAE de ese comprobante validado"
+        },
+        "emision_fecha": {
+          "type": "string",
+          "description": "Día que fue emitido"
+        },
+        "importe": {
+          "type": "number",
+          "description": "Valor monetario que fue informado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.afip.gob.ar/wsfev1/factura/{cbte_nro}/cae?punto_venta={punto_venta}&tipo={cbte_tipo}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Verifica si una factura ya fue emitida legalmente ante AFIP recuperando sus datos y su CAE vigente.",
+      "example_prompt": "¿Cuál es el CAE y el monto de la Factura C número 104 del punto de venta 2?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "afip.validate_cuit",
+    "name": "Consultar Padrón CUIT AFIP",
+    "version": "v1",
+    "provider": "AFIP",
+    "category": "accounting",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cuit": {
+          "type": "string",
+          "description": "Identificación tributaria a consultar (ej. 30111111118 sin guiones)"
+        }
+      },
+      "required": ["cuit"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "description": "Razón social o Nombre de la persona física"
+        },
+        "estado": {
+          "type": "string",
+          "description": "Estado impositivo (ej. ACTIVO)"
+        },
+        "impuestos": {
+          "type": "array",
+          "description": "Detalle de IVA, Ganancias, Monotributo, etc."
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.afip.gob.ar/ws_sr-padron/v1/persona/{cuit}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite acceder al padrón alcance 13 de AFIP para verificar la razón social y la situación fiscal (IVA, Monotributo) vinculada a un CUIT.",
+      "example_prompt": "Consultá el estado fiscal del CUIT 30-71234567-8 en AFIP.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiendanube.create_product",
+    "name": "Subir Producto Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write_products"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID de la tienda"
+        },
+        "name": {
+          "type": "object",
+          "description": "Traducciones del nombre del producto (es, pt, en)"
+        },
+        "price": {
+          "type": "string",
+          "description": "Precio original formateado como string numérico"
+        }
+      },
+      "required": ["store_id", "name", "price"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "El ID global del producto en el catálogo"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.tiendanube.com/v1/{store_id}/products",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Carga un nuevo artículo publicable con su nombre base y precio en la plataforma de e-commerce de Tiendanube.",
+      "example_prompt": "Crea una 'Campera' en Tiendanube con un precio de 50000.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "tiendanube.update_stock",
+    "name": "Sincronizar Stock Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["write_products"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID de la tienda"
+        },
+        "product_id": {
+          "type": "number",
+          "description": "ID del producto padre"
+        },
+        "variant_id": {
+          "type": "number",
+          "description": "ID de la variante de talla o color"
+        },
+        "stock": {
+          "type": "number",
+          "description": "Unidades disponibles"
+        }
+      },
+      "required": ["store_id", "product_id", "variant_id", "stock"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Identificador de variante modificada"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://api.tiendanube.com/v1/{store_id}/products/{product_id}/variants/{variant_id}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Ajusta la cantidad disponible de un producto y su variante específica en el stock de Tiendanube.",
+      "example_prompt": "Actualiza el inventario a 5 de la variante 202 del producto 101 en Tiendanube.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "tiendanube.get_orders",
+    "name": "Leer Pedidos Tiendanube",
+    "version": "v1",
+    "provider": "Tiendanube",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["read_orders"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "Identificador del e-commerce"
+        },
+        "payment_status": {
+          "type": "string",
+          "description": "Filtrar por 'paid', 'pending', 'abandoned'"
+        }
+      },
+      "required": ["store_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "description": "Colección de carritos con transacciones efectuadas"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.tiendanube.com/v1/{store_id}/orders?payment_status={payment_status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Extrae el historial de transacciones de venta completadas y cobradas en una cuenta de Tiendanube.",
+      "example_prompt": "Tráeme la información de los últimos pedidos cobrados en Tiendanube.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "rappi.get_orders",
+    "name": "Bandeja de Pedidos Rappi",
+    "version": "v2",
+    "provider": "Rappi",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "store_id": {
+          "type": "string",
+          "description": "ID del restaurante en el hub"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estado para consultar: 'new', 'in_progress', 'ready_for_pickup'"
+        }
+      },
+      "required": ["store_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "description": "JSON de las solicitudes de delivery hechas por clientes a Rappi"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://microservices.rappi.com/api/v2/restaurants/orders?store_id={store_id}&status={status}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Revisa los pedidos de comida a domicilio entrantes para un restaurante o tienda registrado en Rappi.",
+      "example_prompt": "Verifica si cayeron nuevos pedidos para mi restaurante en Rappi.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "rappi.update_order_status",
+    "name": "Mover Estado Orden Rappi",
+    "version": "v2",
+    "provider": "Rappi",
+    "category": "ecommerce",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "Código de comanda de la orden entrante"
+        },
+        "status": {
+          "type": "string",
+          "description": "Transición, por ejemplo 'cooking', 'ready', 'cancel'"
+        }
+      },
+      "required": ["order_id", "status"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Notificación push enviada al repartidor de Rappi con éxito"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "PUT",
+      "url": "https://microservices.rappi.com/api/v2/restaurants/orders/{order_id}/status",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite aceptar, despachar o marcar un pedido como listo en el hub de atención de Rappi.",
+      "example_prompt": "Marca el pedido 999123 de Rappi como listo para retirar por el repartidor.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "pedidosya.get_orders",
+    "name": "Bandeja Pedidos PedidosYa",
+    "version": "v1",
+    "provider": "PedidosYa",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "restaurant_id": {
+          "type": "string",
+          "description": "El ID interno del comercio en el portal de PeYa"
+        }
+      },
+      "required": ["restaurant_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Nuevos pedidos y comensales procesados"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://partners.pedidosya.com/v1/orders?restaurant_id={restaurant_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consigue las solicitudes gastronómicas y carritos generados por clientes dentro de la app PedidosYa.",
+      "example_prompt": "Dame los pedidos activos de mi local en PedidosYa.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "pedidosya.confirm_order",
+    "name": "Aceptar Orden PedidosYa",
+    "version": "v1",
+    "provider": "PedidosYa",
+    "category": "ecommerce",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "description": "ID del ticket"
+        },
+        "delivery_time": {
+          "type": "number",
+          "description": "Tiempo calculado para despachar (minutos)"
+        }
+      },
+      "required": ["order_id", "delivery_time"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Aprobación notificada al cliente"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://partners.pedidosya.com/v1/orders/{order_id}/confirm",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Aprueba y notifica formalmente al cliente de PedidosYa que su orden será preparada, informando una demora.",
+      "example_prompt": "Confirma el pedido PEYA-500 y define 30 minutos de entrega.",
+      "risk_level": "medium",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "contabilium.create_invoice",
+    "name": "Facturar en Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "IdTipoComprobante": {
+          "type": "number",
+          "description": "Indica si es FC, Ticket, NC, etc."
+        },
+        "IdCliente": {
+          "type": "number",
+          "description": "El ID en base de datos del comprador"
+        },
+        "Items": {
+          "type": "array",
+          "description": "Las filas de compra con ID de producto, precio y cantidad"
+        }
+      },
+      "required": ["IdTipoComprobante", "IdCliente", "Items"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Id": {
+          "type": "number",
+          "description": "Nro interno del sistema"
+        },
+        "Numero": {
+          "type": "string",
+          "description": "Número de comprobante validado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://rest.contabilium.com/api/comprobantes",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Genera de manera automática un comprobante o factura legal (afectando stock) en el ERP argentino Contabilium.",
+      "example_prompt": "Crea una Factura C para el cliente 8891 con 2 unidades del artículo 90 en Contabilium.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "contabilium.get_balance",
+    "name": "Consultar Cuenta Corriente Contabilium",
+    "version": "v1",
+    "provider": "Contabilium",
+    "category": "accounting",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "IdCliente": {
+          "type": "number",
+          "description": "ID o legajo del cliente registrado"
+        }
+      },
+      "required": ["IdCliente"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "Saldo": {
+          "type": "number",
+          "description": "Deuda en cuenta corriente que el cliente mantiene"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://rest.contabilium.com/api/clientes/{IdCliente}/saldo",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Consulta cuánto dinero le adeuda o le sobra a un cliente particular (Saldo) en Contabilium.",
+      "example_prompt": "Verifica qué saldo pendiente tiene el cliente ID 1500 en Contabilium.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mobbex.create_checkout",
+    "name": "Enlace de Cobro Mobbex",
+    "version": "v1",
+    "provider": "Mobbex",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "number",
+          "description": "Importe total del cobro a recibir"
+        },
+        "currency": {
+          "type": "string",
+          "description": "Modena (ARS)"
+        },
+        "reference": {
+          "type": "string",
+          "description": "Referencia unívoca de tu pedido"
+        },
+        "description": {
+          "type": "string",
+          "description": "Razones del cobro visualizadas por el cliente"
+        }
+      },
+      "required": ["total", "currency", "reference", "description"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Contiene el uid del checkout y la 'url' para cobrar"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.mobbex.com/p/checkout",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Levanta un Checkout transparente o URL de pago seguro en la red de Mobbex Argentina para tarjetas de crédito.",
+      "example_prompt": "Genera un link de pago Mobbex de 500 ARS para el pedido REF123.",
+      "risk_level": "high",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "mobbex.get_payment_status",
+    "name": "Validar Operación Mobbex",
+    "version": "v1",
+    "provider": "Mobbex",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "El ID público de transacción Mobbex"
+        }
+      },
+      "required": ["uid"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Comprobantes y status (ej. 2 para aprobado)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.mobbex.com/p/operations/{uid}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Controla si un enlace de Checkout emitido por Mobbex fue abonado de manera aprobada por el comprador.",
+      "example_prompt": "¿El pago con uid xyz en Mobbex ya está acreditado?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "andreani.create_shipment",
+    "name": "Imponer Envíos Andreani",
+    "version": "v2",
+    "provider": "Andreani",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "contrato": {
+          "type": "string",
+          "description": "Número de contrato B2B de Andreani"
+        },
+        "origen": {
+          "type": "object",
+          "description": "Datos completos de la sucursal o pickup de salida"
+        },
+        "destino": {
+          "type": "object",
+          "description": "Destinatario, código postal e información de domicilio"
+        },
+        "bultos": {
+          "type": "array",
+          "description": "Medidas (cm), peso y valor declarado"
+        }
+      },
+      "required": ["contrato", "origen", "destino", "bultos"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "numeroDeEnvio": {
+          "type": "string",
+          "description": "Identificador de tracking (15 dígitos)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://apis.andreani.com/v2/ordenes-de-envio",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Carga un registro de despacho/paquetería (orden de envío) en la logística de Correo Andreani, generando una etiqueta física.",
+      "example_prompt": "Crea un envío en Andreani para despachar el paquete hacia Córdoba capital.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "andreani.get_tracking",
+    "name": "Buscar Pieza Andreani",
+    "version": "v2",
+    "provider": "Andreani",
+    "category": "logistics",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "numero_envio": {
+          "type": "string",
+          "description": "Código largo logístico del sobre/paquete Andreani"
+        }
+      },
+      "required": ["numero_envio"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "eventos": {
+          "type": "array",
+          "description": "Estados de sucursal en sucursal del envío"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://apis.andreani.com/v2/envios/{numero_envio}/trazas",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Vuelca la grilla de trazabilidad pública (movimientos) que posee un paquete expedido por Andreani.",
+      "example_prompt": "Tráeme los movimientos del paquete de Andreani número 360000000.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ualabis.create_payment_link",
+    "name": "Link de Pago Ualá Bis",
+    "version": "v1",
+    "provider": "Ualá Bis",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Saldo a pagar a Ualá Bis"
+        },
+        "description": {
+          "type": "string",
+          "description": "Motivo del pago"
+        },
+        "callback_fail": {
+          "type": "string",
+          "description": "Hacia dónde derivar si rechaza"
+        },
+        "callback_success": {
+          "type": "string",
+          "description": "Retorno en caso exitoso"
+        }
+      },
+      "required": ["amount", "description"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "description": "ID del link en Uala"
+        },
+        "checkoutLink": {
+          "type": "string",
+          "description": "URL que se comparte por WP/Email"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://checkout.ualabis.com.ar/api/links",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Expide un token en forma de link de Checkout Web en el ecosistema Fintech Ualá Bis.",
+      "example_prompt": "Crea un link de pago con Ualá Bis por un importe de $1000.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "ualabis.get_transactions",
+    "name": "Auditar Liquidaciones Ualá",
+    "version": "v1",
+    "provider": "Ualá Bis",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "description": "Fecha inicial de filtro"
+        },
+        "end_date": {
+          "type": "string",
+          "description": "Límite para analizar cobros"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "Comisiones deducidas y saldo neto depositado"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.ualabis.com.ar/1/transactions",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Enumera la lista de depósitos y cobros procesados por la terminal virtual o Links de Ualá Bis.",
+      "example_prompt": "¿Cuáles son las últimas transacciones en Ualá Bis?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "whatsapp.send_template_message",
+    "name": "Push Plantilla WhatsApp Business",
+    "version": "v17.0",
+    "provider": "WhatsApp Business",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["whatsapp_business_messaging"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "phone_number_id": {
+          "type": "string",
+          "description": "WABA sender oficial"
+        },
+        "to": {
+          "type": "string",
+          "description": "Destino con código país Ej: 5491100000000"
+        },
+        "template_name": {
+          "type": "string",
+          "description": "Nombre HSM de Meta, ej 'notificacion_envio'"
+        },
+        "language": {
+          "type": "string",
+          "description": "ej: 'es_AR' o 'es'"
+        }
+      },
+      "required": ["phone_number_id", "to", "template_name", "language"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "description": "Message IDs"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://graph.facebook.com/v17.0/{phone_number_id}/messages",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Despacha un mensaje HSM (template pre-aprobado) estructurado (generalmente transaccional) desde el canal Cloud API WhatsApp de una empresa LATAM.",
+      "example_prompt": "Envía el template de 'pago_exitoso' al +54911... por WhatsApp.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "whatsapp.get_template_list",
+    "name": "Templates de WhatsApp",
+    "version": "v17.0",
+    "provider": "WhatsApp Business",
+    "category": "messaging",
+    "auth": {
+      "type": "oauth2",
+      "scopes": ["whatsapp_business_management"]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "whatsapp_business_account_id": {
+          "type": "string",
+          "description": "El Business Account general para ver que HSMs están APPROVED"
+        }
+      },
+      "required": ["whatsapp_business_account_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "description": "Formatos y variables que exige cada plantilla"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://graph.facebook.com/v17.0/{whatsapp_business_account_id}/message_templates",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Verifica la lista de plantillas HSM subidas al portal Meta WABA de la marca y su estado de aprobación (APPROVED o REJECTED).",
+      "example_prompt": "Fijate qué plantillas tenemos aprobadas en WhatsApp Business API.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "prisma.create_payment",
+    "name": "Autorizar Tarjeta Prisma / Decidir",
+    "version": "v2",
+    "provider": "Fiserv/Prisma",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "description": "Código de comercio Decidir"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Monto de transacción (Payway)"
+        },
+        "currency": {
+          "type": "string",
+          "description": "ARS o USD"
+        },
+        "payment_method": {
+          "type": "object",
+          "description": "Tokenización de la banda magnética/chip ingresada por front"
+        }
+      },
+      "required": ["site_id", "amount", "currency", "payment_method"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador de la captura bancaria"
+        },
+        "status": {
+          "type": "string",
+          "description": "Estatus del Gateway (approved, annuled)"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.decidir.com/api/v2/payments",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Enruta la captura de una tarjeta de crédito o débito conectándose con el switch adquirente central Prisma / Payway / Decidir (Argentina).",
+      "example_prompt": "Cobra los 8000 ARS usando el token de Prisma en este site_id.",
+      "risk_level": "high",
+      "requires_approval": true
+    }
+  },
+  {
+    "tool_id": "prisma.get_transaction",
+    "name": "Rastrear Boleto Prisma",
+    "version": "v2",
+    "provider": "Fiserv/Prisma",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "payment_id": {
+          "type": "string",
+          "description": "El código único originado por Decidir v2"
+        }
+      },
+      "required": ["payment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status_details": {
+          "type": "object",
+          "description": "Motivo de rechazo o aprobación del banco emisor"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.decidir.com/api/v2/payments/{payment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Comprueba si un pago enviado hacia el Gateway de Prisma Decidir fue aprobado por Visa o Mastercard.",
+      "example_prompt": "Traeme el status de la transacción Payway/Decidir ID XYZZ.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "galicia.get_account_balance",
+    "name": "Consultar Saldo Banco Galicia",
+    "version": "v1",
+    "provider": "Banco Galicia API",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cbu": {
+          "type": "string",
+          "description": "CBU representativo de la empresa en Galicia"
+        },
+        "account_id": {
+          "type": "string",
+          "description": "Número de Cuenta"
+        }
+      },
+      "required": ["account_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "balances": {
+          "type": "object",
+          "description": "Información contable conteniendo el saldo disponible liquidado de Galicia"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bancogalicia.com.ar/v1/accounts/{account_id}/balance",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Permite acceder online a los saldos consolidados de tu cuenta corriente o caja de ahorro del Banco Galicia Empresarial (Open Banking).",
+      "example_prompt": "¿Qué saldo tenemos actualmente en la cuenta de Banco Galicia?",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "galicia.list_transactions",
+    "name": "Movimientos Banco Galicia",
+    "version": "v1",
+    "provider": "Banco Galicia API",
+    "category": "payments",
+    "auth": {
+      "type": "oauth2",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "ID numérico de la cuenta"
+        },
+        "date_from": {
+          "type": "string",
+          "description": "YYYY-MM-DD"
+        },
+        "date_to": {
+          "type": "string",
+          "description": "YYYY-MM-DD"
+        }
+      },
+      "required": ["account_id", "date_from", "date_to"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transactions": {
+          "type": "array",
+          "description": "Cheques, débitos, eCHEQs y extractos del extracto bancario digital."
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.bancogalicia.com.ar/v1/accounts/{account_id}/transactions?date_from={date_from}&date_to={date_to}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Cosecha las transferencias (CBU / Alias) salientes y depósitos entrantes imputados en el Banco Galicia.",
+      "example_prompt": "Listame las transacciones del Banco Galicia de la última semana.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "naranjax.create_payment_link",
+    "name": "Solicitud de Pago Naranja X",
+    "version": "v1",
+    "provider": "Naranja X",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Monto"
+        },
+        "description": {
+          "type": "string",
+          "description": "Concepto comercial en la pasarela NaranjaX"
+        },
+        "currency": {
+          "type": "string",
+          "description": "ARS"
+        }
+      },
+      "required": ["amount", "description", "currency"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment_link_id": {
+          "type": "string",
+          "description": "Identidad para consultar si pagó"
+        },
+        "url": {
+          "type": "string",
+          "description": "Boton de cobro público web"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "POST",
+      "url": "https://api.naranjax.com/cobros/v1/payment-links",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Abre una ventana de cobro (Link de Pago) oficial para Tarjeta Naranja y su ecosistema fintech (Naranja X).",
+      "example_prompt": "Haceme un link de pago por $3500 en Naranja X por el servicio.",
+      "risk_level": "medium",
+      "requires_approval": false
+    }
+  },
+  {
+    "tool_id": "naranjax.get_payment_status",
+    "name": "Cotejar Pago Naranja X",
+    "version": "v1",
+    "provider": "Naranja X",
+    "category": "payments",
+    "auth": {
+      "type": "api_key",
+      "scopes": []
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "payment_id": {
+          "type": "string",
+          "description": "El ticket asociado a tu link emitido en NaranjaX"
+        }
+      },
+      "required": ["payment_id"]
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Estados como APPROVED o CANCELLED"
+        }
+      }
+    },
+    "execution": {
+      "type": "http",
+      "method": "GET",
+      "url": "https://api.naranjax.com/cobros/v1/payments/{payment_id}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    "tool_profile": {
+      "description": "Averigua dinámicamente si el usuario resolvió su checkout digital sobre Naranja X para habilitar el servicio.",
+      "example_prompt": "Dime el status del pago con ID 99912 de Naranja X.",
+      "risk_level": "low",
+      "requires_approval": false
+    }
+  }
+]
