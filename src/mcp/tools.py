@@ -1,7 +1,7 @@
-"""MCP Tools — 5 herramientas estáticas + handlers para el servidor MCP de FAP.
+"""MCP Tools — Static and Dynamic tool handlers for FluxAgentPro.
 
-Cada handler retorna CallToolResult con TextContent (JSON serializado como string).
-El output pasa por sanitize_output() antes de retornar (Regla R3).
+Each handler returns CallToolResult with TextContent (JSON serialized string).
+Output passes through sanitize_output() before returning (Rule R3).
 """
 
 from __future__ import annotations
@@ -55,6 +55,64 @@ STATIC_TOOLS = [
         description="Listar las capacidades y metadata del servidor MCP de FluxAgentPro (versión, organización, transporte, cantidad de tools).",
         inputSchema={"type": "object", "properties": {}},
     ),
+    Tool(
+        name="execute_flow",
+        description="Instanciar y ejecutar un flow de trabajo por nombre.",
+        inputSchema={
+            "type": "object",
+            "required": ["flow_type"],
+            "properties": {
+                "flow_type": {"type": "string", "description": "Nombre del flow a ejecutar"},
+                "input_data": {"type": "object", "description": "Diccionario con los parámetros de entrada"}
+            }
+        }
+    ),
+    Tool(
+        name="get_task",
+        description="Consultar el estado y resultado de una tarea o ejecución de flow previa.",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {"type": "string", "description": "UUID de la tarea a consultar"}
+            }
+        }
+    ),
+    Tool(
+        name="approve_task",
+        description="Aprobar una tarea que requiere validación humana (HITL).",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {"type": "string", "description": "UUID de la tarea a aprobar"},
+                "notes": {"type": "string", "description": "Notas opcionales para la auditoría"}
+            }
+        }
+    ),
+    Tool(
+        name="reject_task",
+        description="Rechazar una tarea que requiere validación humana (HITL).",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {"type": "string", "description": "UUID de la tarea a rechazar"},
+                "reason": {"type": "string", "description": "Razón del rechazo"}
+            }
+        }
+    ),
+    Tool(
+        name="create_workflow",
+        description="Generar un nuevo template de workflow a partir de una descripción en lenguaje natural.",
+        inputSchema={
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+                "description": {"type": "string", "description": "Descripción de lo que debe hacer el workflow"}
+            }
+        }
+    ),
 ]
 
 
@@ -70,56 +128,68 @@ async def handle_tool_call(
     arguments: dict[str, Any],
     config: Any,
 ) -> CallToolResult:
-    """Route una llamada a tool al handler correcto.
-
-    Args:
-        name: Nombre de la tool invocada.
-        arguments: Argumentos recibidos del agente.
-        config: MCPConfig con org_id y transport.
-
-    Returns:
-        CallToolResult con el resultado o error.
+    """Route a tool call to the correct handler.
+    
+    Includes dynamic flow tools by mapping them to execute_flow.
     """
+    from .flow_to_tool import get_flow_tool_names
+    from .handlers import (
+        handle_execute_flow, handle_get_task, handle_approve_task, 
+        handle_reject_task, handle_create_workflow
+    )
+    from .exceptions import map_exception_to_mcp_error
+
+    # 1. Check for dynamic flow tools
+    if name in get_flow_tool_names():
+        try:
+            res = await handle_execute_flow({"flow_type": name, "input_data": arguments}, config)
+            return _make_result(res)
+        except Exception as exc:
+            logger.error("Error executing flow tool '%s': %s", name, exc)
+            err = map_exception_to_mcp_error(exc)
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(err.to_dict()))],
+                isError=True,
+            )
+
+    # 2. Map static handlers
     handlers = {
         "list_flows": _handle_list_flows,
         "list_agents": _handle_list_agents,
         "get_agent_detail": _handle_get_agent_detail,
         "get_server_time": _handle_get_server_time,
         "list_capabilities": _handle_list_capabilities,
+        "execute_flow": lambda args, cfg: handle_execute_flow(args, cfg),
+        "get_task": lambda args, cfg: handle_get_task(args, cfg),
+        "approve_task": lambda args, cfg: handle_approve_task(args, cfg),
+        "reject_task": lambda args, cfg: handle_reject_task(args, cfg),
+        "create_workflow": lambda args, cfg: handle_create_workflow(args, cfg),
     }
-
-    # Incluir flow tools dinámicas
-    from .flow_to_tool import get_flow_tool_names
-    for flow_name in get_flow_tool_names():
-        handlers[flow_name] = _handle_flow_tool_placeholder
 
     handler = handlers.get(name)
     if handler is None:
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": f"Tool '{name}' not found"}),
-            )],
+            content=[TextContent(type="text", text=json.dumps({"error": f"Tool '{name}' not found"}))],
             isError=True,
         )
 
     try:
-        return await handler(arguments, config)
+        # Wrap the result in _make_result if it's raw data
+        res = await handler(arguments, config)
+        if isinstance(res, CallToolResult):
+            return res
+        return _make_result(res)
     except Exception as exc:
-        logger.error("Error ejecutando tool '%s': %s", name, exc)
+        logger.error("Error executing tool '%s': %s", name, exc)
+        err = map_exception_to_mcp_error(exc)
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps(sanitize_output(
-                    {"error": f"Error ejecutando '{name}': {str(exc)}"}
-                )),
-            )],
+            content=[TextContent(type="text", text=json.dumps(err.to_dict()))],
             isError=True,
         )
 
 
 def _make_result(data: Any) -> CallToolResult:
-    """Helper: crea CallToolResult con JSON sanitizado."""
+    """Helper: creates CallToolResult with sanitized JSON."""
     sanitized = sanitize_output(data)
     return CallToolResult(
         content=[TextContent(
@@ -167,12 +237,9 @@ async def _handle_list_agents(
         )
         agents = result.data or []
     except Exception as exc:
-        logger.error("Error consultando agent_catalog: %s", exc)
+        logger.error("Error consulting agent_catalog: %s", exc)
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": "No se pudo conectar a la base de datos"}),
-            )],
+            content=[TextContent(type="text", text=json.dumps({"error": "DB connection error"}))],
             isError=True,
         )
 
@@ -187,10 +254,7 @@ async def _handle_get_agent_detail(
     agent_id = arguments.get("agent_id")
     if not agent_id:
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": "agent_id es requerido"}),
-            )],
+            content=[TextContent(type="text", text=json.dumps({"error": "agent_id required"}))],
             isError=True,
         )
 
@@ -205,21 +269,15 @@ async def _handle_get_agent_detail(
             .execute()
         )
     except Exception as exc:
-        logger.error("Error consultando agent_catalog: %s", exc)
+        logger.error("Error consulting agent_catalog: %s", exc)
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": "No se pudo conectar a la base de datos"}),
-            )],
+            content=[TextContent(type="text", text=json.dumps({"error": "DB connection error"}))],
             isError=True,
         )
 
     if not result.data:
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": f"Agente '{agent_id}' no encontrado para esta organización"}),
-            )],
+            content=[TextContent(type="text", text=json.dumps({"error": f"Agent '{agent_id}' not found"}))],
             isError=True,
         )
 
@@ -254,20 +312,3 @@ async def _handle_list_capabilities(
         "static_tools": static_count,
         "dynamic_tools": dynamic_count,
     })
-
-
-async def _handle_flow_tool_placeholder(
-    arguments: dict[str, Any],
-    config: Any,
-) -> CallToolResult:
-    """Placeholder para flow tools — Sprint 1 solo lista, no ejecuta."""
-    return CallToolResult(
-        content=[TextContent(
-            type="text",
-            text=json.dumps({
-                "error": "La ejecución de flows no está habilitada en Sprint 1. "
-                         "Este servidor solo permite consultar la lista de flows y agentes."
-            }),
-        )],
-        isError=True,
-    )
