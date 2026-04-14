@@ -1,81 +1,79 @@
-# 📝 ESTADO DE FASE: MANTENIMIENTO (Sprint 4)
+# 📝 ESTADO DE FASE: MANTENIMIENTO (Sprint 4 — COMPLETADO)
 
 ## 1. Resumen de Fase
-- **Objetivo:** Implementación de handlers productivos para que Claude pueda ejecutar flows reales, consultar tareas y gestionar workflows vía ArchitectFlow.
-- **Lista de Pasos (Sprint 3):**
-  1. Implementación de `src/mcp/handlers.py` (Lógica real de ejecución).
-  2. Implementación de `src/mcp/auth.py` (Auth Bridge con python-jose).
-  3. Implementación de `src/mcp/exceptions.py` (Mapeo de errores JSON-RPC).
-  4. Registro de tools productivas: `execute_flow`, `get_task`, `approve_task`, `reject_task`, `create_workflow`.
+- **Objetivo:** Implementación de soporte **Server-Sent Events (SSE)** para acceso remoto (Claude Web/Mobile) y ciclo completo de **Human-In-The-Loop (HITL)** vía Dashboard.
+- **Lista de Pasos (Sprint 4):**
+  1. Refactor de Auth en middleware a `python-jose` (Unificación).
+  2. Implementación de `src/mcp/server_sse.py` (Transporte HTTP).
+  3. Creación de UI en Dashboard para gestión de aprobaciones (`/approvals`).
+  4. Creación de panel de configuración MCP (`/settings/mcp`).
+  5. Conexión de Health Checks al lifespan de FastAPI.
 - **Dependencias:**
-  - Requiere Sprint 1 ✅ (Servidor Stdio OK).
-  - Requiere Sprint 2 ✅ (ServiceCatalog + Sanitizer OK).
-  - Sprint 3 ✅ (Handlers Productivos OK).
-  - Sprint 4 ⏳ (HITL Completo + SSE).
+  - Sprint 1, 2, 3 ✅ (Core Handlers OK).
+  - Sprint 4 ✅ (SSE + HITL OK).
+  - Sprint 5 ⏳ (Despliegue y Pulido).
 
 ## 2. Estado Actual del Proyecto
 
 - **Qué ya está implementado y funcional:**
-  - **Servidor MCP Básico:** `src/mcp/server.py` y `src/mcp/config.py` operativos vía Stdio (Sprint 1).
-  - **Traductor de Flows a Tools:** `src/mcp/flow_to_tool.py` genera herramientas dinámicamente desde el registry.
-  - **Herramientas Estáticas:** 10 tools en `src/mcp/tools.py` (5 básicas + 5 productivas del Sprint 3).
-  - **Handlers de Ejecución:** `src/mcp/handlers.py` implementado con lógica real de ejecución y timeouts (Sprint 3).
-  - **Auth Bridge:** `src/mcp/auth.py` genera internal tokens usando `python-jose` (Sprint 3).
-  - **Mapeo de Errores:** `src/mcp/exceptions.py` mapea excepciones internas a códigos JSON-RPC (Sprint 3).
-  - **Service Catalog (Tipo C):** Tablas `service_catalog`, `org_service_integrations` y `service_tools` en DB (Migración 024).
-  - **Sanitizador de Salida:** `src/mcp/sanitizer.py` con 7 patrones regex (Regla R3).
-  - **Integración SUPABASE:** Migración 025 aplicada con RLS moderno y bypass para `service_role`.
-  - **Endpoints REST de Integración:** `src/api/routes/integrations.py` implementado.
+  - **Servidor MCP Dual Transport:** Soporta Stdio (`server.py`) y SSE (`server_sse.py`).
+  - **Multi-tenant Seguro:** Uso de `contextvars` para manejar aisladamente el `org_id` en el servidor MCP compartido.
+  - **Health Checks Activos:** Ejecución en background iniciada desde el lifespan de FastAPI.
+  - **Dashboard HITL:** Interfaz operativa para aprobaciones pendientes con actualizaciones Realtime (Supabase).
+  - **Configuración MCP:** Panel en el Dashboard con instrucciones de conexión para Stdio y URL de SSE.
+  - **Trazabilidad Mejorada:** Columna `requires_approval` en tabla `tasks` para identificar flows intervenidos.
 
 - **Qué está parcialmente implementado:**
-  - **Health Check:** `src/scheduler/health_check.py` existe pero no está conectado al lifespan del servidor.
+  - **Manejo de Secretos:** Los tokens JWT para SSE son internos; falta integración con un secret manager para rotación automática (Phase 5).
 
 - **Qué no existe aún:**
-  - **Servidor SSE:** Transporte alternativo para Claude Web/Mobile (Sprint 4).
-  - **HITL Dashboard UI:** Panel para gestionar aprobaciones pendientes (Sprint 4).
-  - **MCP Config UI:** Panel para gestionar conexiones MCP (Sprint 4).
+  - **Streaming de Tokens LLM vía SSE:** Actualmente la respuesta se envía completa al finalizar.
+  - **Observabilidad MCP:** Trazas detalladas de mensajes JSON-RPC en el Dashboard.
 
 - **Discrepancias plan vs código:**
-  - 📝 **CORRECCIÓN:** El plan menciona `PyJWT` para Auth, el código usa `python-jose` (verificado en `pyproject.toml`).
-  - 📝 **CORRECCIÓN:** El plan asume rutas de Windows, el entorno de ejecución real es Linux (`/home/daniel/develop/...`).
+  - 📝 **CORRECCIÓN:** El plan original indicaba `PyJWT`; el código ha sido **unificado a `python-jose`** en todo el proyecto (Auth & Middleware).
+  - 📝 **CORRECCIÓN:** El plan mencionaba rutas Windows; el proyecto está estandarizado en Linux/Unix paths.
 
 ## 3. Contratos Técnicos Vigentes
 
 - **Modelos de Datos (Supabase):**
-  - Schema `public` verificado. Tablas críticas: `agent_catalog`, `service_catalog`, `service_tools`.
-  - RLS: Utiliza `auth.jwt() -> 'app_metadata' -> 'org_id'` para aislamiento (verificado en migración 013/025).
+  - Tabla `tasks`: Incluye `requires_approval` (Migración 026).
+  - Tabla `pending_approvals`: Tabla central para HITL (Migración 002).
+  - RLS: Utiliza `auth.jwt() -> 'app_metadata' -> 'org_id'` (verificado).
 
 - **Endpoints API:**
-  - `/api/v1/integrations/`: Gestión de Service Catalog.
+  - `/api/v1/mcp/sse`: Canal de eventos MCP.
+  - `/api/v1/mcp/messages`: Receptor de mensajes MCP (JSON-RPC POST).
+  - `/api/v1/approvals/`: Gestión de tareas pendientes de intervención humana.
 
 - **Patrones de Código en Uso:**
-  - **Pattern RLS:** Uso de `tenant_id` o `organization_id` con chequeo de `service_role` bypass.
-  - **Tool Registry:** Los flows se registran en `src/flows/registry.py` usando `FLOW_INPUT_SCHEMAS`.
-  - **Sanitización:** Llamada obligatoria a `sanitize_output()` en cada handler de tool MCP.
-  - **Auth en API:** Middleware en `src/api/middleware.py` usa `python-jose` para validar tokens.
+  - **Pattern ContextAware:** Uso de `mcp_config_var` para inyectar configuración de tenant en handlers asíncronos.
+  - **Pattern Realtime:** El Dashboard se suscribe a `pending_approvals` para notificaciones push.
+  - **Auth en API:** Middleware unificado en `src/api/middleware.py` usando `python-jose` con validación de JWKS.
 
-- **Estructura de Carpetas:** Standard Python Package en `src/` con `dashboard/` para el frontend Next.js.
+- **Estructura de Carpetas:** Core logic en `src/mcp`, Routes en `src/api/routes`, Dashboard en `dashboard/app/(app)`.
+
 - **Dependencias (pyproject.toml):**
-  - `mcp>=1.0.0,<2.0.0`
-  - `fastapi>=0.115.0`
+  - `mcp>=1.0.0`
   - `python-jose[cryptography]>=3.3.0`
-  - `httpx>=0.28.0`
+  - `httpx>=0.28.0` (Usado para fetch de JWKS y health checks).
 
 ## 4. Decisiones de Arquitectura Tomadas
-- **Transporte Stdio:** Elegido para la fase inicial de conexión con Claude Desktop.
-- **Service Catalog Tipo C:** Implementación dinámica vía DB para evitar hardcode de ~226 tools.
-- **Sanitización R3:** Obligatoria para prevenir leaks de keys o URLs internas en el output del LLM.
+- **Single Process / Multi-tenant MCP:** Uso de un único servidor MCP que cambia su contexto dinámicamente según la petición HTTP/SSE entrante.
+- **SseServerTransport:** Elección del transporte oficial del SDK de MCP para compatibilidad máxima.
+- **Unificación Criptográfica:** Eliminación de `PyJWT` para evitar conflictos de firmas y dependencias fantasma.
 
 ## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
-| Sprint 1 | ✅ | `src/mcp/server.py`, `src/mcp/tools.py` | Stdio como transporte principal | Base funcional MCP lista |
-| Sprint 2 | ✅ | `src/mcp/sanitizer.py`, `migrations/024` | Herramientas dinámicas via DB | Service Catalog validado 18/18 |
-| Sprint 3 | ✅ | `src/mcp/handlers.py`, `src/mcp/auth.py` | Ejecución real con timeouts | Handlers productivos listos |
+| Sprint 1 | ✅ | `server.py`, `tools.py` | Stdio como transporte principal | Base funcional lista |
+| Sprint 2 | ✅ | `sanitizer.py`, `migr/024` | Herramientas dinámicas via DB | Service Catalog validado |
+| Sprint 3 | ✅ | `handlers.py`, `auth.py` | Ejecución real con timeouts | Handlers productivos listos |
+| Sprint 4 | ✅ | `middleware.py`, `server_sse.py`, `main.py` | Transporte SSE y HITL Realtime | Soporte Claude Web y UI Aprobaciones |
 
 ## 6. Criterios Generales de Aceptación MVP
-- Happy path operativo (Claude ejecuta flows de prueba).
-- Manejo de excepciones sin crash del servidor (JSON-RPC Error mapping).
-- Validación de esquemas de input para cada tool dinámico.
-- Persistencia de eventos de ejecución en `domain_events`.
+- Happy path operativo (Claude ejecuta flows de prueba vía SSE).
+- Intervención humana funcional desde el Dashboard.
+- Aislamiento total entre organizaciones verificado.
+- Salud del sistema monitoreada en tiempo real.

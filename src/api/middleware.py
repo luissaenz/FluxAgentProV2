@@ -51,10 +51,9 @@ from __future__ import annotations
 import json
 import logging
 
-import jwt as pyjwt
-from jwt import PyJWKClient
-from jwt.algorithms import ECAlgorithm
-from jwt.exceptions import PyJWKClientConnectionError, PyJWKClientError
+from jose import jwt, jwk, JWKError
+from jose.exceptions import JWTError, ExpiredSignatureError
+import httpx
 
 from fastapi import Header, HTTPException, Request, Depends
 
@@ -63,39 +62,33 @@ from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# ── JWKS client singleton ──────────────────────────────────────────────────
-# Built lazily on first call so Settings are available.  The client caches the
-# full JWKS response for 5 minutes and automatically re-fetches on key-miss.
-
-_jwks_client: PyJWKClient | None = None
+# ── JWKS caching ───────────────────────────────────────────────────────────
+_jwks_cache: dict | None = None
 
 
-def _get_jwks_client() -> PyJWKClient:
-    """Return (and lazily create) the module-level PyJWKClient singleton.
-
-    PyJWT's ``PyJWKClient`` is thread-safe and caches the JWKS response
-    internally; creating one instance per process is the recommended pattern.
-
-    The Supabase ``/auth/v1/jwks`` endpoint requires an ``apikey`` header
-    (the project's anon key).  ``PyJWKClient`` forwards ``headers`` on every
-    urllib request it makes, so passing ``apikey`` here handles auth
-    transparently — including automatic re-fetch on key rotation.
-    """
-    global _jwks_client
-    if _jwks_client is None:
+async def _get_jwks() -> dict:
+    """Fetch and cache Supabase JWKS using httpx."""
+    global _jwks_cache
+    if _jwks_cache is None:
         settings = get_settings()
         jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
-        _jwks_client = PyJWKClient(
-            jwks_url,
-            headers={"apikey": settings.supabase_anon_key},
-            cache_jwk_set=True,
-            lifespan=300,   # 5 minutes — safe, Supabase caches their edge for 10 min
-            cache_keys=True,
-            max_cached_keys=16,
-            timeout=10,
-        )
-        logger.debug("PyJWKClient initialised: %s", jwks_url)
-    return _jwks_client
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.get(
+                    jwks_url,
+                    headers={"apikey": settings.supabase_anon_key},
+                    timeout=10,
+                )
+                resp.raise_for_status()
+                _jwks_cache = resp.json()
+                logger.debug("JWKS cached from %s", jwks_url)
+            except Exception as e:
+                logger.error("Failed to fetch JWKS: %s", e)
+                raise HTTPException(
+                    status_code=503,
+                    detail="Auth service temporarily unavailable",
+                ) from e
+    return _jwks_cache
 
 
 # ── existing: org_id header extraction ────────────────────────────────────
@@ -118,140 +111,54 @@ async def require_org_id(
     return x_org_id.strip()
 
 
-# ── ES256 helper ───────────────────────────────────────────────────────────
+async def _verify_es256(token: str, issuer: str) -> dict:
+    """Verify an ES256-signed Supabase JWT using python-jose."""
+    jwks = await _get_jwks()
 
-def _verify_es256(token: str, issuer: str) -> dict:
-    """Verify an ES256-signed Supabase JWT using the project's JWKS endpoint.
-
-    Flow
-    ----
-    1. Read the ``kid`` from the unverified JWT header.
-    2. Ask ``PyJWKClient`` for the matching EC public key (fetches / uses cache).
-    3. Decode-and-verify the token with ``pyjwt.decode`` — this performs full
-       signature verification, expiry check, and issuer validation.
-
-    Why not use the Dashboard JWT secret?
-    --------------------------------------
-    The secret shown in Dashboard → Project Settings → API is a shared HMAC
-    secret used *only* for HS256-signed tokens.  ES256 tokens are signed with
-    Supabase's EC private key; the public counterpart is published via JWKS.
-    There is no way to verify an ES256 token locally with the HS256 secret.
-
-    Raises
-    ------
-    HTTPException 401  on any verification failure.
-    """
-    client = _get_jwks_client()
-
-    # --- Step 1: locate the right key by kid ---
     try:
-        signing_key = client.get_signing_key_from_jwt(token)
-    except PyJWKClientConnectionError as e:
-        logger.error("Could not reach Supabase JWKS endpoint: %s", e)
-        raise HTTPException(
-            status_code=503,
-            detail="Auth service temporarily unavailable — JWKS fetch failed",
-        ) from e
-    except PyJWKClientError as e:
-        logger.error("JWKS key lookup failed: %s", e)
-        raise HTTPException(
-            status_code=401,
-            detail=f"Token signing key not found: {e}",
-        ) from e
+        header = jwt.get_unverified_header(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Malformed JWT: {e}")
 
-    # --- Step 2: full cryptographic verification ---
+    kid = header.get("kid")
+    if not kid:
+        raise HTTPException(status_code=401, detail="Missing kid in JWT header")
+
+    # Find the key in the JWKS
+    key_dict = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+    if not key_dict:
+        # Invalidate cache and retry once if key not found (might have rotated)
+        global _jwks_cache
+        _jwks_cache = None
+        jwks = await _get_jwks()
+        key_dict = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+        if not key_dict:
+            raise HTTPException(status_code=401, detail="Invalid token signing key")
+
     try:
-        payload = pyjwt.decode(
+        # Convert JWK to a format jose understands for verification
+        # For ES256, jose likes the JWK dict directly or a jwk.construct object
+        payload = jwt.decode(
             token,
-            signing_key,           # ECPublicKey object from PyJWT's PyJWK wrapper
+            key_dict,
             algorithms=["ES256"],
             issuer=issuer,
             options={
-                "verify_aud": False,   # Supabase tokens may omit aud
+                "verify_aud": False,
                 "verify_exp": True,
                 "verify_iss": True,
             },
         )
         return payload
-    except pyjwt.ExpiredSignatureError as e:
-        raise HTTPException(status_code=401, detail="Token has expired") from e
-    except pyjwt.InvalidIssuerError as e:
-        raise HTTPException(status_code=401, detail="Token issuer mismatch") from e
-    except pyjwt.InvalidTokenError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid ES256 token: {e}") from e
-
-
-def _verify_es256_manual(token: str, issuer: str) -> dict:
-    """Alternative ES256 verifier that fetches the JWKS manually (no PyJWKClient).
-
-    Use this if ``PyJWKClient`` is unavailable or if you need more control over
-    the HTTP layer (e.g. async httpx).  This uses ``requests`` and then
-    ``ECAlgorithm.from_jwk`` directly.
-
-    This is provided as a reference implementation — ``_verify_es256`` above
-    using ``PyJWKClient`` is preferred in production because it handles caching
-    and key rotation automatically.
-    """
-    import requests as req_lib
-
-    settings = get_settings()
-    jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
-
-    # Decode header without verifying to get kid
-    unverified_header = pyjwt.get_unverified_header(token)
-    kid = unverified_header.get("kid")
-    if not kid:
-        raise HTTPException(status_code=401, detail="JWT missing kid header")
-
-    # Fetch JWKS
-    try:
-        resp = req_lib.get(
-            jwks_url,
-            headers={"apikey": settings.supabase_anon_key},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        jwks = resp.json()
-    except Exception as e:
-        logger.error("JWKS fetch error: %s", e)
-        raise HTTPException(status_code=503, detail="Could not fetch JWKS") from e
-
-    # Find the key matching kid
-    keys = jwks.get("keys", [])
-    matching = next((k for k in keys if k.get("kid") == kid), None)
-    if not matching:
-        raise HTTPException(
-            status_code=401,
-            detail=f"No JWKS key found for kid={kid!r}",
-        )
-
-    # Construct the EC public key object and verify
-    try:
-        ec_public_key = ECAlgorithm.from_jwk(json.dumps(matching))
-        payload = pyjwt.decode(
-            token,
-            ec_public_key,
-            algorithms=["ES256"],
-            issuer=issuer,
-            options={"verify_aud": False},
-        )
-        return payload
-    except pyjwt.InvalidTokenError as e:
-        raise HTTPException(status_code=401, detail=f"ES256 verification failed: {e}") from e
-
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid ES256 token: {e}")
 
 # ── HS256 helper ───────────────────────────────────────────────────────────
 
 def _verify_hs256(token: str, issuer: str) -> dict:
-    """Verify a legacy HS256-signed Supabase JWT using the shared JWT secret.
-
-    The secret is found in Dashboard → Project Settings → API → JWT Settings →
-    ``JWT Secret``.  Map it to the env var ``SUPABASE_JWT_SECRET``.
-
-    Raises
-    ------
-    HTTPException 401  on any verification failure.
-    """
+    """Verify a legacy HS256-signed Supabase JWT using python-jose."""
     settings = get_settings()
     if not settings.supabase_jwt_secret:
         logger.error("HS256 token received but SUPABASE_JWT_SECRET is not set")
@@ -260,7 +167,7 @@ def _verify_hs256(token: str, issuer: str) -> dict:
             detail="Server misconfiguration: JWT secret not configured",
         )
     try:
-        payload = pyjwt.decode(
+        payload = jwt.decode(
             token,
             settings.supabase_jwt_secret,
             algorithms=["HS256"],
@@ -272,12 +179,10 @@ def _verify_hs256(token: str, issuer: str) -> dict:
             },
         )
         return payload
-    except pyjwt.ExpiredSignatureError as e:
-        raise HTTPException(status_code=401, detail="Token has expired") from e
-    except pyjwt.InvalidIssuerError as e:
-        raise HTTPException(status_code=401, detail="Token issuer mismatch") from e
-    except pyjwt.InvalidTokenError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid HS256 token: {e}") from e
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid HS256 token: {e}")
 
 
 # ── main JWT dependency ────────────────────────────────────────────────────
@@ -319,8 +224,8 @@ async def verify_supabase_jwt(
 
     # --- Read algorithm from header without verifying ---
     try:
-        header = pyjwt.get_unverified_header(token)
-    except pyjwt.DecodeError as e:
+        header = jwt.get_unverified_header(token)
+    except Exception as e:
         raise HTTPException(status_code=401, detail=f"Malformed JWT header: {e}") from e
 
     alg = header.get("alg", "").upper()
@@ -329,7 +234,7 @@ async def verify_supabase_jwt(
     # --- Dispatch to the correct verifier ---
     if alg == "ES256":
         logger.debug("Verifying ES256 token via JWKS")
-        payload = _verify_es256(token, issuer)
+        payload = await _verify_es256(token, issuer)
         logger.info("ES256 token verified, sub=%s", payload.get("sub"))
 
     elif alg == "HS256":

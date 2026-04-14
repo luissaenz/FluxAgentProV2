@@ -31,6 +31,7 @@ from .routes.agents import router as agents_router
 from .routes.transcripts import router as transcripts_router
 from .routes.analytical_chat import router as analytical_chat_router
 from .routes.integrations import router as integrations_router
+from ..mcp.server_sse import router as mcp_sse_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,6 +60,12 @@ async def lifespan(_app: FastAPI):
             logger.error("Flow Registry validation failed: %s", validation["errors"])
         else:
             logger.info("Flow Registry validated successfully.")
+
+        # Run health checks in background (Paso 4.5)
+        from src.scheduler.health_check import run_health_checks
+        import asyncio
+        asyncio.create_task(run_health_checks())
+        logger.info("Background health checks started.")
 
     except Exception as exc:
         logger.warning("Could not initialize flows during lifespan: %s", exc)
@@ -96,6 +103,7 @@ app.include_router(agents_router)  # Semana 2: agent detail
 app.include_router(transcripts_router)  # Semana 2: transcripts
 app.include_router(analytical_chat_router)  # Phase 4: analytical assistant
 app.include_router(integrations_router)  # Phase 5: service catalog TIPO C
+app.include_router(mcp_sse_router, prefix="/api/v1") # MCP SSE
 
 
 @app.get("/health")

@@ -24,9 +24,12 @@ from .flow_to_tool import build_flow_tools
 
 logger = logging.getLogger(__name__)
 
-server = Server("FluxAgentPro-v2")
-config: MCPConfig  # se asigna en main()
+from contextvars import ContextVar
 
+server = Server("FluxAgentPro-v2")
+
+# ContextVar para manejar el config por request (especialmente para SSE)
+mcp_config_var: ContextVar[MCPConfig | None] = ContextVar("mcp_config", default=None)
 
 @server.list_tools()
 async def handle_list_tools():
@@ -39,32 +42,25 @@ async def handle_list_tools():
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict | None):
     """Route a handler apropiado."""
+    config = mcp_config_var.get()
+    if not config:
+        # Fallback para Stdio
+        config = current_config_stdio
+        
     return await handle_tool_call(name, arguments or {}, config)
 
+# Global solo para Stdio (donde solo hay un tenant por proceso)
+current_config_stdio: MCPConfig | None = None
 
-async def main():
+async def run_stdio_server(org_id: str):
     """Entry point del servidor MCP Stdio."""
-    global config
-
-    parser = argparse.ArgumentParser(description="FAP MCP Server")
-    parser.add_argument(
-        "--org-id",
-        required=True,
-        help="UUID de la organización",
-    )
-    args = parser.parse_args()
-
-    config = MCPConfig(org_id=args.org_id)
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+    global current_config_stdio
+    current_config_stdio = MCPConfig(org_id=org_id)
+    mcp_config_var.set(current_config_stdio)
 
     logger.info(
-        "MCP Server starting (org_id=%s, transport=%s)",
-        config.org_id,
-        config.transport,
+        "Starting Stdio MCP Server (org_id=%s)",
+        current_config_stdio.org_id,
     )
 
     async with stdio_server() as (read, write):
@@ -72,4 +68,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+    parser = argparse.ArgumentParser(description="FAP MCP Server")
+    parser.add_argument("--org-id", required=True)
+    args = parser.parse_args()
+    
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(run_stdio_server(args.org_id))
