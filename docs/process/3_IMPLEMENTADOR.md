@@ -26,7 +26,7 @@ Partimos de un documento técnico consolidado que define qué construir. Tu misi
 1. **🥇 Fuente de Verdad #1:** `D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-FINAL.md` — **TODO lo que implementes debe salir de aquí.**
 2. **🥈 Fuente de Verdad #2:** Código fuente existente (`src/`, `supabase/migrations/`) — para verificar interfaces, patrones y convenciones reales.
 3. **🥉 Contexto:** `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md` — contratos y decisiones vigentes.
-4. **⚠️ Solo referencia:** `D:\Develop\Personal\FluxAgentPro-v2\docs\mcp-analisis-finalV2.md` — el plan general. **NO implementar directamente de aquí si el análisis FINAL lo corrigió.**
+4. **⚠️ Solo referencia:** `D:\Develop\Personal\FluxAgentPro-v2\docs\plan.md` — el plan general. **NO implementar directamente de aquí si el análisis FINAL lo corrigió.**
 
 > [!CRITICAL]
 > **REGLA DE CONFLICTO:** Si encontrás una diferencia entre el plan general y el `analisis-FINAL.md`, el `analisis-FINAL.md` SIEMPRE gana. El plan general puede contener errores que fueron detectados y corregidos durante el proceso de análisis. Implementar del plan en vez del FINAL reintroduce bugs ya identificados.

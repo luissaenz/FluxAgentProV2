@@ -50,6 +50,7 @@ class FlowRegistry:
         *,
         depends_on: Optional[List[str]] = None,
         category: Optional[str] = None,
+        description: str = "",
     ) -> Callable[[Type], Type]:
         """
         Class decorator that registers a Flow.
@@ -63,6 +64,7 @@ class FlowRegistry:
                 "facturacion_flow",
                 depends_on=["venta_flow"],
                 category="facturacion",
+                description="Procesa facturación post-venta",
             )
             class FacturacionFlow(BaseFlow): ...
         """
@@ -75,6 +77,7 @@ class FlowRegistry:
             self._metadata[flow_name] = {
                 "depends_on": depends_on or [],
                 "category": category,
+                "description": description,
             }
 
             logger.info(
@@ -243,6 +246,9 @@ def register_flow(
     *,
     depends_on: Optional[List[str]] = None,
     category: Optional[str] = None,
+    description: str = "",
 ) -> Callable[[Type], Type]:
     """Shortcut for ``flow_registry.register(name)`` with optional metadata."""
-    return flow_registry.register(name, depends_on=depends_on, category=category)
+    return flow_registry.register(
+        name, depends_on=depends_on, category=category, description=description
+    )

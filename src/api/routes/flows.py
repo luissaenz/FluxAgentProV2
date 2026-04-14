@@ -66,68 +66,10 @@ class RunFlowResponse(BaseModel):
     status: str
 
 
-# Mapeo de flows a sus schemas de input (definidos manualmente o desde los flows)
-FLOW_INPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
-    "bartenders_preventa": {
-        "type": "object",
-        "required": [
-            "fecha_evento",
-            "provincia",
-            "localidad",
-            "tipo_evento",
-            "pax",
-            "duracion_horas",
-            "tipo_menu",
-        ],
-        "properties": {
-            "fecha_evento": {"type": "string", "example": "2026-07-20"},
-            "provincia": {
-                "type": "string",
-                "enum": ["Tucuman", "Salta", "Jujuy", "Catamarca"],
-            },
-            "localidad": {"type": "string"},
-            "tipo_evento": {
-                "type": "string",
-                "enum": ["boda", "corporativo", "fiesta", "otro"],
-            },
-            "pax": {"type": "integer", "minimum": 10, "maximum": 500},
-            "duracion_horas": {"type": "integer", "minimum": 1, "maximum": 24},
-            "tipo_menu": {"type": "string", "enum": ["basico", "estandar", "premium"]},
-            "restricciones": {"type": "string"},
-        },
-    },
-    "bartenders_reserva": {
-        "type": "object",
-        "required": ["evento_id", "cotizacion_id", "opcion_elegida"],
-        "properties": {
-            "evento_id": {"type": "string"},
-            "cotizacion_id": {"type": "string"},
-            "opcion_elegida": {
-                "type": "string",
-                "enum": ["basica", "recomendada", "premium"],
-            },
-        },
-    },
-    "bartenders_alerta": {
-        "type": "object",
-        "required": ["evento_id"],
-        "properties": {
-            "evento_id": {"type": "string"},
-        },
-    },
-    "bartenders_cierre": {
-        "type": "object",
-        "required": ["evento_id", "costo_real"],
-        "properties": {
-            "evento_id": {"type": "string"},
-            "costo_real": {"type": "integer"},
-            "mermas": {"type": "integer", "default": 0},
-            "compras_emergencia": {"type": "integer", "default": 0},
-            "desvio_climatico": {"type": "string"},
-            "rating": {"type": "integer", "minimum": 1, "maximum": 5},
-        },
-    },
-}
+# Mapeo de flows a sus schemas de input
+# Los schemas de bartenders fueron removidos en Sprint 1 (desacople).
+# Para MCP, flow_to_tool.py genera tools con schema vacío si no hay entrada aquí.
+FLOW_INPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {}
 
 
 @router.get("/available", response_model=FlowsListResponse)

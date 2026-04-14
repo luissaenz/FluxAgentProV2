@@ -80,3 +80,23 @@ def list_secrets(org_id: str) -> List[str]:
     )
 
     return [row["name"] for row in result.data]
+
+
+async def get_secret_async(org_id: str, secret_name: str) -> str:
+    """Wrapper async de get_secret() para uso en event loops MCP.
+
+    Usa asyncio.to_thread() para no bloquear el event loop.
+    Disponible desde Python 3.9 (proyecto requiere >=3.12).
+
+    Args:
+        org_id: UUID de la organización
+        secret_name: Nombre del secreto
+
+    Returns:
+        El valor del secreto en texto plano.
+
+    Raises:
+        VaultError: Si el secreto no existe o no se puede acceder.
+    """
+    import asyncio
+    return await asyncio.to_thread(get_secret, org_id, secret_name)

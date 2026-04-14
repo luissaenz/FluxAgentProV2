@@ -26,6 +26,8 @@ dependencies = [
     # Phase 6 — Scheduler and date utilities
     "apscheduler>=3.10.0",
     "python-dateutil>=2.9.0",
+    # MCP Server (Phase 5)
+    "mcp>=1.0.0,<2.0.0",
 ]
 
 [project.optional-dependencies]

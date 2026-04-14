@@ -14,8 +14,8 @@ Reglas invariantes de todos los agentes:
 from crewai import Agent, Crew, Task, Process
 from pydantic import BaseModel
 from src.connectors.base_connector import BaseDataConnector
-from src.tools.bartenders.escandallo_tool import EscandalloTool
-from src.tools.bartenders.clima_tool import FactorClimaticoTool
+from src.tools.demo.escandallo_tool import EscandalloTool
+from src.tools.demo.clima_tool import FactorClimaticoTool
 
 
 # ══════════════════════════════════════════════════════════════════════════

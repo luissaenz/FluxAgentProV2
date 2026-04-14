@@ -16,8 +16,8 @@ from crewai import Agent, Crew, Task, Process
 from pydantic import BaseModel
 
 from src.connectors.base_connector import BaseDataConnector
-from src.tools.bartenders.clima_tool import PronosticoRealTool
-from src.tools.bartenders.inventario_tool import (
+from src.tools.demo.clima_tool import PronosticoRealTool
+from src.tools.demo.inventario_tool import (
     CalcularStockNecesarioTool,
     ReservarStockTool,
 )

@@ -27,7 +27,8 @@
       "Bash(mkdir *)",
       "Bash(dir *)",
       "Bash(sed *)",
-      "Bash(powershell *)"
+      "Bash(powershell *)",
+      "Bash(d:\\develop\\personal\\fluxagentpro-v2\\.venv\\scripts\\python.exe *)"
     ]
   },
   "$version": 3
