@@ -2,16 +2,20 @@
 
 import { useState } from 'react'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { api } from '@/lib/api'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Copy, Check, Server, Shield } from 'lucide-react'
+import { Copy, Check, Server, Shield, Key } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function MCPConfigPage() {
   const { orgId } = useCurrentOrg()
   const [copiedSse, setCopiedSse] = useState(false)
+  const [copiedPin, setCopiedPin] = useState(false)
+  const [pin, setPin] = useState('')
+  const [loading, setLoading] = useState(false)
   
   // En producción esto vendría de una variable de entorno configurada en el despliegue
   const sseUrl = `${process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000'}/api/v1/mcp/sse`
@@ -21,6 +25,19 @@ export default function MCPConfigPage() {
     setter(true)
     toast.success('Copiado al portapapeles')
     setTimeout(() => setter(false), 2000)
+  }
+
+  const handleGeneratePin = async () => {
+    try {
+      setLoading(true)
+      const res = await api.post('/mcp/generate-pin')
+      setPin(res.pin)
+      toast.success('PIN generado exitosamente. Cópialo, no se mostrará de nuevo.')
+    } catch (err) {
+      toast.error('Error al generar el PIN')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const claudeConfig = JSON.stringify({
@@ -81,7 +98,29 @@ export default function MCPConfigPage() {
             </div>
             <div className="rounded-md bg-white p-3 text-xs text-muted-foreground dark:bg-gray-950">
               <p className="font-semibold text-blue-700 dark:text-blue-400">Nota:</p>
-              <p>Esta URL requiere incluir las cabeceras `Authorization` y `X-Org-ID` para autenticar la conexión de tu organización.</p>
+              <p>Esta URL requiere incluir las cabeceras `Authorization` y `X-Org-ID` para autenticar la conexión de tu organización. Adicionalmente de un PIN remoto.</p>
+            </div>
+            <div className="space-y-2 mt-4 pt-4 border-t border-blue-100 dark:border-blue-900/50">
+              <Label className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                <Key className="h-4 w-4" />
+                PIN de Conexión Remota
+              </Label>
+              {pin ? (
+                <div className="flex gap-2">
+                  <Input readOnly value={pin} className="font-mono" />
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(pin, setCopiedPin)}>
+                    {copiedPin ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  onClick={handleGeneratePin} 
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  {loading ? 'Generando...' : 'Generar nuevo PIN'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

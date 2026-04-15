@@ -12,6 +12,7 @@ import {
   Activity,
   MessageSquare,
   Ticket,
+  Server,
   type LucideIcon,
 } from 'lucide-react'
 import {
@@ -44,6 +45,7 @@ export const defaultNavItems: NavItem[] = [
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },
   { title: 'Chat MDC', url: '/architect', icon: MessageSquare },
+  { title: 'Config MCP', url: '/settings/mcp', icon: Server },
 ]
 
 export function NavMain({ items }: NavMainProps) {
