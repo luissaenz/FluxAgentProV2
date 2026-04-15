@@ -100,3 +100,25 @@ async def get_secret_async(org_id: str, secret_name: str) -> str:
     """
     import asyncio
     return await asyncio.to_thread(get_secret, org_id, secret_name)
+
+
+def upsert_secret(org_id: str, name: str, value: str) -> None:
+    """
+    Insertar o actualizar un secreto para una organización.
+
+    IMPORTANTE:
+    - Usa service_role (bypasea RLS — requiere política INSERT/UPDATE para service_role).
+    - El valor se guarda en texto plano (encriptación a nivel de DB/Storage es responsabilidad de infra).
+    
+    Args:
+        org_id: UUID de la organización
+        name: Nombre del secreto
+        value: Valor del secreto
+    """
+    svc = get_service_client()
+    svc.table("secrets").upsert({
+        "org_id": org_id,
+        "name": name,
+        "secret_value": value,
+    }, on_conflict="org_id,name").execute()
+    logger.info("Secreto '%s' upserted para org '%s'", name, org_id)

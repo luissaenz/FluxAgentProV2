@@ -1,82 +1,60 @@
-# 📝 ESTADO DE FASE: MANTENIMIENTO (Sprint 4 — COMPLETADO)
+# 📝 ESTADO DE FASE: EXPANSIÓN (Sprint 5 — EN CURSO)
 
 ## 1. Resumen de Fase
-- **Objetivo:** Implementación de soporte **Server-Sent Events (SSE)** para acceso remoto (Claude Web/Mobile) y ciclo completo de **Human-In-The-Loop (HITL)** vía Dashboard.
-- **Lista de Pasos (Sprint 4):**
-  1. Refactor de Auth en middleware a `python-jose` (Unificación).
-  2. Implementación de `src/mcp/server_sse.py` (Transporte HTTP).
-  3. Creación de UI en Dashboard para gestión de aprobaciones (`/approvals`).
-  4. Creación de panel de configuración MCP (`/settings/mcp`).
-  5. Conexión de Health Checks al lifespan de FastAPI.
-  6. Endpoint POST `/api/mcp/generate-pin` (Iniciando Sprint 5).
+- **Objetivo:** Fortalecer el **Ecosistema Agéntico MCP** mediante la resolución de herramientas reales, persistencia de secretos y autenticación robusta.
+- **Lista de Pasos (Sprint 5):**
+  1. **IntegrationResolver:** Validación y mapeo de tools alucinadas contra el catálogo real (COMPLETADO).
+  2. **Auth PIN MCP:** Generación y validación de PIN para emparejamiento Claude-Dashboard.
+  3. **Multi-agent Crew Resolution:** Soporte para resolución de dependencias en workflows de múltiples agentes.
 - **Dependencias:**
-  - Sprint 1, 2, 3 ✅ (Core Handlers OK).
   - Sprint 4 ✅ (SSE + HITL OK).
-  - Sprint 5 🔄 (Auth PIN MCP en curso).
+  - Sprint 5.1 ✅ (Resolver Core OK).
 
 ## 2. Estado Actual del Proyecto
 
 - **Qué ya está implementado y funcional:**
-  - **Servidor MCP Dual Transport:** Soporta Stdio (`server.py`) y SSE (`server_sse.py`).
-  - **Multi-tenant Seguro:** Uso de `contextvars` para manejar aisladamente el `org_id` en el servidor MCP compartido.
-  - **Health Checks Activos:** Ejecución en background iniciada desde el lifespan de FastAPI.
-  - **Dashboard HITL:** Interfaz operativa para aprobaciones pendientes con actualizaciones Realtime (Supabase).
-  - **Configuración MCP:** Panel en el Dashboard con instrucciones de conexión para Stdio y URL de SSE.
-  - **Trazabilidad Mejorada:** Columna `requires_approval` en tabla `tasks` para identificar flows intervenidos.
+  - **IntegrationResolver:** Clase `src/flows/integration_resolver.py` que realiza matching fuzzy de tools y verifica activación de servicios/secretos.
+  - **Vault Write Support:** Función `upsert_secret` en `src/db/vault.py` y políticas RLS (Migración 027) para persistencia de credenciales.
+  - **Architect Prompt Mejorado:** Inyección dinámica de herramientas reales del catálogo en el prompt del ArchitectFlow para reducir alucinaciones.
+  - **Manejo de Resolución en ArchitectFlow:** El flow se detiene y retorna un reporte de faltantes si el resolver detecta servicios inactivos o herramientas no encontradas.
 
 - **Qué está parcialmente implementado:**
-  - **Manejo de Secretos:** Los tokens JWT para SSE son internos; falta integración con un secret manager para rotación automática (Phase 5).
+  - **Generación de PIN:** Endpoint `/api/v1/mcp/generate-pin` iniciado; falta integración con el flujo de validación de Claude.
 
 - **Qué no existe aún:**
-  - **Endpoint de Autenticación MCP:** POST `/api/mcp/generate-pin` (Planeado en Sprint 5).
-  - **Streaming de Tokens LLM vía SSE:** Actualmente la respuesta se envía completa al finalizar.
-  - **Observabilidad MCP:** Trazas detalladas de mensajes JSON-RPC en el Dashboard.
+  - **Streaming de Tokens LLM vía SSE:** En el roadmap.
+  - **Observabilidad MCP:** Trazas JSON-RPC pendientes.
 
 - **Discrepancias plan vs código:**
-  - 📝 **CORRECCIÓN:** El plan original indicaba `PyJWT`; el código ha sido **unificado a `python-jose`** en todo el proyecto (Auth & Middleware).
-  - 📝 **CORRECCIÓN:** El plan mencionaba rutas Windows; el proyecto está estandarizado en Linux/Unix paths.
-  - ⚠️ **VERIFICAR:** El `plan.md` asume la existencia de `secure-pin.ts`, pero no fue hallado en `src/` ni en `dashboard/`.
+  - 📝 **CORRECCIÓN:** El plan original sugería activación por herramienta; el código implementa **activación por servicio** (basado en `service_catalog`) por ser el modelo de datos vigente.
+  - 📝 **CORRECCIÓN:** La tabla `secrets` ahora permite `INSERT/UPDATE` vía `service_role` (Migración 027), corrigiendo la restricción de solo lectura previa.
 
 ## 3. Contratos Técnicos Vigentes
 
 - **Modelos de Datos (Supabase):**
-  - Tabla `tasks`: Incluye `requires_approval` (Migración 026).
-  - Tabla `pending_approvals`: Tabla central para HITL (Migración 002).
-  - RLS: Utiliza `auth.jwt() -> 'app_metadata' -> 'org_id'` (verificado).
+  - Tabla `secrets`: Ahora accesible para escritura por el sistema (Migración 027).
+  - Tabla `service_tools`: Fuente de verdad para el mapping de herramientas reales (Migración 024).
 
-- **Endpoints API:**
-  - `/api/v1/mcp/sse`: Canal de eventos MCP.
-  - `/api/v1/mcp/messages`: Receptor de mensajes MCP (JSON-RPC POST).
-  - `/api/v1/approvals/`: Gestión de tareas pendientes de intervención humana.
+- **Interfaces de Código Nuevas:**
+  - `IntegrationResolver.resolve(workflow_def)` -> `ResolutionResult`.
+  - `upsert_secret(org_id, name, value)`.
 
 - **Patrones de Código en Uso:**
-  - **Pattern ContextAware:** Uso de `mcp_config_var` para inyectar configuración de tenant en handlers asíncronos.
-  - **Pattern Realtime:** El Dashboard se suscribe a `pending_approvals` para notificaciones push.
-  - **Auth en API:** Middleware unificado en `src/api/middleware.py` usando `python-jose` con validación de JWKS.
-
-- **Estructura de Carpetas:** Core logic en `src/mcp`, Routes en `src/api/routes`, Dashboard en `dashboard/app/(app)`.
-
-- **Dependencias (pyproject.toml):**
-  - `mcp>=1.0.0`
-  - `python-jose[cryptography]>=3.3.0`
-  - `httpx>=0.28.0` (Usado para fetch de JWKS y health checks).
+  - **Pattern Pre-flight Validation:** Uso del Resolver antes de persistir templates en `ArchitectFlow`.
+  - **Pattern Fuzzy Matching:** Estrategia de matching de herramientas en 3 niveles (Exacto -> Service-based -> ILIKE general).
 
 ## 4. Decisiones de Arquitectura Tomadas
-- **Single Process / Multi-tenant MCP:** Uso de un único servidor MCP que cambia su contexto dinámicamente según la petición HTTP/SSE entrante.
-- **SseServerTransport:** Elección del transporte oficial del SDK de MCP para compatibilidad máxima.
-- **Unificación Criptográfica:** Eliminación de `PyJWT` para evitar conflictos de firmas y dependencias fantasma.
+- **Resolución Transitoria:** El `ResolutionResult` no se persiste; se envía como respuesta de la tarea para intervención del usuario.
+- **Bloqueo Preventivo:** Se prohíbe la creación de workflows con herramientas en estado `not_found` para garantizar que los workflows sean ejecutables.
 
 ## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
-| Sprint 1 | ✅ | `server.py`, `tools.py` | Stdio como transporte principal | Base funcional lista |
-| Sprint 2 | ✅ | `sanitizer.py`, `migr/024` | Herramientas dinámicas via DB | Service Catalog validado |
-| Sprint 3 | ✅ | `handlers.py`, `auth.py` | Ejecución real con timeouts | Handlers productivos listos |
-| Sprint 4 | ✅ | `middleware.py`, `server_sse.py`, `main.py` | Transporte SSE y HITL Realtime | Soporte Claude Web y UI Aprobaciones |
+| Sprint 4 | ✅ | `middleware.py`, `server_sse.py` | Transporte SSE y HITL | Soporte Claude Web OK |
+| Sprint 5.1 | ✅ | `integration_resolver.py`, `vault.py`, `architect_flow.py` | Matching fuzzy y Vault write | Paso 1 del plan completado |
 
 ## 6. Criterios Generales de Aceptación MVP
-- Happy path operativo (Claude ejecuta flows de prueba vía SSE).
-- Intervención humana funcional desde el Dashboard.
-- Aislamiento total entre organizaciones verificado.
-- Salud del sistema monitoreada en tiempo real.
+- Happy path de creación de workflows con tools reales verificado.
+- Resolución de herramientas alucinadas funcional.
+- Secretos almacenables y recuperables para integraciones.

@@ -1,7 +1,16 @@
 {
   "mcpServers": {
     "flux-agent-pro": {
-      "url": "http://localhost:8000/api/v1/mcp/sse"
+      "command": "python",
+      "args": [
+        "-m",
+        "src.mcp.server",
+        "--org-id",
+        "6877612f-3768-44bf-b6e3-b2d1453c3de9"
+      ],
+      "env": {
+        "PYTHONPATH": "."
+      }
     }
   }
 }

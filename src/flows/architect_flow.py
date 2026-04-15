@@ -131,7 +131,22 @@ class ArchitectFlow(BaseFlow):
         except WorkflowValidationError as e:
             raise ValueError(f"Workflow inválido: {e}")
 
-        # ── 4. Asegurar flow_type único global ──────────────────
+        # ── 4. Resolver integraciones contra catálogo real ──────
+        from .integration_resolver import IntegrationResolver
+        
+        resolver = IntegrationResolver(org_id=self.org_id)
+        # SUPUESTO: El resolver trabaja con el diccionario del modelo
+        resolution = await resolver.resolve(workflow_def.model_dump())
+        
+        if not resolution.is_ready:
+            logger.warning("ArchitectFlow: Resolución incompleta para org %s", self.org_id)
+            return self._build_resolution_response(resolution)
+
+        # Aplicar mapeos (alucinada -> real)
+        mapped_data = resolver.apply_mapping(workflow_def.model_dump(), resolution.tool_mapping)
+        workflow_def = WorkflowDefinition(**mapped_data)
+
+        # ── 5. Asegurar flow_type único global ──────────────────
         safe_flow_type = self._ensure_unique_flow_type(workflow_def.flow_type)
         workflow_def.flow_type = safe_flow_type
 
@@ -188,6 +203,11 @@ class ArchitectFlow(BaseFlow):
             max_iter=5,
         )
 
+        # ── 8. Inyectar catálogo de herramientas ────────────────
+        svc = get_service_client()
+        available_tools = svc.table("service_tools").select("id").limit(50).execute()
+        tools_list = ", ".join([t["id"] for t in available_tools.data]) if available_tools.data else "Ninguna (alucina nombres descriptivos)"
+
         task = Task(
             description=f"""
 Analiza esta descripción y produce UNICAMENTE un objeto JSON sin ningún texto adicional.
@@ -237,6 +257,9 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
 5. El campo 'model' DEBE ser uno de los valores permitidos listados arriba
 6. NO agregues campos extra que no estén en el schema
 7. Responde SOLO con el objeto JSON, sin markdown, sin backticks, sin texto explicativo
+8. TOOLS DISPONIBLES EN EL CATÁLOGO (USAR SOLO ESTAS SI ES POSIBLE):
+   {tools_list}
+   Si necesitás una que no está, usá el nombre más descriptivo posible.
 """,
             expected_output="Un objeto JSON puro que cumpla exactamente con el schema de WorkflowDefinition.",
             agent=architect,
@@ -402,3 +425,39 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
             definition=workflow_def.model_dump(),
         )
         logger.info("DynamicFlow '%s' registrado en FLOW_REGISTRY", flow_type)
+
+    def _build_resolution_response(self, resolution: Any) -> Dict[str, Any]:
+        """Construir respuesta diagnóstica cuando faltan integraciones o credenciales."""
+        message_parts = ["No puedo finalizar la creación del workflow porque faltan dependencias técnicas:\n"]
+        
+        if resolution.needs_activation:
+            message_parts.append("\nServicios que necesitan activación:")
+            for svc in resolution.needs_activation:
+                message_parts.append(f"  - {svc}: Debe ser habilitado en el Dashboard.")
+        
+        if resolution.needs_credentials:
+            message_parts.append("\nCredenciales faltantes en Vault:")
+            for secret in resolution.needs_credentials:
+                message_parts.append(f"  - {secret}: Favor de configurar en /settings/vault.")
+        
+        if resolution.not_found:
+            message_parts.append("\nHerramientas no encontradas en el catálogo:")
+            for tool in resolution.not_found:
+                message_parts.append(f"  - {tool}: El nombre no coincide con ninguna integración conocida.")
+
+        if resolution.tool_mapping:
+            message_parts.append("\nHerramientas mapeadas exitosamente:")
+            for alucinada, real in resolution.tool_mapping.items():
+                message_parts.append(f"  - \"{alucinada}\" -> \"{real}\" ✓")
+
+        return {
+            "status": "resolution_required",
+            "is_ready": False,
+            "resolution": {
+                "needs_activation": resolution.needs_activation,
+                "needs_credentials": resolution.needs_credentials,
+                "not_found": resolution.not_found,
+                "tool_mapping": resolution.tool_mapping,
+            },
+            "message": "\n".join(message_parts),
+        }
