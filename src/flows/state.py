@@ -25,6 +25,7 @@ class FlowStatus(str, Enum):
     FAILED = "failed"
     PAUSED = "paused"
     CANCELLED = "cancelled"
+    RESOLUTION_PENDING = "resolution_pending"
 
 
 class BaseFlowState(BaseModel):
@@ -105,6 +106,10 @@ class BaseFlowState(BaseModel):
 
     def await_approval(self) -> "BaseFlowState":
         self.status = FlowStatus.AWAITING_APPROVAL
+        return self
+
+    def resolution_pending(self) -> "BaseFlowState":
+        self.status = FlowStatus.RESOLUTION_PENDING
         return self
 
     def update_tokens(self, tokens: int) -> "BaseFlowState":

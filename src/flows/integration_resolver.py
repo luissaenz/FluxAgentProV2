@@ -174,14 +174,18 @@ class IntegrationResolver:
         
         return [s for s in required if s not in current]
 
-    async def activate_service(self, service_id: str) -> None:
-        """Activa un servicio para la org (lo pone en pending_setup)."""
-        self.db.table("org_service_integrations").upsert({
+    async def activate_service(self, service_id: str, secret_names: Optional[List[str]] = None) -> None:
+        """Activa un servicio para la org (lo pone en active o pending_setup)."""
+        data = {
             "org_id": self.org_id,
             "service_id": service_id,
-            "status": "pending_setup", # Requiere configuración manual o wizard
-        }, on_conflict="org_id,service_id").execute()
-        logger.info("Servicio '%s' activado (pending_setup) para org '%s'", service_id, self.org_id)
+            "status": "active" if not secret_names else "pending_setup",
+        }
+        if secret_names:
+            data["config"] = {"secret_names": secret_names}
+            
+        self.db.table("org_service_integrations").upsert(data, on_conflict="org_id,service_id").execute()
+        logger.info("Servicio '%s' activado para org '%s'", service_id, self.org_id)
 
     async def store_credential(self, secret_name: str, secret_value: str) -> None:
         """Almacena credencial en Vault."""

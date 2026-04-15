@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).parent.parent
-DOCS_DIR = BASE_DIR / "docs" / "Sprint 2 - Expansion of Service Catalog"
+DOCS_DIR = BASE_DIR / "docs" / "IMPLEMENTED" / "Sprint 2 - Expansion of Service Catalog"
 DATA_DIR = BASE_DIR / "data"
 SEED_PATH = DATA_DIR / "service_catalog_seed.json"
 
@@ -95,23 +95,38 @@ def transform_tool(raw_tool):
     return transformed
 
 def main():
-    print("--- Iniciando expansion del catalogo de servicios ---")
+    print("--- Iniciando expansion del catalogo de servicios (Sprint 2) ---")
     
-    # 1. Cargar el seed existente
+    # 0. Identificar herramientas de prompts futuros (6-9) para excluirlas de este sprint
+    future_prompt_ids = set()
+    for i in range(6, 10):
+        pf = DOCS_DIR / f"prompt{i}.txt"
+        if pf.exists():
+            with open(pf, "r", encoding="utf-8") as f:
+                content = f.read()
+                for t in extract_json_array(content):
+                    tid = t.get("tool_id") or t.get("id")
+                    if tid:
+                        future_prompt_ids.add(tid.lower())
+    
+    # 1. Cargar el seed existente filtrando basura de sprints futuros
     all_tools = {}
     if SEED_PATH.exists():
         with open(SEED_PATH, "r", encoding="utf-8") as f:
             try:
                 seed_data = json.load(f)
+                count_legacy = 0
                 for t in seed_data.get("tools", []):
-                    all_tools[t["id"].lower()] = t
-                print(f"Loaded {len(all_tools)} tools from seed original.")
+                    tid = t["id"].lower()
+                    if tid not in future_prompt_ids:
+                        all_tools[tid] = t
+                        count_legacy += 1
+                print(f"Loaded {count_legacy} base tools (legacy + Sprint 2) from seed.")
             except Exception as e:
                 print(f"Warning: Error loading seed: {e}. Starting empty catalog.")
     
-    # 2. Procesar Prompts (1 a 9)
-    # Orden de precedencia: prompt9 > prompt8 > ... > seed
-    for i in range(1, 10):
+    # 2. Procesar Prompts (1 a 5) como indica el criterio de validación
+    for i in range(1, 6):
         prompt_file = DOCS_DIR / f"prompt{i}.txt"
         if not prompt_file.exists():
             print(f"Warning: File {prompt_file.name} not found. Skipping.")

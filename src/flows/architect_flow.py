@@ -178,7 +178,28 @@ class ArchitectFlow(BaseFlow):
                     }
 
             logger.warning("ArchitectFlow: Resolución incompleta para org %s", self.org_id)
-            return self._build_resolution_response(resolution)
+            
+            # 6. Guardar definición y marcar como resolución pendiente
+            output = {
+                "status": "resolution_required",
+                "is_ready": False,
+                "extracted_definition": workflow_def.model_dump(),
+                "resolution": {
+                    "available": resolution.available,
+                    "needs_activation": resolution.needs_activation,
+                    "not_found": resolution.not_found,
+                    "needs_credentials": resolution.needs_credentials,
+                    "tool_mapping": resolution.tool_mapping,
+                },
+                "message": self._build_resolution_response(resolution)["message"],
+            }
+
+            # Persistir estado en la tarea para permitir reintento posterior
+            self.state.resolution_pending()
+            self.state.output_data = output
+            await self.persist_state()
+
+            return output
 
         # Aplicar mapeos (alucinada -> real)
         mapped_data = resolver.apply_mapping(workflow_def.model_dump(), resolution.tool_mapping)

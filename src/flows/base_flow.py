@@ -133,12 +133,13 @@ class BaseFlow(ABC):
         try:
             result = await self._run_crew()
 
-            # Phase 2: If the flow was paused for approval during _run_crew,
+            # Phase 2: If the flow was paused for approval or resolution during _run_crew,
             # we must NOT mark it as complete.
-            if self.state.status == FlowStatus.AWAITING_APPROVAL:
+            if self.state.status in [FlowStatus.AWAITING_APPROVAL, FlowStatus.RESOLUTION_PENDING]:
                 logger.info(
-                    "Flow %s paused for approval. Sequential execution stopped.",
-                    self.state.task_id
+                    "Flow %s paused for %s. Sequential execution stopped.",
+                    self.state.task_id,
+                    self.state.status
                 )
                 await self.persist_state()
                 return self.state

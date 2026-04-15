@@ -113,6 +113,52 @@ STATIC_TOOLS = [
             }
         }
     ),
+    Tool(
+        name="activate_service",
+        description="Activa un servicio del catálogo de integraciones para la organización actual.",
+        inputSchema={
+            "type": "object",
+            "required": ["service_id"],
+            "properties": {
+                "service_id": {
+                    "type": "string",
+                    "description": "ID del servicio a activar (ej: google_sheets, gmail, stripe)"
+                }
+            }
+        }
+    ),
+    Tool(
+        name="store_credential",
+        description="Almacena una credencial (API key, token OAuth, etc.) en el vault seguro. El valor se encripta.",
+        inputSchema={
+            "type": "object",
+            "required": ["secret_name", "secret_value"],
+            "properties": {
+                "secret_name": {
+                    "type": "string",
+                    "description": "Nombre del secreto (ej: google_oauth_token, stripe_api_key)"
+                },
+                "secret_value": {
+                    "type": "string",
+                    "description": "Valor del secreto. Se almacena encriptado."
+                }
+            }
+        }
+    ),
+    Tool(
+        name="retry_workflow",
+        description="Re-ejecuta la resolución de un workflow que estaba pendiente de integraciones.",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "ID de la tarea del workflow que necesita re-resolución"
+                }
+            }
+        }
+    ),
 ]
 
 
@@ -164,6 +210,9 @@ async def handle_tool_call(
         "approve_task": lambda args, cfg: handle_approve_task(args, cfg),
         "reject_task": lambda args, cfg: handle_reject_task(args, cfg),
         "create_workflow": lambda args, cfg: handle_create_workflow(args, cfg),
+        "activate_service": _handle_activate_service,
+        "store_credential": _handle_store_credential,
+        "retry_workflow": _handle_retry_workflow,
     }
 
     handler = handlers.get(name)
@@ -196,6 +245,14 @@ def _make_result(data: Any) -> CallToolResult:
             type="text",
             text=json.dumps(sanitized, ensure_ascii=False, default=str),
         )],
+    )
+
+
+def _make_error(message: str) -> CallToolResult:
+    """Helper: creates CallToolResult with error message."""
+    return CallToolResult(
+        content=[TextContent(type="text", text=json.dumps({"error": message}))],
+        isError=True,
     )
 
 
@@ -312,3 +369,145 @@ async def _handle_list_capabilities(
         "static_tools": static_count,
         "dynamic_tools": dynamic_count,
     })
+
+
+# ── Internal Handlers for Onboarding ─────────────────────────────
+
+async def _handle_activate_service(arguments: dict, config) -> CallToolResult:
+    """Activa un servicio del catálogo."""
+    from ..flows.integration_resolver import IntegrationResolver
+
+    service_id = arguments.get("service_id")
+    if not service_id:
+        return _make_error("service_id requerido")
+
+    # Validar existe en catálogo
+    try:
+        db = get_service_client()
+        svc = db.table("service_catalog").select("id, name").eq("id", service_id).maybe_single().execute()
+        if not svc.data:
+            return _make_error(f"Servicio '{service_id}' no encontrado en el catálogo")
+
+        resolver = IntegrationResolver(org_id=config.org_id)
+        # NOTA: MVP activa sin secret_names, usuario configura después con store_credential
+        await resolver.activate_service(service_id)
+        
+        return _make_result({
+            "status": "activated", 
+            "service_id": service_id, 
+            "org_id": config.org_id
+        })
+    except Exception as exc:
+        logger.error("Error activating service: %s", exc)
+        return _make_error(f"DB Error: {str(exc)}")
+
+
+async def _handle_store_credential(arguments: dict, config) -> CallToolResult:
+    """Almacena una credencial en Vault."""
+    from ..flows.integration_resolver import IntegrationResolver
+
+    secret_name = arguments.get("secret_name")
+    secret_value = arguments.get("secret_value")
+    if not secret_name or not secret_value:
+        return _make_error("secret_name y secret_value requeridos")
+
+    try:
+        resolver = IntegrationResolver(org_id=config.org_id)
+        await resolver.store_credential(secret_name, secret_value)
+        return _make_result({
+            "status": "stored",
+            "secret_name": secret_name,
+            "message": f"Credencial '{secret_name}' almacenada correctamente",
+        })
+    except Exception as exc:
+        logger.error("Error storing credential: %s", exc)
+        return _make_error(f"Vault Error: {str(exc)}")
+
+
+async def _handle_retry_workflow(arguments: dict, config) -> CallToolResult:
+    """Re-ejecuta la resolución de un workflow pendiente."""
+    from ..flows.integration_resolver import IntegrationResolver
+    from ..flows.architect_flow import ArchitectFlow
+    from ..flows.workflow_definition import WorkflowDefinition
+
+    task_id = arguments.get("task_id")
+    if not task_id:
+        return _make_error("task_id requerido")
+
+    try:
+        db = get_service_client()
+        task = db.table("tasks").select("*").eq("id", task_id).eq("org_id", config.org_id).maybe_single().execute()
+        
+        if not task.data:
+            return _make_error("Tarea no encontrada")
+        
+        # NOTA: tasks.status es TEXT libre, permitimos reintento de resolution_pending
+        if task.data["status"] != "resolution_pending":
+            return _make_error(f"Tarea en estado '{task.data['status']}', esperaba 'resolution_pending'")
+
+        workflow_def_raw = task.data.get("result", {}).get("extracted_definition")
+        if not workflow_def_raw:
+            return _make_error("No se encontró definición de workflow guardada en task.result")
+
+        # Re-resolver
+        resolver = IntegrationResolver(org_id=config.org_id)
+        resolution = await resolver.resolve(workflow_def_raw)
+
+        if not resolution.is_ready:
+            return _make_result({
+                "status": "still_not_ready",
+                "needs_activation": resolution.needs_activation,
+                "not_found": resolution.not_found,
+                "needs_credentials": resolution.needs_credentials,
+            })
+
+        # Persistir workflow reutilizando lógica de ArchitectFlow
+        mapped_def = resolver.apply_mapping(workflow_def_raw, resolution.tool_mapping)
+        workflow_def_obj = WorkflowDefinition(**mapped_def)
+
+        # Usamos una instancia de ArchitectFlow para acceder a sus métodos de persistencia
+        flow_instance = ArchitectFlow(org_id=config.org_id, user_id="mcp-system")
+        
+        # RESTORE STATE (Fix ID-002)
+        from ..flows.architect_flow import ArchitectState
+        flow_instance.state = ArchitectState.from_snapshot(task.data)
+        
+        from ..events.store import EventStore
+        flow_instance.event_store = EventStore(
+            config.org_id, 
+            "mcp-system", 
+            correlation_id=flow_instance.state.correlation_id
+        )
+        
+        # LOGGING (Fix ID-004)
+        await flow_instance.emit_event("flow.retry_started", {"task_id": task_id})
+        
+        # Asegurar flow_type único
+        safe_flow_type = flow_instance._ensure_unique_flow_type(workflow_def_obj.flow_type)
+        workflow_def_obj.flow_type = safe_flow_type
+
+        # Ejecutar persistencia (Tareas atómicas del ArchitectFlow)
+        template_id = await flow_instance._persist_template(workflow_def_obj)
+        agents_created = await flow_instance._persist_agents(workflow_def_obj)
+        flow_instance._register_dynamic_flow(safe_flow_type, workflow_def_obj)
+
+        # Actualizar task a completed
+        db.table("tasks").update({
+            "status": "completed",
+            "result": {
+                "flow_type": safe_flow_type,
+                "template_id": template_id,
+                "agents_created": agents_created,
+                "status": "workflow_created"
+            },
+        }).eq("id", task_id).execute()
+
+        return _make_result({
+            "status": "workflow_created",
+            "task_id": task_id,
+            "flow_type": safe_flow_type,
+            "template_id": template_id,
+        })
+    except Exception as exc:
+        logger.error("Error in retry_workflow: %s", exc)
+        return _make_error(f"Resolution Error: {str(exc)}")

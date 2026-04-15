@@ -5,67 +5,65 @@
 - **Lista de Pasos (Sprint 5):**
   1. **IntegrationResolver:** Validación y mapeo de tools alucinadas contra el catálogo real (COMPLETADO).
   2. **MCPRegistryClient:** Descubrimiento de servidores MCP en registros externos (COMPLETADO).
-  3. **Auth PIN MCP:** Generación y validación de PIN para emparejamiento Claude-Dashboard (COMPLETADO).
-  4. **Multi-agent Crew Resolution:** Soporte para resolución de dependencias en workflows de múltiples agentes (EN CURSO).
+  3. **Auth PIN MCP:** Generación y validación de PIN para emparejamiento (COMPLETADO).
+  4. **Internal Onboarding Tools:** MCP Tools para activar servicios y cargar credenciales (COMPLETADO).
+  5. **Multi-agent Crew Resolution:** Soporte para resolución de dependencias en workflows complejos (EN CURSO).
 - **Dependencias:**
   - Sprint 4 ✅ (SSE + HITL OK).
-  - Sprint 5.1 ✅ (Resolver Core OK).
-  - Sprint 5.2 ✅ (External Discovery OK).
-  - Sprint 5.3 ✅ (Auth PIN OK).
+  - Integración MCP completa requiere los pasos 1-4.
 
 ## 2. Estado Actual del Proyecto
 
 - **Qué ya está implementado y funcional:**
-  - **IntegrationResolver:** Clase `src/flows/integration_resolver.py` que realiza matching fuzzy de tools.
-  - **MCPRegistryClient:** Clase `src/mcp/registry_client.py` que consulta el GitHub MCP Registry y parsea herramientas desde READMEs de forma segura (sin ejecución).
-  - **Auth PIN MCP:** Endpoint `/api/v1/mcp/generate-pin` en `src/mcp/server_sse.py` funcional. Genera tokens seguros de 16 bytes y los persiste en Vault.
-  - **Vault Write Support:** Función `upsert_secret` en `src/db/vault.py` y políticas RLS operativas.
-  - **Inyección de Catálogo:** `ArchitectFlow` inyecta tools reales en el prompt del LLM.
-  - **Búsqueda Externa en ArchitectFlow:** Si el resolver no encuentra una tool, el flow busca en el registro global y ofrece opciones de importación al usuario.
+  - **IntegrationResolver:** Clase `src/flows/integration_resolver.py` que realiza matching fuzzy y validación de activación/secretos.
+  - **MCPRegistryClient:** Clase `src/mcp/registry_client.py` que consulta el GitHub MCP Registry de forma estática.
+  - **Auth PIN MCP:** Endpoint `/api/v1/mcp/generate-pin` funcional con persistencia en Vault.
+  - **Internal Onboarding Tools:** 3 herramientas MCP (`activate_service`, `store_credential`, `retry_workflow`) en `src/mcp/tools.py` que permiten cerrar el ciclo de onboarding desde el chat.
+  - **Resolution Pending Flow:** `ArchitectFlow` pausa y guarda `extracted_definition` en `tasks.result` cuando faltan dependencias (status `resolution_pending`).
+  - **Vault Write Support:** Funciones `upsert_secret` y `list_secrets` en `src/db/vault.py` operativas.
 
 - **Qué está parcialmente implementado:**
-  - **Workflow Validation:** Validación de schemas en agent definitions (Base funcional, falta rigurosidad en tipos complejos).
+  - **Workflow Validation:** Validación de schemas en agent definitions básica.
+  - **Dynamic Flow Lifecycle:** Re-resolución en `retry_workflow` funcional pero limitada a ejecuciones simples (no multi-step complejo aún).
 
 - **Qué no existe aún:**
-  - **Streaming de Tokens LLM vía SSE:** En el roadmap.
-  - **Observabilidad MCP:** Trazas JSON-RPC pendientes.
+  - **Streaming de Tokens LLM vía SSE.**
+  - **Tool cancel_workflow** para abortar tareas en `resolution_pending`.
 
 - **Discrepancias plan vs código:**
-  - 📝 **CORRECCIÓN:** El plan original sugería activación por herramienta; el código implementa **activación por servicio** (modelo de datos vigente).
-  - 📝 **CORRECCIÓN (D1):** `discover_tools` NO ejecuta servidores externos por seguridad; usa parseo estático de documentación.
-  - 📝 **CORRECCIÓN (D2):** El endpoint de PIN reside en `server_sse.py` para compartir contexto de transporte, no en una ruta de auth separada.
+  - 📝 **CORRECCIÓN:** El plan sugería `activate_service` con `secrets`; el código separa `activate_service` de `store_credential` para mayor seguridad y simplicidad.
+  - 📝 **CORRECCIÓN:** `retry_workflow` restaura el estado y el `EventStore` de la tarea original para mantener la trazabilidad.
 
 ## 3. Contratos Técnicos Vigentes
 
 - **Modelos de Datos (Supabase):**
-  - Tabla `org_mcp_servers`: Destino para importaciones de servidores Tipo B.
-  - Tablas `service_catalog` / `service_tools`: Destino para importaciones Tipo C.
+  - Tabla `tasks`: Columna `result` almacena `extracted_definition` para retries.
+  - Tablas `org_service_integrations` / `snapshots`.
 
 - **Interfaces de Código Nuevas:**
-  - `IntegrationResolver.resolve(workflow_def)` -> `ResolutionResult`.
-  - `MCPRegistryClient.search(query)` -> `list[MCPServerInfo]`.
-  - `MCPRegistryClient.discover_tools(server)` -> `list[dict]`.
-  - `upsert_secret(org_id, name, value)`.
+  - `IntegrationResolver.activate_service(service_id)` -> `None`.
+  - `IntegrationResolver.store_credential(name, value)` -> `None`.
+  - `ArchitectFlow.state.resolution_pending()` -> Transiciona a status `resolution_pending`.
 
 - **Patrones de Código en Uso:**
-  - **Pattern Discovery-Import:** Búsqueda externa gatillada por fallos en la resolución local.
-  - **Pattern Safe Parsing:** Extracción de metadatos mediante regex sobre contenido markdown/raw de GitHub.
+  - **Pattern Pause-and-Retry:** El flujo se detiene en validación técnica, se guarda la definición y se reanuda vía tool externa (`retry_workflow`).
+  - **Pattern Private Handlers:** Handlers de tools MCP como funciones privadas `_handle_*` en `tools.py`.
 
 ## 4. Decisiones de Arquitectura Tomadas
-- **Bloqueo Preventivo:** Prohibido crear workflows con tools `not_found`.
-- **Importación Inactiva:** Servidores importados nacen con `is_active: False` para requerir configuración manual del admin.
-- **Seguridad de Descubrimiento:** Priorizar el parseo de README sobre la ejecución `tools/list` para servidores no confiables.
+- **Aislamiento de Secretos:** `store_credential` nunca retorna el valor del secreto al LLM ni al usuario tras guardarlo.
+- **Persistencia de Definición:** La definición del workflow se persiste como resultado de la tarea original para evitar pérdida de contexto en el reintento.
 
 ## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
-| Sprint 4 | ✅ | `middleware.py`, `server_sse.py` | Transporte SSE y HITL | Claude Web OK |
-| Sprint 5.1 | ✅ | `integration_resolver.py`, `vault.py`, `architect_flow.py` | Matching fuzzy y Vault write | Paso 1 del plan |
-| Sprint 5.2 | ✅ | `registry_client.py`, `architect_flow.py` | Búsqueda externa segura | Paso 2 del plan |
-| Sprint 5.3 | ✅ | `server_sse.py`, `vault.py` | Generación de PIN y persistencia en Vault | Endpoint `/generate-pin` |
+| Sprint 5.1 | ✅ | `integration_resolver.py` | Matching fuzzy | Paso 1 |
+| Sprint 5.2 | ✅ | `registry_client.py` | Búsqueda externa segura | Paso 2 |
+| Sprint 5.3 | ✅ | `server_sse.py`, `vault.py` | Auth PIN | Paso 3 |
+| Sprint 5.4 | ✅ | `tools.py`, `architect_flow.py`, `state.py` | Tools Onboarding e HITL técnico | Ciclo completo OK |
 
 ## 6. Criterios Generales de Aceptación MVP
-- Happy path de creación de workflows con tools reales verificado.
-- Resolución de herramientas alucinadas (local + global) funcional.
-- Secretos almacenables y recuperables.
+- Happy path de creación de workflows (Architect -> Pause -> Store -> Activate -> Retry -> Success) verificado.
+- Resolución de herramientas alucinadas local y global operativa.
+- Secretos cifrados en Vault.
+
