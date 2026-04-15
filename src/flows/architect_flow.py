@@ -139,6 +139,44 @@ class ArchitectFlow(BaseFlow):
         resolution = await resolver.resolve(workflow_def.model_dump())
         
         if not resolution.is_ready:
+            # ── 5. Buscar en registros externos si hay tools no encontradas ──
+            if resolution.not_found:
+                from ..mcp.registry_client import MCPRegistryClient
+                registry = MCPRegistryClient()
+
+                discovered = {}
+                for tool_hint in resolution.not_found:
+                    # Extraer keyword básica (ej: "google_sheets_read" -> "google")
+                    search_query = tool_hint.replace("_", " ").split(".")[0]
+                    try:
+                        results = await registry.search(search_query)
+                        if results:
+                            discovered[tool_hint] = results
+                    except Exception as e:
+                        logger.warning("ArchitectFlow: Falló búsqueda en registry para '%s': %s", tool_hint, e)
+
+                if discovered:
+                    logger.info("ArchitectFlow: Se encontraron integraciones externas para %s", list(discovered.keys()))
+                    return {
+                        "status": "external_integrations_found",
+                        "is_ready": False,
+                        "resolution": {
+                            "available": resolution.available,
+                            "needs_activation": resolution.needs_activation,
+                            "not_found": [t for t in resolution.not_found if t not in discovered],
+                            "needs_credentials": resolution.needs_credentials,
+                            "tool_mapping": resolution.tool_mapping,
+                        },
+                        "discovered": {
+                            hint: [
+                                {"name": s.name, "description": s.description, "url": s.url}
+                                for s in servers
+                            ]
+                            for hint, servers in discovered.items()
+                        },
+                        "message": self._build_discovery_message(discovered),
+                    }
+
             logger.warning("ArchitectFlow: Resolución incompleta para org %s", self.org_id)
             return self._build_resolution_response(resolution)
 
@@ -461,3 +499,18 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
             },
             "message": "\n".join(message_parts),
         }
+
+    def _build_discovery_message(self, discovered: Dict[str, Any]) -> str:
+        """Construir mensaje para el usuario cuando se encuentran integraciones externas."""
+        parts = ["No encontré algunas herramientas en tu catálogo local, pero encontré estas opciones externas:\n"]
+        
+        for hint, servers in discovered.items():
+            parts.append(f"\nPara '{hint}':")
+            for i, srv in enumerate(servers[:3], 1):
+                parts.append(f"  {i}. {srv.name} ({srv.url})")
+                if srv.description:
+                    desc = srv.description[:100] + "..." if len(srv.description) > 100 else srv.description
+                    parts.append(f"     > {desc}")
+        
+        parts.append("\n¿Deseas que intente importar alguna de estas integraciones?")
+        return "\n".join(parts)
