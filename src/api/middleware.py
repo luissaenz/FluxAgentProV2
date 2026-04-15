@@ -50,8 +50,7 @@ from __future__ import annotations
 
 import json
 import logging
-
-from jose import jwt, jwk, JWKError
+from jose import jwt, jwk, JWSError
 from jose.exceptions import JWTError, ExpiredSignatureError
 import httpx
 

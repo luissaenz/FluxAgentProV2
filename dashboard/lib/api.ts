@@ -15,35 +15,43 @@ export async function fapFetch(
     throw new Error('Not authenticated')
   }
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_FASTAPI_URL}${path}`,
-    {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'X-Org-ID': orgId,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    }
-  )
+  console.log(`[fapFetch] REQ -> ${options.method || 'GET'} ${process.env.NEXT_PUBLIC_FASTAPI_URL}${path}`);
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_FASTAPI_URL}${path}`,
+      {
+        ...options,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'X-Org-ID': orgId,
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      }
+    )
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    const detail = errorData.detail
-    
-    // Si detail es un objeto, intentamos extraer los campos message o error según prioridad
-    let message = `API error: ${response.status}`
-    if (typeof detail === 'string') {
-      message = detail
-    } else if (detail && typeof detail === 'object') {
-      message = detail.error || detail.message || JSON.stringify(detail)
+    console.log(`[fapFetch] RES <- ${response.status} for ${path}`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const detail = errorData.detail
+      
+      let message = `API error: ${response.status}`
+      if (typeof detail === 'string') {
+        message = detail
+      } else if (detail && typeof detail === 'object') {
+        message = detail.error || detail.message || JSON.stringify(detail)
+      }
+      
+      console.error(`[fapFetch] Error ${response.status} in ${path}:`, message);
+      throw new Error(message)
     }
-    
-    throw new Error(message)
+
+    return response.json()
+  } catch (err) {
+    console.error(`[fapFetch] NETWORK/FETCH ERROR in ${path}:`, err);
+    throw err;
   }
-
-  return response.json()
 }
 
 export const api = {

@@ -30,7 +30,7 @@ export default function MCPConfigPage() {
   const handleGeneratePin = async () => {
     try {
       setLoading(true)
-      const res = await api.post('/mcp/generate-pin')
+      const res = await api.post('/api/v1/mcp/generate-pin')
       setPin(res.pin)
       toast.success('PIN generado exitosamente. Cópialo, no se mostrará de nuevo.')
     } catch (err) {

@@ -6,7 +6,7 @@ Implementa el protocolo MCP sobre Server-Sent Events integrado con FastAPI.
 import logging
 import secrets
 from fastapi import APIRouter, Request, Depends, HTTPException
-from mcp.server.fastapi import SseServerTransport
+from mcp.server.sse import SseServerTransport
 
 from .server import server, mcp_config_var
 from .config import MCPConfig
