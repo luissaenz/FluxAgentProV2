@@ -55,6 +55,39 @@ STATIC_TOOLS = [
         description="Listar las capacidades y metadata del servidor MCP de FluxAgentPro (versión, organización, transporte, cantidad de tools).",
         inputSchema={"type": "object", "properties": {}},
     ),
+    Tool(
+        name="get_task",
+        description="Consultar el estado detallado de una tarea/flow en ejecución mediante su task_id.",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {"type": "string", "description": "UUID de la tarea a consultar"}
+            }
+        },
+    ),
+    Tool(
+        name="approve_task",
+        description="Aprobar una tarea que se encuentra pausada esperando intervención humana (HITL).",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {"type": "string", "description": "UUID de la tarea a aprobar"}
+            }
+        },
+    ),
+    Tool(
+        name="reject_task",
+        description="Rechazar una tarea que se encuentra pausada esperando intervención humana (HITL).",
+        inputSchema={
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+                "task_id": {"type": "string", "description": "UUID de la tarea a rechazar"}
+            }
+        },
+    ),
 ]
 
 
@@ -86,24 +119,34 @@ async def handle_tool_call(
         "get_agent_detail": _handle_get_agent_detail,
         "get_server_time": _handle_get_server_time,
         "list_capabilities": _handle_list_capabilities,
+        "get_task": _handle_get_task,
+        "approve_task": _handle_approve_task,
+        "reject_task": _handle_reject_task,
     }
 
-    # Incluir flow tools dinámicas
-    from .flow_to_tool import get_flow_tool_names
-    for flow_name in get_flow_tool_names():
-        handlers[flow_name] = _handle_flow_tool_placeholder
-
+    # 1. Intentar obtener handler estático
     handler = handlers.get(name)
+    
+    # 2. Si no es estático, verificar si es un flow dinámico
+    is_flow = False
     if handler is None:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": f"Tool '{name}' not found"}),
-            )],
-            isError=True,
-        )
+        from .flow_to_tool import get_flow_tool_names
+        if name in get_flow_tool_names():
+            is_flow = True
+        else:
+            return CallToolResult(
+                content=[TextContent(
+                    type="text",
+                    text=json.dumps({"error": f"Tool '{name}' not found"}),
+                )],
+                isError=True,
+            )
 
     try:
+        # 3. Despachar
+        if is_flow:
+            return await _handle_execute_flow_with_name(name, arguments, config)
+        
         return await handler(arguments, config)
     except Exception as exc:
         logger.error("Error ejecutando tool '%s': %s", name, exc)
@@ -256,18 +299,78 @@ async def _handle_list_capabilities(
     })
 
 
-async def _handle_flow_tool_placeholder(
+async def _handle_get_task(
     arguments: dict[str, Any],
     config: Any,
 ) -> CallToolResult:
-    """Placeholder para flow tools — Sprint 1 solo lista, no ejecuta."""
-    return CallToolResult(
-        content=[TextContent(
-            type="text",
-            text=json.dumps({
-                "error": "La ejecución de flows no está habilitada en Sprint 1. "
-                         "Este servidor solo permite consultar la lista de flows y agentes."
-            }),
-        )],
-        isError=True,
+    """Consultar estado de una tarea."""
+    from .handlers import handle_get_task
+    
+    task_id = arguments.get("task_id")
+    if not task_id:
+        return CallToolResult(
+            content=[TextContent(type="text", text=json.dumps({"error": "task_id requerido"}))],
+            isError=True
+        )
+
+    # Mock claims for internal MCP call (Stdio doesn't have JWT, uses org_id from config)
+    claims = {"sub": "mcp-stdio-user", "role": "service_role"}
+    
+    res = await handle_get_task(config.org_id, task_id, claims)
+    return _make_result(res)
+
+
+async def _handle_approve_task(
+    arguments: dict[str, Any],
+    config: Any,
+) -> CallToolResult:
+    """Aprobar tarea HITL."""
+    from .handlers import handle_approve_task
+    
+    task_id = arguments.get("task_id")
+    if not task_id:
+        return CallToolResult(
+            content=[TextContent(type="text", text=json.dumps({"error": "task_id requerido"}))],
+            isError=True
+        )
+
+    claims = {"sub": "mcp-stdio-user", "role": "service_role"}
+    res = await handle_approve_task(config.org_id, task_id, claims)
+    return _make_result(res)
+
+
+async def _handle_reject_task(
+    arguments: dict[str, Any],
+    config: Any,
+) -> CallToolResult:
+    """Rechazar tarea HITL."""
+    from .handlers import handle_reject_task
+    
+    task_id = arguments.get("task_id")
+    if not task_id:
+        return CallToolResult(
+            content=[TextContent(type="text", text=json.dumps({"error": "task_id requerido"}))],
+            isError=True
+        )
+
+    claims = {"sub": "mcp-stdio-user", "role": "service_role"}
+    res = await handle_reject_task(config.org_id, task_id, claims)
+    return _make_result(res)
+
+
+async def _handle_execute_flow_with_name(
+    name: str,
+    arguments: dict[str, Any],
+    config: Any,
+) -> CallToolResult:
+    """Handler real que conoce el nombre del flujo."""
+    from .handlers import handle_execute_flow
+    
+    claims = {"sub": "mcp-stdio-user", "role": "service_role"}
+    res = await handle_execute_flow(
+        org_id=config.org_id,
+        flow_type=name,
+        input_data=arguments,
+        claims=claims
     )
+    return _make_result(res)
