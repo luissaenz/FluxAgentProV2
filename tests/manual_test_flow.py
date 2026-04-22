@@ -32,7 +32,7 @@ async def main():
         state = await flow.execute(input_data, correlation_id)
         
         print("\n" + "="*50)
-        print(f"✅ FLOW COMPLETED SUCCESSFULLY!")
+        print("✅ FLOW COMPLETED SUCCESSFULLY!")
         print(f"   Task ID: {state.task_id}")
         print(f"   Status: {state.status}")
         print(f"   Result: {state.output_data}")

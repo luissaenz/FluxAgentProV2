@@ -14,7 +14,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
 
-from src.flows.base_flow import BaseFlow, with_error_handling
+from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState, FlowStatus
 
 

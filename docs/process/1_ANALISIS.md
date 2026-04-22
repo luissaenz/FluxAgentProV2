@@ -4,7 +4,7 @@
 Actúa como un **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especialista en Diseño de Producto con un enfoque implacable en la ejecución real. **Tu análisis se basa en el código fuente real, no en suposiciones sobre lo que debería existir.**
 
 ## Contexto del Proyecto
-Estamos desarrollando el sistema **"LUMIS"**. Contamos con:
+Estamos desarrollando el sistema **"FluxAgentPro-v2"**. Contamos con:
 - **Plan general:** `D:\Develop\Personal\FluxAgentPro-v2\docs\plan.md`
 - **Contexto de fase:** `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`
 - **Código fuente:** `D:\Develop\Personal\FluxAgentPro-v2\src\` (fuente de verdad para verificación)
@@ -103,7 +103,7 @@ La exploración NO se incluye como sección separada en el output. Se usa como i
 ✅ VERIFICADO: `organizations` existe (migración 001, línea 15, `id UUID PRIMARY KEY`)
 ❌ DISCREPANCIA: El plan usa `get_current_user` pero esta función NO EXISTE en middleware.py.
    Evidencia: `grep -rn "get_current_user" src/api/` → 0 resultados
-   Resolución: Usar `require_org_id` (middleware.py L45) o `verify_org_membership` (middleware.py L78)
+   Resolución: Usar `require_org_id` (src/api/middleware.py L65) o `verify_org_membership` (src/api/middleware.py L130)
 ⚠️ NO VERIFICABLE: No tengo acceso a la tabla X. Asumo que existe según migración Y — CONFIRMAR antes de implementar.
 ```
 

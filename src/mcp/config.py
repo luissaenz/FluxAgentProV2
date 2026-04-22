@@ -1,6 +1,7 @@
 """MCPConfig — Configuración del servidor MCP con Pydantic BaseSettings."""
 
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 
 class MCPConfig(BaseSettings):
@@ -15,6 +16,6 @@ class MCPConfig(BaseSettings):
     port: int = 8765              # Solo SSE
     require_auth: bool = False    # Sprint 3
     allowed_orgs: list[str] = []  # Vacío = todas
-    org_id: str = ""              # Recibido vía --org-id CLI
+    jwks_url: Optional[str] = None  # Supabase JWKS endpoint, optional
 
     model_config = {"env_prefix": "MCP_"}

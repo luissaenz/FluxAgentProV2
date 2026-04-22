@@ -1,5 +1,4 @@
 import asyncio
-import os
 from dotenv import load_dotenv
 from src.db.session import get_service_client
 

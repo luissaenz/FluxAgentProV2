@@ -11,7 +11,7 @@ Covers:
 from __future__ import annotations
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch, call
+from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
 import json
 
@@ -22,7 +22,6 @@ from src.flows.workflow_definition import (
     StepDefinition,
     ApprovalRule,
 )
-from src.flows.state import FlowStatus
 
 
 # ── Test fixtures ────────────────────────────────────────────────
@@ -541,7 +540,6 @@ class TestDynamicFlowRegistration:
         )
 
         from src.flows.registry import flow_registry
-        from src.flows.dynamic_flow import DynamicWorkflow
 
         flow_registry.clear()
         flow._register_dynamic_flow("test_def_flow", valid_workflow_definition)

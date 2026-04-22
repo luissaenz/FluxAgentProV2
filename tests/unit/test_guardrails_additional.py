@@ -10,7 +10,7 @@ Covers:
 from __future__ import annotations
 
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, patch
 
 from src.guardrails.base_guardrail import (
     make_approval_check,

@@ -1,0 +1,188 @@
+"""MCP Handlers — Implementation of JSON-RPC methods for FluxAgentPro."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, Dict, Optional
+from uuid import uuid4
+
+from ..flows.registry import flow_registry
+from ..flows.state import BaseFlowState
+from ..db.session import get_service_client
+from .exceptions import MethodNotFound, NotFound
+from .auth import verify_org_membership
+
+logger = logging.getLogger(__name__)
+
+
+async def handle_execute_flow(
+    org_id: str,
+    flow_type: str,
+    input_data: Dict[str, Any],
+    claims: Dict[str, Any],
+    correlation_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Execute a registered flow in background/foreground.
+
+    Args:
+        org_id: Organization UUID.
+        flow_type: Name of the registered flow.
+        input_data: Payload for the flow.
+        claims: Decoded JWT claims for authorization.
+        correlation_id: Optional tracing ID.
+
+    Returns:
+        dict: {task_id, status, correlation_id}
+    """
+    # 1. Authorize
+    auth_info = verify_org_membership(org_id, claims)
+    user_id = auth_info["user_id"]
+
+    # 2. Check flow existence
+    if not flow_registry.has(flow_type):
+        available = flow_registry.list_flows()
+        raise MethodNotFound(
+            f"Flow '{flow_type}' not found. Available: {available}"
+        )
+
+    # 3. Prepare execution context
+    if not correlation_id:
+        correlation_id = f"mcp-{flow_type}-{uuid4().hex[:8]}"
+
+    # 4. Instantiate and execute via the Registry
+    # Note: Flow.execute() handles task creation and initial persistence.
+    flow_class = flow_registry.get(flow_type)
+    flow = flow_class(org_id=org_id, user_id=user_id)
+
+    # We run it in the current task (MCP handlers are usually called in an async loop)
+    # The caller (mcp server) handles the response.
+    state = await flow.execute(input_data, correlation_id=correlation_id)
+
+    return {
+        "task_id": state.task_id,
+        "status": state.status,
+        "correlation_id": correlation_id
+    }
+
+
+async def handle_get_task(
+    org_id: str,
+    task_id: str,
+    claims: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Retrieve the current state of a task.
+
+    Args:
+        org_id: Organization UUID.
+        task_id: Task UUID.
+        claims: Decoded JWT claims.
+
+    Returns:
+        dict: Standard flow state summary.
+    """
+    # 1. Authorize
+    verify_org_membership(org_id, claims)
+
+    # 2. Query snapshot (bypassing RLS with svc client for speed/visibility)
+    svc = get_service_client()
+    snapshot = (
+        svc.table("snapshots")
+        .select("*")
+        .eq("task_id", task_id)
+        .eq("org_id", org_id)
+        .maybe_single()
+        .execute()
+    )
+
+    if not snapshot.data:
+        raise NotFound(f"Task {task_id} not found for org {org_id}")
+
+    # 3. Format response
+    state = BaseFlowState.from_snapshot(snapshot.data)
+    return state.model_dump(mode="json")
+
+
+async def handle_approve_task(
+    org_id: str,
+    task_id: str,
+    claims: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Approve a task awaiting human intervention.
+
+    Args:
+        org_id: Organization UUID.
+        task_id: Task UUID.
+        claims: Decoded JWT claims.
+
+    Returns:
+        dict: Updated task status.
+    """
+    return await _process_decision(org_id, task_id, claims, "approved")
+
+
+async def handle_reject_task(
+    org_id: str,
+    task_id: str,
+    claims: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Reject a task awaiting human intervention.
+
+    Args:
+        org_id: Organization UUID.
+        task_id: Task UUID.
+        claims: Decoded JWT claims.
+
+    Returns:
+        dict: Updated task status.
+    """
+    return await _process_decision(org_id, task_id, claims, "rejected")
+
+
+async def _process_decision(
+    org_id: str,
+    task_id: str,
+    claims: Dict[str, Any],
+    decision: str
+) -> Dict[str, Any]:
+    """Resume a flow with a specific decision."""
+    # 1. Authorize
+    auth_info = verify_org_membership(org_id, claims)
+    user_id = auth_info["user_id"]
+
+    # 2. Validate state in pending_approvals
+    svc = get_service_client()
+    pending = (
+        svc.table("pending_approvals")
+        .select("*")
+        .eq("task_id", task_id)
+        .eq("org_id", org_id)
+        .eq("status", "pending")
+        .maybe_single()
+        .execute()
+    )
+
+    if not pending.data:
+        raise NotFound(f"No pending approval found for task {task_id}")
+
+    # 3. Update pending_approvals
+    import datetime
+    svc.table("pending_approvals").update({
+        "status": decision,
+        "decided_by": user_id,
+        "decided_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }).eq("id", pending.data["id"]).execute()
+
+    # 4. Resume flow execution
+    # We need to know the flow_type to instantiate the right class
+    flow_type = pending.data["flow_type"]
+    flow_class = flow_registry.get(flow_type)
+    flow = flow_class(org_id=org_id, user_id=user_id)
+
+    # resume() restores state from snapshot and continues logic
+    await flow.resume(task_id=task_id, decision=decision, decided_by=user_id)
+
+    return {
+        "task_id": task_id,
+        "status": flow.state.status if flow.state else "processed",
+        "decision": decision
+    }

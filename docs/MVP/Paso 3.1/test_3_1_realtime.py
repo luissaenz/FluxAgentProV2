@@ -88,7 +88,7 @@ def test_02_idempotency_check():
         with open(migration_path, "r", encoding="utf-8") as f:
             content = f.read()
             if "ALTER TABLE domain_events REPLICA IDENTITY FULL" in content:
-                print(f"  [OK] Migración 022 encontrada y contiene lógica de Replica Identity.")
+                print("  [OK] Migración 022 encontrada y contiene lógica de Replica Identity.")
                 return True
             else:
                 print("  [FAIL] Migración existe pero no contiene el SQL esperado.")

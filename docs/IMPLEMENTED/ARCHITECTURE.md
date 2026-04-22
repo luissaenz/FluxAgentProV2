@@ -15,6 +15,7 @@ graph LR
     subgraph "Nivel A: ENTRADA (Input Gates)"
         T[<b>User Dashboard</b><br/>Interaction] -->|Action: Execute| API[<b>FastAPI Router</b><br/>/tickets/{id}/execute]
         EXT[<b>Webhooks</b><br/>External Signal] --> API
+        MCP[<b>MCP Server</b><br/>JSON-RPC /mcp] --> API
     end
 
     subgraph "Nivel B: ORQUESTACIÓN (The Engine)"
@@ -47,6 +48,7 @@ graph LR
 ### 1. Puertas de ENTRADA (Input Gates) - [Color Verde]
 Son los únicos puntos donde el sistema acepta comandos. 
 - **API Router:** Valida la autenticación y el `org_id`.
+- **MCP Server:** Puerta de entrada para clientes externos usando el protocolo MCP via JSON-RPC. Centraliza el Auth Bridge para validar JWT (ES256/HS256).
 - **Registry:** Asegura que el flujo solicitado existe antes de gastar recursos.
 
 ### 2. El MOTOR (The Brain) - [Color Púrpura]

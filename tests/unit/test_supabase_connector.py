@@ -7,7 +7,7 @@ para no requerir una instancia real de Supabase.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 from src.connectors.supabase_connector import SupabaseMockConnector
 
 ORG_ID  = "11111111-1111-1111-1111-111111111111"

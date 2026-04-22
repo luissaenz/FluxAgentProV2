@@ -1,5 +1,4 @@
 import asyncio
-import os
 import logging
 from dotenv import load_dotenv
 from src.db.session import get_service_client
@@ -46,7 +45,7 @@ async def verify_agent_enrichment_robustness():
         print("El backend manejó correctamente la ausencia de la tabla 'agent_metadata' y aplicó los fallbacks.")
         
     except Exception as e:
-        print(f"\n❌ FALLO DE ROBUSTEZ: El endpoint explotó al no encontrar la tabla.")
+        print("\n❌ FALLO DE ROBUSTEZ: El endpoint explotó al no encontrar la tabla.")
         print(f"Error: {e}")
         # Reraise to show traceback
         raise

@@ -9,7 +9,6 @@ Covers:
 
 from __future__ import annotations
 
-import pytest
 from src.flows.registry import FlowRegistry, register_flow, flow_registry
 from src.flows.base_flow import BaseFlow
 

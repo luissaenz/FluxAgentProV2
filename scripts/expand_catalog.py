@@ -1,10 +1,7 @@
 import json
 import re
-import os
-import sys
 from pathlib import Path
 from urllib.parse import urlparse
-from collections import OrderedDict
 
 # Configuración de rutas
 BASE_DIR = Path(__file__).parent.parent
@@ -144,7 +141,7 @@ def main():
     with open(SEED_PATH, "w", encoding="utf-8") as f:
         json.dump(final_output, f, indent=2, ensure_ascii=False)
     
-    print(f"\nProcess finished successfully.")
+    print("\nProcess finished successfully.")
     print(f"Total tools in catalog: {len(all_tools)}")
     print(f"Saved to: {SEED_PATH}")
 

@@ -7,14 +7,13 @@ for m in ["crewai", "crewai.flow", "crewai.project", "structlog"]:
     sys.modules[m] = MagicMock()
 
 from uuid import uuid4
-import asyncio
 import os
 
 # PYTHONPATH
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 # Importamos lo necesario
-from src.flows.state import BaseFlowState, FlowStatus
+from src.flows.state import BaseFlowState
 
 @pytest.mark.asyncio
 async def test_base_flow_state_token_tracking():

@@ -6,7 +6,6 @@ Verifica los 13 criterios de aceptacion definidos en analisis-qwen.md
 
 import os
 import sys
-import re
 
 # Directorio base del proyecto
 # This script is in LAST/test_3_3_timeline.py

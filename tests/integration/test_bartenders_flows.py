@@ -17,8 +17,7 @@ Casos clave:
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import date
+from unittest.mock import MagicMock, patch
 
 ORG_ID  = "11111111-1111-1111-1111-111111111111"
 USER_ID = "22222222-2222-2222-2222-222222222222"
@@ -260,7 +259,6 @@ class TestAlertaFlow:
     @pytest.mark.asyncio
     async def test_on_approved_actualiza_orden_a_aprobada(self):
         from src.flows.bartenders.alerta_flow import AlertaClimaFlow, AlertaState
-        from src.flows.state import FlowStatus
 
         flow = AlertaClimaFlow(org_id=ORG_ID, user_id=USER_ID)
         flow.state = AlertaState(

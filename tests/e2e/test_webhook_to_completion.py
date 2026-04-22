@@ -7,7 +7,6 @@ and we can assert on the final state without real infrastructure.
 from __future__ import annotations
 
 import pytest
-from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient

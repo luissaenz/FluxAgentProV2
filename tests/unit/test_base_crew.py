@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from src.crews.base_crew import BaseCrew, CrewConfigError
 
 # Import conftest fixtures
-from tests.conftest import sample_org_id, mock_service_client
 
 
 # ── Agent loading tests ─────────────────────────────────────────

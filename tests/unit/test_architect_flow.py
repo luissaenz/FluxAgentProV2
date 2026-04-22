@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from src.flows.architect_flow import ArchitectFlow, ArchitectState
+from src.flows.architect_flow import ArchitectFlow
 
 
 class TestArchitectFlow:

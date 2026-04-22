@@ -1,5 +1,4 @@
 import json
-import re
 import shutil
 
 # Restore original 50-tool seed

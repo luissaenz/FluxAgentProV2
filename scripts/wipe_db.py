@@ -78,9 +78,9 @@ def main():
             del_url = f"{base_rest}/{table}?{pk}=neq.{dummy_uuid}"
             r = requests.delete(del_url, headers=headers, timeout=15)
             if r.status_code in (200, 204):
-                print(f"   Done.", flush=True)
+                print("   Done.", flush=True)
             elif r.status_code == 404:
-                print(f"   Skipped (Not found).", flush=True)
+                print("   Skipped (Not found).", flush=True)
             else:
                 print(f"   Failed: {r.status_code} {r.text}", flush=True)
         except Exception as e:

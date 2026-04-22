@@ -10,7 +10,6 @@ sys.path.append(os.getcwd())
 from src.flows.architect_flow import ArchitectFlow
 from src.flows.state import FlowStatus
 from src.flows.registry import flow_registry
-from src.db.session import get_service_client
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

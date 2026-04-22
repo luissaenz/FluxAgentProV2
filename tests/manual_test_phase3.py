@@ -3,7 +3,7 @@ import logging
 import sys
 from uuid import uuid4
 from typing import Dict, Any
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 
 # Add src to path
 import os

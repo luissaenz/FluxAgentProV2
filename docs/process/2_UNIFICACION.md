@@ -80,6 +80,14 @@ Cuando hay conflicto entre análisis:
 - Documentar tus propias verificaciones con evidencia.
 - Si encontrás una discrepancia que ningún análisis detectó, documentala como hallazgo propio.
 
+### 🔍 Rutas de Verificación Críticas (Estructura FluxAgentPro-v2)
+Para resolver conflictos con evidencia real, verificá siempre estas rutas:
+- **Registry de Tools:** `src/tools/registry.py`
+- **Registry de Flows:** `src/flows/registry.py`
+- **Middleware Auth:** `src/api/middleware.py` (L65: `require_org_id`, L130: `verify_org_membership`)
+- **Health Check:** `src/scheduler/health_check.py`
+
+
 ### 1. Evaluación Comparativa
 - Identifica similitudes y patrones comunes entre análisis.
 - Detecta contradicciones directas.

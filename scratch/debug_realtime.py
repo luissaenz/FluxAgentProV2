@@ -1,8 +1,7 @@
 import asyncio
 import os
 import uuid
-from supabase import create_client, AsyncClient
-from supabase.lib.client_options import ClientOptions
+from supabase import AsyncClient
 from dotenv import load_dotenv
 
 load_dotenv()

@@ -11,9 +11,8 @@ Covers:
 from __future__ import annotations
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch, call
+from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone
 
 from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState, FlowStatus

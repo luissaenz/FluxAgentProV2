@@ -1,4 +1,5 @@
-import json, re
+import json
+import re
 
 
 def extract_all_json_arrays(text):

@@ -14,7 +14,7 @@ Partimos de un documento técnico consolidado que define qué construir. Tu misi
 - **NO** rediseñes la arquitectura. Implementa lo que dice el `analisis-FINAL.md`. Si detectas un error CRÍTICO que impide la ejecución, detenete y explícalo — pero solo si es genuinamente imposible de implementar tal como está.
 - **NO** dejes stubs, placeholders ni TODOs. Si una funcionalidad está en alcance del paso, se implementa COMPLETA. Un `# TODO: implementar` es equivalente a no haber hecho la tarea.
 - **NO** modifiques código fuera del alcance del paso actual.
-- **NO** copies SQL, patrones ni interfaces del plan general (`mcp-analisis-finalV2.md`) si el `analisis-FINAL.md` los corrigió. El FINAL siempre gana.
+- **NO** copies SQL, patrones ni interfaces del plan general (`plan.md`) si el `analisis-FINAL.md` los corrigió. El FINAL siempre gana.
 
 > [!CAUTION]
 > **SI HAS RECIBIDO/LEÍDO ESTE DOCUMENTO:** Tu objetivo es **IMPLEMENTAR** inmediatamente. No preguntar, no confirmar, no pedir clarificaciones. EJECUTAR.

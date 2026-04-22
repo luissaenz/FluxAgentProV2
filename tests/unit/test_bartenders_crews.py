@@ -7,8 +7,7 @@ sin ejecutar el LLM — los Crew se testean solo en integración.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
-from datetime import date
+from unittest.mock import MagicMock
 
 # ─── Helpers de crews (funciones deterministas) ────────────────────────────
 from src.crews.bartenders.preventa_crews import (
@@ -25,7 +24,6 @@ from src.crews.bartenders.cierre_crews import (
     _guardar_auditoria,
     _actualizar_precios,
     MARGEN_CRITICO_UMBRAL,
-    MOCK_PRECIOS_ACTUALIZADOS,
 )
 
 ORG_ID = "11111111-1111-1111-1111-111111111111"
