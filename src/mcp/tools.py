@@ -14,6 +14,7 @@ from typing import Any
 from mcp.types import Tool, TextContent, CallToolResult
 
 from .sanitizer import sanitize_output
+from .exceptions import MethodNotFound, InvalidParams, InternalError, MCPError, mcp_error_to_response
 from ..db.session import get_service_client
 
 logger = logging.getLogger(__name__)
@@ -134,29 +135,24 @@ async def handle_tool_call(
         if name in get_flow_tool_names():
             is_flow = True
         else:
-            return CallToolResult(
-                content=[TextContent(
-                    type="text",
-                    text=json.dumps({"error": f"Tool '{name}' not found"}),
-                )],
-                isError=True,
-            )
+            raise MethodNotFound(f"Tool '{name}' not found")
 
     try:
         # 3. Despachar
         if is_flow:
             return await _handle_execute_flow_with_name(name, arguments, config)
-        
+
         return await handler(arguments, config)
     except Exception as exc:
-        logger.error("Error ejecutando tool '%s': %s", name, exc)
+        # Usar el helper centralizado para formatear el error
+        error_resp = mcp_error_to_response(exc)
         return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps(sanitize_output(
-                    {"error": f"Error ejecutando '{name}': {str(exc)}"}
-                )),
-            )],
+            content=[
+                TextContent(
+                    type="text",
+                    text=json.dumps(sanitize_output(error_resp["error"])),
+                )
+            ],
             isError=True,
         )
 
@@ -210,14 +206,7 @@ async def _handle_list_agents(
         )
         agents = result.data or []
     except Exception as exc:
-        logger.error("Error consultando agent_catalog: %s", exc)
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": "No se pudo conectar a la base de datos"}),
-            )],
-            isError=True,
-        )
+        raise InternalError(f"Database connection error: {str(exc)}")
 
     return _make_result({"agents": agents, "count": len(agents)})
 
@@ -229,13 +218,7 @@ async def _handle_get_agent_detail(
     """Obtener detalle de un agente específico."""
     agent_id = arguments.get("agent_id")
     if not agent_id:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": "agent_id es requerido"}),
-            )],
-            isError=True,
-        )
+        raise InvalidParams("agent_id is required")
 
     try:
         svc = get_service_client()
@@ -248,23 +231,10 @@ async def _handle_get_agent_detail(
             .execute()
         )
     except Exception as exc:
-        logger.error("Error consultando agent_catalog: %s", exc)
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": "No se pudo conectar a la base de datos"}),
-            )],
-            isError=True,
-        )
+        raise InternalError(f"Database connection error: {str(exc)}")
 
     if not result.data:
-        return CallToolResult(
-            content=[TextContent(
-                type="text",
-                text=json.dumps({"error": f"Agente '{agent_id}' no encontrado para esta organización"}),
-            )],
-            isError=True,
-        )
+        raise MethodNotFound(f"Agent '{agent_id}' not found for this organization")
 
     return _make_result(result.data)
 
@@ -308,10 +278,7 @@ async def _handle_get_task(
     
     task_id = arguments.get("task_id")
     if not task_id:
-        return CallToolResult(
-            content=[TextContent(type="text", text=json.dumps({"error": "task_id requerido"}))],
-            isError=True
-        )
+        raise InvalidParams("task_id is required")
 
     # Mock claims for internal MCP call (Stdio doesn't have JWT, uses org_id from config)
     claims = {"sub": "mcp-stdio-user", "role": "service_role"}
@@ -329,10 +296,7 @@ async def _handle_approve_task(
     
     task_id = arguments.get("task_id")
     if not task_id:
-        return CallToolResult(
-            content=[TextContent(type="text", text=json.dumps({"error": "task_id requerido"}))],
-            isError=True
-        )
+        raise InvalidParams("task_id is required")
 
     claims = {"sub": "mcp-stdio-user", "role": "service_role"}
     res = await handle_approve_task(config.org_id, task_id, claims)
@@ -348,10 +312,7 @@ async def _handle_reject_task(
     
     task_id = arguments.get("task_id")
     if not task_id:
-        return CallToolResult(
-            content=[TextContent(type="text", text=json.dumps({"error": "task_id requerido"}))],
-            isError=True
-        )
+        raise InvalidParams("task_id is required")
 
     claims = {"sub": "mcp-stdio-user", "role": "service_role"}
     res = await handle_reject_task(config.org_id, task_id, claims)

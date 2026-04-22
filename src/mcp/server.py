@@ -39,7 +39,18 @@ async def handle_list_tools():
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict | None):
     """Route a handler apropiado."""
-    return await handle_tool_call(name, arguments or {}, config)
+    try:
+        return await handle_tool_call(name, arguments or {}, config)
+    except Exception as exc:
+        from .exceptions import mcp_error_to_response
+        from mcp.types import CallToolResult, TextContent
+        import json
+        
+        error_resp = mcp_error_to_response(exc)
+        return CallToolResult(
+            content=[TextContent(type="text", text=json.dumps(error_resp["error"]))],
+            isError=True,
+        )
 
 
 async def main():

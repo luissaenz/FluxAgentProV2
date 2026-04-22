@@ -1,6 +1,7 @@
-"""MCP Exceptions — Hierarchy of JSON-RPC compatible errors."""
-
+import logging
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class MCPError(Exception):
@@ -69,23 +70,23 @@ def mcp_error_to_response(error: Exception, request_id: Any = None) -> dict:
     Returns:
         dict: Standard JSON-RPC error structure.
     """
-    if isinstance(error, MCPError):
-        return {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "error": {
-                "code": error.code,
-                "message": error.message,
-                "data": error.data
-            }
-        }
+    code = getattr(error, "code", -32603)
+    message = getattr(error, "message", str(error))
+    data = getattr(error, "data", None)
 
-    # Fallback for unexpected exceptions
+    # Logging estratégico
+    if code == -32603:
+        logger.error(
+            "MCP Internal Error [req_id=%s]: %s", request_id, error, exc_info=True
+        )
+        # Sanitizar mensaje para el cliente si no es un MCPError explícito
+        if not isinstance(error, MCPError):
+            message = "Internal error"
+    else:
+        logger.warning("MCP Protocol Error [%d]: %s", code, message)
+
     return {
         "jsonrpc": "2.0",
         "id": request_id,
-        "error": {
-            "code": -32603,
-            "message": str(error)
-        }
+        "error": {"code": code, "message": message, "data": data},
     }

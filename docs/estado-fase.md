@@ -8,8 +8,9 @@
     2. **5.0.1 [Prerrequisitos]:** `get_secret_async`, dependencia `mcp>=1.0.0`, migración 025 RLS. [COMPLETADO ✅]
     3. **5.1 [Backend]:** Servidor MCP Stdio + Flow-to-Tool adapter + 5 tools estáticas. [COMPLETADO ✅]
     4. **5.2 [Backend]:** Handlers de ejecución + Auth Bridge (PyJWT) + Gateway JSON-RPC. [COMPLETADO ✅]
-    5. **5.2.5 [DB+Backend]:** Service Catalog TIPO C (3 tablas + import + ServiceConnectorTool). [COMPLETADO ✅]
-    6. **5.3 [Backend+Frontend]:** Endpoint SSE + HITL completo + MCPConfig. [PENDIENTE]
+    5. **5.2.1 [Backend]:** Excepciones MCP (Normalización, Logging y Sanitización R3). [COMPLETADO ✅]
+    6. **5.2.5 [DB+Backend]:** Service Catalog TIPO C (3 tablas + import + ServiceConnectorTool). [COMPLETADO ✅]
+    7. **5.3 [Backend+Frontend]:** Endpoint SSE + HITL completo + MCPConfig. [PENDIENTE]
 - **Dependencias entre pasos:** 5.0 → 5.0.1 → 5.1 → 5.2 → 5.3. Paso 5.2.5 ejecutado en paralelo (antes de 5.1).
 
 ## 2. Estado Actual del Proyecto
@@ -25,7 +26,7 @@
     - **Auth/JWT** (`src/mcp/auth.py`): Verificación JWT con ES256 (JWKS) + HS256 (secret), `verify_org_membership()`, soporte `fap_admin` cross-org. Concentra auth logic para middleware y MCP. Usa `PyJWKClient` con caché de 1h.
     - **MCP Handlers** (`src/mcp/handlers.py`): Implementación real de `execute_flow`, `get_task`, `approve_task`, `reject_task`. Resume de flows HITL interactuando con `pending_approvals`.
     - **MCP Gateway** (`src/api/routes/mcp.py`): Puente HTTP JSON-RPC para clientes MCP remotos accesible en `/api/v1/mcp`.
-    - **MCP Exceptions** (`src/mcp/exceptions.py`): Jerarquía de errores MCP con mapeo a códigos JSON-RPC estándar (-32603, -32001, etc.).
+    - **MCP Exceptions** (`src/mcp/exceptions.py`): Jerarquía robusta de errores MCP normalizada a JSON-RPC 2.0. Incluye logging estratégico para errores internos (-32603) y sanitización automática de mensajes hacia el cliente (Regla R3).
     - **API REST completa:** Endpoints para flows, tasks, approvals, agents, webhooks, chat, analytical, integrations, mcp.
     - **ServiceConnectorTool** (`src/tools/service_connector.py`): Tool genérica TIPO C. Lee definiciones de `service_tools`, resuelve secretos vía Vault, ejecuta HTTP con `httpx`, sanitiza output (Regla R3), audita en `domain_events`. Registrada con `@register_tool("service_connector", ...)`. Validada ✅.
     - **Output Sanitizer** (`src/mcp/sanitizer.py`): Última línea de defensa para Regla R3. 7 patrones regex. Recurre en dict/list. Si falla internamente, retorna error genérico.
@@ -83,6 +84,7 @@
 | 5.0.1 | ✅ | `pyproject.toml`, `src/db/vault.py` | MCP dep, async secrets | Prerrequisitos listos. |
 | 5.1  | ✅ | `src/mcp/server.py`, `tools.py` | 5 tools estáticas, flow-to-tool | Servidor Stdio funcional. |
 | 5.2  | ✅ | `src/mcp/handlers.py`, `tools.py`, `tests/...` | Handlers reales, HITL integration | Handlers productivos completados. |
+| 5.2.1 | ✅ | `src/mcp/exceptions.py`, `tools.py`, `server.py` | Normalización JSON-RPC, Logging, Catch global | Errores MCP robustecidos. |
 | 5.2.5 | ✅ | Migration 024, `service_connector.py` | Service Catalog TIPO C | Integración REST genérica certificada. |
 | 5.3  | ⏳ | — | — | SSE + HITL completo. Próximo objetivo. |
 
@@ -91,7 +93,8 @@
 - [x] **5.2:** Handlers `execute_flow` y `get_task` funcionales y conectados a Stdio.
 - [x] **5.2:** HITL funcional (aprobación/rechazo) mediante herramientas MCP.
 - [ ] **5.3:** Transporte SSE para clientes web/remotos.
-- [x] Los errores MCP se mapean a códigos JSON-RPC estándar.
+- [x] Los errores MCP se mapean a códigos JSON-RPC estándar y están centralizados.
+- [x] Dependencia `sse-starlette` añadida a `pyproject.toml` (prerrequisito 5.3).
 
 ## 7. Estructura del Módulo MCP
 
@@ -109,5 +112,5 @@ src/mcp/
 ```
 
 ---
-*Documento actualizado por el protocolo CONTEXTO — Paso 5.2 COMPLETADO.*
-*Última actualización: 2026-04-22 (post-implementación Handlers Productivos)*
+*Documento actualizado por el protocolo CONTEXTO — Paso 5.2.1 COMPLETADO.*
+*Última actualización: 2026-04-22 (post-normalización de Excepciones MCP)*
