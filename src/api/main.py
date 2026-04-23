@@ -61,6 +61,12 @@ async def lifespan(_app: FastAPI):
         else:
             logger.info("Flow Registry validated successfully.")
 
+        # NEW: Start health check scheduler (Paso 5)
+        import asyncio
+        from src.scheduler.health_check import run_health_checks
+        asyncio.create_task(run_health_checks())
+        logger.info("Health check scheduler started in background.")
+
     except Exception as exc:
         logger.warning("Could not initialize flows during lifespan: %s", exc)
 

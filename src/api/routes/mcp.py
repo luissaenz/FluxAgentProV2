@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+import asyncio
+import json
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from ..middleware import verify_supabase_jwt, require_org_id
 from ...mcp.handlers import (
@@ -16,6 +19,7 @@ from ...mcp.handlers import (
     handle_reject_task
 )
 from ...mcp.exceptions import mcp_error_to_response, MethodNotFound, InvalidParams
+from ...mcp.sse import sse_manager
 
 logger = logging.getLogger(__name__)
 
@@ -103,4 +107,46 @@ async def mcp_gateway(
 
     except Exception as exc:
         return mcp_error_to_response(exc, request_id)
+
+
+@router.get("/mcp/sse")
+async def mcp_sse_endpoint(
+    request: Request,
+    org_id: str = Depends(require_org_id),
+    auth: dict = Depends(verify_supabase_jwt),
+):
+    """Establish an SSE connection for MCP events.
+    
+    According to MCP spec, the first event must be 'endpoint' to inform
+    the client where to send POST requests.
+    """
+    queue = await sse_manager.connect(org_id)
+
+    async def event_generator():
+        try:
+            # 1. MCP Handshake: Inform the client where to POST JSON-RPC requests
+            # We point back to the same router's /mcp endpoint
+            yield {
+                "event": "endpoint",
+                "data": f"/api/v1/mcp?org_id={org_id}"
+            }
+
+            # 2. Listen for broadcasted events
+            while True:
+                if await request.is_disconnected():
+                    break
+                
+                message = await queue.get()
+                # If message data is a dict, serialize to JSON string for SSE
+                if isinstance(message.get("data"), dict):
+                    message["data"] = json.dumps(message["data"], default=str)
+                
+                yield message
+
+        except asyncio.CancelledError:
+            logger.info("SSE connection cancelled for org_id=%s", org_id)
+        finally:
+            await sse_manager.disconnect(org_id, queue)
+
+    return EventSourceResponse(event_generator())
 

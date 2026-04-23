@@ -18,6 +18,7 @@ from ..flows.state import BaseFlowState
 from ..db.session import get_service_client
 from .exceptions import MethodNotFound, NotFound
 from .auth import verify_org_membership
+from .sse import sse_manager
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +58,17 @@ async def handle_execute_flow(
         correlation_id = f"mcp-{flow_type}-{uuid4().hex[:8]}"
 
     # 4. Instantiate and execute via the Registry
-    # Flow.execute() handles task creation in DB (tasks table) and initial state persistence.
     flow_class = flow_registry.get(flow_type)
     flow = flow_class(org_id=org_id, user_id=user_id)
 
-    # Note: For long-running flows in production, this should be dispatched to a worker.
-    # Currently running in the current event loop.
     state = await flow.execute(input_data, correlation_id=correlation_id)
+
+    # 5. Notify via SSE
+    await sse_manager.broadcast(org_id, "task_update", {
+        "task_id": state.task_id,
+        "status": state.status,
+        "correlation_id": correlation_id
+    })
 
     return {
         "task_id": state.task_id,
@@ -185,6 +190,14 @@ async def _process_decision(
 
     # resume() restores state from snapshot, emits domain events, and continues logic
     await flow.resume(task_id=task_id, decision=decision, decided_by=user_id)
+
+    # 5. Notify via SSE
+    if flow.state:
+        await sse_manager.broadcast(org_id, "task_update", {
+            "task_id": task_id,
+            "status": flow.state.status,
+            "decision": decision
+        })
 
     return {
         "task_id": task_id,

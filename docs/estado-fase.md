@@ -10,7 +10,7 @@
     4. **5.2 [Backend]:** Handlers de ejecución + Auth Bridge (PyJWT) + Gateway JSON-RPC. [COMPLETADO ✅]
     5. **5.2.1 [Backend]:** Excepciones MCP (Normalización, Logging y Sanitización R3). [COMPLETADO ✅]
     6. **5.2.5 [DB+Backend]:** Service Catalog TIPO C (3 tablas + import + ServiceConnectorTool). [COMPLETADO ✅]
-    7. **5.3 [Backend+Frontend]:** Endpoint SSE + HITL completo + MCPConfig. [PENDIENTE]
+    7. **5.3 [Backend+Frontend]:** Endpoint SSE + Handshake MCP + Connection Manager + Health Check Lifespan. [COMPLETADO ✅]
 - **Dependencias entre pasos:** 5.0 → 5.0.1 → 5.1 → 5.2 → 5.3. Paso 5.2.5 ejecutado en paralelo (antes de 5.1).
 
 ## 2. Estado Actual del Proyecto
@@ -30,7 +30,8 @@
     - **API REST completa:** Endpoints para flows, tasks, approvals, agents, webhooks, chat, analytical, integrations, mcp.
     - **ServiceConnectorTool** (`src/tools/service_connector.py`): Tool genérica TIPO C. Lee definiciones de `service_tools`, resuelve secretos vía Vault, ejecuta HTTP con `httpx`, sanitiza output (Regla R3), audita en `domain_events`. Registrada con `@register_tool("service_connector", ...)`. Validada ✅.
     - **Output Sanitizer** (`src/mcp/sanitizer.py`): Última línea de defensa para Regla R3. 7 patrones regex. Recurre en dict/list. Si falla internamente, retorna error genérico.
-    - **Health Check Scheduler** (`src/scheduler/health_check.py`): `run_health_checks()` async implementado. ⚠️ Job no conectado aún al lifespan de `main.py`.
+    - **Health Check Scheduler** (`src/scheduler/health_check.py`): Monitoreo asíncrono de salud. Conectado exitosamente al lifespan de `main.py` (arranca en background al iniciar la API). ✅.
+    - **SSE Connection Manager** (`src/mcp/sse.py`): Gestor Singleton de colas de eventos asíncronos con aislamiento por `org_id`. Soporta broadcast de cambios de estado en tareas. ✅.
     - **API Integrations** (`src/api/routes/integrations.py`): 3 endpoints — `/available`, `/active`, `/tools/{service_id}`. Router registrado en `main.py`.
     - **Import Script** (`scripts/import_service_catalog.py`): Carga `data/service_catalog_seed.json`.
     - **Service Catalog DB** (`supabase/migrations/024_service_catalog.sql`): 3 tablas con RLS correcto.
@@ -86,15 +87,15 @@
 | 5.2  | ✅ | `src/mcp/handlers.py`, `tools.py`, `tests/...` | Handlers reales, HITL integration | Handlers productivos completados. |
 | 5.2.1 | ✅ | `src/mcp/exceptions.py`, `tools.py`, `server.py` | Normalización JSON-RPC, Logging, Catch global | Errores MCP robustecidos. |
 | 5.2.5 | ✅ | Migration 024, `service_connector.py` | Service Catalog TIPO C | Integración REST genérica certificada. |
-| 5.3  | ⏳ | — | — | SSE + HITL completo. Próximo objetivo. |
+| 5.3  | ✅ | `src/mcp/sse.py`, `src/api/routes/mcp.py`, `main.py` | Transporte SSE, Handshake MCP, Lifespan fix | Comunicación asíncrona bidireccional habilitada. |
 
 ## 6. Criterios Generales de Aceptación MVP (Fase 5)
 - [x] **5.1:** `tools/list` retorna herramientas al conectar desde Claude Desktop.
 - [x] **5.2:** Handlers `execute_flow` y `get_task` funcionales y conectados a Stdio.
 - [x] **5.2:** HITL funcional (aprobación/rechazo) mediante herramientas MCP.
-- [ ] **5.3:** Transporte SSE para clientes web/remotos.
+- [x] **5.3:** Transporte SSE funcional con handshake `endpoint` para clientes web/remotos.
 - [x] Los errores MCP se mapean a códigos JSON-RPC estándar y están centralizados.
-- [x] Dependencia `sse-starlette` añadida a `pyproject.toml` (prerrequisito 5.3).
+- [x] Dependencia `sse-starlette` añadida a `pyproject.toml`.
 
 ## 7. Estructura del Módulo MCP
 
@@ -108,9 +109,10 @@ src/mcp/
 ├── flow_to_tool.py     # Flow-to-Tool translator
 ├── handlers.py         # Business logic (Execute/Approve/Get)
 ├── auth.py             # Auth Bridge (PyJWT)
+├── sse.py              # SSE Connection Manager (Broadcast)
 └── exceptions.py       # Error mapping → JSON-RPC
 ```
 
 ---
-*Documento actualizado por el protocolo CONTEXTO — Paso 5.2.1 COMPLETADO.*
-*Última actualización: 2026-04-22 (post-normalización de Excepciones MCP)*
+*Documento actualizado por el protocolo CONTEXTO — Paso 5.3 COMPLETADO.*
+*Última actualización: 2026-04-22 (post-implementación Transporte SSE)*
