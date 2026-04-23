@@ -33,7 +33,9 @@
     - **Health Check Scheduler** (`src/scheduler/health_check.py`): Monitoreo asíncrono de salud. Conectado exitosamente al lifespan de `main.py` (arranca en background al iniciar la API). ✅.
     - **SSE Connection Manager** (`src/mcp/sse.py`): Gestor Singleton de colas de eventos asíncronos con aislamiento por `org_id`. Soporta broadcast de cambios de estado en tareas. ✅.
     - **API Integrations** (`src/api/routes/integrations.py`): 3 endpoints — `/available`, `/active`, `/tools/{service_id}`. Router registrado en `main.py`.
-    - **Import Script** (`scripts/import_service_catalog.py`): Carga `data/service_catalog_seed.json`.
+    - **Import Script** (`scripts/import_service_catalog.py`): Automatiza la carga del catálogo global con validación de integridad (proveedores ≥ 15, perfiles completos). ✅.
+    - **Seed File** (`data/service_catalog_seed.json`): Catálogo robusto con 216 herramientas de 90 proveedores (GitHub, Stripe, Slack, etc.). Validado sintácticamente. ✅.
+    - **Service Catalog Documentation** (`docs/service_catalog.md`): Guía técnica sobre el formato del catálogo, resolución de secretos y extensión de herramientas TIPO C. ✅.
     - **Service Catalog DB** (`supabase/migrations/024_service_catalog.sql`): 3 tablas con RLS correcto.
     - **MCP Server Stdio** (`src/mcp/server.py`): Entry point `python -m src.mcp.server --org-id <UUID>`. Implementa `list_tools` (estáticas + dinámicas) y `call_tool` (dispatch a handlers).
     - **MCP Config** (`src/mcp/config.py`): `MCPConfig` con Pydantic BaseSettings, prefijo `MCP_`. Soporta Stdio y placeholders para SSE.
@@ -87,6 +89,7 @@
 | 5.2  | ✅ | `src/mcp/handlers.py`, `tools.py`, `tests/...` | Handlers reales, HITL integration | Handlers productivos completados. |
 | 5.2.1 | ✅ | `src/mcp/exceptions.py`, `tools.py`, `server.py` | Normalización JSON-RPC, Logging, Catch global | Errores MCP robustecidos. |
 | 5.2.5 | ✅ | Migration 024, `service_connector.py` | Service Catalog TIPO C | Integración REST genérica certificada. |
+| 5.2.6 | ✅ | `data/service_catalog_seed.json`, `docs/...` | Archivo Seed + Docs | 216 herramientas listas para importación. |
 | 5.3  | ✅ | `src/mcp/sse.py`, `src/api/routes/mcp.py`, `main.py` | Transporte SSE, Handshake MCP, Lifespan fix | Comunicación asíncrona bidireccional habilitada. |
 
 ## 6. Criterios Generales de Aceptación MVP (Fase 5)
@@ -114,5 +117,5 @@ src/mcp/
 ```
 
 ---
-*Documento actualizado por el protocolo CONTEXTO — Paso 5.3 COMPLETADO.*
-*Última actualización: 2026-04-22 (post-implementación Transporte SSE)*
+*Documento actualizado por el protocolo CONTEXTO — Paso 5.2.6 COMPLETADO.*
+*Última actualización: 2026-04-22 (post-validación de Archivo Seed)*
