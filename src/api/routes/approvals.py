@@ -147,6 +147,7 @@ async def process_approval(
         )
 
     # 4. Resume flow in background
+    notes = body.get("notes")
     flow_class = flow_registry.get(flow_type)
     if not flow_class:
         raise HTTPException(
@@ -161,6 +162,7 @@ async def process_approval(
             task_id=task_id,
             decision=decision,
             decided_by=decided_by,
+            notes=notes,
         ),
     )
 

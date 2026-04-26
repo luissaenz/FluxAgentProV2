@@ -21,8 +21,11 @@ interface CreateTicketFormProps {
 }
 
 export function CreateTicketForm({ onSuccess }: CreateTicketFormProps) {
-  const { data: flows, isLoading: loadingFlows } = useFlows()
+  const { data: allFlows, isLoading: loadingFlows } = useFlows({ excludeSystem: true })
   const createTicket = useCreateTicket()
+
+  // Filtrar flujos de prueba
+  const flows = allFlows?.filter(f => f.category !== 'test')
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')

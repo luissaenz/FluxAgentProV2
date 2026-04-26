@@ -12,6 +12,8 @@ import {
   Activity,
   MessageSquare,
   Ticket,
+  Puzzle,
+  Wand2,
   type LucideIcon,
 } from 'lucide-react'
 import {
@@ -43,6 +45,8 @@ export const defaultNavItems: NavItem[] = [
   { title: 'Agentes', url: '/agents', icon: Bot },
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },
+  { title: 'Integraciones', url: '/integrations', icon: Puzzle },
+  { title: 'Wizard Agentes', url: '/wizard', icon: Wand2 },
   { title: 'Chat MDC', url: '/architect', icon: MessageSquare },
 ]
 

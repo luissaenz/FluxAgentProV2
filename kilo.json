@@ -1,0 +1,19 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "flux-agent-pro": {
+      "type": "local",
+      "command": [
+        "python",
+        "-m",
+        "src.mcp.server",
+        "--org-id",
+        "6877612f-3768-44bf-b6e3-b2d1453c3de9"
+      ],
+      "environment": {
+        "PYTHONPATH": "."
+      },
+      "enabled": true
+    }
+  }
+}

@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import logging
+from uuid import UUID
 
 from ..middleware import verify_org_membership
 from ...db.session import get_tenant_client
@@ -29,6 +30,9 @@ class TaskResponse(BaseModel):
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     tokens_used: int = 0
+    approval_required: bool = False
+    approval_status: str = "none"
+    approval_payload: Optional[Dict[str, Any]] = None
     created_at: str
     updated_at: str
 
@@ -50,6 +54,9 @@ def _task_to_response(t: dict) -> TaskResponse:
         result=t.get("result"),
         error=t.get("error"),
         tokens_used=t.get("tokens_used", 0) or 0,
+        approval_required=t.get("approval_required", False) or False,
+        approval_status=t.get("approval_status", "none") or "none",
+        approval_payload=t.get("approval_payload"),
         created_at=str(t["created_at"]),
         updated_at=str(t["updated_at"]),
     )
@@ -66,7 +73,14 @@ async def get_task(
     """Return the current state of a single task (used for polling)."""
     org_id = auth["org_id"]
     with get_tenant_client(org_id) as db:
-        result = db.table("tasks").select("*").eq("id", task_id).execute()
+        # Validate that task_id is a valid UUID
+        try:
+            uuid_obj = UUID(task_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid task ID")
+
+        # Use the string representation for the DB query
+        result = db.execute_with_retry(db.table("tasks").select("*").eq("id", str(uuid_obj)))
 
         if not result.data:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -97,7 +111,7 @@ async def list_tasks(
         if flow_type:
             query = query.eq("flow_type", flow_type)
 
-        result = query.range(offset, offset + limit - 1).execute()
+        result = db.execute_with_retry(query.range(offset, offset + limit - 1))
         items = result.data or []
         total = len(items)
 

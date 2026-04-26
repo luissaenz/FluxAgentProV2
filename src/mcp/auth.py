@@ -17,7 +17,7 @@ from jwt.exceptions import PyJWKClientConnectionError, PyJWKClientError
 from fastapi import HTTPException
 
 from ..config import get_settings
-from ..db.session import get_service_client
+from ..db.session import get_service_client, execute_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ def decode_jwt(token: str) -> dict:
     except pyjwt.PyJWTError as e:
         raise HTTPException(status_code=401, detail="Malformed token") from e
     alg = unverified_header.get("alg")
-    issuer = settings.supabase_url
+    issuer = f"{settings.supabase_url}/auth/v1"
     if alg == "ES256":
         return _verify_es256(token, issuer)
     elif alg == "HS256":
@@ -126,29 +126,29 @@ def verify_org_membership(org_id: str, claims: dict) -> dict:
     db = get_service_client()
 
     # 1. Check if user is fap_admin in ANY org (cross-org support)
-    admin_check = (
+    admin_query = (
         db.table("org_members")
         .select("role")
         .eq("user_id", user_id)
         .eq("role", "fap_admin")
         .eq("is_active", True)
         .limit(1)
-        .execute()
     )
+    admin_check = execute_with_retry(admin_query)
 
     if admin_check.data:
         return {"user_id": user_id, "org_id": org_id, "role": "fap_admin"}
 
     # 2. Check membership in the specific org
-    member = (
+    member_query = (
         db.table("org_members")
         .select("role")
         .eq("org_id", org_id)
         .eq("user_id", user_id)
         .eq("is_active", True)
         .maybe_single()
-        .execute()
     )
+    member = execute_with_retry(member_query)
 
     if not member.data:
         logger.warning("Access denied: User %s is not in Org %s", user_id, org_id)

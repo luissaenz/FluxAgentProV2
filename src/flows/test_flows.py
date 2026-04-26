@@ -15,7 +15,7 @@ from .registry import register_flow
 logger = logging.getLogger(__name__)
 
 
-@register_flow("success_test_flow")
+@register_flow("success_test_flow", category="test")
 class SuccessTestFlow(BaseFlow):
     """Flow que siempre completa exitosamente para validar el ciclo de éxito.
 
@@ -34,7 +34,7 @@ class SuccessTestFlow(BaseFlow):
         }
 
 
-@register_flow("fail_test_flow")
+@register_flow("fail_test_flow", category="test")
 class FailTestFlow(BaseFlow):
     """Flow que siempre falla para validar el manejo de errores.
 

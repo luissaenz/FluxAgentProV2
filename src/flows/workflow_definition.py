@@ -60,6 +60,7 @@ class WorkflowDefinition(BaseModel):
     steps: list[StepDefinition] = Field(..., min_length=1)
     agents: list[AgentDefinition] = Field(..., min_length=1)
     approval_rules: list[ApprovalRule] = Field(default_factory=list)
+    category: str = Field(default="business")
 
     @field_validator("flow_type")
     @classmethod

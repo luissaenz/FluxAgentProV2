@@ -80,11 +80,22 @@ async def trigger_webhook(
 
     correlation_id = f"webhook-{uuid4()}"
 
+    # Initialize flow and create record synchronously so we can return the real task_id
+    flow_class = flow_registry.get(request.flow_type)
+    flow = flow_class(org_id=org_id)
+
+    # We call create_task_record directly to get the task_id immediately
+    # Note: validation is also done here if we wanted to be strict
+    if not flow.validate_input(request.input_data):
+        raise HTTPException(status_code=400, detail="Input validation failed")
+
+    await flow.create_task_record(request.input_data, correlation_id)
+    task_id = flow.state.task_id
+
     background_tasks.add_task(
         _run_async_in_background,
-        execute_flow(
-            flow_type=request.flow_type,
-            org_id=org_id,
+        execute_flow_instance(
+            flow=flow,
             input_data=request.input_data,
             correlation_id=correlation_id,
             callback_url=request.callback_url,
@@ -92,7 +103,7 @@ async def trigger_webhook(
     )
 
     return WebhookTriggerResponse(
-        task_id="pending",  # real id assigned inside create_task_record
+        task_id=task_id,
         correlation_id=correlation_id,
         status="accepted",
     )
@@ -101,27 +112,15 @@ async def trigger_webhook(
 # ── background execution ───────────────────────────────────────
 
 
-async def execute_flow(
-    flow_type: str,
-    org_id: str,
+async def execute_flow_instance(
+    flow: Any,
     input_data: Dict[str, Any],
     correlation_id: str,
     callback_url: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Run a flow in the background — called by ``BackgroundTasks``.
-
-    Returns a dict with:
-      - task_id: str or None
-      - error: str or None
-      - error_type: str or None
-
-    The caller can determine success by checking if result["error"] is None.
-    """
+    """Run an already initialized flow in the background."""
     result: Dict[str, Any] = {"task_id": None, "error": None, "error_type": None}
-    flow = None
     try:
-        flow_class = flow_registry.get(flow_type)
-        flow = flow_class(org_id=org_id)
         state = await flow.execute(input_data, correlation_id)
         result["task_id"] = state.task_id if hasattr(state, 'task_id') else str(state)
 
@@ -132,11 +131,30 @@ async def execute_flow(
         logger.error("Background flow execution failed: %s", exc)
         result["error"] = str(exc)
         result["error_type"] = type(exc).__name__
-        # Try to capture task_id from flow state if it was set before the exception
         if flow and hasattr(flow, 'state') and flow.state and hasattr(flow.state, 'task_id'):
             result["task_id"] = flow.state.task_id
 
     return result
+
+
+async def execute_flow(
+    flow_type: str,
+    org_id: str,
+    input_data: Dict[str, Any],
+    correlation_id: str,
+    callback_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Legacy entrypoint for background flow execution.
+    Initializes the flow and then executes it.
+    """
+    flow_class = flow_registry.get(flow_type)
+    flow = flow_class(org_id=org_id)
+    return await execute_flow_instance(
+        flow=flow,
+        input_data=input_data,
+        correlation_id=correlation_id,
+        callback_url=callback_url
+    )
 
 
 async def _send_callback(callback_url: str, state) -> None:

@@ -33,7 +33,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     conversation_id: str
-    status: str  # "generating" | "gathering_requirements" | "failed"
+    status: str  # "in_progress" | "completed" | "failed"
     reply: str
     flow_type: Optional[str] = None
 
@@ -81,7 +81,7 @@ async def architect_chat(
 
     if len(user_messages) >= 2 or len(request.message) > 80:
         # Suficiente contexto → generar
-        update_status(conversation_id, org_id, "generating")
+        update_status(conversation_id, org_id, "in_progress")
         add_message(
             conversation_id, org_id, "assistant",
             "Estoy diseñando tu workflow. Te aviso cuando esté listo."
@@ -96,7 +96,7 @@ async def architect_chat(
 
         return ChatResponse(
             conversation_id=conversation_id,
-            status="generating",
+            status="in_progress",
             reply="Estoy diseñando tu workflow. Te aviso cuando esté listo.",
         )
 
@@ -106,7 +106,7 @@ async def architect_chat(
 
     return ChatResponse(
         conversation_id=conversation_id,
-        status="gathering_requirements",
+        status="in_progress",
         reply=reply,
     )
 

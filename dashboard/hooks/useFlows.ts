@@ -7,15 +7,25 @@ export interface FlowInfo {
   name: string
   description?: string
   input_schema?: Record<string, unknown>
+  category?: string
 }
 
-export function useFlows() {
+export interface UseFlowsOptions {
+  category?: string
+  excludeSystem?: boolean
+}
+
+export function useFlows(options: UseFlowsOptions = {}) {
   const { orgId } = useCurrentOrg()
 
   return useQuery<FlowInfo[]>({
-    queryKey: ['flows', orgId],
+    queryKey: ['flows', orgId, options.category, options.excludeSystem],
     queryFn: async () => {
-      const result = await api.get('/flows/available')
+      const params = new URLSearchParams()
+      if (options.category) params.append('category', options.category)
+      if (options.excludeSystem) params.append('exclude_system', 'true')
+      
+      const result = await api.get(`/flows/available?${params.toString()}`)
       return result.flows || []
     },
     enabled: !!orgId,

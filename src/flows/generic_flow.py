@@ -16,7 +16,7 @@ from ..crews.generic_crew import create_generic_crew
 logger = logging.getLogger(__name__)
 
 
-@register_flow("generic_flow")
+@register_flow("generic_flow", category="system")
 class GenericFlow(BaseFlow):
     """Demo flow that processes text via a single-agent crew."""
 

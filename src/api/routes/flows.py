@@ -9,7 +9,7 @@ from uuid import uuid4
 import logging
 
 from ...flows.registry import flow_registry
-from .webhooks import execute_flow
+from .webhooks import execute_flow, execute_flow_instance
 from ..middleware import require_org_id
 
 logger = logging.getLogger(__name__)
@@ -75,6 +75,8 @@ FLOW_INPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {}
 @router.get("/available", response_model=FlowsListResponse)
 async def list_available_flows(
     org_id: str = Depends(require_org_id),
+    category: Optional[str] = None,
+    exclude_system: bool = False,
 ):
     """
     Listar todos los flows registrados disponibles para ejecución.
@@ -83,14 +85,24 @@ async def list_available_flows(
 
     for flow_type in flow_registry.list_flows():
         meta = flow_registry.get_metadata(flow_type)
+        flow_category = meta.get("category")
+        
+        # Filtrar por categoría si se especifica
+        if category and flow_category != category:
+            continue
+            
+        # Excluir system si se solicita
+        if exclude_system and flow_category == "system":
+            continue
+
         flows.append(
             FlowInfo(
                 flow_type=flow_type,
                 name=flow_type.replace("_", " ").title(),
-                description=f"Flow: {flow_type}",
+                description=meta.get("description") or f"Flow: {flow_type}",
                 input_schema=FLOW_INPUT_SCHEMAS.get(flow_type),
                 depends_on=meta.get("depends_on", []),
-                category=meta.get("category"),
+                category=flow_category,
             )
         )
 
@@ -143,21 +155,31 @@ async def run_flow(
             detail=f"Flow '{flow_type}' no encontrado. Disponibles: {flow_registry.list_flows()}",
         )
 
-    # SUPUESTO: correlation_id debe ser único por ejecución para trazabilidad correcta.
-    # Formato: manual-{flow_type}-{org_prefix}-{short_uuid}
+    # 1. Generate correlation_id for traceability
     correlation_id = f"manual-{flow_type}-{org_id[:8]}-{uuid4().hex[:6]}"
 
+    # 2. Initialize flow and create task record synchronously to get the real task_id
+    flow_class = flow_registry.get(flow_type)
+    flow = flow_class(org_id=org_id)
+
+    # Validate input (standard procedure)
+    if not flow.validate_input(request.input_data):
+        raise HTTPException(status_code=400, detail="Input validation failed")
+
+    await flow.create_task_record(request.input_data, correlation_id)
+    task_id = flow.state.task_id
+
+    # 3. Hand off the rest of the execution to the background
     background_tasks.add_task(
-        execute_flow,
-        flow_type=flow_type,
-        org_id=org_id,
+        execute_flow_instance,
+        flow=flow,
         input_data=request.input_data,
         correlation_id=correlation_id,
         callback_url=request.callback_url,
     )
 
     return RunFlowResponse(
-        task_id=correlation_id,
+        task_id=task_id,
         correlation_id=correlation_id,
         status="accepted",
     )

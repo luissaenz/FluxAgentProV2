@@ -166,7 +166,7 @@ class BaseFlow(ABC):
         self,
         input_data: Dict[str, Any],
         correlation_id: Optional[str] = None,
-    ) -> None:
+    ) -> str:
         """Insert a row into ``tasks`` and initialise ``self.state``."""
         if correlation_id is None:
             logger.warning(
@@ -193,7 +193,7 @@ class BaseFlow(ABC):
                     "max_retries": self.extra_kwargs.get("max_retries", 3),
                 }
             ).execute()
-
+        
         self.state = self.state_class(
             task_id=task_id,
             org_id=self.org_id,
@@ -209,6 +209,8 @@ class BaseFlow(ABC):
             correlation_id=self.state.correlation_id
         )
         await self.emit_event("flow.created", {"input_data": input_data})
+        
+        return task_id
 
     async def persist_state(self) -> None:
         """
@@ -236,6 +238,7 @@ class BaseFlow(ABC):
                             if self.state.status == FlowStatus.AWAITING_APPROVAL.value
                             else "none"
                         ),
+                        "approval_payload": self.state.approval_payload,
                         "tokens_used": self.state.tokens_used,
                     }
                 ).eq("id", self.state.task_id)
@@ -323,7 +326,7 @@ class BaseFlow(ABC):
 
         # El método retorna → el paso del Flow termina → el proceso puede finalizar
 
-    async def resume(self, task_id: str, decision: str, decided_by: str) -> None:
+    async def resume(self, task_id: str, decision: str, decided_by: str, notes: Optional[str] = None) -> None:
         """
         Reanudar un Flow pausado después de la decisión del supervisor.
 
@@ -333,6 +336,7 @@ class BaseFlow(ABC):
             task_id: ID de la tarea a reanudar
             decision: "approved" | "rejected"
             decided_by: Identificador del supervisor que decidió
+            notes: Comentarios o respuestas adicionales del usuario (Wizard support)
         """
         svc = get_service_client()
 
@@ -353,6 +357,10 @@ class BaseFlow(ABC):
         self.state = BaseFlowState.from_snapshot(snapshot.data)
         self.state.approval_decision = decision
         self.state.approval_decided_by = decided_by
+        
+        # Guardar notas en el estado dinámico (BaseFlowState permite campos extra)
+        if notes:
+            self.state.last_notes = notes
 
         # 3. Actualizar event_store
         self.event_store = EventStore(self.org_id, self.user_id, self.state.correlation_id)
@@ -364,7 +372,7 @@ class BaseFlow(ABC):
                 aggregate_type="flow",
                 aggregate_id=self.state.task_id,
                 event_type=f"approval.{decision}",
-                payload={"decided_by": decided_by},
+                payload={"decided_by": decided_by, "notes": notes},
                 correlation_id=self.state.correlation_id,
                 actor=f"user:{decided_by}"
             )
@@ -406,4 +414,5 @@ class BaseFlow(ABC):
     @property
     def flow_type(self) -> str:
         """Return the flow type name for DB records."""
-        return self.__class__.__name__
+        # Priorizar el nombre con el que se registró en FlowRegistry
+        return getattr(self, "_registered_flow_name", self.__class__.__name__)

@@ -11,6 +11,7 @@ import {
   Workflow,
   Activity,
   MessageSquare,
+  Puzzle,
 } from 'lucide-react'
 import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
@@ -32,6 +33,7 @@ const navMain = [
   { title: 'Agentes', url: '/agents', icon: Bot },
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },
+  { title: 'Integraciones', url: '/integrations', icon: Puzzle },
   { title: 'Chat MDC', url: '/architect', icon: MessageSquare },
 ]
 

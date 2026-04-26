@@ -73,6 +73,9 @@ class FlowRegistry:
             flow_name = (name or flow_class.__name__).lower()
             self._flows[flow_name] = flow_class
 
+            # Guardar el nombre oficial en la clase para que BaseFlow lo use
+            flow_class._registered_flow_name = flow_name
+
             # Store metadata
             self._metadata[flow_name] = {
                 "depends_on": depends_on or [],
@@ -196,7 +199,9 @@ class FlowRegistry:
         invalid_deps = self.validate_dependencies()
         cycles = self.detect_cycles()
 
+        status = "error" if (invalid_deps or cycles) else "success"
         return {
+            "status": status,
             "invalid_dependencies": invalid_deps,
             "cycles": cycles,
         }
@@ -207,16 +212,21 @@ class FlowRegistry:
         """Return the Flow class for *name*, or raise ``ValueError``.
 
         Supports multiple naming formats:
-        - PascalCase: "CotizacionFlow" → looks up "cotizacion_flow"
-        - snake_case: "cotizacion_flow" → looks up "cotizacion_flow"
-        - lowercase: "cot izacionflow" → looks up "cot izacionflow"
+        - Exact lowercase: "agent_wizard"
+        - PascalCase: "AgentWizardFlow" → looks up "agent_wizard_flow"
         """
+        # 1. Intento por nombre exacto (minúsculas)
+        if name.lower() in self._flows:
+            return self._flows[name.lower()]
+
+        # 2. Intento por nombre normalizado (CamelCase -> snake_case)
         key = _normalize_flow_name(name)
-        if key not in self._flows:
-            raise ValueError(
-                f"Flow '{name}' not found. Available: {list(self._flows.keys())}"
-            )
-        return self._flows[key]
+        if key in self._flows:
+            return self._flows[key]
+            
+        raise ValueError(
+            f"Flow '{name}' not found. Available: {list(self._flows.keys())}"
+        )
 
     def create(self, name: str, **kwargs: Any) -> Any:
         """Instantiate a registered Flow by name."""

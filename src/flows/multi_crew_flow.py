@@ -31,7 +31,7 @@ class MultiCrewState(BaseFlowState):
     crew_c_output: Optional[Dict[str, Any]] = None
 
 
-@register_flow("multi_crew")
+@register_flow("multi_crew", category="test")
 class MultiCrewFlow(BaseFlow):
     """Orchestrate three sequential crews with conditional routing.
 
@@ -79,7 +79,8 @@ class MultiCrewFlow(BaseFlow):
         if not self.validate_input(input_data):
             raise ValueError("Input validation failed")
 
-        await self.create_task_record(input_data, correlation_id)
+        if self.state is None:
+            await self.create_task_record(input_data, correlation_id)
 
         self.state.start()
         await self.persist_state()

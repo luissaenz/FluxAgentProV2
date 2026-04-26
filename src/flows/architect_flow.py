@@ -305,26 +305,33 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
             )
 
     def _ensure_unique_flow_type(self, flow_type: str) -> str:
-        """Si flow_type ya existe globalmente, agregar sufijo."""
+        """Si flow_type ya existe globalmente, buscar uno libre con sufijo."""
+        import random
+        import string
+        
         svc = get_service_client()
-
-        existing = (
-            svc.table("workflow_templates")
-            .select("id")
-            .eq("flow_type", flow_type)
-            .maybe_single()
-            .execute()
-        )
-
-        if existing and existing.data:
-            suffix = self.org_id.replace("-", "")[:8]
-            safe = f"{flow_type}_{suffix}"
-            logger.warning(
-                "flow_type '%s' ya existe, usando '%s'", flow_type, safe
+        current_name = flow_type
+        attempts = 0
+        
+        while attempts < 10:
+            existing = (
+                svc.table("workflow_templates")
+                .select("id")
+                .eq("flow_type", current_name)
+                .maybe_single()
+                .execute()
             )
-            return safe
 
-        return flow_type
+            if not (existing and existing.data):
+                return current_name
+                
+            # Si ya existe, generar nuevo nombre con sufijo aleatorio corto
+            suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+            current_name = f"{flow_type}_{suffix}"
+            attempts += 1
+            logger.warning("flow_type ocupado, reintentando con '%s'", current_name)
+
+        return f"{flow_type}_{uuid.uuid4().hex[:8]}"
 
     async def _persist_template(
         self, workflow_def: WorkflowDefinition
@@ -368,20 +375,19 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
                     .execute()
                 )
 
-                action = "skipped" if existing.data else "created"
+                action = "skipped" if existing and existing.data else "created"
 
                 db.table("agent_catalog").upsert({
                     "org_id": self.org_id,
-                    "name": agent_def.role,
                     "role": agent_def.role,
                     "soul_json": {
                         "role": agent_def.role,
                         "goal": agent_def.goal,
                         "backstory": agent_def.backstory,
                         "rules": agent_def.rules,
+                        "model": agent_def.model,
                     },
                     "allowed_tools": agent_def.allowed_tools,
-                    "model": agent_def.model,
                     "max_iter": agent_def.max_iter,
                     "is_active": True,
                 }, on_conflict="org_id,role").execute()
