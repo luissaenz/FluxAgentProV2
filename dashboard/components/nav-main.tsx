@@ -46,7 +46,6 @@ export const defaultNavItems: NavItem[] = [
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },
   { title: 'Integraciones', url: '/integrations', icon: Puzzle },
-  { title: 'Wizard Agentes', url: '/wizard', icon: Wand2 },
   { title: 'Chat MDC', url: '/architect', icon: MessageSquare },
 ]
 

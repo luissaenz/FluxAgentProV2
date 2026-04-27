@@ -336,7 +336,7 @@ class BaseFlow(ABC):
             task_id: ID de la tarea a reanudar
             decision: "approved" | "rejected"
             decided_by: Identificador del supervisor que decidió
-            notes: Comentarios o respuestas adicionales del usuario (Wizard support)
+            notes: Comentarios o respuestas adicionales del usuario
         """
         svc = get_service_client()
 

@@ -212,8 +212,8 @@ class FlowRegistry:
         """Return the Flow class for *name*, or raise ``ValueError``.
 
         Supports multiple naming formats:
-        - Exact lowercase: "agent_wizard"
-        - PascalCase: "AgentWizardFlow" → looks up "agent_wizard_flow"
+        - Exact lowercase: "generic"
+        - PascalCase: "GenericFlow" → looks up "generic_flow"
         """
         # 1. Intento por nombre exacto (minúsculas)
         if name.lower() in self._flows:
