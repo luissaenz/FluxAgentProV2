@@ -17,6 +17,12 @@ Este documento lista las deudas técnicas, riesgos y funcionalidades identificad
 ### [Prio: MEDIA] Bundle-Builder Agent
 - **Descripción:** Desarrollar un agente especializado que pueda generar bundles (ZIP con manifest + código) a partir de lenguaje natural, integrándose con el flujo de importación atómico.
 
+### [Prio: MEDIA] Dashboard Wizard UI
+- **Descripción:** Interfaz web intuitiva para el upload de bundles, visualización de manifiestos y gestión de historial de importaciones por organización.
+
+### [Prio: ALTA] Validación SemVer Estricta
+- **Descripción:** Refinar el `ImportService` para realizar validaciones de versión semántica (SemVer) que bloqueen activamente el downgrade de bundles accidentales.
+
 ## Rendimiento y QA
 
 ### [Prio: BAJA] Optimización de Latencia en Local
@@ -26,3 +32,6 @@ Este documento lista las deudas técnicas, riesgos y funcionalidades identificad
 
 ### [Prio: MEDIA] Auditoría de Dependencias Dinámica
 - **Descripción:** Automatizar el escaneo de vulnerabilidades en las dependencias permitidas (`ALLOWED_MODULES`) del sandbox de `RestrictedPython`.
+
+### [Prio: BAJA] Hardening con Seccomp (Linux)
+- **Descripción:** Activar el filtrado de llamadas al sistema (Seccomp) en los procesos que ejecutan el sandbox para añadir una capa adicional de defensa en profundidad en entornos Linux/Docker.
