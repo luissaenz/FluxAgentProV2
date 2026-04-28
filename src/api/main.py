@@ -54,7 +54,12 @@ async def lifespan(_app: FastAPI):
         count = load_dynamic_flows_from_db()
         logger.info("Dynamic workflows loaded: %d", count)
 
+        # Warmup Registries (L1 Cache) - Analisis-FINAL §2.3
+        from src.services.warmup import warmup_all_active_tenants
+        warmup_all_active_tenants()
+
         # Run full validation of the registry (Paso 4.1)
+
         from src.flows.registry import flow_registry
         validation = flow_registry.run_full_validation()
         if validation["status"] == "error":

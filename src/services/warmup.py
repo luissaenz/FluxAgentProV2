@@ -24,6 +24,7 @@ def warmup_registries(org_id: str) -> Dict[str, int]:
     stats = {"flows": 0, "skills": 0}
     
     try:
+        # Use get_tenant_client to ensure we have the right context for the org
         with get_tenant_client(org_id) as db:
             # 1. Warmup Flows (workflow_templates)
             flows_res = (
@@ -68,3 +69,39 @@ def warmup_registries(org_id: str) -> Dict[str, int]:
     except Exception as exc:
         logger.error("Warmup failed for org '%s': %s", org_id, exc)
         return stats
+
+
+def warmup_all_active_tenants() -> int:
+    """Pre-load assets for all tenants that have active workflows.
+    
+    Designed to be called during API startup (lifespan).
+    """
+    from src.db.session import get_service_client
+    
+    logger.info("Starting global registry warmup...")
+    try:
+        svc = get_service_client()
+        # Get distinct org_ids that have active templates
+        res = (
+            svc.table("workflow_templates")
+            .select("org_id")
+            .eq("is_active", True)
+            .execute()
+        )
+        
+        if not res.data:
+            logger.info("No active tenants found for warmup.")
+            return 0
+            
+        org_ids = {row["org_id"] for row in res.data}
+        count = 0
+        for org_id in org_ids:
+            warmup_registries(org_id)
+            count += 1
+            
+        logger.info("Global warmup complete. Tenants processed: %d", count)
+        return count
+    except Exception as e:
+        logger.error("Global warmup failed: %s", e)
+        return 0
+

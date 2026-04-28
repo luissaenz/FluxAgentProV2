@@ -114,6 +114,7 @@ def mock_service_client():
         "src.events.store.get_service_client",
         "src.tools.mcp_pool.get_service_client",
         "src.crews.base_crew.get_service_client",
+        "src.services.warmup.get_service_client",
     ]
     
     stack = []
