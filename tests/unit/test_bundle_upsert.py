@@ -11,9 +11,6 @@ import json
 import zipfile
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from src.services.bundle_manager import BundleManager
 from src.services.bundle_schemas import BundleRPCResult
 from src.services.import_service import ImportService
 from src.services.integrity import calculate_sha256
@@ -75,7 +72,6 @@ class TestBundleUpsert:
             "src.services.import_service.get_tenant_client", return_value=cm
         ):
             service = ImportService(org_id=org_id)
-            bundle_manager = BundleManager(org_id=org_id)
 
             # First import
             agent_v1 = json.dumps({"role": "tester", "goal": "version 1"})
@@ -109,7 +105,7 @@ class TestBundleUpsert:
                 "agents/tester.json": agent_v2,
             })
 
-            result_v2 = service.process_bundle(zip_v2)
+            service.process_bundle(zip_v2)
 
         # ASSERTION: Only 1 RPC call means UPDATE happened (not INSERT+INSERT)
         # PostgreSQL ON CONFLICT (org_id, role) DO UPDATE
@@ -127,7 +123,6 @@ class TestBundleUpsert:
         when re-importing with the same (org_id, role).
         """
         org_id = "test-org-constraint"
-        bundle_manager = BundleManager(org_id=org_id)
 
         agent_json = json.dumps({"role": "unique_role", "goal": "test"})
         manifest = {
@@ -177,7 +172,6 @@ class TestBundleUpsert:
         This verifies the upsert is scoped to (org_id, role), not just org_id.
         """
         org_id = "test-org-separate"
-        bundle_manager = BundleManager(org_id=org_id)
 
         # Create bundle with 2 different roles
         agent_1 = json.dumps({"role": "role_a", "goal": "Goal A"})

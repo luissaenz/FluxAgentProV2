@@ -6,12 +6,9 @@ and returns appropriate exit codes for valid/invalid bundles.
 
 from __future__ import annotations
 
-import io
 import json
-import zipfile
 from pathlib import Path
 from typing import Dict
-from unittest.mock import patch
 
 import pytest
 
@@ -152,8 +149,7 @@ class TestCLValidateBundle:
         safe_skill = "def my_skill(): return 42"
         (skills_dir / "skill.py").write_text(safe_skill, encoding="utf-8")
 
-        # Calculate actual hash but store wrong hash in manifest
-        actual_hash = calculate_sha256(safe_skill.encode())
+        # Store wrong hash in manifest
         wrong_hash = "sha256:" + "a" * 64
 
         manifest = {

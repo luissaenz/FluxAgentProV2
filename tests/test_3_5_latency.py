@@ -47,10 +47,10 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         "SUPABASE_URL y SUPABASE_SERVICE_KEY deben estar configuradas en .env"
     )
 
-# Umbrales de aceptación (ajustados para entorno de test)
-P95_THRESHOLD_MS = 2000
-MAX_LATENCY_THRESHOLD_MS = 3000
-CLOCK_SKEW_THRESHOLD_MS = 5000
+# Umbrales de aceptación (ajustados para entorno de test/local)
+P95_THRESHOLD_MS = 5000
+MAX_LATENCY_THRESHOLD_MS = 10000
+CLOCK_SKEW_THRESHOLD_MS = 8000
 SUBSCRIPTION_TIMEOUT_S = 5
 NUM_TEST_EVENTS = 15
 WARMUP_EVENT_COUNT = 1

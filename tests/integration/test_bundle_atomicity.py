@@ -13,7 +13,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.services.bundle_manager import BundleManager
 from src.services.bundle_schemas import BundleRPCResult
 from src.services.import_service import ImportService
 from src.services.integrity import calculate_sha256
@@ -39,7 +38,6 @@ class TestAtomicityRollback:
         We verify that no partial state persists.
         """
         org_id = "test-org-atomicity"
-        bundle_manager = BundleManager(org_id=org_id)
 
         # Create bundle with 3 agents
         agents = [
@@ -81,10 +79,6 @@ class TestAtomicityRollback:
         ):
             service = ImportService(org_id=org_id)
 
-            # BundleManager validates successfully
-            content = bundle_manager.process_zip(zip_bytes)
-            assert len(content.agents) == 3
-
             # ImportService.process_bundle should raise due to RPC exception
             # which means PostgreSQL rolled back (in real DB)
             with pytest.raises(Exception, match="Simulated DB error"):
@@ -102,7 +96,6 @@ class TestAtomicityRollback:
         rather than as exceptions. These also result in no data persistence.
         """
         org_id = "test-org-failed-status"
-        bundle_manager = BundleManager(org_id=org_id)
 
         # Create bundle with 2 agents
         agent_json = json.dumps({"role": "role_1", "goal": "Goal 1"})
@@ -136,8 +129,6 @@ class TestAtomicityRollback:
             "src.services.import_service.get_tenant_client", return_value=cm
         ):
             service = ImportService(org_id=org_id)
-            content = bundle_manager.process_zip(zip_bytes)
-
             # process_bundle returns failed result (no exception raised)
             result = service.process_bundle(zip_bytes)
 
@@ -151,7 +142,6 @@ class TestAtomicityRollback:
         Verifies the happy path where RPC returns success.
         """
         org_id = "test-org-success"
-        bundle_manager = BundleManager(org_id=org_id)
 
         # Create simple bundle with 1 agent
         agent_json = json.dumps({"role": "tester", "goal": "test"})
@@ -187,7 +177,6 @@ class TestAtomicityRollback:
             "src.services.import_service.get_tenant_client", return_value=cm
         ):
             service = ImportService(org_id=org_id)
-            content = bundle_manager.process_zip(zip_bytes)
             result = service.process_bundle(zip_bytes)
 
         assert result.status == "success"
