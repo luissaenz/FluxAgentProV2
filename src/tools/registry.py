@@ -131,14 +131,14 @@ class ToolRegistry:
                     return None
 
                 code_source = result.data["code_source"]
+                filename = f"<db_skill_{org_id}_{name}>"
 
-                # 1. Security Scan (AST)
+                # 1. Security Scan (AST + Compilation check)
                 guard = SecurityGuard()
-                guard.scan_source(code_source)  # Raises SecurityError if unsafe
+                guard.validate_skill(code_source, filename)  # Raises SecurityError if unsafe
 
                 # 2. Restricted Compilation
                 # Note: We use 'exec' mode. The code must define a class that we can extract.
-                filename = f"<db_skill_{org_id}_{name}>"
                 byte_code = compile_restricted(code_source, filename, "exec")
 
                 # 3. Execution in restricted namespace
