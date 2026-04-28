@@ -47,7 +47,13 @@ ALTER TABLE bundle_imports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skill_catalog ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "bundle_imports_tenant_isolation" ON bundle_imports
-    FOR ALL USING (org_id::text = current_setting('app.org_id', TRUE));
+    FOR ALL USING (
+        auth.role() = 'service_role'
+        OR org_id::text = current_org_id()
+    );
 
 CREATE POLICY "skill_catalog_tenant_isolation" ON skill_catalog
-    FOR ALL USING (org_id::text = current_setting('app.org_id', TRUE));
+    FOR ALL USING (
+        auth.role() = 'service_role'
+        OR org_id::text = current_org_id()
+    );

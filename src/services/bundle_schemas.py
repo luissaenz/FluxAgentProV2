@@ -51,3 +51,22 @@ class BundleContent(BaseModel):
 
     # Stats for limit validation
     size_bytes: int = 0
+
+
+class BundleRPCPayload(BaseModel):
+    """Payload expected by the PostgreSQL function import_bundle_atomic."""
+    bundle_name: str
+    bundle_hash: str
+    agents: List[Dict] = Field(default_factory=list)
+    flows: List[Dict] = Field(default_factory=list)
+    skills: Dict[str, str] = Field(default_factory=dict)
+
+
+class BundleRPCResult(BaseModel):
+    """Response returned by the PostgreSQL function import_bundle_atomic."""
+    status: str
+    bundle_id: str
+    agents_count: int = 0
+    flows_count: int = 0
+    skills_count: int = 0
+    error: Optional[str] = None
