@@ -10,21 +10,22 @@ El objetivo de esta fase es eliminar la creación manual de agentes e implementa
 4. **T4. Persistencia Atómica**: Refactor de RLS, validación de RPC `import_bundle_atomic` y modelos de datos. *(Completado)* ✅
 5. **T5. Pipeline de Importación (API)**: Endpoint `/api/bundles/import` e orquestador `ImportService`. *(Completado)* ✅
 6. **T6. Refactor Existente**: Modificar `ArchitectFlow` para no insertar directamente y habilitar un `ToolRegistry` híbrido y scoped. *(Completado)* ✅
-7. **T7. FAP-CLI**: Utilidad de línea de comandos para empaquetado y validación. *(Depende de T5)*
+7. **T7. FAP-CLI**: Utilidad de línea de comandos para empaquetado y validación. *(Completado)* ✅
 
 ## 2. Estado Actual del Proyecto
 
 > [!IMPORTANT]
-> Se han completado los pasos **T0 a T6**. El sistema ya cuenta con el pipeline completo de importación operativo, validado técnica y funcionalmente bajo aislamiento multi-tenant.
+> Se han completado los pasos **T0 a T7**. El sistema de importación de bundles está 100% operativo, incluyendo herramientas de backend y utilidades de línea de comandos para desarrolladores.
 
 - **Qué ya está implementado y funcional:**
   - **API de Bundles**: Endpoint `POST /api/bundles/import` operativo con soporte para multipart/form-data.
   - **Orquestador de Importación**: `ImportService` integra validación de integridad, seguridad (RestrictedPython), persistencia atómica (Supabase RPC) y registro in-memory dinámico.
   - **Aislamiento Tenant (ToolRegistry)**: Búsqueda de herramientas scoped por `org_id`. Las herramientas importadas vía bundle solo son visibles para la organización propietaria.
   - **Refactor de ArchitectFlow**: Desacoplado de la persistencia directa; ahora produce definiciones JSON listas para ser empaquetadas como bundles.
+  - **FAP-CLI (Herramienta Global)**: Comando `fap` disponible para `init`, `validate`, `package` y `export-agents`. Garantiza paridad de seguridad con el servidor.
   - **Suite de Pruebas Unificada**: 100% de éxito en 226 tests unitarios y 75 tests de integración (Incluyendo resolución de regresiones de arquitectura).
 - **Qué no existe aún (Pendiente de implementación):**
-  - **FAP-CLI**: Utilidad para desarrolladores para validar y empaquetar bundles localmente (Tarea T7).
+  - Ninguna tarea pendiente para esta fase.
 - **Discrepancias plan vs código:**
   - 📝 CORRECCIÓN: El `ToolRegistry` se ha implementado como un sistema híbrido (Memoria > Disco) con aislamiento estricto por prefijos (`org_id:name`) para cumplir con los requisitos de seguridad multi-tenant.
 
@@ -38,7 +39,8 @@ El objetivo de esta fase es eliminar la creación manual de agentes e implementa
   - **Tool Scoping**: Registro de herramientas en memoria usando prefijo `{org_id}:{tool_name}`.
   - **Modern Datetime**: Uso obligatorio de `datetime.now(UTC)` (verificado en `src/db/memory.py`).
   - **Bundle-Driven Architect**: El flujo de arquitecto es el generador de esquemas, pero no el persistidor.
-- **Dependencias instaladas:** `fastapi`, `supabase`, `pydantic`, `RestrictedPython>=7.0`, `crewai`, `litellm`, `ruff`, `pytest`.
+  - **Estructura Bundle**: Carpetas estándar `agents/`, `flows/`, `skills/`, `context/`.
+  - **Dependencias instaladas**: `fastapi`, `supabase`, `pydantic`, `RestrictedPython>=7.0`, `typer>=0.12.0`, `crewai`, `litellm`, `ruff`, `pytest`.
 
 ## 4. Decisiones de Arquitectura Tomadas
 
@@ -54,6 +56,7 @@ El objetivo de esta fase es eliminar la creación manual de agentes e implementa
 | T2-T4. Foundation | ✅ Completado | `src/services/*`, `026_bundle_system.sql` | RPC Atómico como único camino. | Integridad y Seguridad verificadas. |
 | T5. Pipeline API | ✅ Completado | `src/api/routes/bundles.py`, `import_service.py` | Orquestación centralizada en `ImportService`. | Endpoint `/api/bundles/import` funcional. |
 | T6. Refactor & Scoping| ✅ Completado | `registry.py`, `base_crew.py`, `architect_flow.py` | Aislamiento por prefijo en ToolRegistry. | Regresiones de tests resueltas. |
+| T7. FAP-CLI | ✅ Completado | `src/cli/*`, `pyproject.toml` | Typer como estándar; Paridad de seguridad local. | Comando `fap` funcional en Windows. |
 
 ## 6. Criterios Generales de Aceptación MVP
 - El happy path (empaquetar ZIP → POST API → persistencia en DB → ejecución por agente) funciona end-to-end.
