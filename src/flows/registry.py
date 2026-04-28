@@ -317,6 +317,20 @@ class FlowRegistry:
         self._flows.clear()
         self._builders.clear()
 
+    def invalidate_tenant_cache(self, org_id: str) -> None:
+        """Elimina todas las entradas de caché (L1) que pertenezcan al tenant.
+
+        Esto fuerza al registro a recargar flujos desde la base de datos en la
+        siguiente llamada a get().
+        """
+        prefix = f"{org_id}:"
+        keys_to_del = [k for k in self._flows.keys() if k.startswith(prefix)]
+        for k in keys_to_del:
+            self._flows.pop(k, None)
+            self._metadata.pop(k, None)
+
+        logger.info("Invalidated cache for tenant flow registry: %s", org_id)
+
 
 # ── global singleton ────────────────────────────────────────────
 flow_registry = FlowRegistry()

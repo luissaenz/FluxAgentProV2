@@ -1,21 +1,21 @@
-# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v15
+# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v16
 
 > 📅 Documento actualizado: 2026-04-28
-> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 17 - CLI Refinement / The Local Forge)
+> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 18 - Warmup & Persistence / The Registry Bridge)
 
 ---
 
 ## 1. Resumen de Fase
 
-El objetivo de esta fase (**Fase III: Refinamiento y DX**) es elevar la experiencia del desarrollador (DX) y garantizar que el flujo **Local-First** sea robusto, seguro y un espejo fiel del entorno de producción. Tras cerrar la auditoría técnica del backend (Paso 16), el foco se ha trasladado al **FAP-CLI**, convirtiéndolo en una herramienta de grado profesional para desarrollo local.
+El objetivo de esta fase (**Fase III: Refinamiento y DX**) es elevar la experiencia del desarrollador (DX) y garantizar que el flujo **Local-First** sea robusto, seguro y un espejo fiel del entorno de producción. Tras cerrar la auditoría técnica del backend (Paso 16) y el refinamiento del CLI (Paso 17), el foco se ha completado en la **Resiliencia y Persistencia** del sistema de registros.
 
-**Estado Actual:** 🚀 **PASO 17 COMPLETADO Y VALIDADO.** El CLI ahora soporta validación sincronizada, sandbox local restrictivo y flujo completo de autenticación y publicación.
+**Estado Actual:** 🚀 **PASO 18 COMPLETADO Y VALIDADO.** El sistema ahora es resiliente a reinicios mediante warmup automático y mantiene coherencia total tras borrados mediante soft-deletes sincronizados.
 
 | Paso | Descripción | Estado |
 |:---|:---|:---|
 | T1-T16| Auditoría de Integridad Técnica y Cierre MVP | ✅ Completado |
-| T17 | **CLI Refinement (The Local Forge)** | ✅ Completado |
-| T18 | Warmup & Persistence (The Registry Bridge) | ⏳ Pendiente |
+| T17 | CLI Refinement (The Local Forge) | ✅ Completado |
+| T18 | **Warmup & Persistence (The Registry Bridge)** | ✅ Completado |
 | T19 | SemVer & Version Guard | ⏳ Pendiente |
 | T20 | Dashboard & Wizard (The Visual Entry) | ⏳ Pendiente |
 
@@ -25,35 +25,37 @@ El objetivo de esta fase (**Fase III: Refinamiento y DX**) es elevar la experien
 
 ### Qué ya está implementado y funcional (verificado contra código):
 
+**Warmup & Persistence (Paso 18):**
+- **Soft-Delete Sincronizado:** Implementado en `ImportService.delete_bundle`. Al borrar un bundle, se marcan como `is_active=False` tanto el bundle como sus agentes, skills y flujos asociados (verificado en `src/services/import_service.py`).
+- **Invalidación de Caché L1:** Los registros de herramientas y flujos implementan `invalidate_tenant_cache(org_id)` para limpiar la memoria tras cambios en el catálogo, forzando la recarga desde DB (verificado en `src/flows/registry.py` y `src/tools/registry.py`).
+- **Warmup Service:** Servicio global que identifica tenants con workflows activos y pre-carga sus assets en memoria durante el arranque para eliminar la latencia de "cold start" (verificado en `src/services/warmup.py`).
+- **Integración en Lifespan:** La API de FastAPI ahora ejecuta el warmup global antes de aceptar peticiones (verificado en `src/api/main.py`).
+
 **Refinamiento de CLI (Paso 17):**
-- **Autenticación Persistente (T17.1):** `fap login` implementado. Guarda tokens en `~/.fap/config.json` con permisos restringidos (chmod 600 en POSIX) usando Pydantic para la persistencia (verificado en `src/cli/config.py`).
-- **Sincronización de Seguridad (T17.2):** `fap validate --sync` descarga la configuración de seguridad del servidor (`GET /api/bundles/security-config`) para asegurar que la validación local coincida con la del backend (verificado en `src/cli/commands/validate.py`).
-- **Sandbox Local (T17.3):** `fap run` permite ejecutar skills localmente usando `RestrictedPython` y el mismo `SecurityGuard` del servidor, garantizando que si una skill corre localmente, correrá en FAP (verificado en `src/cli/commands/run.py`).
-- **Pipeline de Publicación (T17.4):** `fap publish` automatiza el empaquetado y subida del bundle usando el token de acceso persistido (verificado en `src/cli/commands/publish.py`).
+- **Autenticación Persistente:** `fap login` gestiona tokens en `~/.fap/config.json`.
+- **Sincronización de Seguridad:** `fap validate --sync` descarga reglas de `/api/bundles/security-config`.
+- **Sandbox Local:** `fap run` utiliza `RestrictedPython` con paridad total con el servidor.
 
 **Integridad de Backend:**
-- **Endpoint de Configuración de Seguridad:** Nuevo endpoint `/api/bundles/security-config` que expone módulos permitidos/prohibidos y versión de Python (verificado en `src/api/routes/bundles.py`).
-- **Atomicidad Certificada:** `import_bundle_atomic` garantiza transaccionalidad total (verificado en migración 0027).
+- **Esquema de Roadmap:** Migración 0028 aplicada, añadiendo `version` e `is_active` a `bundle_imports` y `skill_catalog` (verificado en `supabase/migrations/0028_roadmap_features.sql`).
 
 ---
 
 ## 3. Contratos Técnicos Vigentes
 
 ### Patrones de Código en Uso (Verificados):
-- **RLS (Row Level Security):** Usa `current_org_id()` que lee la variable de sesión `app.org_id` configurada mediante la función RPC `set_config`. ⚠️ *Nota: El plan sugiere `auth.uid()`, pero el código real usa consistentemente el patrón de variable de sesión `app.org_id`* (Verificado en `001_set_config_rpc.sql` y `025_agent_catalog_rls_update.sql`).
-- **Auth:** Implementado con `PyJWT`. El CLI usa `httpx` para todas las comunicaciones autenticadas.
-- **Sandboxing:** `RestrictedPython >= 7.0` con filtrado AST. Sincronizado entre CLI y Backend.
-- **Registry:** Lookup de 4 niveles en `ToolRegistry` con inyección de dependencias de seguridad.
+- **Soft-Delete:** Filtro obligatorio `.eq("is_active", True)` en todas las lecturas de catálogo desde el `WarmupService` y métodos de carga dinámica.
+- **Cache Registry:** Uso de llaves con prefijo `{org_id}:{asset_name}` en diccionarios `_flows` y `_tools` para aislamiento multi-tenant en memoria.
+- **RLS (Row Level Security):** Uso de `current_setting('app.org_id')` configurado vía RPC `set_config`.
+- **Auth:** `PyJWT` para validación de tokens y extracción de `org_id`.
 
-### Estructura del CLI (`fap`):
-| Comando | Función | Archivo |
+### Schemas de Catálogo Actualizados (Migración 0028):
+| Tabla | Columnas Críticas | Notas |
 |:---|:---|:---|
-| `fap init` | Inicializa estructura de proyecto local | `src/cli/commands/init.py` |
-| `fap login` | Gestiona autenticación y tokens | `src/cli/commands/login.py` |
-| `fap validate` | Valida bundle (local o remoto con `--sync`) | `src/cli/commands/validate.py` |
-| `fap run` | Ejecuta skill en sandbox local | `src/cli/commands/run.py` |
-| `fap package` | Genera ZIP con `manifest.json` | `src/cli/commands/package.py` |
-| `fap publish` | Empaqueta y sube a FAP | `src/cli/commands/publish.py` |
+| `bundle_imports` | `id, org_id, version, is_active` | `is_active` controla visibilidad global del bundle. |
+| `skill_catalog` | `id, org_id, bundle_id, name, code_source, is_active` | `is_active` permite desactivar herramientas individuales. |
+| `agent_catalog` | `id, org_id, role, bundle_id, is_active` | Ya incluía `is_active` por defecto. |
+| `workflow_templates` | `id, org_id, flow_type, bundle_id, is_active` | Ya incluía `is_active` por defecto. |
 
 ---
 
@@ -61,29 +63,28 @@ El objetivo de esta fase (**Fase III: Refinamiento y DX**) es elevar la experien
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |:---|:---|:---|:---|:---|
-| T17 | ✅ | `src/cli/`, `src/api/routes/bundles.py`, `pyproject.toml` | Adopción de `Typer` para CLI y `httpx` para red. Paridad de sandbox local/remoto. | DX Nivel Pro |
-| T16 | ✅ | `registry.py`, `import_service.py`, `0027_bundle_rpc.sql` | Unificación de criterios de auditoría y cierre de brechas de seguridad | Fase II Auditada |
+| T18 | ✅ | `src/services/warmup.py`, `src/api/main.py`, `src/flows/registry.py`, `0028_roadmap_features.sql` | Warmup síncrono en lifespan para garantizar SLA de latencia. Soft-delete universal con `is_active`. | Resiliencia 100% |
+| T17 | ✅ | `src/cli/`, `src/api/routes/bundles.py` | Typer + httpx. Sincronización de reglas de seguridad. | DX Pro |
+| T16 | ✅ | `registry.py`, `import_service.py` | Cierre de brechas de auditoría técnica. | Auditado |
 
 ---
 
-## 5. Criterios de Aceptación (Fase III - Paso 17)
+## 5. Criterios de Aceptación (Fase III - Paso 18)
 
 | # | Criterio | Verificación |
 |:---|:---|:---|
-| 1 | `fap login` persiste credenciales de forma segura | ✅ Verificado (`CLIConfig`) |
-| 2 | `fap run` bloquea módulos prohibidos localmente | ✅ Verificado (`SecurityGuard` in CLI) |
-| 3 | `fap validate --sync` actualiza reglas desde el server | ✅ Verificado (Endpoint /security-config) |
-| 4 | `fap publish` realiza el flujo completo PACK -> UPLOAD | ✅ Verificado (Functional Test) |
-| 5 | El CLI es instalable como script de sistema (`pip install -e .`) | ✅ Verificado (`project.scripts` en toml) |
+| 1 | `delete_bundle` oculta flujos y herramientas inmediatamente | ✅ Verificado (Invalidación de Caché L1) |
+| 2 | El reinicio de la API pre-carga assets de tenants activos | ✅ Verificado (Logs de Warmup en startup) |
+| 3 | La migración 028 añade `is_active` a tablas faltantes | ✅ Verificado (`0028_roadmap_features.sql`) |
+| 4 | `FlowRegistry` tiene paridad con `ToolRegistry` en caché | ✅ Verificado (Métodos de invalidación idénticos) |
 
 ---
 
 ## 6. Estado del Repositorio
 
 **Hitos Finales Alcanzados:**
-- CLI Refinement (Paso 17) completado al 100%.
-- Ecosistema **Local-First** funcional: El desarrollador puede codificar, probar y publicar sin salir de la terminal.
-- Sincronización de seguridad garantizada entre cliente y servidor.
+- Cierre del **The Registry Bridge**: El sistema de registros en memoria y persistencia en DB está sincronizado.
+- Preparado para **SemVer & Version Guard** (Paso 19), aprovechando el nuevo campo `version` en `bundle_imports`.
 
 ---
 *Documento actualizado por Antigravity (ATG) siguiendo 0_CONTEXTO.md.*

@@ -49,7 +49,11 @@ def warmup_registries(org_id: str) -> Dict[str, int]:
 
             # 2. Warmup Skills (skill_catalog)
             skills_res = (
-                db.table("skill_catalog").select("name").eq("org_id", org_id).execute()
+                db.table("skill_catalog")
+                .select("name")
+                .eq("org_id", org_id)
+                .eq("is_active", True)
+                .execute()
             )
             if skills_res.data:
                 for skill in skills_res.data:

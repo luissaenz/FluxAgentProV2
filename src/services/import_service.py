@@ -229,6 +229,7 @@ class ImportService:
     def delete_bundle(self, bundle_id: str) -> bool:
         """Soft-delete a bundle and its components."""
         from src.db.session import get_tenant_client
+        from src.flows.registry import flow_registry
         from src.tools.registry import tool_registry
 
         with get_tenant_client(self.org_id) as db:
@@ -236,16 +237,21 @@ class ImportService:
             db.table("bundle_imports").update({"is_active": False}).eq(
                 "id", bundle_id
             ).execute()
-            # 2. Mark components as inactive (Roadmap T15.3)
+            # 2. Mark components as inactive (Roadmap T15.3 + Analysis-FINAL)
             db.table("agent_catalog").update({"is_active": False}).eq(
                 "bundle_id", bundle_id
             ).execute()
             db.table("skill_catalog").update({"is_active": False}).eq(
                 "bundle_id", bundle_id
             ).execute()
+            # Added in Paso 18: Soft-delete workflow templates
+            db.table("workflow_templates").update({"is_active": False}).eq(
+                "bundle_id", bundle_id
+            ).execute()
 
-            # 3. Invalidate memory cache to trigger reload without deleted skills
+            # 3. Invalidate memory cache to trigger reload without deleted assets
             tool_registry.invalidate_tenant_cache(self.org_id)
+            flow_registry.invalidate_tenant_cache(self.org_id)
 
             return True
 
@@ -253,10 +259,12 @@ class ImportService:
         """Register imported skills in the in-memory ToolRegistry."""
         import RestrictedPython
 
+        from src.flows.registry import flow_registry
         from src.tools.registry import tool_registry
 
-        # Roadmap T15.1: Invalidate cache before re-registering
+        # Roadmap T15.1: Invalidate cache before re-registering (Avoid collisions)
         tool_registry.invalidate_tenant_cache(self.org_id)
+        flow_registry.invalidate_tenant_cache(self.org_id)
 
         # We use a safe environment similar to SecurityGuard
         safe_env = RestrictedPython.safe_builtins.copy()
