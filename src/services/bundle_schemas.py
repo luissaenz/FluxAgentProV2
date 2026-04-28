@@ -51,6 +51,7 @@ class BundleContent(BaseModel):
 
     # Stats for limit validation
     size_bytes: int = 0
+    bundle_hash: str = ""
 
 
 class BundleRPCPayload(BaseModel):

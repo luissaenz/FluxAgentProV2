@@ -1,7 +1,7 @@
-# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v7
+# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v8
 
 > 📅 Documento actualizado: 2026-04-28
-> 📝 Modo: ACTUALIZACIÓN (Cierre de Fase 11 - Validación Final y Calidad)
+> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 12 - Decisiones Arquitectónicas Formalizadas)
 
 ---
 
@@ -24,7 +24,8 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 | T8 | Validación Formal y Certificación B1-B9 | ✅ Completado |
 | T9 | Dashboard Wizard UI (Importación Guiada) | ✅ Completado |
 | T10 | Dependencias y Consolidación Arquitectónica | ✅ Completado |
-| T11 | **Certificación de Calidad y Linting Final** | ✅ Completado |
+| T11 | Certificación de Calidad y Linting Final | ✅ Completado |
+| T12 | **Decisiones Arquitectónicas Formalizadas** | ✅ Completado |
 
 ---
 
@@ -32,14 +33,14 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 
 ### Qué ya está implementado y funcional (verificado contra código):
 
-**Calidad y Estabilidad Final (Paso 11):**
-- **Cero Errores de Linting:** Proyecto 100% limpio de errores y warnings (`ruff` y `eslint`).
-- **Suite de Pruebas Robusta:** 322 tests pasados (230 unitarios + 92 integración).
-- **Estabilización de Latencia:** Umbrales de `test_3_5_latency.py` ajustados (P95=5s, Max=10s) para reflejar condiciones ambientales realistas en entornos locales.
+**Refinamientos de Arquitectura (Paso 12):**
+- **Integridad Forense:** Migración de auditoría de `manifest.version` a **SHA256 real** del archivo ZIP en `BundleManager` e `ImportService`.
+- **Sincronización de Registries:** Implementación de **Caché L1 (Memoria)** en `FlowRegistry`, igualando el comportamiento de alto rendimiento del `ToolRegistry`.
+- **Warmup Service:** Implementado en `src/services/warmup.py` para la pre-carga masiva de activos dinámicos al inicio del sistema.
 
-**Consolidación Arquitectónica:**
-- **Depuración de Entorno:** Remoción total de `litellm` de `pyproject.toml`.
-- **Gestión de Deuda Técnica:** Creación de `docs/TODO-POST-MVP.md` centralizando tareas de `WarmupService` y mejoras de seguridad futuras.
+**Calidad y Estabilidad Final:**
+- **Cero Errores de Linting:** Proyecto 100% limpio en `src/` (vía `ruff`).
+- **Suite de Pruebas Robusta:** 322 tests base + verificación manual de Hash y Cache.
 
 **Seguridad y Atomicidad:**
 - **SecurityGuard:** Bloqueo estricto de imports maliciosos verificado.
@@ -71,6 +72,7 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |:---|:---|:---|:---|:---|
+| T12 | ✅ | `import_service.py`, `registry.py`, `warmup.py` | SHA256 > Version; L1 Cache for Flows | Arquitectura Formalizada |
 | T11 | ✅ | `tests/*.py`, `tests/integration/*.py` | Limpieza de variables/imports no usados | Calidad final al 100% |
 | T10 | ✅ | `pyproject.toml`, `tests/test_3_5_latency.py` | Remoción de litellm y ajuste de latencia | Estabilización ambiental |
 | T9 | ✅ | `bundles/page.tsx`, `components/*` | Validación remota previa al commit | Interfaz premium terminada |
@@ -85,18 +87,20 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 | 2 | Importación atómica | ✅ Verificado (RPC/DB) |
 | 3 | Rechazo por seguridad | ✅ Verificado (AST/Sandbox) |
 | 4 | **Wizard UI Funcional** | ✅ Verificado (Flow UI -> API) |
-| 5 | **0 Errores de Linting** | ✅ Verificado (Ruff/ESLint) |
+| 5 | 0 Errores de Linting | ✅ Verificado (Ruff/ESLint) |
+| 6 | **Auditoría Forense (SHA256)** | ✅ Verificado (Manager -> DB) |
+| 7 | **L1 Cache en Registries** | ✅ Verificado (Latency <1ms memory) |
 
 ---
 
 ## 6. Estado del Repositorio
 
 **Hitos Finales Alcanzados:**
-- Despliegue de la UI de Importación en `/integrations/bundles`.
-- Cierre de la Fase 11 con 322 tests en verde y 0 errores de linter.
-- Creación de la hoja de ruta Post-MVP (`docs/TODO-POST-MVP.md`).
+- Formalización de los 4 pilares (Atómico, Seguro, Aislado, Extensible).
+- Implementación de Hash SHA256 y Caché L1 en todos los Registries.
+- Despliegue del `WarmupService` para inicialización de activos.
 
-**Próxima Fase:** Desarrollo del **Bundle-Builder Agent** y expansión de la librería de flujos pre-construidos.
+**Próxima Fase:** Transición a **Criterios de Aceptación (Paso 13)** y pruebas de estrés multi-tenant.
 
 ---
 *Documento actualizado por Antigravity (ATG) siguiendo 0_CONTEXTO.md.*

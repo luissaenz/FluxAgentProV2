@@ -211,18 +211,29 @@ class FlowRegistry:
     def get(self, name: str, org_id: str | None = None) -> Type:
         """Return the Flow class for *name*.
         
-        Order: memory -> DB lookup (if org_id provided) -> raise ValueError.
+        Order: Scoped Cache (org:name) -> Global Cache (name) -> DB lookup -> raise ValueError.
         """
-        # 1. Memory lookup
         key = name.lower()
+        normalized_key = _normalize_flow_name(name)
+
+        # 1. Scoped Cache (L1) - Analysis-FINAL §2.2
+        if org_id:
+            scoped_key = f"{org_id}:{key}"
+            if scoped_key in self._flows:
+                return self._flows[scoped_key]
+            
+            scoped_norm = f"{org_id}:{normalized_key}"
+            if scoped_norm in self._flows:
+                return self._flows[scoped_norm]
+
+        # 2. Global / Static Cache
         if key in self._flows:
             return self._flows[key]
 
-        normalized_key = _normalize_flow_name(name)
         if normalized_key in self._flows:
             return self._flows[normalized_key]
 
-        # 2. DB Lookup (workflow_templates)
+        # 3. DB Lookup (workflow_templates)
         if org_id:
             try:
                 flow_class = self._load_from_db(key, org_id)
@@ -276,18 +287,9 @@ class FlowRegistry:
                 # Inyectamos la definición en la clase para que DynamicWorkflow la use
                 BoundDynamicFlow.definition = definition
                 
-                # Opcional: registrar en memoria para esta sesión/tenant?
-                # El análisis dice: "se registra en memoria". 
-                # Pero FlowRegistry es global. Si lo registro en _flows[flow_type],
-                # la siguiente org que pida ese flow_type recibirá el de la org anterior.
-                # ERROR: Debemos usar un prefijo o no registrar en el registry global
-                # si es dinámico.
-                
-                # Sin embargo, el endpoint run_flow usa require_org_id, 
-                # por lo que el lookup es seguro mientras pasemos el org_id.
-                
-                # Si queremos persistir en memoria, deberíamos usar {org_id}:{flow_type}
-                # pero el registry actual no soporta eso bien en list_flows.
+                # L1 Cache (Analisis-FINAL §2.2): Register in memory with org prefix
+                scoped_key = f"{org_id}:{flow_type}"
+                self._flows[scoped_key] = BoundDynamicFlow
                 
                 return BoundDynamicFlow
                 

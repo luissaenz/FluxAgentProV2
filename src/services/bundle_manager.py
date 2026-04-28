@@ -5,6 +5,7 @@ Implements memory-only extraction, limit validation, and integrity checks.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import logging
@@ -65,7 +66,13 @@ class BundleManager:
                 manifest_data = json.loads(z.read("manifest.json"))
                 manifest = BundleManifest(**manifest_data)
 
-                content = BundleContent(manifest=manifest, size_bytes=size)
+                # Calculate bundle hash for audit (Analisis-FINAL §2.1)
+                bundle_hash = hashlib.sha256(zip_bytes).hexdigest()
+                content = BundleContent(
+                    manifest=manifest, 
+                    size_bytes=size,
+                    bundle_hash=bundle_hash
+                )
 
                 # 3. Verify Integrity and Parse Files
                 for rel_path, expected_hash in manifest.hashes.items():

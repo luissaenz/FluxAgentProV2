@@ -44,7 +44,7 @@ class ImportService:
         )
         payload = BundleRPCPayload(
             bundle_name=bundle_name,
-            bundle_hash=content.manifest.version,  # Using version as identifier/hash for now
+            bundle_hash=content.bundle_hash,  # Analysis-FINAL §2.1: Use real SHA256 hash
             agents=content.agents,
             flows=content.flows,
             skills=content.skills,
