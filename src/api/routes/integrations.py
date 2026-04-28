@@ -8,6 +8,7 @@ Correcciones vs plan:
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+
 from src.api.middleware import require_org_id, verify_org_membership
 from src.db.session import get_service_client
 

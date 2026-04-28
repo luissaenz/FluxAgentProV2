@@ -11,9 +11,11 @@ Uso:
 
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi import HTTPException
+
 from src.api.routes.agents import get_agent_detail
 
 # ── Capa A: Validación de Lógica de Aplicación ───────────────────
@@ -25,7 +27,6 @@ async def test_agent_detail_isolation_logic():
     y no permita el acceso a agentes de otras organizaciones.
     """
     org_alpha = "org-alpha-123"
-    org_beta = "org-beta-456"
     agent_id_beta = "agent-beta-789"
 
     def make_chain(data):

@@ -7,8 +7,9 @@ Validation order:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AgentDefinition(BaseModel):

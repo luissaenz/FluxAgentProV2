@@ -7,8 +7,8 @@ según condiciones de negocio.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, Any
 import logging
+from typing import Any, Callable, Dict
 
 from ..db.session import get_tenant_client
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import uuid
 import logging
+import uuid
 from typing import Optional
 
-from .session import get_tenant_client, get_service_client
+from .session import get_service_client, get_tenant_client
 
 logger = logging.getLogger(__name__)
 

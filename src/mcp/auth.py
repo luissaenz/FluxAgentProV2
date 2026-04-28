@@ -12,12 +12,12 @@ import logging
 from typing import Optional
 
 import jwt as pyjwt
+from fastapi import HTTPException
 from jwt import PyJWKClient
 from jwt.exceptions import PyJWKClientConnectionError, PyJWKClientError
-from fastapi import HTTPException
 
 from ..config import get_settings
-from ..db.session import get_service_client, execute_with_retry
+from ..db.session import execute_with_retry, get_service_client
 
 logger = logging.getLogger(__name__)
 

@@ -10,17 +10,18 @@ import argparse
 import asyncio
 import logging
 
-from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
-# Eager flow registration (mismos que main.py:15-17)
-import src.flows.generic_flow   # noqa: F401
 import src.flows.architect_flow  # noqa: F401
-import src.flows.test_flows     # noqa: F401
+
+# Eager flow registration (mismos que main.py:15-17)
+import src.flows.generic_flow  # noqa: F401
+import src.flows.test_flows  # noqa: F401
+from mcp.server import Server
 
 from .config import MCPConfig
-from .tools import get_static_tools, handle_tool_call
 from .flow_to_tool import build_flow_tools
+from .tools import get_static_tools, handle_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +43,11 @@ async def handle_call_tool(name: str, arguments: dict | None):
     try:
         return await handle_tool_call(name, arguments or {}, config)
     except Exception as exc:
-        from .exceptions import mcp_error_to_response
-        from mcp.types import CallToolResult, TextContent
         import json
+
+        from mcp.types import CallToolResult, TextContent
+
+        from .exceptions import mcp_error_to_response
         
         error_resp = mcp_error_to_response(exc)
         return CallToolResult(

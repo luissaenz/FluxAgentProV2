@@ -114,6 +114,12 @@ Para cada archivo que tocaste, léelo completo y verifica:
 - `try/except` vacíos (que silencian errores sin hacer nada) → Agregá al menos un log.
 - `except Exception` demasiado amplio donde se puede ser más específico → Especificá.
 
+**Validación de Calidad (Linting):**
+- Ejecutá `npm run lint` en la raíz del proyecto.
+- Si se detectan errores: ejecutá `npm run lint:fix` para corregirlos automáticamente.
+- Si persisten errores manuales: corregilos uno por uno hasta que `npm run lint` devuelva un estado exitoso.
+- No entregues código con errores de linter activos.
+
 ### Proceso concreto:
 ```
 Por cada archivo modificado:

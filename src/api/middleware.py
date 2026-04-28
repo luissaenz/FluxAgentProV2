@@ -50,10 +50,10 @@ from __future__ import annotations
 
 import logging
 
+from fastapi import Depends, Header, HTTPException, Request
 
-from fastapi import Header, HTTPException, Request, Depends
-
-from ..mcp.auth import decode_jwt, verify_org_membership as auth_verify_org_membership
+from ..mcp.auth import decode_jwt
+from ..mcp.auth import verify_org_membership as auth_verify_org_membership
 
 logger = logging.getLogger(__name__)
 

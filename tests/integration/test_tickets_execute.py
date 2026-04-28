@@ -11,15 +11,14 @@ Además se validan los criterios de aceptación del análisis.
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from uuid import uuid4
 from datetime import datetime as dt
 from datetime import timezone
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 
 # ── App fixture ─────────────────────────────────────────────────
 
@@ -29,10 +28,9 @@ def ticket_app(mock_flow_registry):
     app = FastAPI()
 
     # Import and register tickets router
-    from src.api.routes.tickets import router as tickets_router
-
     # Override the require_org_id dependency to return our test org
     from src.api.middleware import require_org_id
+    from src.api.routes.tickets import router as tickets_router
     app.dependency_overrides[require_org_id] = lambda: mock_flow_registry["org_id"]
 
     app.include_router(tickets_router)

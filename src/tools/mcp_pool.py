@@ -20,7 +20,7 @@ import time
 from collections import defaultdict
 from typing import Dict, Optional
 
-from tenacity import retry, wait_exponential, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..db.session import get_service_client
 from ..db.vault import get_secret_async
@@ -147,6 +147,7 @@ class MCPPool:
             # run __enter__ in a thread pool to avoid blocking the event loop.
             try:
                 from crewai_tools import MCPServerAdapter
+
                 from mcp import StdioServerParameters
             except ImportError:
                 raise MCPConnectionError(

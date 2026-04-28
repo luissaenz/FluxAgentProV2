@@ -12,17 +12,17 @@ Correcciones vs plan original (mcp-analisis-finalV2.md):
 from __future__ import annotations
 
 import base64
+from typing import Type
 
 import httpx
 import structlog
-from typing import Type
 from pydantic import BaseModel, Field
 
+from src.db.session import get_service_client
+from src.db.vault import VaultError, get_secret
+from src.mcp.sanitizer import sanitize_output
 from src.tools.base_tool import OrgBaseTool
 from src.tools.registry import register_tool
-from src.db.session import get_service_client
-from src.db.vault import get_secret, VaultError
-from src.mcp.sanitizer import sanitize_output
 
 logger = structlog.get_logger(__name__)
 

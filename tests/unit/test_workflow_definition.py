@@ -4,9 +4,9 @@ import pytest
 from pydantic import ValidationError
 
 from src.flows.workflow_definition import (
-    WorkflowDefinition,
-    StepDefinition,
     AgentDefinition,
+    StepDefinition,
+    WorkflowDefinition,
 )
 
 

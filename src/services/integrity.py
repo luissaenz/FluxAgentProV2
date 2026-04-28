@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 def calculate_sha256(data: bytes | io.BytesIO) -> str:
     """Calculate the SHA256 hash of the given data.
-    
+
     Returns the hash prefixed with 'sha256:'.
     """
     sha256_hash = hashlib.sha256()
-    
+
     if isinstance(data, io.BytesIO):
         # Reset pointer just in case
         data.seek(0)
@@ -28,7 +28,7 @@ def calculate_sha256(data: bytes | io.BytesIO) -> str:
         data.seek(0)  # Reset for next reader
     else:
         sha256_hash.update(data)
-        
+
     return f"sha256:{sha256_hash.hexdigest()}"
 
 

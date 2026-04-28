@@ -8,8 +8,8 @@ patrones de secretos conocidos. Si encuentra uno, lo reemplaza con
 
 from __future__ import annotations
 
-import re
 import logging
+import re
 from typing import Any
 
 logger = logging.getLogger(__name__)

@@ -6,10 +6,11 @@ without external dependencies.
 
 from __future__ import annotations
 
-import pytest
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 if sys.platform == "win32" and sys.stdout is not None:
     try:

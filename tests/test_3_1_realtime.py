@@ -11,8 +11,8 @@ Mejoras Realizadas:
 
 import os
 import sys
-import uuid
 import time
+import uuid
 
 try:
     from supabase import create_client

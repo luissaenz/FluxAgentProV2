@@ -5,10 +5,10 @@ This file re-exports everything that Phase 3 documentation expects from src.db.c
 """
 
 from src.db.session import (
+    TenantClient,
+    get_anon_client,
     get_service_client,
     get_tenant_client,
-    get_anon_client,
-    TenantClient,
 )
 
 __all__ = ["get_service_client", "get_tenant_client", "get_anon_client", "TenantClient"]

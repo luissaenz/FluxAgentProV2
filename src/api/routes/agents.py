@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from ..middleware import require_org_id
 from ...db.session import get_tenant_client
+from ..middleware import require_org_id
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 

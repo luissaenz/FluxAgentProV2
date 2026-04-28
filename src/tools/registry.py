@@ -6,9 +6,9 @@ Mirrors the FlowRegistry pattern but also carries operational metadata
 
 from __future__ import annotations
 
-from typing import Type, Dict, List, Optional, Any, Callable
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Type
 
 logger = logging.getLogger(__name__)
 

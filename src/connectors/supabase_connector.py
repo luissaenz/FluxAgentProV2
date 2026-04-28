@@ -17,9 +17,11 @@ Tablas de configuración (sin org_id, acceso vía service_role):
 """
 
 from typing import Any
-from src.connectors.base_connector import BaseDataConnector
-from src.db.session import get_tenant_client, get_service_client
+
 import structlog
+
+from src.connectors.base_connector import BaseDataConnector
+from src.db.session import get_service_client, get_tenant_client
 
 logger = structlog.get_logger(__name__)
 

@@ -17,11 +17,11 @@ Tres tools separadas con responsabilidades claras:
    Libera reservas cuando un evento se cancela.
 """
 
-from typing import Any
-from pydantic import BaseModel, Field
-from crewai.tools import BaseTool
 import math
+from typing import Any
 
+from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
 
 # ─── Modelos ───────────────────────────────────────────────────────────────
 

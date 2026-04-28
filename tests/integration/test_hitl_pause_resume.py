@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from src.flows.state import BaseFlowState, FlowStatus
+import pytest
+
 from src.flows.base_flow import BaseFlow
+from src.flows.state import BaseFlowState, FlowStatus
 
 
 class DummyFlowForHITL(BaseFlow):

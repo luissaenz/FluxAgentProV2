@@ -46,6 +46,14 @@ export function TranscriptTimeline({ taskId, orgId }: TranscriptTimelineProps) {
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [newEventCount, setNewEventCount] = useState(0)
 
+  const scrollToBottom = useCallback(() => {
+    if (!viewportRef.current) return
+    viewportRef.current.scrollTo({
+      top: viewportRef.current.scrollHeight,
+      behavior: 'smooth',
+    })
+  }, [])
+
   // Setup viewport reference for scroll detection
   useEffect(() => {
     if (!scrollRef.current) return
@@ -84,7 +92,7 @@ export function TranscriptTimeline({ taskId, orgId }: TranscriptTimelineProps) {
       scrollToBottom()
     }
     prevEventCount.current = events.length
-  }, [events.length])
+  }, [events.length, scrollToBottom])
 
   // Contar eventos nuevos cuando el usuario no esta al fondo
   useEffect(() => {
@@ -92,14 +100,6 @@ export function TranscriptTimeline({ taskId, orgId }: TranscriptTimelineProps) {
       setNewEventCount((prev) => prev + (events.length - prevEventCount.current))
     }
   }, [events.length])
-
-  const scrollToBottom = useCallback(() => {
-    if (!viewportRef.current) return
-    viewportRef.current.scrollTo({
-      top: viewportRef.current.scrollHeight,
-      behavior: 'smooth',
-    })
-  }, [])
 
   const handleScrollToBottom = useCallback(() => {
     scrollToBottom()

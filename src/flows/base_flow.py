@@ -13,18 +13,19 @@ Lifecycle: validate_input → create_task_record → start → _run_crew
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
-from functools import wraps
-from uuid import uuid4
 import logging
 import traceback
+from abc import ABC, abstractmethod
+from datetime import datetime, timezone
+from functools import wraps
+from typing import Any, Dict, Optional
+from uuid import uuid4
+
 import structlog
 
-from .state import BaseFlowState, FlowStatus
-from ..db.session import get_tenant_client, get_service_client, execute_with_retry
+from ..db.session import execute_with_retry, get_service_client, get_tenant_client
 from ..events.store import EventStore, EventStoreError
+from .state import BaseFlowState, FlowStatus
 
 logger = logging.getLogger(__name__)
 logger_struct = structlog.get_logger(__name__)

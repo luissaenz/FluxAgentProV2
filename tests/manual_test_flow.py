@@ -1,16 +1,16 @@
 """Manual Test Flow — Bypasses FastAPI to test the core logic directly."""
 
 import asyncio
-import sys
 import os
+import sys
 from uuid import uuid4
 
 # Add src to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    from src.flows.generic_flow import GenericFlow
     from src.config import get_settings
+    from src.flows.generic_flow import GenericFlow
 except ImportError as e:
     print(f"Error importing project modules: {e}")
     sys.exit(1)

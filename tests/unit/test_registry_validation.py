@@ -9,9 +9,8 @@ Covers:
 
 from __future__ import annotations
 
-from src.flows.registry import FlowRegistry, register_flow, flow_registry
 from src.flows.base_flow import BaseFlow
-
+from src.flows.registry import FlowRegistry, flow_registry, register_flow
 
 # ── Helpers ─────────────────────────────────────────────────────
 
@@ -204,9 +203,8 @@ class TestRegisterFlowDecorator:
 
     def test_decorator_with_metadata(self):
         """Decorator stores depends_on and category."""
-        reg = FlowRegistry()
+        FlowRegistry()
         # Use the global decorator but on a fresh registry
-        original_registry = flow_registry
 
         @register_flow("decorated_flow", depends_on=["dep_a", "dep_b"], category="testing")
         class DecoratedFlow(BaseFlow):

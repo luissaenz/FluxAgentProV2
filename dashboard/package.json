@@ -6,7 +6,8 @@
     "dev": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next dev",
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

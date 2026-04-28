@@ -7,11 +7,12 @@ El LLM solo ve el RESULTADO de usar la credencial, no la credencial.
 
 from __future__ import annotations
 
-from crewai.tools import BaseTool
-from pydantic import BaseModel
 from typing import Type
 
-from ..db.vault import get_secret, VaultError
+from crewai.tools import BaseTool
+from pydantic import BaseModel
+
+from ..db.vault import VaultError, get_secret
 
 
 class OrgBaseTool(BaseTool):

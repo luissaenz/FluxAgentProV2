@@ -25,8 +25,8 @@ def build_flow_tools() -> list[Tool]:
     se generan con schema vacío, lo cual es aceptable para Sprint 1
     (solo consulta, no ejecución).
     """
-    from src.flows.registry import flow_registry
     from src.api.routes.flows import FLOW_INPUT_SCHEMAS
+    from src.flows.registry import flow_registry
 
     tools = []
     for flow_name in flow_registry.list_flows():

@@ -1,14 +1,12 @@
-"""src/services/bundle_schemas.py — Pydantic models for FAP-Bundle v2 standard.
+"""src/services/bundle_schemas.py — Pydantic models for FAP-Bundle v2.
 
-These models are used for:
-1. Validating manifest.json
-2. Validating bundle content structure
-3. Orchestrating the import process
+These models are used for validating manifest.json and bundle content.
 """
 
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -23,9 +21,12 @@ class BundleManifest(BaseModel):
     """Schema for manifest.json at the root of the ZIP."""
     version: str = Field(default="2.0")
     bundle_info: Optional[BundleInfo] = None
-    
+
     # Map of relative_path -> sha256_hash
-    hashes: Dict[str, str] = Field(..., description="Map of relative file paths to their SHA256 hashes")
+    hashes: Dict[str, str] = Field(
+        ...,
+        description="Map of relative file paths to their SHA256 hashes"
+    )
 
     @field_validator("hashes")
     @classmethod
@@ -43,7 +44,10 @@ class BundleContent(BaseModel):
     manifest: BundleManifest
     agents: List[Dict] = Field(default_factory=list)
     flows: List[Dict] = Field(default_factory=list)
-    skills: Dict[str, str] = Field(default_factory=dict, description="Map of filename -> source_code")
-    
+    skills: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Map of filename -> source_code"
+    )
+
     # Stats for limit validation
     size_bytes: int = 0

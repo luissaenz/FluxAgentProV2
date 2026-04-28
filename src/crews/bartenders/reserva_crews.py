@@ -12,7 +12,8 @@ Agente 8: Staffing — asigna bartenders y genera instrucciones
 import math
 import uuid
 from datetime import datetime
-from crewai import Agent, Crew, Task, Process
+
+from crewai import Agent, Crew, Process, Task
 from pydantic import BaseModel
 
 from src.connectors.base_connector import BaseDataConnector
@@ -21,7 +22,6 @@ from src.tools.demo.inventario_tool import (
     CalcularStockNecesarioTool,
     ReservarStockTool,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════
 # MODELOS DE OUTPUT

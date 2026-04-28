@@ -6,11 +6,11 @@ Verifican que los endpoints respondan 202, que el task_id esté presente
 y que el FlowRegistry sea invocado correctamente.
 """
 
-import pytest
 import sys
-from unittest.mock import MagicMock, patch, AsyncMock
-from fastapi.testclient import TestClient
-from fastapi import FastAPI
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 
 # Mock apscheduler since it might not be in the test environment
 class MockScheduler:

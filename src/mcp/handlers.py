@@ -8,16 +8,16 @@ Key handlers:
 
 from __future__ import annotations
 
-import logging
 import datetime
+import logging
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
+from ..db.session import get_service_client
 from ..flows.registry import flow_registry
 from ..flows.state import BaseFlowState
-from ..db.session import get_service_client
-from .exceptions import MethodNotFound, NotFound
 from .auth import verify_org_membership
+from .exceptions import MethodNotFound, NotFound
 from .sse import sse_manager
 
 logger = logging.getLogger(__name__)

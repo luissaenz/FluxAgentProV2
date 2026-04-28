@@ -9,15 +9,15 @@ Rule R6: Events are blocking.
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional
-import logging
 import json
+import logging
+from typing import Any, Dict, Optional
 
-from .base_flow import BaseFlow, with_error_handling
-from .state import BaseFlowState, FlowStatus
-from .registry import register_flow
 from ..crews.base_crew import BaseCrew
 from ..guardrails.base_guardrail import make_approval_check
+from .base_flow import BaseFlow, with_error_handling
+from .registry import register_flow
+from .state import BaseFlowState, FlowStatus
 
 logger = logging.getLogger(__name__)
 

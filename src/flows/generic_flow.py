@@ -6,12 +6,12 @@ with a ``text`` key and delegates processing to GenericCrew.
 
 from __future__ import annotations
 
-from typing import Dict, Any
 import logging
+from typing import Any, Dict
 
+from ..crews.generic_crew import create_generic_crew
 from .base_flow import BaseFlow
 from .registry import register_flow
-from ..crews.generic_crew import create_generic_crew
 
 logger = logging.getLogger(__name__)
 

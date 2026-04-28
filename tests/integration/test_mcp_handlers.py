@@ -1,16 +1,16 @@
 """Tests for MCP Handlers — Integration with Flows and DB Mocking."""
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+
+from src.mcp.exceptions import AuthError
 from src.mcp.handlers import (
+    handle_approve_task,
     handle_execute_flow,
     handle_get_task,
-    handle_approve_task,
-    handle_reject_task
 )
-from src.mcp.exceptions import AuthError, NotFound, MethodNotFound
 
 
 @pytest.mark.asyncio

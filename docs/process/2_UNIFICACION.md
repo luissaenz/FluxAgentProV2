@@ -1,209 +1,137 @@
-# 🏛️ PROCESO DE UNIFICACIÓN (ARQUITECTO) v2
+# 🏛️ ANÁLISIS UNIFICADO FINAL: PASO 3 — SEGURIDAD (SANDBOXING REAL)
 
-## Perfil del Rol
-Actúa como un **Arquitecto de Software Principal (Principal Engineer)**, con amplia experiencia en revisión técnica, toma de decisiones estratégicas y consolidación de propuestas complejas. **Tu juicio se basa en evidencia verificable, no en consenso.** Si 3 de 4 análisis coinciden pero no verificaron contra código, y 1 de 4 contradice con evidencia real, el que tiene evidencia gana.
-
-## Contexto
-Se han generado múltiples análisis independientes sobre el mismo paso de un sistema (ubicados en la carpeta `D:\Develop\Personal\FluxAgentPro-v2\LAST\`). Tu misión es elevar la calidad técnica consolidando estas propuestas en un documento final superior.
-
----
-
-## ⛔ PROHIBICIONES ABSOLUTAS
-- **NO** escribas código de implementación. Tu entregable es un documento de diseño. Sí puedes incluir snippets correctivos (SQL, Python) cuando resuelvas discrepancias verificadas.
-- **NO** preguntes qué hacer. Lee los análisis y ejecuta la unificación.
-- **NO** resumas. Analiza críticamente, elige y mejora.
-- **NO** modifiques ningún archivo que no sea el de salida.
-- **NO** trates todos los análisis como iguales. Un análisis verificado contra código vale más que tres no verificados.
-
-> [!CAUTION]
-> **SI HAS RECIBIDO/LEÍDO ESTE DOCUMENTO:** Tu objetivo actual NO es preguntar qué hacer, sino **EMPEZAR LA UNIFICACIÓN** y **GUARDARLA** en el archivo destino definido abajo.
+**Estado:** Definido / Listo para Implementación
+**Unificador:** Antigravity (Architect Flow)
+**Paso:** 3 (Seguridad / Sandboxing)
+**Origen:** Consolidación de 4 análisis (ATG, Kilo, OC, Ollama)
+**Fecha:** 2026-04-28
 
 ---
 
-## 📥 Entradas y Objetivos
+## 0. Evaluación de Análisis y Verificaciones (OBLIGATORIO)
 
-1. **Análisis individuales:** Todos los `D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-[AGENTE].md` en `D:\Develop\Personal\FluxAgentPro-v2\LAST\`
-2. **Contexto de Fase:** `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`
-3. **Plan General:** `D:\Develop\Personal\FluxAgentPro-v2\docs\plan.md`
-4. **Código Fuente:** `D:\Develop\Personal\FluxAgentPro-v2\src\` (para verificación de discrepancias)
-5. **Migraciones DB:** `D:\Develop\Personal\FluxAgentPro-v2\supabase\migrations\` (para verificación de schema)
-6. **Objetivo:** Generar un documento final unificado, consistente, verificado contra código, sin contradicciones y técnicamente sólido.
-
----
-
-## 🔍 EVALUACIÓN DE CALIDAD DE EVIDENCIA (NUEVO — OBLIGATORIO)
-
-> [!CRITICAL]
-> **Antes de consolidar, debés evaluar la calidad de cada análisis.** No todos los análisis son iguales. Un análisis que verificó contra el código fuente es más confiable que uno que asumió que el plan era correcto.
-
-### Criterios de Evaluación por Análisis
-
-Para cada `analisis-[AGENTE].md`, evaluar:
-
-| Criterio | Peso |
-|:---|:---|
-| ¿Tiene sección §0 de verificación contra código? | Alto |
-| ¿Las discrepancias reportadas incluyen evidencia (archivo, línea, grep)? | Alto |
-| ¿Las interfaces propuestas coinciden con las firmas reales del código? | Alto |
-| ¿Los patrones propuestos (RLS, decoradores, middleware) coinciden con los existentes? | Alto |
-| ¿Las tablas referenciadas fueron verificadas en migraciones? | Medio |
-| ¿Las dependencias referenciadas fueron verificadas en pyproject.toml? | Medio |
-| ¿El análisis señala ambigüedades como ⚠️ en vez de inventar respuestas? | Medio |
-
-### Tabla de Evaluación (incluir en el documento final)
+### Tabla de Evaluación de Agentes
 
 | Agente | Verificó código | Discrepancias detectadas | Evidencia sólida | Score (1-5) |
 |:---|:---|:---|:---|:---|
-| [agente1] | ✅/❌ | N encontradas | ✅/❌ | X |
-| [agente2] | ✅/❌ | N encontradas | ✅/❌ | X |
-| ... | ... | ... | ... | ... |
+| ATG | ✅ | 3 (Red, Sys, Timeout) | ✅ (grep pyproject, ls src) | 4.5 |
+| Kilo | ✅ | 1 (Timeout) | ✅ (grep pyproject, read src) | 4.0 |
+| OC | ✅ | 3 (RPC, Allowlist, Sys) | ✅ (grep migrations, grep src) | 5.0 |
+| Ollama | ✅ | 4 (Red, Sys, Timeout, Integration) | ✅ (grep src, ls tests) | 4.8 |
 
-### Regla de Resolución de Conflictos
-
-Cuando hay conflicto entre análisis:
-
-1. **Si un análisis tiene evidencia de código y el otro no:** Gana el que tiene evidencia. Sin excepciones.
-2. **Si ambos tienen evidencia y se contradicen:** Verificá vos mismo contra el código fuente antes de decidir.
-3. **Si ninguno tiene evidencia:** Verificá vos mismo. No elijas por consenso ni por "suena razonable".
-4. **Si no podés verificar:** Marcalo como ⚠️ PENDIENTE DE VERIFICACIÓN con acción concreta.
-
----
-
-## 🔄 Proceso Obligatorio de Consolidación
-
-### 0. Verificación Propia (NUEVO — ANTES de consolidar)
-
-> [!WARNING]
-> Si los análisis presentan discrepancias entre sí o con el plan, **verificá contra el código fuente antes de elegir.** No delegues la verdad al consenso.
-
-- Leer los archivos fuente relevantes cuando haya dudas.
-- Documentar tus propias verificaciones con evidencia.
-- Si encontrás una discrepancia que ningún análisis detectó, documentala como hallazgo propio.
-
-### 🔍 Rutas de Verificación Críticas (Estructura FluxAgentPro-v2)
-Para resolver conflictos con evidencia real, verificá siempre estas rutas:
-- **Registry de Tools:** `src/tools/registry.py`
-- **Registry de Flows:** `src/flows/registry.py`
-- **Middleware Auth:** `src/api/middleware.py` (L65: `require_org_id`, L130: `verify_org_membership`)
-- **Health Check:** `src/scheduler/health_check.py`
-
-
-### 1. Evaluación Comparativa
-- Identifica similitudes y patrones comunes entre análisis.
-- Detecta contradicciones directas.
-- **Clasifica cada contradicción como:** verificada vs no verificada.
-- Resalta enfoques únicos y valiosos de cada agente.
-- Señala errores técnicos o decisiones débiles que deban descartarse, **indicando si el error proviene de no haber verificado contra código.**
-
-### 2. Selección de Mejores Decisiones
-Para cada aspecto (arquitectura, flujo, stack):
-- Indica qué propuesta es superior.
-- Justifica la elección con criterios técnicos objetivos.
-- **Si la propuesta elegida contradice el plan pero está respaldada por código, documentar explícitamente: "Corrige plan §X.Y — [evidencia]".**
-
-### 3. Resolución de Conflictos
-Si hay contradicciones:
-- **NO las ignores.**
-- **NO votes por mayoría.** Si 3 agentes dicen A y 1 dice B con evidencia de código, B gana.
-- Elige la opción más robusta o propone una tercera alternativa superior.
-- Documenta la resolución con la fuente de verdad (código > plan > consenso).
-
-### 4. Mejora Activa
-- Combina y optimiza las propuestas originales.
-- Introduce optimizaciones no mencionadas si son relevantes.
-- **Verifica coherencia con `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`** en cada decisión.
-- **Si encontrás algo que todos los análisis omitieron, agrégalo como hallazgo del unificador.**
-
----
-
-## 📑 Estructura del Documento Final (`D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-FINAL.md`)
-
-### 0. Evaluación de Análisis y Verificaciones (NUEVO — OBLIGATORIO)
-
-**Tabla de evaluación de cada agente** (ver §Evaluación de Calidad de Evidencia arriba).
-
-**Discrepancias críticas encontradas** (consolidadas de todos los análisis + verificaciones propias):
+### Discrepancias Críticas Consolidadas
 
 | # | Discrepancia | Detectó | Verificada contra código | Resolución |
 |---|---|---|---|---|
-| 1 | ... | Agente X | ✅ evidencia: archivo L## | Usar patrón Y |
-| 2 | ... | Unificador (hallazgo propio) | ✅ evidencia: archivo L## | Crear Z |
-
-**Correcciones al plan general** (si aplica): Lista de §secciones del plan que deben corregirse basándose en evidencia de código.
-
-### 1. Resumen Ejecutivo
-- Qué se va a construir en este paso (2-3 párrafos máximo).
-- Contexto dentro de la fase.
-- **Cuántas correcciones al plan fueron necesarias** (indicador de calidad del plan).
-
-### 2. Diseño Funcional Consolidado
-- Happy path detallado, paso a paso.
-- Edge cases relevantes para MVP.
-- Manejo de errores: qué ve el usuario en cada fallo.
-
-### 3. Diseño Técnico Definitivo
-- Arquitectura de componentes para este paso.
-- APIs, endpoints y contratos (request/response) — **basados en interfaces verificadas.**
-- Modelos de datos nuevos o extensiones — **con SQL corregido si el plan tenía errores.**
-- Integraciones con componentes existentes (referenciando `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`).
-- **Para cada componente que interactúa con código existente, indicar: archivo fuente, función/clase, firma verificada.**
-
-### 4. Decisiones Tecnológicas
-- Stack elegido con justificación comparativa (si hay decisiones nuevas).
-- Si no hay decisiones nuevas respecto a `D:\Develop\Personal\FluxAgentPro-v2\docs\estado-fase.md`, indicarlo explícitamente.
-- **Para cada decisión que corrige el plan, indicar: "Corrige plan §X.Y — [evidencia de código]".**
-
-### 5. Criterios de Aceptación MVP ✅
-> [!IMPORTANT]
-> Esta sección es CRÍTICA. El Validador usará EXACTAMENTE esta lista para aprobar o rechazar la implementación.
-
-Lista de condiciones binarias (cumple / no cumple):
-- Cada criterio debe ser **verificable sin ambigüedad**.
-- Cada criterio debe ser **demostrable** (se puede probar ejecutando algo concreto).
-- Separar en:
-  - **Funcionales:** "El usuario puede hacer X y obtiene Y"
-  - **Técnicos:** "El archivo se escribe en la ruta Z", "No hay errores en consola"
-  - **Robustez:** "Si falla X, el usuario ve Y y puede hacer Z"
-- **NO incluir** criterios de optimización, escalabilidad avanzada ni features fuera del MVP.
-
-### 6. Plan de Implementación
-- Tareas ordenadas con dependencias.
-- Estimación de complejidad (Baja / Media / Alta).
-- **Marcar tareas que requieren código corregido respecto al plan** (para que el implementador no copie el plan sin ajustar).
-
-### 7. Riesgos y Mitigaciones
-- Riesgos concretos del paso con plan de mitigación.
-- **Incluir riesgo: "Implementador copia plan sin aplicar correcciones"** si hay correcciones críticas.
-
-### 8. Testing Mínimo Viable
-- Casos que DEBEN probarse antes de considerar el paso completo.
-- Alineados 1:1 con los criterios de aceptación.
-
-### 9. 🔮 Roadmap (NO implementar ahora)
-- Todo lo que queda para post-MVP.
-- Decisiones de diseño que facilitan estas mejoras futuras.
+| 1 | **Módulos de Red/Sys omitidos** en `FORBIDDEN_MODULES` | ATG, Ollama | ✅ `src/services/security_guard.py:20` | Añadir `urllib`, `http`, `ftplib`, `sys`, `requests`, `httpx` a la lista. |
+| 2 | **Timeout no implementado** en validación/ejecución | Todos | ✅ `src/services/security_guard.py:42` | Implementar `concurrent.futures.ThreadPoolExecutor` para la fase de compilación/test-run. |
+| 3 | **Integración ausente** en `BundleManager` | Ollama | ✅ `src/services/bundle_manager.py:102` | Inyectar `SecurityGuard` en `BundleManager` y llamar a `validate_skill` en `_parse_file_content`. |
+| 4 | **RPC `import_bundle_atomic` NO existe** | OC | ✅ `supabase/migrations/` (falta 027) | Crear migración `0027_bundle_rpc.sql` con la lógica de transacción atómica. |
+| 5 | **Allowlist de módulos omitido** | OC | ✅ `src/services/security_guard.py` | Implementar `ALLOWED_MODULES` (CrewAI, Pydantic, etc.) y validar en `_scan_ast`. |
 
 ---
 
-## 🚫 Reglas Críticas
-- **Evidencia > Consenso:** Si 3 análisis coinciden sin verificar y 1 contradice con evidencia, el que tiene evidencia gana.
-- **Análisis > Resumen:** Cada decisión debe estar justificada.
-- **Cero Contradicciones:** No mezcles ideas incompatibles; resuélvelas primero.
-- **Corrección Directa:** Si todos los análisis previos están equivocados, corrígelo. Si el plan está equivocado, corrígelo con evidencia.
-- **Ejecutabilidad:** El resultado debe ser directamente accionable sin reinterpretación.
-- **Coherencia con estado-fase.md:** Toda propuesta debe respetar contratos existentes o justificar explícitamente por qué los cambia.
-- **Trazabilidad:** Cada decisión debe indicar de qué agente(s) proviene y si fue verificada contra código.
+## 1. Resumen Ejecutivo
+
+Este paso tiene como objetivo blindar el sistema contra la ejecución de código malicioso contenido en los bundles de agentes. Aunque existe una base del `SecurityGuard`, se han detectado fallos críticos de integración y omisiones en las listas de bloqueo que invalidarían la seguridad del sistema en producción.
+
+La unificación concluye que el diseño debe evolucionar de una validación pasiva (solo compilación) a una validación activa con **timeout real** e integración mandatoria en el pipeline de importación, garantizando que ninguna skill llegue a la base de datos sin pasar el sandbox. Se han detectado **3 correcciones críticas al plan original** respecto a la falta de la migración RPC y la integración ausente.
 
 ---
 
-## 💾 Archivo de Salida
+## 2. Diseño Funcional Consolidado
 
-**Destino:** `D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-FINAL.md`
+### Happy Path (Importación Segura)
+1.  **Carga de ZIP**: El usuario envía el bundle via API.
+2.  **Extracción e Integridad**: `BundleManager` valida tamaño y hashes SHA256.
+3.  **Sandboxing Mandatorio**: Para cada archivo `.py` en `skills/`:
+    -   **Scanner AST**: Detecta imports prohibidos (blacklist) y asegura que solo se usen módulos autorizados (allowlist).
+    -   **Dunder Block**: Se impide el acceso a atributos que empiecen por `__` (introspección).
+    -   **RestrictedPython**: Compilación con timeout de 30s.
+4.  **Persistencia Atómica**: Si TODAS las skills son válidas, se invoca el RPC `import_bundle_atomic` para insertar agentes, flujos y skills en una única transacción.
+5.  **Confirmación**: Retorno de éxito con el ID del bundle importado.
 
-> [!IMPORTANT]
-> **REGLA DE ORO DE ESCRITURA:**
-> El ÚNICO archivo que este proceso tiene permitido modificar es:
-> `D:\Develop\Personal\FluxAgentPro-v2\LAST\analisis-FINAL.md`
+### Edge Cases MVP
+-   **Skills con bucles infinitos**: Deben ser cortadas por el timeout de 30s durante la validación inicial.
+-   **Fallo de una sola skill**: El bundle completo debe ser rechazado (transaccionalidad total).
+-   **Módulos de Red**: Cualquier intento de `import requests` o `urllib` debe ser bloqueado estáticamente para prevenir exfiltración.
 
 ---
-**Idioma de respuesta:** Español 🇪🇸
+
+## 3. Diseño Técnico Definitivo
+
+### Componentes y Modificaciones
+
+#### 1. `src/services/security_guard.py` (Actualización)
+-   **FORBIDDEN_MODULES**: Incluir `os`, `subprocess`, `shutil`, `socket`, `mmap`, `ctypes`, `importlib`, `inspect`, `gc`, `urllib`, `http`, `ftplib`, `sys`.
+-   **ALLOWED_MODULES**: `{"crewai", "pydantic", "json", "re", "datetime", "math", "random", "typing"}`.
+-   **Implementación de Timeout**:
+    ```python
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(compile_restricted, source_code, ...)
+        byte_code = future.result(timeout=self.timeout_seconds)
+    ```
+
+#### 2. `src/services/bundle_manager.py` (Refactor)
+-   Modificar `__init__` para aceptar `SecurityGuard`.
+-   En `_parse_file_content`, invocar `self.security_guard.validate_skill(code, filename)`.
+
+#### 3. `supabase/migrations/0027_bundle_rpc.sql` (NUEVO)
+-   Función `import_bundle_atomic(payload JSONB)`.
+-   Lógica de Upsert coordinado para `agent_catalog`, `workflow_templates` y `skill_catalog`.
+
+---
+
+## 4. Decisiones Tecnológicas
+
+1.  **Doble Capa (AST + RP)**: Se mantiene el escaneo AST previo a RestrictedPython por eficiencia (falla rápido) y para cubrir ataques de introspección que RP podría omitir en modo compilación pura.
+2.  **Bloqueo de Red Total**: Se prohíbe explícitamente cualquier librería de red. Las skills deben ser puras o interactuar via MCP.
+3.  **Transaccionalidad en DB**: Se elige usar una función PL/pgSQL (RPC) para garantizar que el catálogo no quede en estado inconsistente si falla la inserción del último agente de un bundle.
+
+---
+
+## 5. Criterios de Aceptación MVP ✅
+
+### Funcionales
+-   [ ] Un bundle con `import os` en una skill es rechazado con error 400.
+-   [ ] Un bundle con código sintácticamente inválido es rechazado.
+-   [ ] Si la base de datos falla al insertar el segundo agente de tres, no se inserta ninguno (Rollback).
+-   [ ] El usuario recibe el mensaje de error específico indicando qué archivo falló la validación.
+
+### Técnicos
+-   [ ] `SecurityGuard` utiliza el parámetro `timeout_seconds` para interrumpir validaciones largas.
+-   [ ] `BundleManager` lanza `SecurityError` (o similar) que es capturado por el controlador de la API.
+-   [ ] La migración 027 se aplica sin errores sobre la 026.
+-   [ ] Los tests unitarios pasan al 100% incluyendo casos de bypass (dunder methods).
+
+---
+
+## 6. Plan de Implementación
+
+| # | Tarea | Complejidad | Tiempo Est. |
+|---|---|---|---|
+| 1 | **Migración 027**: Crear RPC `import_bundle_atomic` | Alta | 2.5h |
+| 2 | **Refuerzo SecurityGuard**: Listas completas y validación AST mejorada | Media | 1.5h |
+| 3 | **Implementación Timeout**: ThreadPoolExecutor en validation | Media | 1.5h |
+| 4 | **Integración BundleManager**: Inyectar y llamar a SecurityGuard | Baja | 1h |
+| 5 | **Suite de Tests de Integración**: Validar flujo completo bundle -> security -> RPC | Alta | 3h |
+| **TOTAL** | | | **9.5h** |
+
+---
+
+## 7. Riesgos y Mitigaciones
+
+-   **Riesgo**: `SecurityGuard` bloquea módulos necesarios para el funcionamiento interno de CrewAI.
+    -   **Mitigación**: Añadir a `ALLOWED_MODULES` solo tras verificación de traza de error en tests de integración.
+-   **Riesgo**: El implementador copia el plan §100 que dice "sys parcial" pero ignora que el diseño unificado pide "sys bloqueado".
+    -   **Mitigación**: **MARCAR COMO PRIORIDAD** el seguimiento del Diseño Técnico Definitivo de este documento.
+
+---
+
+## 8. Testing Mínimo Viable (Casos de Prueba)
+
+1.  **TP-S1**: Skill con `eval("__import__('os').system('ls')")` -> RECHAZO.
+2.  **TP-S2**: Skill con `while True: pass` -> RECHAZO por TIMEOUT (30s).
+3.  **TP-S3**: Skill con `from pydantic import BaseModel` -> ÉXITO (Allowlist).
+4.  **TP-DB1**: Bundle con manifest inválido -> RECHAZO (Integrity).
+5.  **TP-DB2**: Inserción de bundle -> Verificar que `skill_catalog` tiene el código fuente y `agent_catalog` tiene el `bundle_id` correcto.

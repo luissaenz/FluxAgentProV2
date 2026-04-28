@@ -1,18 +1,19 @@
 import asyncio
 import logging
-import sys
-from uuid import uuid4
-from typing import Dict, Any
-from unittest.mock import patch
 
 # Add src to path
 import os
+import sys
+from typing import Any, Dict
+from unittest.mock import patch
+from uuid import uuid4
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from src.config import get_settings
 from src.db.session import get_service_client
 from src.flows.multi_crew_flow import MultiCrewFlow
 from src.flows.state import FlowStatus
-from src.config import get_settings
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("manual_test_phase3")
@@ -42,7 +43,7 @@ async def run_demonstration():
     }).execute()
     
     # 2. Mocking de dependencias externas (LLM y Embeddings)
-    settings = get_settings()
+    get_settings()
     
     # Mock Embeddings
     dummy_vector = [0.1] * 1536

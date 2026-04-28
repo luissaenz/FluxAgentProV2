@@ -11,10 +11,10 @@ Rule R7: All tables have org_id + RLS.
 
 from __future__ import annotations
 
-import uuid
 import logging
+import uuid
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel
 
@@ -48,6 +48,7 @@ def _get_openai_client() -> "OpenAI":
     global _client
     if _client is None:
         from openai import OpenAI
+
         from src.config import get_settings
 
         settings = get_settings()

@@ -7,8 +7,8 @@ el resultado de la operación.
 
 from __future__ import annotations
 
-from typing import List
 import logging
+from typing import List
 
 from .session import get_service_client
 

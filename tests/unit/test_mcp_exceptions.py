@@ -1,13 +1,13 @@
-import pytest
 from src.mcp.exceptions import (
-    MCPError,
     AuthError,
-    NotFound,
-    MethodNotFound,
-    InvalidParams,
     InternalError,
-    mcp_error_to_response
+    InvalidParams,
+    MCPError,
+    MethodNotFound,
+    NotFound,
+    mcp_error_to_response,
 )
+
 
 def test_mcp_error_properties():
     """Verify that MCPError and subclasses have correct JSON-RPC codes."""

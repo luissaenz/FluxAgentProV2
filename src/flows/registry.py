@@ -9,9 +9,9 @@ process hierarchies (e.g. "Venta" → "Facturación").
 
 from __future__ import annotations
 
-from typing import Type, Dict, Callable, Any, Optional, List
 import logging
 import re
+from typing import Any, Callable, Dict, List, Optional, Type
 
 logger = logging.getLogger(__name__)
 

@@ -20,10 +20,11 @@ Notas de Fase 6:
     - Los jobs usan service_role para leer orgs — no hay tenant activo.
 """
 
+from datetime import date, timedelta
+
+import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from datetime import date, timedelta
-import structlog
 
 logger = structlog.get_logger(__name__)
 
@@ -110,9 +111,9 @@ async def update_prices_all_orgs():
     Fase 6: usa MOCK_PRECIOS_ACTUALIZADOS.
     Fase 7: reemplazar con scraping real en cierre_crews.py.
     """
-    from src.db.session import get_service_client
-    from src.crews.bartenders.cierre_crews import _actualizar_precios
     from src.connectors.supabase_connector import SupabaseMockConnector
+    from src.crews.bartenders.cierre_crews import _actualizar_precios
+    from src.db.session import get_service_client
 
     logger.info("scheduler.price_update.start")
 

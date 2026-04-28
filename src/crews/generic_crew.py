@@ -19,6 +19,7 @@ if TYPE_CHECKING:  # pragma: no cover
 def create_generic_crew() -> "Crew":
     """Build a simple text-processing crew for end-to-end validation."""
     from crewai import Agent, Crew, Process, Task
+
     from ..config import get_settings
 
     settings = get_settings()

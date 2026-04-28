@@ -3,18 +3,18 @@
 All OpenAI and Supabase calls are mocked — no external dependencies.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from src.db.memory import (
+    MemoryError,
+    MemoryRecord,
+    cleanup_expired_memory,
     embed,
     save_memory,
     search_memory,
-    cleanup_expired_memory,
-    MemoryRecord,
-    MemoryError,
 )
-
 
 FIXED_EMBEDDING = [0.1] * 1536
 

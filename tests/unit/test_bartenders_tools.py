@@ -5,16 +5,13 @@ Tests de las tres tools de Bartenders NOA.
 Usan un conector mock para no depender de Supabase.
 """
 
-import pytest
 from unittest.mock import MagicMock
-from src.tools.demo.escandallo_tool import EscandalloTool, EscandalloOutput
-from src.tools.demo.clima_tool import (
-    FactorClimaticoTool, PronosticoRealTool
-)
-from src.tools.demo.inventario_tool import (
-    CalcularStockNecesarioTool, ReservarStockTool
-)
 
+import pytest
+
+from src.tools.demo.clima_tool import FactorClimaticoTool, PronosticoRealTool
+from src.tools.demo.escandallo_tool import EscandalloOutput, EscandalloTool
+from src.tools.demo.inventario_tool import CalcularStockNecesarioTool, ReservarStockTool
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────
 

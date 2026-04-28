@@ -17,9 +17,9 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 
+from ..crews.base_crew import BaseCrew
 from .base_flow import BaseFlow
 from .registry import flow_registry
-from ..crews.base_crew import BaseCrew
 
 logger = logging.getLogger(__name__)
 

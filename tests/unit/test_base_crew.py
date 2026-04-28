@@ -9,8 +9,9 @@ Covers:
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from src.crews.base_crew import BaseCrew, CrewConfigError
 
@@ -242,7 +243,7 @@ class TestRunMethod:
                             mock_crew.kickoff.return_value = MagicMock(raw="Result")
 
                             crew = BaseCrew(org_id=sample_org_id, role="analyst")
-                            result = crew.run(
+                            crew.run(
                                 task_description="Analyze this data",
                                 inputs={"data": "test"},
                                 expected_output="Detailed analysis",
@@ -351,7 +352,7 @@ class TestRunAsyncMethod:
                             )
 
                             crew = BaseCrew(org_id=sample_org_id, role="analyst")
-                            result = await crew.run_async(
+                            await crew.run_async(
                                 task_description="Async analysis",
                                 inputs={"data": "test"},
                             )

@@ -1,6 +1,8 @@
 import unittest
 from uuid import uuid4
+
 from src.flows.state import BaseFlowState
+
 
 class TestTokenTracking(unittest.TestCase):
     def setUp(self):

@@ -9,13 +9,13 @@ Agente 11: Monitor de precios — job background semanal (mock en Fase 6)
 """
 
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
+
+from crewai import Agent, Crew, Process, Task
 from dateutil.relativedelta import relativedelta
-from crewai import Agent, Crew, Task, Process
 from pydantic import BaseModel, Field
 
 from src.connectors.base_connector import BaseDataConnector
-
 
 # ══════════════════════════════════════════════════════════════════════════
 # MODELOS DE OUTPUT

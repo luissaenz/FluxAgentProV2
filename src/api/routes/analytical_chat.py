@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ..middleware import require_org_id
 from ...crews.analytical_crew import AnalyticalCrew
 from ...crews.analytical_queries import ALLOWED_ANALYTICAL_QUERIES
+from ..middleware import require_org_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytical", tags=["analytical"])

@@ -10,11 +10,11 @@ Rule R8: max_iter explicit (≤5 for production).
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, List
 import logging
+from typing import Any, Dict, List, Optional
 
-from ..db.session import get_service_client
 from ..config import get_settings
+from ..db.session import get_service_client
 from ..tools.registry import tool_registry
 
 logger = logging.getLogger(__name__)

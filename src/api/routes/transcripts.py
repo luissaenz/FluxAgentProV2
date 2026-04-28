@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from ..middleware import require_org_id
 from ...db.session import get_tenant_client
+from ..middleware import require_org_id
 
 logger = logging.getLogger(__name__)
 

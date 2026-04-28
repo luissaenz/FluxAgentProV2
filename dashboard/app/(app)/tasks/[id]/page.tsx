@@ -82,7 +82,7 @@ export default function TaskDetailPage() {
     // No forzamos el cambio para no interrumpir la lectura del usuario, 
     // pero si la tarea finaliza y el usuario refresca, initialTab (si lo usáramos) sería info.
     
-  }, [task?.status])
+  }, [task, task?.status])
 
   if (isLoading) {
     return <LoadingSpinner label="Cargando tarea..." />

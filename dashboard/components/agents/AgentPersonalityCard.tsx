@@ -99,7 +99,7 @@ export function AgentPersonalityCard({
               <div className="relative">
                 {hasNarrative ? (
                   <p className="text-sm leading-relaxed text-muted-foreground/90 whitespace-pre-line italic relative z-10 px-1 border-l-2 border-primary/20">
-                    "{soulNarrative}"
+                    &quot;{soulNarrative}&quot;
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground/60 italic">

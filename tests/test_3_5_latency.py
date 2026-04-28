@@ -67,9 +67,8 @@ logger = logging.getLogger(__name__)
 # Imports del proyecto (se parchean si crewai no está disponible)
 # ---------------------------------------------------------------------------
 
-from supabase import acreate_client, AsyncClient, AsyncClientOptions  # noqa: E402
-
 from src.flows.multi_crew_flow import MultiCrewFlow  # noqa: E402
+from supabase import AsyncClient, AsyncClientOptions, acreate_client  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -229,7 +228,7 @@ class LatencyValidator:
             logger.debug("  [DEBUG] Payload sin datos: %s", payload)
             return
 
-        event_id = new_data.get("id")
+        new_data.get("id")
         agg_id = new_data.get("aggregate_id")
         evt_type = new_data.get("event_type")
         

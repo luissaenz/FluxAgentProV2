@@ -21,19 +21,19 @@ Flujo:
 
 from __future__ import annotations
 
+import logging
 import re
 import uuid
-import logging
 from typing import Any, Dict, Optional
 
 from crewai import Agent, Crew, Process, Task
 
+from ..db.session import get_service_client, get_tenant_client
 from .base_flow import BaseFlow
-from .state import BaseFlowState
 from .registry import register_flow
+from .state import BaseFlowState
 from .workflow_definition import WorkflowDefinition
-from .workflow_guardrails import validate_workflow, WorkflowValidationError
-from ..db.session import get_tenant_client, get_service_client
+from .workflow_guardrails import WorkflowValidationError, validate_workflow
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,7 @@ class ArchitectFlow(BaseFlow):
     ) -> None:
         """Override para usar ArchitectState."""
         from uuid import uuid4
+
         from ..db.session import get_tenant_client
         from ..events.store import EventStore
 

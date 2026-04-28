@@ -18,15 +18,15 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from crewai import LLM
 
-from .base_crew import BaseCrew
-from .analytical_queries import ALLOWED_ANALYTICAL_QUERIES
 from ..config import get_settings
-from ..tools.analytical import SQLAnalyticalTool, EventStoreTool
+from ..tools.analytical import EventStoreTool, SQLAnalyticalTool
+from .analytical_queries import ALLOWED_ANALYTICAL_QUERIES
+from .base_crew import BaseCrew
 
 logger = logging.getLogger(__name__)
 

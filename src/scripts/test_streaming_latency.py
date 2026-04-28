@@ -17,14 +17,14 @@ import asyncio
 import os
 import sys
 import time
-from typing import List
 from datetime import datetime, timezone
+from typing import List
 from uuid import uuid4
 
 # Agregar src/ al path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from src.db.session import get_tenant_client, get_service_client
+from src.db.session import get_service_client, get_tenant_client
 from src.events.store import EventStore
 
 # ── Configuración ─────────────────────────────────────────────────

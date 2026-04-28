@@ -14,14 +14,14 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Type, Optional
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
-from .base_tool import OrgBaseTool
-from .registry import register_tool
 from ..crews.analytical_queries import ALLOWED_ANALYTICAL_QUERIES
 from ..db.session import get_tenant_client
+from .base_tool import OrgBaseTool
+from .registry import register_tool
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +148,7 @@ class SQLAnalyticalTool(OrgBaseTool):
         WHERE org_id = X AND created_at >= NOW() - 7 days
         GROUP BY ac.role ORDER BY success_rate DESC LIMIT 10
         """
-        from datetime import timedelta, datetime, timezone
+        from datetime import datetime, timedelta, timezone
 
         params = params or {}
         days = int(params.get("days", 7))
@@ -255,7 +255,7 @@ class SQLAnalyticalTool(OrgBaseTool):
         SELECT event_type, COUNT(*) as count FROM domain_events
         WHERE org_id = X AND created_at >= NOW() - 24h GROUP BY event_type ORDER BY count DESC
         """
-        from datetime import timedelta, datetime, timezone
+        from datetime import datetime, timedelta, timezone
 
         params = params or {}
         hours = int(params.get("hours", 24))

@@ -6,14 +6,15 @@ GET /chat/{conversation_id} — Consulta estado de una conversación
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
-from pydantic import BaseModel, Field
-from typing import Optional
 import logging
+from typing import Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from ...db.conversation_store import (
-    create_conversation,
     add_message,
+    create_conversation,
     get_conversation,
     link_workflow,
     update_status,

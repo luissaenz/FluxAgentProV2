@@ -6,8 +6,8 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any
 import logging
+from typing import Any, Dict
 
 from .base_flow import BaseFlow
 from .registry import register_flow

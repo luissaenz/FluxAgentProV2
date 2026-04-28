@@ -11,11 +11,16 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from mcp.types import Tool, TextContent, CallToolResult
+from mcp.types import CallToolResult, TextContent, Tool
 
-from .sanitizer import sanitize_output
-from .exceptions import MethodNotFound, InvalidParams, InternalError, MCPError, mcp_error_to_response
 from ..db.session import get_service_client
+from .exceptions import (
+    InternalError,
+    InvalidParams,
+    MethodNotFound,
+    mcp_error_to_response,
+)
+from .sanitizer import sanitize_output
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +211,7 @@ async def _handle_list_agents(
         )
         agents = result.data or []
     except Exception as exc:
-        raise InternalError(f"Database connection error: {str(exc)}")
+        raise InternalError(f"Database connection error: {str(exc)}") from exc
 
     return _make_result({"agents": agents, "count": len(agents)})
 
@@ -231,7 +236,7 @@ async def _handle_get_agent_detail(
             .execute()
         )
     except Exception as exc:
-        raise InternalError(f"Database connection error: {str(exc)}")
+        raise InternalError(f"Database connection error: {str(exc)}") from exc
 
     if not result.data:
         raise MethodNotFound(f"Agent '{agent_id}' not found for this organization")

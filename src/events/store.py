@@ -9,11 +9,11 @@ single batch insert to guarantee atomicity.
 
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
-import logging
 
 from ..db.session import get_tenant_client
 

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock
 
-from src.db.vault import get_secret, list_secrets, VaultError
+import pytest
+
+from src.db.vault import VaultError, get_secret, list_secrets
 
 
 class TestGetSecret:
@@ -82,6 +83,7 @@ class TestSecretIsolation:
     def test_secret_parameter_not_in_run_signature(self):
         """_run() no recibe el secreto como parámetro."""
         import inspect
+
         from src.tools.base_tool import SendMessageTool
 
         sig = inspect.signature(SendMessageTool._run)

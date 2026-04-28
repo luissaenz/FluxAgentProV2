@@ -23,9 +23,9 @@ Distancias NOA (km ida):
 
 import math
 from typing import Any
-from pydantic import BaseModel, Field
-from crewai.tools import BaseTool
 
+from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
 
 # ─── Modelos de input/output ───────────────────────────────────────────────
 

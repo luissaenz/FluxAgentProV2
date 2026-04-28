@@ -10,19 +10,19 @@ Covers:
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from uuid import uuid4
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+import pytest
 
 from src.flows.architect_flow import ArchitectFlow, ArchitectState
 from src.flows.workflow_definition import (
-    WorkflowDefinition,
     AgentDefinition,
-    StepDefinition,
     ApprovalRule,
+    StepDefinition,
+    WorkflowDefinition,
 )
-
 
 # ── Test fixtures ────────────────────────────────────────────────
 
@@ -153,14 +153,14 @@ class TestArchitectFlowExecution:
         mock_result = MagicMock()
         mock_result.raw = '{"name": "Test", "description": "Test desc", "flow_type": "test", "steps": [{"id": "s1", "name": "S", "description": "Desc", "agent_role": "a1"}], "agents": [{"role": "a1", "goal": "Goal text here", "backstory": "Backstory text"}]}'
 
-        with patch("src.flows.architect_flow.Agent") as mock_agent_cls:
-            with patch("src.flows.architect_flow.Task") as mock_task_cls:
+        with patch("src.flows.architect_flow.Agent"):
+            with patch("src.flows.architect_flow.Task"):
                 with patch("src.flows.architect_flow.Crew") as mock_crew_cls:
                     mock_crew = MagicMock()
                     mock_crew_cls.return_value = mock_crew
                     mock_crew.kickoff_async = AsyncMock(return_value=mock_result)
 
-                    result = await flow._execute_architect_agent("Test description")
+                    await flow._execute_architect_agent("Test description")
 
                     # Crew should have been executed
                     mock_crew.kickoff_async.assert_called_once()
@@ -350,7 +350,7 @@ class TestTemplatePersistence:
             input_data={"conversation_id": "conv-123"},
         )
 
-        template_id = await flow._persist_template(valid_workflow_definition)
+        await flow._persist_template(valid_workflow_definition)
 
         # Insert should be called
         assert mock_tenant_client.table("workflow_templates").insert.called

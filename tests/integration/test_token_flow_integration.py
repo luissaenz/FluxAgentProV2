@@ -1,19 +1,21 @@
-import pytest
 import sys
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Mock universal para evitar dependencias externas
 for m in ["crewai", "crewai.flow", "crewai.project", "structlog"]:
     sys.modules[m] = MagicMock()
 
-from uuid import uuid4
 import os
+from uuid import uuid4
 
 # PYTHONPATH
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 # Importamos lo necesario
 from src.flows.state import BaseFlowState
+
 
 @pytest.mark.asyncio
 async def test_base_flow_state_token_tracking():

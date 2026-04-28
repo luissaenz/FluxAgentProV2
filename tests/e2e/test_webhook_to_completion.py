@@ -6,13 +6,12 @@ and we can assert on the final state without real infrastructure.
 
 from __future__ import annotations
 
-import pytest
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app
-
 
 # ── helpers ─────────────────────────────────────────────────────
 

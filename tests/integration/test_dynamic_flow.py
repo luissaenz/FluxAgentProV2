@@ -10,11 +10,11 @@ Covers:
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from src.flows.dynamic_flow import DynamicWorkflow
-
 
 # ── Test templates ──────────────────────────────────────────────
 
@@ -352,7 +352,7 @@ class TestDynamicWorkflowWithApproval:
             with patch.object(
                 flow, "request_approval", new_callable=AsyncMock
             ) as mock_request:
-                result = await flow._run_crew()
+                await flow._run_crew()
 
                 # request_approval should have been called
                 mock_request.assert_called_once()

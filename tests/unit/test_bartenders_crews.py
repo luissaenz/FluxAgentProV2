@@ -6,24 +6,26 @@ Verifican la lógica determinista (cálculos, persistencia)
 sin ejecutar el LLM — los Crew se testean solo en integración.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
+from src.crews.bartenders.cierre_crews import (
+    MARGEN_CRITICO_UMBRAL,
+    _actualizar_precios,
+    _guardar_auditoria,
+)
 
 # ─── Helpers de crews (funciones deterministas) ────────────────────────────
 from src.crews.bartenders.preventa_crews import (
+    MARGENES,
     _calcular_opciones,
     _registrar_evento,
-    MARGENES,
 )
 from src.crews.bartenders.reserva_crews import (
     _calcular_items_orden,
-    _seleccionar_bartenders,
     _generar_hoja_de_ruta,
-)
-from src.crews.bartenders.cierre_crews import (
-    _guardar_auditoria,
-    _actualizar_precios,
-    MARGEN_CRITICO_UMBRAL,
+    _seleccionar_bartenders,
 )
 
 ORG_ID = "11111111-1111-1111-1111-111111111111"

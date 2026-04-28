@@ -10,13 +10,13 @@ All LLM and DB calls are mocked — tests verify:
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 from src.flows.multi_crew_flow import MultiCrewFlow, MultiCrewState
 from src.flows.state import FlowStatus
-
 
 # ── helpers ──────────────────────────────────────────────────────
 
@@ -195,7 +195,7 @@ class TestMultiCrewExecution:
 
             MockBaseCrew.side_effect = side_effect
 
-            state = await flow.execute({"data": "test"})
+            await flow.execute({"data": "test"})
 
         # snapshots.upsert should have been called multiple times (after each crew + final)
         upsert_calls = mock_tenant_client.table("snapshots").upsert.call_count

@@ -2,24 +2,24 @@
 
 from __future__ import annotations
 
-import logging
 import asyncio
 import json
+import logging
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from ..middleware import verify_supabase_jwt, require_org_id
+from ...mcp.exceptions import InvalidParams, MethodNotFound, mcp_error_to_response
 from ...mcp.handlers import (
+    handle_approve_task,
     handle_execute_flow,
     handle_get_task,
-    handle_approve_task,
-    handle_reject_task
+    handle_reject_task,
 )
-from ...mcp.exceptions import mcp_error_to_response, MethodNotFound, InvalidParams
 from ...mcp.sse import sse_manager
+from ..middleware import require_org_id, verify_supabase_jwt
 
 logger = logging.getLogger(__name__)
 

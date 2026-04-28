@@ -8,12 +8,12 @@ Provides three clients:
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from typing import Optional, Generator, Any
 import logging
 import time
+from contextlib import contextmanager
+from typing import Any, Generator, Optional
 
-from supabase import create_client, Client
+from supabase import Client, create_client
 
 from ..config import get_settings
 

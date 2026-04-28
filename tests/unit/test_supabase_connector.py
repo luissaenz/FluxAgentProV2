@@ -6,8 +6,10 @@ Usan mocks de get_tenant_client y get_service_client
 para no requerir una instancia real de Supabase.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.connectors.supabase_connector import SupabaseMockConnector
 
 ORG_ID  = "11111111-1111-1111-1111-111111111111"
@@ -70,7 +72,7 @@ class TestRead:
             mock_ctx.return_value.__enter__ = MagicMock(return_value=mock_tenant_db)
             mock_ctx.return_value.__exit__  = MagicMock(return_value=False)
 
-            result = connector.read("bartenders_disponibles",
+            connector.read("bartenders_disponibles",
                                     {"disponible": True, "especialidad": "premium"})
 
         # Verificar que se llamó eq() para cada filtro

@@ -6,32 +6,32 @@ decorator, ensuring it is available before the first request arrives.
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import logging
+
+import src.flows.architect_flow  # noqa: F401
 
 # ── eager flow registration (import triggers @register_flow) ─────
 import src.flows.generic_flow  # noqa: F401
-import src.flows.architect_flow  # noqa: F401
 import src.flows.test_flows  # noqa: F401
 import src.tools.builtin  # noqa: F401
 
-
-
-from .routes.webhooks import router as webhooks_router
-from .routes.tasks import router as tasks_router
+from .routes.agents import router as agents_router
+from .routes.analytical_chat import router as analytical_chat_router
 from .routes.approvals import router as approvals_router
 from .routes.chat import router as chat_router
-from .routes.workflows import router as workflows_router
 from .routes.flow_metrics import router as flow_metrics_router
 from .routes.flows import router as flows_router
-from .routes.tickets import router as tickets_router
-from .routes.agents import router as agents_router
-from .routes.transcripts import router as transcripts_router
-from .routes.analytical_chat import router as analytical_chat_router
 from .routes.integrations import router as integrations_router
 from .routes.mcp import router as mcp_router
+from .routes.tasks import router as tasks_router
+from .routes.tickets import router as tickets_router
+from .routes.transcripts import router as transcripts_router
+from .routes.webhooks import router as webhooks_router
+from .routes.workflows import router as workflows_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,6 +63,7 @@ async def lifespan(_app: FastAPI):
 
         # NEW: Start health check scheduler (Paso 5)
         import asyncio
+
         from src.scheduler.health_check import run_health_checks
         asyncio.create_task(run_health_checks())
         logger.info("Health check scheduler started in background.")
