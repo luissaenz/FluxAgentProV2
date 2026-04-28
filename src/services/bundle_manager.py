@@ -26,17 +26,14 @@ MAX_SKILLS = 30
 
 class BundleError(Exception):
     """Base error for bundle processing failures."""
+
     pass
 
 
 class BundleManager:
     """Manages the lifecycle of a bundle from ZIP to parsed content."""
 
-    def __init__(
-        self,
-        org_id: str,
-        security_guard: Optional[SecurityGuard] = None
-    ):
+    def __init__(self, org_id: str, security_guard: Optional[SecurityGuard] = None):
         self.org_id = org_id
         # Analysis Final §76: Inject SecurityGuard
         self.security_guard = security_guard or SecurityGuard()
@@ -82,9 +79,7 @@ class BundleManager:
 
                     # Verify hash
                     if not verify_integrity(file_data, expected_hash):
-                        raise BundleError(
-                            f"Integrity check failed for '{rel_path}'"
-                        )
+                        raise BundleError(f"Integrity check failed for '{rel_path}'")
 
                     # Sort into categories
                     self._parse_file_content(rel_path, file_data, content)
@@ -100,9 +95,7 @@ class BundleManager:
             raise BundleError(f"JSON parsing error: {str(e)}") from e
         except SecurityError as e:
             # Propagate security errors with context
-            raise BundleError(
-                f"Security validation failed: {str(e)}"
-            ) from e
+            raise BundleError(f"Security validation failed: {str(e)}") from e
 
         except Exception as e:
             if isinstance(e, (BundleError, SecurityError)):
@@ -137,9 +130,7 @@ class BundleManager:
                 f"Exceeded max agents: {len(content.agents)} > {MAX_AGENTS}"
             )
         if len(content.flows) > MAX_FLOWS:
-            raise BundleError(
-                f"Exceeded max flows: {len(content.flows)} > {MAX_FLOWS}"
-            )
+            raise BundleError(f"Exceeded max flows: {len(content.flows)} > {MAX_FLOWS}")
         if len(content.skills) > MAX_SKILLS:
             raise BundleError(
                 f"Exceeded max skills: {len(content.skills)} > {MAX_SKILLS}"

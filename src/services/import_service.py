@@ -14,6 +14,7 @@ from .bundle_schemas import BundleRPCPayload, BundleRPCResult
 
 logger = logging.getLogger(__name__)
 
+
 class ImportService:
     """Orchestrates the end-to-end bundle import flow."""
 
@@ -23,7 +24,7 @@ class ImportService:
 
     def process_bundle(self, zip_bytes: bytes) -> BundleRPCResult:
         """Execute the full import pipeline: validate -> process -> persist.
-        
+
         Raises:
             BundleError: If validation, integrity or limits fail.
             SecurityError: If AST scan or RestrictedPython fails.
@@ -36,12 +37,17 @@ class ImportService:
         content = self.bundle_manager.process_zip(zip_bytes)
 
         # 2. Prepare RPC Payload
+        bundle_name = (
+            content.manifest.bundle_info.name
+            if content.manifest.bundle_info
+            else content.manifest.version
+        )
         payload = BundleRPCPayload(
-            bundle_name=content.manifest.name,
+            bundle_name=bundle_name,
             bundle_hash=content.manifest.version,  # Using version as identifier/hash for now
             agents=content.agents,
             flows=content.flows,
-            skills=content.skills
+            skills=content.skills,
         )
 
         # 3. Invoke Atomic Persistence via RPC
@@ -51,10 +57,7 @@ class ImportService:
                 # Analisis-FINAL §2.1: Use import_bundle_atomic(p_org_id, p_payload)
                 response = db.rpc(
                     "import_bundle_atomic",
-                    {
-                        "p_org_id": self.org_id,
-                        "p_payload": payload.model_dump()
-                    }
+                    {"p_org_id": self.org_id, "p_payload": payload.model_dump()},
                 ).execute()
 
                 if not response.data:
@@ -66,21 +69,23 @@ class ImportService:
 
                 if result.status == "failed":
                     logger.error("Atomic import failed: %s", result.error)
-                    # We keep it as a successful call but with failed status 
+                    # We keep it as a successful call but with failed status
                     # so the API can decide what to return.
                 else:
                     logger.info(
                         "Import successful for bundle '%s'. IDs: %s",
-                        content.manifest.name,
-                        result.bundle_id
+                        bundle_name,
+                        result.bundle_id,
                     )
                     # Analysis-FINAL §2.4: Runtime registration of skills
                     self._register_skills(content)
-                
+
                 return result
 
         except Exception:
-            logger.exception("Unexpected error during RPC execution for org %s", self.org_id)
+            logger.exception(
+                "Unexpected error during RPC execution for org %s", self.org_id
+            )
             raise
 
     def _register_skills(self, content: any) -> None:
@@ -88,22 +93,22 @@ class ImportService:
         from RestrictedPython import compile_restricted, safe_builtins
 
         from src.tools.registry import tool_registry
-        
+
         # We use a safe environment similar to SecurityGuard
         safe_env = safe_builtins.copy()
         # SUPUESTO: Standard __import__ is needed to resolve allowed imports (pydantic, etc)
         safe_env["__import__"] = __import__
-        
+
         for filename, code in content.skills.items():
             skill_name = filename.replace(".py", "").lower()
             try:
                 # Compile restricted
                 byte_code = compile_restricted(code, filename=filename, mode="exec")
-                
+
                 # Execute in safe env to extract classes
                 exec_globals = {"__builtins__": safe_env}
                 exec(byte_code, exec_globals)
-                
+
                 # Look for the tool class
                 # We expect at least one class that looks like a Tool
                 for attr_name, attr in exec_globals.items():
@@ -113,7 +118,15 @@ class ImportService:
                             # SUPUESTO: Use tenant prefix to ensure isolation (Analysis R3)
                             scoped_name = f"{self.org_id}:{skill_name}"
                             tool_registry.register(name=scoped_name)(attr)
-                            logger.info("Registered imported skill in memory for tenant %s: %s", self.org_id, skill_name)
+                            logger.info(
+                                "Registered imported skill in memory for tenant %s: %s",
+                                self.org_id,
+                                skill_name,
+                            )
                             break
             except Exception as e:
-                logger.warning("Failed to register imported skill '%s' in memory: %s", skill_name, e)
+                logger.warning(
+                    "Failed to register imported skill '%s' in memory: %s",
+                    skill_name,
+                    e,
+                )

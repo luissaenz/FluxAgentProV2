@@ -17,32 +17,58 @@ logger = logging.getLogger(__name__)
 # Forbidden modules in AST scanner (Plan §98-101 + Analysis Final)
 FORBIDDEN_MODULES = {
     # System
-    "os", "subprocess", "shutil", "socket", "mmap", "ctypes", "sys",
+    "os",
+    "subprocess",
+    "shutil",
+    "socket",
+    "mmap",
+    "ctypes",
+    "sys",
     # Dynamic
     "importlib",
     # Introspección
-    "inspect", "gc",
+    "inspect",
+    "gc",
     # Red (Análisis Final §26)
-    "urllib", "http", "ftplib", "requests", "httpx", "aiohttp", "urllib3"
+    "urllib",
+    "http",
+    "ftplib",
+    "requests",
+    "httpx",
+    "aiohttp",
+    "urllib3",
 }
 
 # Allowed modules (Análisis Final §67)
 # Any module NOT in this list AND not in standard safe list will be blocked.
 # SUPUESTO: Standard library modules like 'math', 'json', 're' are allowed.
 ALLOWED_MODULES = {
-    "crewai", "pydantic", "json", "re", "datetime", "math", "random",
-    "typing", "abc", "uuid", "logging", "time", "collections",
-    "functools", "itertools", "pydantic_core", "annotated_types"
+    "crewai",
+    "pydantic",
+    "json",
+    "re",
+    "datetime",
+    "math",
+    "random",
+    "typing",
+    "abc",
+    "uuid",
+    "logging",
+    "time",
+    "collections",
+    "functools",
+    "itertools",
+    "pydantic_core",
+    "annotated_types",
 }
 
 # Forbidden functions/calls
-FORBIDDEN_CALLS = {
-    "eval", "exec", "compile", "open", "__import__"
-}
+FORBIDDEN_CALLS = {"eval", "exec", "compile", "open", "__import__"}
 
 
 class SecurityError(Exception):
     """Raised when code fails security validation."""
+
     pass
 
 
@@ -52,11 +78,7 @@ class SecurityGuard:
     def __init__(self, timeout_seconds: int = 30):
         self.timeout_seconds = timeout_seconds
 
-    def validate_skill(
-        self,
-        source_code: str,
-        filename: str = "skill.py"
-    ) -> bool:
+    def validate_skill(self, source_code: str, filename: str = "skill.py") -> bool:
         """Validate source code using AST analysis and dry-run compilation.
 
         Raises SecurityError if code is deemed unsafe.
@@ -78,13 +100,13 @@ class SecurityGuard:
                 # Check imports (import X)
                 if isinstance(node, ast.Import):
                     for alias in node.names:
-                        root_module = alias.name.split('.')[0]
+                        root_module = alias.name.split(".")[0]
                         self._check_module(root_module, alias.name, filename)
 
                 # Check from imports (from X import Y)
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
-                        root_module = node.module.split('.')[0]
+                        root_module = node.module.split(".")[0]
                         self._check_module(root_module, node.module, filename)
 
                 # Check forbidden function calls
@@ -110,9 +132,7 @@ class SecurityGuard:
         """Verify if a module is forbidden or not in the allowlist."""
         # 1. Check blacklist (Explicitly forbidden)
         if root_module in FORBIDDEN_MODULES:
-            raise SecurityError(
-                f"Forbidden import '{full_module}' in {filename}"
-            )
+            raise SecurityError(f"Forbidden import '{full_module}' in {filename}")
 
         # 2. Check allowlist
         # Note: per OC Analysis D2: "only allowlist... blacklist not enough".
@@ -123,12 +143,9 @@ class SecurityGuard:
 
     def _verify_compilation(self, source_code: str, filename: str):
         """Try to compile and dry-run the code with timeout."""
+
         def _execute_restricted():
-            byte_code = compile_restricted(
-                source_code,
-                filename=filename,
-                mode="exec"
-            )
+            byte_code = compile_restricted(source_code, filename=filename, mode="exec")
             if byte_code is None:
                 raise SecurityError(
                     f"RestrictedPython compilation failed for {filename}"
@@ -160,12 +177,10 @@ class SecurityGuard:
             if isinstance(e, SecurityError):
                 raise
             logger.warning(
-                "RestrictedPython validation error for %s: %s",
-                filename, str(e)
+                "RestrictedPython validation error for %s: %s", filename, str(e)
             )
             raise SecurityError(
-                f"Security validation failed during restricted "
-                f"execution: {str(e)}"
+                f"Security validation failed during restricted " f"execution: {str(e)}"
             ) from e
         finally:
             # Note: The worker thread will continue running until process exit

@@ -129,3 +129,40 @@ def test_malicious_skill_in_bundle(manager):
     with pytest.raises(BundleError, match="Security validation failed"):
         manager.process_zip(zip_bytes)
 
+
+def test_zip_size_exceeds_50mb():
+    """B8: Bundle larger than 50MB is rejected.
+
+    The BundleManager enforces MAX_ZIP_SIZE (50MB) at the start of
+    process_zip(), before any parsing or validation occurs.
+    """
+    manager = BundleManager(org_id="test-org-size")
+
+    # Create a manifest
+    manifest = {
+        "version": "2.0",
+        "name": "large-bundle",
+        "hashes": {},
+    }
+    manifest_bytes = json.dumps(manifest).encode()
+
+    # ZIP containing manifest + large file that exceeds 50MB total
+    large_content = b"x" * (50 * 1024 * 1024 + 1)  # 50MB + 1 byte
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("manifest.json", manifest_bytes)
+        # Add a single file that pushes total ZIP over 50MB
+        z.writestr("agents/large_agent.json", large_content)
+
+    zip_bytes = buf.getvalue()
+    total_size = len(zip_bytes)
+
+    # Verify we actually created a ZIP > 50MB
+    assert total_size > 50 * 1024 * 1024, (
+        f"Test setup error: ZIP size is {total_size}, should exceed 50MB"
+    )
+
+    with pytest.raises(BundleError, match="exceeds limit"):
+        manager.process_zip(zip_bytes)
+

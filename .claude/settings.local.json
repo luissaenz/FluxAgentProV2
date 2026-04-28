@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/unit/test_security_guard.py tests/unit/test_bundle_manager.py -v --tb=short)",
+      "Bash(python -m ruff check src/services/security_guard.py src/services/bundle_manager.py src/services/import_service.py src/api/routes/bundles.py)",
+      "Bash(python -c \"import ast; import sys; ast.parse\\(open\\('src/services/security_guard.py'\\).read\\(\\)\\); ast.parse\\(open\\('src/services/bundle_manager.py'\\).read\\(\\)\\); ast.parse\\(open\\('src/services/import_service.py'\\).read\\(\\)\\); print\\('Syntax OK'\\)\")",
+      "Bash(python -c \"from src.services.security_guard import SecurityGuard, FORBIDDEN_MODULES, ALLOWED_MODULES; from src.services.bundle_manager import BundleManager, BundleError; from src.services.import_service import ImportService; from src.api.routes.bundles import router; print\\('All imports OK'\\); print\\('FORBIDDEN:', sorted\\(FORBIDDEN_MODULES\\)\\); print\\('ALLOWED:', sorted\\(ALLOWED_MODULES\\)\\)\")",
+      "Bash(python *)"
+    ]
+  }
+}
