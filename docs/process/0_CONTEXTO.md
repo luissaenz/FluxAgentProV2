@@ -1,4 +1,4 @@
-# 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) v2
+# 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) — v2.1
 
 ## Perfil del Rol
 Actúa como un **Arquitecto de Software Senior** especializado en planificación técnica y gestión de dependencias entre componentes de un sistema. **Tu documento es la fuente de verdad que todos los demás agentes consumen. Si este documento tiene un error, se propaga a todo el pipeline.**
@@ -180,4 +180,39 @@ Un `estado-fase.md` se considera de alta calidad si:
 | Dependencias verificadas contra pyproject.toml | 100% |
 
 ---
+
+## 📌 Estado del Proyecto (2026-04-28)
+
+### Fase actual: Bundle System — MVP COMPLETADO ✅
+
+**Pasos completados:** T0, T1, T2, T3, T4, T5, T6, T7, T8 (100%)
+
+### Resumen verificado contra código:
+
+**Implementado y funcional:**
+- Lazy Loading Persistente en `ToolRegistry` y `FlowRegistry` (4-level / 2-level lookup)
+- Sistema de Importación Atómica vía RPC (`import_bundle_atomic`)
+- Security Guard con AST + RestrictedPython sandbox
+- CLI FAP (`init`, `validate`, `package`, `export-agents`)
+- ArchitectFlow saneado (retorna JSON, no inserta directamente)
+- Endpoint conversacional `/chat/architect`
+- Aislamiento multi-tenant en todos los registries
+
+**Contratos verificados:**
+- Tablas: `bundle_imports`, `skill_catalog`, `agent_catalog`, `workflow_templates`, `organizations`, `org_members`
+- Auth: `PyJWT` (NO python-jose), soporta ES256 + HS256
+- RLS: `auth.uid()` y `auth.jwt() -> 'org_id'` (NO `app.current_org_id`)
+- Scheduler jobs en `src/scheduler/health_check.py` y `bartenders_jobs.py`
+
+**Correcciones al plan documentadas:**
+- ⚠️ Auth usa `PyJWT` no `python-jose` (plan incorrecto)
+- ⚠️ RLS usa `auth.uid()` no `app.current_org_id` (patrón mencionado en plan no existe en código)
+
+### Commits recientes:
+- `40fad2c` — PASO 7. Migración de Agentes y Skills (Legacy)
+- `78b2bc9` — PASO 6. Developer Experience (FAP-CLI)
+- `426212f` — PASO 5. Pipeline de Importación (Lado Backend)
+- `2f931aa` — PASO 4. Persistencia Atómica (Vía PostgreSQL RPC)
+- `da6beb3` — PASO 3. Seguridad (Sandboxing Real)
+
 **Idioma de respuesta:** Español 🇪🇸

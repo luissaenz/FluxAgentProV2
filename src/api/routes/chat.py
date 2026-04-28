@@ -161,16 +161,17 @@ async def _run_architect_background(
             correlation_id=f"chat-{conversation_id}",
         )
 
-        flow_type = result.output_data.get("flow_type")
-        template_id = result.output_data.get("template_id")
+        flow_type = result.get("flow_type")
+        msg = result.get("message", f"Workflow '{flow_type}' diseñado exitosamente.")
 
         add_message(
             conversation_id, org_id, "assistant",
-            f"Workflow '{flow_type}' creado. "
-            f"Ejecutalo con POST /webhooks/{org_id}/{flow_type}"
+            msg
         )
 
-        link_workflow(conversation_id, org_id, template_id)
+        # En arquitectura Bundle-Driven, no hay template_id hasta que se importe.
+        # Marcamos como completado pasando None en template_id.
+        link_workflow(conversation_id, org_id, None)
 
         logger.info(
             "ArchitectFlow[%s] completó: %s",
