@@ -208,29 +208,96 @@ class FlowRegistry:
 
     # ── lookup ──────────────────────────────────────────────────
 
-    def get(self, name: str) -> Type:
-        """Return the Flow class for *name*, or raise ``ValueError``.
-
-        Supports multiple naming formats:
-        - Exact lowercase: "generic"
-        - PascalCase: "GenericFlow" → looks up "generic_flow"
+    def get(self, name: str, org_id: str | None = None) -> Type:
+        """Return the Flow class for *name*.
+        
+        Order: memory -> DB lookup (if org_id provided) -> raise ValueError.
         """
-        # 1. Intento por nombre exacto (minúsculas)
-        if name.lower() in self._flows:
-            return self._flows[name.lower()]
-
-        # 2. Intento por nombre normalizado (CamelCase -> snake_case)
-        key = _normalize_flow_name(name)
+        # 1. Memory lookup
+        key = name.lower()
         if key in self._flows:
             return self._flows[key]
-            
+
+        normalized_key = _normalize_flow_name(name)
+        if normalized_key in self._flows:
+            return self._flows[normalized_key]
+
+        # 2. DB Lookup (workflow_templates)
+        if org_id:
+            try:
+                flow_class = self._load_from_db(key, org_id)
+                if flow_class:
+                    return flow_class
+            except Exception as e:
+                logger.debug("Failed DB lookup for flow '%s' in org '%s': %s", name, org_id, e)
+
         raise ValueError(
-            f"Flow '{name}' not found. Available: {list(self._flows.keys())}"
+            f"Flow '{name}' not found. Available in memory: {list(self._flows.keys())}"
         )
 
-    def create(self, name: str, **kwargs: Any) -> Any:
+    def _load_from_db(self, flow_type: str, org_id: str) -> Optional[Type]:
+        """Fetch workflow template from DB and wrap in DynamicWorkflow."""
+        from src.db.session import get_tenant_client
+        from src.flows.dynamic_flow import DynamicWorkflow
+
+        try:
+            with get_tenant_client(org_id) as db:
+                result = (
+                    db.table("workflow_templates")
+                    .select("definition")
+                    .eq("org_id", org_id)
+                    .eq("flow_type", flow_type)
+                    .eq("is_active", True)
+                    .maybe_single()
+                    .execute()
+                )
+                
+                if not (result and result.data):
+                    return None
+                
+                definition = result.data["definition"]
+                
+                # Wrap in DynamicWorkflow
+                # SUPUESTO: DynamicWorkflow.register_class retorna una clase configurada
+                # que podemos registrar en memoria para el futuro.
+                # Nota: Necesitamos importar DynamicWorkflow localmente para evitar circulares.
+                
+                # Para evitar registrar clases temporales globalmente en _flows 
+                # (lo que podría colisionar si diferentes orgs tienen el mismo flow_type),
+                # el análisis sugería retornar la clase configurada.
+                
+                # Creamos una subclase anónima de DynamicWorkflow para esta definición
+                class BoundDynamicFlow(DynamicWorkflow):
+                    _registered_flow_name = flow_type
+                    def __init__(self, **kwargs):
+                        # Forzamos la definición en el constructor o via clase
+                        super().__init__(**kwargs)
+                
+                # Inyectamos la definición en la clase para que DynamicWorkflow la use
+                BoundDynamicFlow.definition = definition
+                
+                # Opcional: registrar en memoria para esta sesión/tenant?
+                # El análisis dice: "se registra en memoria". 
+                # Pero FlowRegistry es global. Si lo registro en _flows[flow_type],
+                # la siguiente org que pida ese flow_type recibirá el de la org anterior.
+                # ERROR: Debemos usar un prefijo o no registrar en el registry global
+                # si es dinámico.
+                
+                # Sin embargo, el endpoint run_flow usa require_org_id, 
+                # por lo que el lookup es seguro mientras pasemos el org_id.
+                
+                # Si queremos persistir en memoria, deberíamos usar {org_id}:{flow_type}
+                # pero el registry actual no soporta eso bien en list_flows.
+                
+                return BoundDynamicFlow
+                
+        except Exception as exc:
+            logger.error("Error loading flow '%s' from DB: %s", flow_type, exc)
+            return None
+
+    def create(self, name: str, org_id: str | None = None, **kwargs: Any) -> Any:
         """Instantiate a registered Flow by name."""
-        return self.get(name)(**kwargs)
+        return self.get(name, org_id=org_id)(org_id=org_id, **kwargs)
 
     def has(self, name: str) -> bool:
         """Check whether *name* has been registered."""

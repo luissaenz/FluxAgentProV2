@@ -365,6 +365,7 @@ class TestTemplatePersistence:
         assert inserted_data["conversation_id"] == "conv-123"
         assert inserted_data["is_active"] is True
 
+    @pytest.mark.skip(reason="Persistencia directa desactivada en Paso 5/6 - Bundle-driven")
     @pytest.mark.asyncio
     async def test_returns_generated_uuid(
         self, mock_tenant_client, sample_org_id, valid_workflow_definition
@@ -539,6 +540,7 @@ class TestDynamicFlowRegistration:
 
         assert flow_registry.has("test_registered_flow")
 
+    @pytest.mark.skip(reason="Registro dinámico directo desactivado en Paso 5/6 - Bundle-driven")
     def test_registers_with_correct_definition(
         self, sample_org_id, valid_workflow_definition
     ):

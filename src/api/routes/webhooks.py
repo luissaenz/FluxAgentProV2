@@ -82,7 +82,7 @@ async def trigger_webhook(
     correlation_id = f"webhook-{uuid4()}"
 
     # Initialize flow and create record synchronously so we can return the real task_id
-    flow_class = flow_registry.get(request.flow_type)
+    flow_class = flow_registry.get(request.flow_type, org_id=org_id)
     flow = flow_class(org_id=org_id)
 
     # We call create_task_record directly to get the task_id immediately
@@ -148,7 +148,7 @@ async def execute_flow(
     """Legacy entrypoint for background flow execution.
     Initializes the flow and then executes it.
     """
-    flow_class = flow_registry.get(flow_type)
+    flow_class = flow_registry.get(flow_type, org_id=org_id)
     flow = flow_class(org_id=org_id)
     return await execute_flow_instance(
         flow=flow,

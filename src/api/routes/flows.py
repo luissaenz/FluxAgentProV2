@@ -160,7 +160,7 @@ async def run_flow(
     correlation_id = f"manual-{flow_type}-{org_id[:8]}-{uuid4().hex[:6]}"
 
     # 2. Initialize flow and create task record synchronously to get the real task_id
-    flow_class = flow_registry.get(flow_type)
+    flow_class = flow_registry.get(flow_type, org_id=org_id)
     flow = flow_class(org_id=org_id)
 
     # Validate input (standard procedure)

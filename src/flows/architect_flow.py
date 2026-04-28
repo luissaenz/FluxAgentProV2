@@ -13,10 +13,7 @@ Flujo:
   3. _run_crew → Ejecuta agente Architect
   4. _parse_and_validate → WorkflowDefinition (Pydantic)
   5. validate_workflow → seguridad + quota
-  6. _persist_template → workflow_templates
-  7. _persist_agents → agent_catalog
-  8. _register_dynamic_flow → FLOW_REGISTRY
-  9. complete
+  6. complete → Retorna definición JSON para empaquetado como Bundle
 """
 
 from __future__ import annotations
@@ -78,7 +75,6 @@ class ArchitectFlow(BaseFlow):
         """Override para usar ArchitectState."""
         from uuid import uuid4
 
-        from ..db.session import get_tenant_client
         from ..events.store import EventStore
 
         task_id = str(uuid4())
@@ -328,81 +324,3 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
 
         return f"{flow_type}_{uuid.uuid4().hex[:8]}"
 
-    async def _persist_template(
-        self, workflow_def: WorkflowDefinition
-    ) -> str:
-        """DEPRECATED: Use Bundle Import API instead."""
-        logger.warning("Llamada a método persist_template obsoleta.")
-        conversation_id = self.state.input_data.get("conversation_id")
-        template_id = str(uuid.uuid4())
-
-        with get_tenant_client(self.org_id, self.state.user_id) as db:
-            db.table("workflow_templates").insert({
-                "id": template_id,
-                "org_id": self.org_id,
-                "name": workflow_def.name,
-                "description": workflow_def.description,
-                "flow_type": workflow_def.flow_type,
-                "definition": workflow_def.model_dump(),
-                "version": 1,
-                "status": "active",
-                "is_validated": True,
-                "is_active": True,
-                "created_by": "architect_flow",
-                "conversation_id": conversation_id,
-            }).execute()
-
-        return template_id
-
-    async def _persist_agents(
-        self, workflow_def: WorkflowDefinition
-    ) -> list[str]:
-        """DEPRECATED: Use Bundle Import API instead."""
-        logger.warning("Llamada a método persist_agents obsoleta.")
-        created = []
-
-        with get_tenant_client(self.org_id, self.state.user_id) as db:
-            for agent_def in workflow_def.agents:
-                existing = (
-                    db.table("agent_catalog")
-                    .select("id")
-                    .eq("org_id", self.org_id)
-                    .eq("role", agent_def.role)
-                    .maybe_single()
-                    .execute()
-                )
-
-                action = "skipped" if existing and existing.data else "created"
-
-                db.table("agent_catalog").upsert({
-                    "org_id": self.org_id,
-                    "role": agent_def.role,
-                    "soul_json": {
-                        "role": agent_def.role,
-                        "goal": agent_def.goal,
-                        "backstory": agent_def.backstory,
-                        "rules": agent_def.rules,
-                        "model": agent_def.model,
-                    },
-                    "allowed_tools": agent_def.allowed_tools,
-                    "max_iter": agent_def.max_iter,
-                    "is_active": True,
-                }, on_conflict="org_id,role").execute()
-
-                if action == "created":
-                    created.append(agent_def.role)
-
-        return created
-
-    def _register_dynamic_flow(
-        self, flow_type: str, workflow_def: WorkflowDefinition
-    ) -> None:
-        """DEPRECATED: Use Bundle Import API instead."""
-        logger.warning("Llamada a método register_dynamic_flow obsoleta.")
-        from .dynamic_flow import DynamicWorkflow
-
-        DynamicWorkflow.register(
-            flow_type=flow_type,
-            definition=workflow_def.model_dump(),
-        )
-        logger.info("DynamicFlow '%s' registrado en FLOW_REGISTRY", flow_type)

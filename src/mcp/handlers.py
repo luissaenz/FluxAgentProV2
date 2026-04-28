@@ -58,7 +58,7 @@ async def handle_execute_flow(
         correlation_id = f"mcp-{flow_type}-{uuid4().hex[:8]}"
 
     # 4. Instantiate and execute via the Registry
-    flow_class = flow_registry.get(flow_type)
+    flow_class = flow_registry.get(flow_type, org_id=org_id)
     flow = flow_class(org_id=org_id, user_id=user_id)
 
     state = await flow.execute(input_data, correlation_id=correlation_id)
@@ -185,7 +185,7 @@ async def _process_decision(
     # 4. Resume flow execution
     # We retrieve the flow_type from the pending record to instantiate the right class
     flow_type = pending.data["flow_type"]
-    flow_class = flow_registry.get(flow_type)
+    flow_class = flow_registry.get(flow_type, org_id=org_id)
     flow = flow_class(org_id=org_id, user_id=user_id)
 
     # resume() restores state from snapshot, emits domain events, and continues logic
