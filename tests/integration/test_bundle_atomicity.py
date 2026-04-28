@@ -76,6 +76,9 @@ class TestAtomicityRollback:
 
         with patch(
             "src.services.import_service.get_tenant_client", return_value=cm
+        ), patch(
+            "src.services.import_service.ImportService._check_version_guard",
+            return_value=None,
         ):
             service = ImportService(org_id=org_id)
 
@@ -127,6 +130,9 @@ class TestAtomicityRollback:
 
         with patch(
             "src.services.import_service.get_tenant_client", return_value=cm
+        ), patch(
+            "src.services.import_service.ImportService._check_version_guard",
+            return_value=None,
         ):
             service = ImportService(org_id=org_id)
             # process_bundle returns failed result (no exception raised)
@@ -175,6 +181,9 @@ class TestAtomicityRollback:
 
         with patch(
             "src.services.import_service.get_tenant_client", return_value=cm
+        ), patch(
+            "src.services.import_service.ImportService._check_version_guard",
+            return_value=None,
         ):
             service = ImportService(org_id=org_id)
             result = service.process_bundle(zip_bytes)

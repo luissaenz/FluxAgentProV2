@@ -24,7 +24,7 @@ class ImportService:
         self.org_id = org_id
         self.bundle_manager = BundleManager(org_id=org_id)
 
-    def process_bundle(self, zip_bytes: bytes) -> BundleRPCResult:
+    def process_bundle(self, zip_bytes: bytes, force: bool = False) -> BundleRPCResult:
         """Execute the full import pipeline: validate -> process -> persist.
 
         Raises:
@@ -45,14 +45,12 @@ class ImportService:
             if content.manifest.bundle_info
             else "1.0.0"
         )
-        self._check_version_guard(new_version_str)
-
-        # 3. Prepare RPC Payload
         bundle_name = (
             content.manifest.bundle_info.name
             if content.manifest.bundle_info
             else content.manifest.version
         )
+        self._check_version_guard(new_version_str, bundle_name, force=force)
         payload = BundleRPCPayload(
             bundle_name=bundle_name,
             bundle_hash=content.bundle_hash,  # Analysis-FINAL §2.1: Use real SHA256 hash
@@ -100,53 +98,67 @@ class ImportService:
             )
             raise
 
-    def _check_version_guard(self, new_version_str: str) -> None:
-        """Prevent downgrades by comparing with the latest imported bundle version."""
+    def _check_version_guard(
+        self, new_version_str: str, bundle_name: str, force: bool = False
+    ) -> None:
+        """Prevent downgrades by comparing with the latest imported bundle version.
+
+        Granularized by bundle_name to allow independent versioning.
+        """
         try:
-            with get_tenant_client(self.org_id) as db:
-                # SUPUESTO: bundle_imports tiene name y version.
-                # Necesitamos el último bundle con el mismo nombre.
-                # Nota: analisis-FINAL dice que bundle_imports no tiene 'version' aún en el esquema 026.
-                # ADAPTADO: Buscamos si existe la tabla bundle_imports y si tiene el campo version.
-                # Si no tiene el campo version, saltamos la validación hasta que se aplique el esquema de Fase II.
-
-                # Para el MVP+, asumimos que queremos proteger por versión.
-                # Pero el análisis FINAL §1.5 dice: "R5: Versión de Bundles ... ❌ Sin campo version en bundle_imports"
-                # Razón por la cual la T15.2 debe IMPLEMENTAR el campo si es necesario o manejar la ausencia.
-                # Como soy el IMPLEMENTADOR, voy a agregar la lógica de comparación asumiendo que
-                # la migración de Fase II (T15.2) agregará el campo.
-
-                logger.debug("Checking version guard for %s", new_version_str)
-                # Por ahora, verificamos si podemos obtener la versión.
-                # Si falla por columna inexistente, logueamos y seguimos (Fase I compatibility).
-                try:
-                    result = (
-                        db.table("bundle_imports")
-                        .select("version")
-                        .eq("org_id", self.org_id)
-                        .order("created_at", descending=True)
-                        .limit(1)
-                        .execute()
-                    )
-
-                    if result.data and "version" in result.data[0]:
-                        current_version_str = result.data[0]["version"]
-                        if Version(new_version_str) < Version(current_version_str):
-                            raise VersionConflictError(
-                                f"Version downgrade not allowed: {new_version_str} < {current_version_str}"
-                            )
-                except Exception as e:
-                    if 'column "version" does not exist' in str(e):
-                        logger.warning(
-                            "Version guard skipped: 'version' column not yet in bundle_imports table."
-                        )
-                    else:
-                        raise
-
+            # 1. Validate format ALWAYS (Analysis TP-V5)
+            new_v = Version(new_version_str)
         except InvalidVersion:
             raise VersionConflictError(
                 f"Invalid semantic version format: {new_version_str}"
             )
+
+        if force:
+            logger.info(
+                "Version guard bypassed via force=True for bundle '%s' (org: %s)",
+                bundle_name,
+                self.org_id,
+            )
+            return
+
+        try:
+            with get_tenant_client(self.org_id) as db:
+                logger.debug(
+                    "Checking version guard for bundle '%s': %s",
+                    bundle_name,
+                    new_version_str,
+                )
+
+                # Fetch latest version for this specific bundle in this org
+                # Analysis-FINAL §1.2: Added .eq("bundle_name", bundle_name)
+                result = (
+                    db.table("bundle_imports")
+                    .select("version")
+                    .eq("org_id", self.org_id)
+                    .eq("bundle_name", bundle_name)
+                    .order("created_at", desc=True)
+                    .limit(1)
+                    .execute()
+                )
+
+                if result.data and result.data[0].get("version"):
+                    current_version_str = result.data[0]["version"]
+                    curr_v = Version(current_version_str)
+
+                    if new_v < curr_v:
+                        logger.warning(
+                            "Downgrade rejected for '%s': %s < %s",
+                            bundle_name,
+                            new_version_str,
+                            current_version_str,
+                        )
+                        raise VersionConflictError(
+                            f"Incoming version {new_version_str} is lower than current {current_version_str}. "
+                            "Use force=true to override."
+                        )
+
+        except VersionConflictError:
+            raise
         except Exception:
             logger.exception("Error in version guard check")
             raise
@@ -184,7 +196,7 @@ class ImportService:
                 db.table("bundle_imports")
                 .select("*")
                 .eq("org_id", self.org_id)
-                .order("created_at", descending=True)
+                .order("created_at", desc=True)
                 .execute()
             )
             return result.data or []

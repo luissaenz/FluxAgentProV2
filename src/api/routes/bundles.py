@@ -47,6 +47,7 @@ async def get_security_config():
 )
 async def import_bundle(
     file: UploadFile = File(...),
+    force: bool = False,
     org_id: str = Depends(require_org_id),
 ):
     """
@@ -54,6 +55,8 @@ async def import_bundle(
 
     The ZIP must contain a 'manifest.json' and follow the expected folder structure.
     All operations are performed within a single database transaction.
+
+    - **force**: If true, allows downgrading the bundle version.
     """
     # 1. Basic format validation
     if not file.filename.endswith(".zip"):
@@ -68,7 +71,7 @@ async def import_bundle(
 
         # 3. Process via Service
         service = ImportService(org_id=org_id)
-        result = service.process_bundle(zip_bytes)
+        result = service.process_bundle(zip_bytes, force=force)
 
         if result.status == "failed":
             raise HTTPException(
