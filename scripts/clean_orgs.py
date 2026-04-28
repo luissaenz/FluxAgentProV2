@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import os
-import requests
+
 import dotenv
+import requests
+
 
 def main():
     print("Starting final organization cleanup...", flush=True)

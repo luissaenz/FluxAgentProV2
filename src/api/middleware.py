@@ -62,6 +62,7 @@ logger = logging.getLogger(__name__)
 
 # ── existing: org_id header extraction ────────────────────────────────────
 
+
 async def require_org_id(
     x_org_id: str = Header(
         ...,
@@ -84,6 +85,7 @@ async def require_org_id(
 
 
 # ── main JWT dependency ────────────────────────────────────────────────────
+
 
 async def verify_supabase_jwt(
     authorization: str = Header(..., description="Bearer token from Supabase Auth"),
@@ -109,9 +111,11 @@ async def verify_supabase_jwt(
     other  →  rejected (e.g. ``none``, RS256 not currently issued by Supabase)
     """
     if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Authorization header must start with 'Bearer '")
+        raise HTTPException(
+            status_code=401, detail="Authorization header must start with 'Bearer '"
+        )
 
-    token = authorization[len("Bearer "):]
+    token = authorization[len("Bearer ") :]
     if not token:
         raise HTTPException(status_code=401, detail="Empty bearer token")
 
@@ -126,6 +130,7 @@ async def verify_supabase_jwt(
 
 
 # ── org membership verification ────────────────────────────────────────────
+
 
 async def verify_org_membership(
     request: Request,

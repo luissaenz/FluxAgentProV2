@@ -11,8 +11,12 @@ from src.cli.utils import calculate_dir_hashes, load_json, save_json
 
 
 def package_bundle(
-    path: Path = typer.Argument(Path("."), help="Path to the bundle directory to package"),
-    output: Path = typer.Option(None, "--output", "-o", help="Custom name/path for the output ZIP file"),
+    path: Path = typer.Argument(
+        Path("."), help="Path to the bundle directory to package"
+    ),
+    output: Path = typer.Option(
+        None, "--output", "-o", help="Custom name/path for the output ZIP file"
+    ),
 ):
     """Update manifest hashes and create a deployable ZIP bundle."""
     if not path.is_dir():
@@ -27,7 +31,7 @@ def package_bundle(
     try:
         manifest = load_json(manifest_path)
         bundle_name = manifest.get("name", "bundle")
-        
+
         # 1. Update Hashes
         print(f"PACKAGING bundle: [bold]{bundle_name}[/bold]")
         print("GENERATING hashes...")
@@ -39,7 +43,7 @@ def package_bundle(
         # 2. Create ZIP
         zip_filename = output if output else Path(f"{bundle_name}.zip")
         print(f"ZIP: Creating [bold]{zip_filename}[/bold]...")
-        
+
         with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zf:
             # We want to walk the directory and add everything relative to 'path'
             for root, _dirs, files in os.walk(path):
@@ -50,7 +54,9 @@ def package_bundle(
                     zf.write(file_path, arcname)
 
         size_mb = os.path.getsize(zip_filename) / (1024 * 1024)
-        print(f"[bold green]OK:[/bold green] [cyan]{zip_filename}[/cyan] created successfully ({size_mb:.2f} MB).")
+        print(
+            f"[bold green]OK:[/bold green] [cyan]{zip_filename}[/cyan] created successfully ({size_mb:.2f} MB)."
+        )
         print("\nYou can now import this bundle using:")
         print("  [white]POST /api/bundles/import[/white]")
 

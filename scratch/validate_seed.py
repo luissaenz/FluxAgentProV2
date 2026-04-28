@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+
 def validate():
     seed_path = Path("data/service_catalog_seed.json")
     if not seed_path.exists():

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+
 def check_activecampaign():
     seed = Path("data/service_catalog_seed.json")
     seed_data = json.loads(seed.read_text(encoding="utf-8"))

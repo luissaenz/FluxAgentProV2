@@ -32,6 +32,7 @@ DANGEROUS_TOOLS = {
 
 class WorkflowValidationError(Exception):
     """Workflow inválido — no se persiste."""
+
     pass
 
 

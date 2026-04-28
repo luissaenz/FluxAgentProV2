@@ -20,23 +20,30 @@ from pydantic import BaseModel, Field
 
 # ─── Modelos ───────────────────────────────────────────────────────────────
 
+
 class FactorClimaticoOutput(BaseModel):
-    mes:               int
-    factor_pct:        int
-    razon:             str
-    provincia:         str
+    mes: int
+    factor_pct: int
+    razon: str
+    provincia: str
 
 
 class PronosticoRealOutput(BaseModel):
-    evento_id:          str
-    provincia:          str
-    fecha_evento:       str
-    temp_historica:     float = Field(..., description="Temperatura histórica esperada (°C)")
-    temp_pronosticada:  float = Field(..., description="Temperatura del pronóstico real (°C)")
-    desvio_absoluto:    float = Field(..., description="Diferencia en °C (puede ser negativa)")
-    desvio_pct:         float = Field(..., description="Desvío relativo al histórico (%)")
-    alerta_roja:        bool  = Field(..., description="True si desvío > UMBRAL_ALERTA_PCT")
-    descripcion:        str
+    evento_id: str
+    provincia: str
+    fecha_evento: str
+    temp_historica: float = Field(
+        ..., description="Temperatura histórica esperada (°C)"
+    )
+    temp_pronosticada: float = Field(
+        ..., description="Temperatura del pronóstico real (°C)"
+    )
+    desvio_absoluto: float = Field(
+        ..., description="Diferencia en °C (puede ser negativa)"
+    )
+    desvio_pct: float = Field(..., description="Desvío relativo al histórico (%)")
+    alerta_roja: bool = Field(..., description="True si desvío > UMBRAL_ALERTA_PCT")
+    descripcion: str
 
 
 # ─── Constantes ────────────────────────────────────────────────────────────
@@ -55,9 +62,9 @@ TEMP_HISTORICA_NOA: dict[int, float] = {
     7: 10.5,  # Julio
     8: 13.0,  # Agosto
     9: 16.5,  # Septiembre
-   10: 20.0,  # Octubre
-   11: 23.5,  # Noviembre
-   12: 25.0,  # Diciembre
+    10: 20.0,  # Octubre
+    11: 23.5,  # Noviembre
+    12: 25.0,  # Diciembre
 }
 
 # Mock de pronósticos por evento para Fase 6
@@ -74,6 +81,7 @@ MOCK_DEFAULT_DELTA: float = 0.0
 
 
 # ─── Tool 1: Factor Climático Histórico (Agente 2) ─────────────────────────
+
 
 class FactorClimaticoTool(BaseTool):
     name: str = "obtener_factor_climatico"
@@ -111,6 +119,7 @@ class FactorClimaticoTool(BaseTool):
 
 # ─── Tool 2: Pronóstico Real con Mock (Agente 5) ───────────────────────────
 
+
 class PronosticoRealTool(BaseTool):
     name: str = "verificar_pronostico_real"
     description: str = (
@@ -126,17 +135,17 @@ class PronosticoRealTool(BaseTool):
 
     def _run(
         self,
-        evento_id:    str,
-        provincia:    str,
-        fecha_evento: str,   # formato YYYY-MM-DD
+        evento_id: str,
+        provincia: str,
+        fecha_evento: str,  # formato YYYY-MM-DD
     ) -> PronosticoRealOutput:
 
         mes = self._extraer_mes(fecha_evento)
-        temp_historica   = TEMP_HISTORICA_NOA.get(mes, 20.0)
+        temp_historica = TEMP_HISTORICA_NOA.get(mes, 20.0)
         temp_pronosticada = self._fetch_real_forecast(evento_id, mes)
 
         desvio_absoluto = temp_pronosticada - temp_historica
-        desvio_pct      = abs(desvio_absoluto) / temp_historica * 100
+        desvio_pct = abs(desvio_absoluto) / temp_historica * 100
 
         alerta_roja = desvio_pct > UMBRAL_ALERTA_PCT
 
@@ -156,15 +165,15 @@ class PronosticoRealTool(BaseTool):
             )
 
         return PronosticoRealOutput(
-            evento_id          = evento_id,
-            provincia          = provincia,
-            fecha_evento       = fecha_evento,
-            temp_historica     = temp_historica,
-            temp_pronosticada  = temp_pronosticada,
-            desvio_absoluto    = round(desvio_absoluto, 1),
-            desvio_pct         = round(desvio_pct, 1),
-            alerta_roja        = alerta_roja,
-            descripcion        = descripcion,
+            evento_id=evento_id,
+            provincia=provincia,
+            fecha_evento=fecha_evento,
+            temp_historica=temp_historica,
+            temp_pronosticada=temp_pronosticada,
+            desvio_absoluto=round(desvio_absoluto, 1),
+            desvio_pct=round(desvio_pct, 1),
+            alerta_roja=alerta_roja,
+            descripcion=descripcion,
         )
 
     def _fetch_real_forecast(self, evento_id: str, mes: int) -> float:
@@ -196,6 +205,5 @@ class PronosticoRealTool(BaseTool):
             return int(month)
         except (IndexError, ValueError):
             raise ValueError(
-                f"Formato de fecha inválido: '{fecha_evento}'. "
-                f"Esperado: YYYY-MM-DD"
+                f"Formato de fecha inválido: '{fecha_evento}'. Esperado: YYYY-MM-DD"
             )

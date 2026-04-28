@@ -26,23 +26,25 @@ from src.db.session import get_service_client, get_tenant_client
 logger = structlog.get_logger(__name__)
 
 # Tablas de configuración global — no tienen org_id
-CONFIG_TABLES = frozenset({
-    "config_consumo_pax",
-    "config_margenes",
-    "config_climatico",
-    "equipamiento_amortizacion",
-})
+CONFIG_TABLES = frozenset(
+    {
+        "config_consumo_pax",
+        "config_margenes",
+        "config_climatico",
+        "equipamiento_amortizacion",
+    }
+)
 
 # Clave primaria por tabla operativa
 TABLE_PKS: dict[str, str] = {
     "bartenders_disponibles": "bartender_id",
-    "precios_bebidas":         "producto_id",
-    "inventario":              "item_id",
-    "eventos":                 "evento_id",
-    "cotizaciones":            "cotizacion_id",
-    "ordenes_compra":          "orden_id",
-    "auditorias":              "auditoria_id",
-    "historial_precios":       "id",
+    "precios_bebidas": "producto_id",
+    "inventario": "item_id",
+    "eventos": "evento_id",
+    "cotizaciones": "cotizacion_id",
+    "ordenes_compra": "orden_id",
+    "auditorias": "auditoria_id",
+    "historial_precios": "id",
 }
 
 
@@ -88,8 +90,9 @@ class SupabaseMockConnector(BaseDataConnector):
                 result = query.execute()
                 return result.data or []
         except Exception as e:
-            logger.error("connector.read.error",
-                         table=table, filters=filters, error=str(e))
+            logger.error(
+                "connector.read.error", table=table, filters=filters, error=str(e)
+            )
             raise
 
     def write(self, table: str, data: dict) -> dict:
@@ -105,12 +108,14 @@ class SupabaseMockConnector(BaseDataConnector):
                 result = db.table(table).insert(payload).execute()
                 if not result.data:
                     raise ValueError(f"Insert en {table} no retornó datos")
-                logger.info("connector.write.ok",
-                            table=table, pk=self._get_pk_value(table, payload))
+                logger.info(
+                    "connector.write.ok",
+                    table=table,
+                    pk=self._get_pk_value(table, payload),
+                )
                 return result.data[0]
         except Exception as e:
-            logger.error("connector.write.error",
-                         table=table, error=str(e))
+            logger.error("connector.write.error", table=table, error=str(e))
             raise
 
     def update(self, table: str, record_id: str, data: dict) -> dict:
@@ -123,29 +128,26 @@ class SupabaseMockConnector(BaseDataConnector):
 
         try:
             with get_tenant_client(self.org_id, self.user_id) as db:
-                result = (
-                    db.table(table)
-                    .update(data)
-                    .eq(pk_col, record_id)
-                    .execute()
-                )
+                result = db.table(table).update(data).eq(pk_col, record_id).execute()
                 if not result.data:
                     raise ValueError(
                         f"Update en {table} no encontró registro con {pk_col}={record_id}"
                     )
-                logger.info("connector.update.ok",
-                            table=table, record_id=record_id)
+                logger.info("connector.update.ok", table=table, record_id=record_id)
                 return result.data[0]
         except Exception as e:
-            logger.error("connector.update.error",
-                         table=table, record_id=record_id, error=str(e))
+            logger.error(
+                "connector.update.error", table=table, record_id=record_id, error=str(e)
+            )
             raise
 
     # ------------------------------------------------------------------
     # Tablas de configuración global
     # ------------------------------------------------------------------
 
-    def get_config(self, table: str, filters: dict[str, Any] | None = None) -> list[dict]:
+    def get_config(
+        self, table: str, filters: dict[str, Any] | None = None
+    ) -> list[dict]:
         """
         Lee tablas de configuración global usando service_role (sin RLS de tenant).
         Estas tablas no tienen org_id y son compartidas por todos los tenants.
@@ -160,8 +162,9 @@ class SupabaseMockConnector(BaseDataConnector):
             result = query.execute()
             return result.data or []
         except Exception as e:
-            logger.error("connector.get_config.error",
-                         table=table, filters=filters, error=str(e))
+            logger.error(
+                "connector.get_config.error", table=table, filters=filters, error=str(e)
+            )
             raise
 
     # ------------------------------------------------------------------
@@ -185,21 +188,29 @@ class SupabaseMockConnector(BaseDataConnector):
         """
         try:
             db = get_service_client()
-            result = db.rpc("reserve_inventory_item", {
-                "p_org_id":   self.org_id,
-                "p_item_id":  item_id,
-                "p_cantidad": cantidad,
-            }).execute()
+            result = db.rpc(
+                "reserve_inventory_item",
+                {
+                    "p_org_id": self.org_id,
+                    "p_item_id": item_id,
+                    "p_cantidad": cantidad,
+                },
+            ).execute()
 
             if result.data and result.data.get("error"):
                 raise ValueError(result.data["error"])
 
-            logger.info("connector.reserve_stock.ok",
-                        item_id=item_id, cantidad=cantidad)
+            logger.info(
+                "connector.reserve_stock.ok", item_id=item_id, cantidad=cantidad
+            )
             return result.data
         except Exception as e:
-            logger.error("connector.reserve_stock.error",
-                         item_id=item_id, cantidad=cantidad, error=str(e))
+            logger.error(
+                "connector.reserve_stock.error",
+                item_id=item_id,
+                cantidad=cantidad,
+                error=str(e),
+            )
             raise
 
     def release_stock(self, item_id: str, cantidad: int) -> dict:
@@ -209,17 +220,25 @@ class SupabaseMockConnector(BaseDataConnector):
         """
         try:
             db = get_service_client()
-            result = db.rpc("release_inventory_item", {
-                "p_org_id":   self.org_id,
-                "p_item_id":  item_id,
-                "p_cantidad": cantidad,
-            }).execute()
-            logger.info("connector.release_stock.ok",
-                        item_id=item_id, cantidad=cantidad)
+            result = db.rpc(
+                "release_inventory_item",
+                {
+                    "p_org_id": self.org_id,
+                    "p_item_id": item_id,
+                    "p_cantidad": cantidad,
+                },
+            ).execute()
+            logger.info(
+                "connector.release_stock.ok", item_id=item_id, cantidad=cantidad
+            )
             return result.data
         except Exception as e:
-            logger.error("connector.release_stock.error",
-                         item_id=item_id, cantidad=cantidad, error=str(e))
+            logger.error(
+                "connector.release_stock.error",
+                item_id=item_id,
+                cantidad=cantidad,
+                error=str(e),
+            )
             raise
 
     # ------------------------------------------------------------------

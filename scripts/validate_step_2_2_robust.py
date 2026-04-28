@@ -1,6 +1,8 @@
 import asyncio
 import logging
+
 from dotenv import load_dotenv
+
 from src.db.session import get_service_client
 
 # Silenciar logs ruidosos

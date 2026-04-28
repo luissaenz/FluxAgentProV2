@@ -33,9 +33,11 @@ async def list_workflows(
 ):
     """Listar todos los workflows activos de una org."""
     with get_tenant_client(org_id) as db:
-        query = db.table("workflow_templates").select(
-            "id, name, flow_type, status, is_active, execution_count"
-        ).eq("org_id", org_id)
+        query = (
+            db.table("workflow_templates")
+            .select("id, name, flow_type, status, is_active, execution_count")
+            .eq("org_id", org_id)
+        )
 
         if status:
             query = query.eq("status", status)
@@ -44,9 +46,7 @@ async def list_workflows(
 
         result = query.execute()
 
-    return WorkflowListResponse(
-        workflows=[dict(r) for r in result.data or []]
-    )
+    return WorkflowListResponse(workflows=[dict(r) for r in result.data or []])
 
 
 @router.get("/{flow_type}")
@@ -78,9 +78,11 @@ async def archive_workflow(
 ):
     """Desactivar (soft-delete) un workflow."""
     with get_tenant_client(org_id) as db:
-        db.table("workflow_templates").update({
-            "is_active": False,
-            "status": "archived",
-        }).eq("flow_type", flow_type).eq("org_id", org_id).execute()
+        db.table("workflow_templates").update(
+            {
+                "is_active": False,
+                "status": "archived",
+            }
+        ).eq("flow_type", flow_type).eq("org_id", org_id).execute()
 
     return {"status": "archived", "flow_type": flow_type}

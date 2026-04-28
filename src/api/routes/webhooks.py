@@ -123,7 +123,7 @@ async def execute_flow_instance(
     result: Dict[str, Any] = {"task_id": None, "error": None, "error_type": None}
     try:
         state = await flow.execute(input_data, correlation_id)
-        result["task_id"] = state.task_id if hasattr(state, 'task_id') else str(state)
+        result["task_id"] = state.task_id if hasattr(state, "task_id") else str(state)
 
         if callback_url:
             await _send_callback(callback_url, state)
@@ -132,7 +132,12 @@ async def execute_flow_instance(
         logger.error("Background flow execution failed: %s", exc)
         result["error"] = str(exc)
         result["error_type"] = type(exc).__name__
-        if flow and hasattr(flow, 'state') and flow.state and hasattr(flow.state, 'task_id'):
+        if (
+            flow
+            and hasattr(flow, "state")
+            and flow.state
+            and hasattr(flow.state, "task_id")
+        ):
             result["task_id"] = flow.state.task_id
 
     return result
@@ -154,7 +159,7 @@ async def execute_flow(
         flow=flow,
         input_data=input_data,
         correlation_id=correlation_id,
-        callback_url=callback_url
+        callback_url=callback_url,
     )
 
 

@@ -16,12 +16,14 @@ def create_conversation(org_id: str, user_id: Optional[str] = None) -> str:
     conversation_id = str(uuid.uuid4())
 
     with get_tenant_client(org_id, user_id) as db:
-        db.table("conversations").insert({
-            "id": conversation_id,
-            "org_id": org_id,
-            "user_id": user_id,
-            "status": "in_progress",
-        }).execute()
+        db.table("conversations").insert(
+            {
+                "id": conversation_id,
+                "org_id": org_id,
+                "user_id": user_id,
+                "status": "in_progress",
+            }
+        ).execute()
 
     return conversation_id
 
@@ -34,16 +36,20 @@ def add_message(
 ) -> None:
     """Agregar un mensaje a una conversación."""
     with get_tenant_client(org_id) as db:
-        db.table("conversation_messages").insert({
-            "id": str(uuid.uuid4()),
-            "conversation_id": conversation_id,
-            "role": role,
-            "content": content,
-        }).execute()
+        db.table("conversation_messages").insert(
+            {
+                "id": str(uuid.uuid4()),
+                "conversation_id": conversation_id,
+                "role": role,
+                "content": content,
+            }
+        ).execute()
 
-        db.table("conversations").update({
-            "updated_at": "now()",
-        }).eq("id", conversation_id).execute()
+        db.table("conversations").update(
+            {
+                "updated_at": "now()",
+            }
+        ).eq("id", conversation_id).execute()
 
 
 def get_conversation(conversation_id: str, org_id: str) -> dict:
@@ -82,11 +88,13 @@ def link_workflow(
 ) -> None:
     """Vincular una conversación con el workflow que generó."""
     with get_tenant_client(org_id) as db:
-        db.table("conversations").update({
-            "workflow_template_id": workflow_template_id,
-            "status": "completed",
-            "updated_at": "now()",
-        }).eq("id", conversation_id).execute()
+        db.table("conversations").update(
+            {
+                "workflow_template_id": workflow_template_id,
+                "status": "completed",
+                "updated_at": "now()",
+            }
+        ).eq("id", conversation_id).execute()
 
 
 def update_status(
@@ -96,7 +104,9 @@ def update_status(
 ) -> None:
     """Actualizar el status de una conversación."""
     with get_tenant_client(org_id) as db:
-        db.table("conversations").update({
-            "status": status,
-            "updated_at": "now()",
-        }).eq("id", conversation_id).execute()
+        db.table("conversations").update(
+            {
+                "status": status,
+                "updated_at": "now()",
+            }
+        ).eq("id", conversation_id).execute()

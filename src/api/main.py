@@ -47,20 +47,17 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    """Cargar workflows generados previamente desde la DB al arrancar."""
-    from src.flows.dynamic_flow import load_dynamic_flows_from_db
-
     try:
-        count = load_dynamic_flows_from_db()
-        logger.info("Dynamic workflows loaded: %d", count)
-
-        # Warmup Registries (L1 Cache) - Analisis-FINAL §2.3
+        # Unified Warmup (Flows & Skills) - Analisis-FINAL §2.3
+        # Pre-loads dynamic assets into L1 cache for low-latency execution.
         from src.services.warmup import warmup_all_active_tenants
+
         warmup_all_active_tenants()
 
         # Run full validation of the registry (Paso 4.1)
 
         from src.flows.registry import flow_registry
+
         validation = flow_registry.run_full_validation()
         if validation["status"] == "error":
             logger.error("Flow Registry validation failed: %s", validation["errors"])
@@ -71,6 +68,7 @@ async def lifespan(_app: FastAPI):
         import asyncio
 
         from src.scheduler.health_check import run_health_checks
+
         asyncio.create_task(run_health_checks())
         logger.info("Health check scheduler started in background.")
 

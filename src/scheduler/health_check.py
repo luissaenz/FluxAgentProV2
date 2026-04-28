@@ -61,13 +61,16 @@ async def run_health_checks() -> None:
                 error_msg = str(e)[:200]
 
             try:
-                db.table("org_service_integrations").update({
-                    "last_health_check": datetime.now(timezone.utc).isoformat(),
-                    "last_health_status": status,
-                    "error_message": error_msg,
-                }).eq("id", integration_id).execute()
+                db.table("org_service_integrations").update(
+                    {
+                        "last_health_check": datetime.now(timezone.utc).isoformat(),
+                        "last_health_status": status,
+                        "error_message": error_msg,
+                    }
+                ).eq("id", integration_id).execute()
             except Exception as update_err:
                 logger.warning(
                     "Failed to update health status for integration %s: %s",
-                    integration_id, update_err,
+                    integration_id,
+                    update_err,
                 )

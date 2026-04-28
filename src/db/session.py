@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 # ── Retry utilities ────────────────────────────────────────
 
+
 def execute_with_retry(query_builder: Any, max_retries: int = 3) -> Any:
     """
     Execute a query builder with automatic retry on connection failures.
@@ -32,13 +33,19 @@ def execute_with_retry(query_builder: Any, max_retries: int = 3) -> Any:
             return query_builder.execute()
         except Exception as exc:
             error_str = str(exc)
-            if "Server disconnected" not in error_str and "RemoteProtocolError" not in str(exc.__class__.__name__):
+            if (
+                "Server disconnected" not in error_str
+                and "RemoteProtocolError" not in str(exc.__class__.__name__)
+            ):
                 raise
             if attempt >= max_retries - 1:
                 logger.error("Query failed after %d retries: %s", max_retries, exc)
                 raise
-            logger.debug("Retry %d/%d after connection error: %s", attempt + 1, max_retries, exc)
+            logger.debug(
+                "Retry %d/%d after connection error: %s", attempt + 1, max_retries, exc
+            )
             time.sleep(0.1 * (attempt + 1))
+
 
 # ── Module-level clients (lazy singletons) ──────────────────────
 _service_client: Optional[Client] = None
@@ -85,6 +92,7 @@ def get_anon_client() -> Client:
 
 # ── TenantClient ────────────────────────────────────────────────
 
+
 class TenantClient:
     """
     Wraps a Supabase client and sets session-level RLS config on enter.
@@ -109,39 +117,62 @@ class TenantClient:
 
         while retry_count < max_retries:
             try:
-                self._client.rpc("set_config", {
-                    "p_key": "app.org_id",
-                    "p_value": self._org_id,
-                    "p_is_local": True,
-                }).execute()
+                self._client.rpc(
+                    "set_config",
+                    {
+                        "p_key": "app.org_id",
+                        "p_value": self._org_id,
+                        "p_is_local": True,
+                    },
+                ).execute()
 
                 if self._user_id:
-                    self._client.rpc("set_config", {
-                        "p_key": "app.user_id",
-                        "p_value": self._user_id,
-                        "p_is_local": True,
-                    }).execute()
+                    self._client.rpc(
+                        "set_config",
+                        {
+                            "p_key": "app.user_id",
+                            "p_value": self._user_id,
+                            "p_is_local": True,
+                        },
+                    ).execute()
 
-                logger.debug("Tenant config set: org_id=%s, user_id=%s", self._org_id, self._user_id)
+                logger.debug(
+                    "Tenant config set: org_id=%s, user_id=%s",
+                    self._org_id,
+                    self._user_id,
+                )
                 return self
             except Exception as exc:
                 retry_count += 1
                 if retry_count >= max_retries:
-                    logger.error("Failed to set tenant config after %d retries: %s", max_retries, exc)
+                    logger.error(
+                        "Failed to set tenant config after %d retries: %s",
+                        max_retries,
+                        exc,
+                    )
                     raise
-                logger.debug("Retry %d/%d setting tenant config: %s", retry_count, max_retries, exc)
+                logger.debug(
+                    "Retry %d/%d setting tenant config: %s",
+                    retry_count,
+                    max_retries,
+                    exc,
+                )
                 # Small delay before retry
                 import time
+
                 time.sleep(0.1 * retry_count)
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb) -> None:
         """Best-effort cleanup of session config."""
         try:
-            self._client.rpc("set_config", {
-                "p_key": "app.org_id",
-                "p_value": "",
-                "p_is_local": True,
-            }).execute()
+            self._client.rpc(
+                "set_config",
+                {
+                    "p_key": "app.org_id",
+                    "p_value": "",
+                    "p_is_local": True,
+                },
+            ).execute()
         except Exception as exc:
             logger.warning("Failed to clear tenant config (non-blocking): %s", exc)
 
@@ -159,17 +190,26 @@ class TenantClient:
             try:
                 return query_builder.execute()
             except Exception as exc:
-                if "Server disconnected" not in str(exc) and "RemoteProtocolError" not in str(exc.__class__.__name__):
+                if "Server disconnected" not in str(
+                    exc
+                ) and "RemoteProtocolError" not in str(exc.__class__.__name__):
                     raise
                 if attempt >= max_retries - 1:
                     logger.error("Query failed after %d retries: %s", max_retries, exc)
                     raise
-                logger.debug("Retry %d/%d after connection error: %s", attempt + 1, max_retries, exc)
+                logger.debug(
+                    "Retry %d/%d after connection error: %s",
+                    attempt + 1,
+                    max_retries,
+                    exc,
+                )
                 import time
+
                 time.sleep(0.1 * (attempt + 1))
 
 
 # ── convenience context manager ─────────────────────────────────
+
 
 @contextmanager
 def get_tenant_client(

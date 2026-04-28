@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 class MCPError(Exception):
     """Base category for MCP/JSON-RPC errors."""
+
     code: int = -32603  # Internal error by default
     message: str = "Internal error"
     data: Optional[Any] = None
@@ -19,36 +20,42 @@ class MCPError(Exception):
 
 class ParseError(MCPError):
     """Invalid JSON was received by the server."""
+
     code = -32700
     message = "Parse error"
 
 
 class InvalidRequest(MCPError):
     """The JSON sent is not a valid Request object."""
+
     code = -32600
     message = "Invalid Request"
 
 
 class MethodNotFound(MCPError):
     """The method does not exist / is not available."""
+
     code = -32601
     message = "Method not found"
 
 
 class InvalidParams(MCPError):
     """Invalid method parameter(s)."""
+
     code = -32602
     message = "Invalid params"
 
 
 class InternalError(MCPError):
     """Internal JSON-RPC error."""
+
     code = -32603
     message = "Internal error"
 
 
 class AuthError(MCPError):
     """Authentication or authorization failed."""
+
     # Use -32000 for custom implementation errors
     code = -32001
     message = "Authentication or authorization failed"
@@ -56,6 +63,7 @@ class AuthError(MCPError):
 
 class NotFound(MCPError):
     """Resource (flow, task, etc) not found."""
+
     code = -32004
     message = "Resource not found"
 

@@ -51,8 +51,10 @@ class OrgBaseTool(BaseTool):
 
 # ── Ejemplo: SendMessageTool ──────────────────────────────────
 
+
 class SendMessageInput(BaseModel):
     """Schema de input para SendMessageTool."""
+
     to: str
     message: str
 
@@ -83,8 +85,10 @@ class SendMessageTool(OrgBaseTool):
 
 # ── Ejemplo: SendEmailTool ─────────────────────────────────────
 
+
 class SendEmailInput(BaseModel):
     """Schema de input para SendEmailTool."""
+
     to: str
     subject: str
     body: str

@@ -22,7 +22,7 @@ from typing import List
 from uuid import uuid4
 
 # Agregar src/ al path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.db.session import get_service_client, get_tenant_client
 from src.events.store import EventStore
@@ -53,17 +53,19 @@ async def test_event_emission_to_transcript_latency():
     now = datetime.now(timezone.utc).isoformat()
 
     with get_tenant_client(TEST_ORG_ID) as db:
-        db.table("tasks").insert({
-            "id": task_id,
-            "org_id": TEST_ORG_ID,
-            "flow_type": "test_latency_flow",
-            "flow_id": task_id,
-            "status": "running",
-            "payload": {"test": "latency measurement"},
-            "correlation_id": correlation_id,
-            "created_at": now,
-            "updated_at": now,
-        }).execute()
+        db.table("tasks").insert(
+            {
+                "id": task_id,
+                "org_id": TEST_ORG_ID,
+                "flow_type": "test_latency_flow",
+                "flow_id": task_id,
+                "status": "running",
+                "payload": {"test": "latency measurement"},
+                "correlation_id": correlation_id,
+                "created_at": now,
+                "updated_at": now,
+            }
+        ).execute()
 
     print("   ✅ Task record creado")
     print()
@@ -76,8 +78,14 @@ async def test_event_emission_to_transcript_latency():
     test_events = [
         {"event_type": "flow.started", "payload": {"task_id": task_id}},
         {"event_type": "flow_step", "payload": {"step": 1, "name": "initialization"}},
-        {"event_type": "agent_thought", "payload": {"agent": "test_agent", "thought": "Processing..."}},
-        {"event_type": "tool_output", "payload": {"tool": "test_tool", "output": "Result"}},
+        {
+            "event_type": "agent_thought",
+            "payload": {"agent": "test_agent", "thought": "Processing..."},
+        },
+        {
+            "event_type": "tool_output",
+            "payload": {"tool": "test_tool", "output": "Result"},
+        },
         {"event_type": "flow.completed", "payload": {"status": "completed"}},
     ]
 
@@ -102,18 +110,27 @@ async def test_event_emission_to_transcript_latency():
 
         # Verificar que el evento está en la DB
         with get_tenant_client(TEST_ORG_ID) as db:
-            db_result = db.table("domain_events").select("*").eq("aggregate_id", task_id).order("sequence", desc=True).limit(1).execute()
+            db_result = (
+                db.table("domain_events")
+                .select("*")
+                .eq("aggregate_id", task_id)
+                .order("sequence", desc=True)
+                .limit(1)
+                .execute()
+            )
 
         if db_result.data and len(db_result.data) > 0:
             db_time = time.monotonic()
             db_latency = db_time - emit_time
 
             latencies.append(db_latency)
-            print(f"   📨 Evento {i+1} ({event_data['event_type']}):")
-            print(f"      - Emit → Flush: {emit_latency*1000:.1f}ms")
-            print(f"      - Emit → DB verified: {db_latency*1000:.1f}ms")
+            print(f"   📨 Evento {i + 1} ({event_data['event_type']}):")
+            print(f"      - Emit → Flush: {emit_latency * 1000:.1f}ms")
+            print(f"      - Emit → DB verified: {db_latency * 1000:.1f}ms")
         else:
-            print(f"   ❌ Evento {i+1} no encontrado en DB: {event_data['event_type']}")
+            print(
+                f"   ❌ Evento {i + 1} no encontrado en DB: {event_data['event_type']}"
+            )
 
         # Pequeña pausa entre eventos
         await asyncio.sleep(0.05)
@@ -131,18 +148,22 @@ async def test_event_emission_to_transcript_latency():
     max_latency = max(latencies)
     min_latency = min(latencies)
 
-    print(f"   📈 Latencia promedio: {avg_latency*1000:.1f}ms")
-    print(f"   📈 Latencia máxima:   {max_latency*1000:.1f}ms")
-    print(f"   📈 Latencia mínima:   {min_latency*1000:.1f}ms")
+    print(f"   📈 Latencia promedio: {avg_latency * 1000:.1f}ms")
+    print(f"   📈 Latencia máxima:   {max_latency * 1000:.1f}ms")
+    print(f"   📈 Latencia mínima:   {min_latency * 1000:.1f}ms")
     print(f"   📊 Eventos medidos:   {len(latencies)}")
     print()
 
     # Verificar umbral
     passed = max_latency < LATENCY_THRESHOLD_SECONDS
     if passed:
-        print(f"   ✅ Latencia máxima ({max_latency*1000:.1f}ms) < umbral ({LATENCY_THRESHOLD_SECONDS*1000:.0f}ms)")
+        print(
+            f"   ✅ Latencia máxima ({max_latency * 1000:.1f}ms) < umbral ({LATENCY_THRESHOLD_SECONDS * 1000:.0f}ms)"
+        )
     else:
-        print(f"   ❌ Latencia máxima ({max_latency*1000:.1f}ms) >= umbral ({LATENCY_THRESHOLD_SECONDS*1000:.0f}ms)")
+        print(
+            f"   ❌ Latencia máxima ({max_latency * 1000:.1f}ms) >= umbral ({LATENCY_THRESHOLD_SECONDS * 1000:.0f}ms)"
+        )
 
     print()
     return passed
@@ -163,16 +184,18 @@ async def test_realtime_subscription_latency():
     # Crear task
     now = datetime.now(timezone.utc).isoformat()
     with get_tenant_client(TEST_ORG_ID) as db:
-        db.table("tasks").insert({
-            "id": task_id,
-            "org_id": TEST_ORG_ID,
-            "flow_type": "test_realtime_flow",
-            "status": "running",
-            "payload": {},
-            "correlation_id": correlation_id,
-            "created_at": now,
-            "updated_at": now,
-        }).execute()
+        db.table("tasks").insert(
+            {
+                "id": task_id,
+                "org_id": TEST_ORG_ID,
+                "flow_type": "test_realtime_flow",
+                "status": "running",
+                "payload": {},
+                "correlation_id": correlation_id,
+                "created_at": now,
+                "updated_at": now,
+            }
+        ).execute()
 
     # Emitir un evento
     event_store = EventStore(TEST_ORG_ID, correlation_id=correlation_id)
@@ -186,7 +209,13 @@ async def test_realtime_subscription_latency():
 
     # Verificar que el evento está en DB
     with get_tenant_client(TEST_ORG_ID) as db:
-        result = db.table("domain_events").select("*").eq("aggregate_id", task_id).single().execute()
+        result = (
+            db.table("domain_events")
+            .select("*")
+            .eq("aggregate_id", task_id)
+            .single()
+            .execute()
+        )
 
     if result.data:
         print("   ✅ Evento insertado y verificado en DB")
@@ -212,15 +241,24 @@ async def test_realtime_subscription_latency():
                 print("   ✅ Publicación 'supabase_realtime' encontrada")
 
                 # Verificar que domain_events está incluida
-                pub_tables = svc.table("pg_publication_tables").select("*").eq("pubname", "supabase_realtime").execute()
+                pub_tables = (
+                    svc.table("pg_publication_tables")
+                    .select("*")
+                    .eq("pubname", "supabase_realtime")
+                    .execute()
+                )
                 if pub_tables.data:
                     tables = [t["tablename"] for t in pub_tables.data]
                     if "domain_events" in tables:
                         print("   ✅ domain_events está en la publicación realtime")
                     else:
-                        print(f"   ⚠️  domain_events NO está en realtime. Tablas: {tables}")
+                        print(
+                            f"   ⚠️  domain_events NO está en realtime. Tablas: {tables}"
+                        )
             else:
-                print("   ⚠️  No se encontró 'supabase_realtime' (puede necesitar configuración manual)")
+                print(
+                    "   ⚠️  No se encontró 'supabase_realtime' (puede necesitar configuración manual)"
+                )
     except Exception as e:
         print(f"   ⚠️  No se pudo verificar configuración Realtime: {e}")
 
@@ -238,13 +276,20 @@ async def test_transcript_endpoint_response_time():
 
     print("   📝 Verificando optimización del endpoint transcripts...")
     print("   - Endpoint: GET /transcripts/{task_id}")
-    print("   - Query: SELECT * FROM domain_events WHERE aggregate_id = ? ORDER BY sequence")
+    print(
+        "   - Query: SELECT * FROM domain_events WHERE aggregate_id = ? ORDER BY sequence"
+    )
     print("   - Índice recomendado: idx_domain_events_aggregate_id_sequence")
 
     # Verificar que existe índice
     svc = get_service_client()
     try:
-        indexes = svc.table("pg_indexes").select("*").eq("tablename", "domain_events").execute()
+        indexes = (
+            svc.table("pg_indexes")
+            .select("*")
+            .eq("tablename", "domain_events")
+            .execute()
+        )
         if indexes.data:
             index_names = [idx["indexname"] for idx in indexes.data]
             print(f"   📋 Índices en domain_events: {index_names}")
@@ -253,7 +298,9 @@ async def test_transcript_endpoint_response_time():
             if has_aggregate_idx:
                 print("   ✅ Índice por aggregate_id encontrado")
             else:
-                print("   ⚠️  No se encontró índice por aggregate_id (puede afectar performance)")
+                print(
+                    "   ⚠️  No se encontró índice por aggregate_id (puede afectar performance)"
+                )
     except Exception as e:
         print(f"   ⚠️  No se pudieron consultar índices: {e}")
 
@@ -270,7 +317,10 @@ async def run_all_tests():
     print()
 
     tests = [
-        ("Event Emission → Transcript Latency", test_event_emission_to_transcript_latency),
+        (
+            "Event Emission → Transcript Latency",
+            test_event_emission_to_transcript_latency,
+        ),
         ("Realtime Subscription Latency", test_realtime_subscription_latency),
         ("Transcript Endpoint Response Time", test_transcript_endpoint_response_time),
     ]
@@ -299,7 +349,9 @@ async def run_all_tests():
     if failed == 0:
         print()
         print("✅ Tests de latencia completados:")
-        print(f"   - Latencia de eventos medida (umbral: {LATENCY_THRESHOLD_SECONDS*1000:.0f}ms)")
+        print(
+            f"   - Latencia de eventos medida (umbral: {LATENCY_THRESHOLD_SECONDS * 1000:.0f}ms)"
+        )
         print("   - Configuración Realtime verificada")
         print("   - Endpoint transcripts optimizado")
 

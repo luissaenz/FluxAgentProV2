@@ -12,17 +12,16 @@ import logging
 import zipfile
 from typing import Optional
 
+from src.config import get_settings
+
 from .bundle_schemas import BundleContent, BundleManifest
 from .integrity import verify_integrity
 from .security_guard import SecurityError, SecurityGuard
 
 logger = logging.getLogger(__name__)
 
-# Limits defined in plan.md §71-74
-MAX_ZIP_SIZE = 50 * 1024 * 1024  # 50MB
-MAX_AGENTS = 50
-MAX_FLOWS = 20
-MAX_SKILLS = 30
+# Constants for fallback or internal use if needed,
+# but we prioritize settings.
 
 
 class BundleError(Exception):
@@ -51,10 +50,12 @@ class BundleManager:
         6. Limit validation
         """
         # 1. Size check
+        settings = get_settings()
+        max_size = settings.max_bundle_size_mb * 1024 * 1024
         size = len(zip_bytes)
-        if size > MAX_ZIP_SIZE:
+        if size > max_size:
             raise BundleError(
-                f"Bundle size ({size} bytes) exceeds limit of {MAX_ZIP_SIZE}"
+                f"Bundle size ({size} bytes) exceeds limit of {max_size} bytes"
             )
 
         try:
@@ -69,17 +70,14 @@ class BundleManager:
                 # Calculate bundle hash for audit (Analisis-FINAL §2.1)
                 bundle_hash = hashlib.sha256(zip_bytes).hexdigest()
                 content = BundleContent(
-                    manifest=manifest, 
-                    size_bytes=size,
-                    bundle_hash=bundle_hash
+                    manifest=manifest, size_bytes=size, bundle_hash=bundle_hash
                 )
 
                 # 3. Verify Integrity and Parse Files
                 for rel_path, expected_hash in manifest.hashes.items():
                     if rel_path not in z.namelist():
                         raise BundleError(
-                            f"File '{rel_path}' declared in manifest "
-                            f"not found in ZIP"
+                            f"File '{rel_path}' declared in manifest not found in ZIP"
                         )
 
                     file_data = z.read(rel_path)
@@ -131,14 +129,15 @@ class BundleManager:
             logger.info("Ignoring file outside structure: %s", path)
 
     def _validate_limits(self, content: BundleContent):
-        """Ensure bundle doesn't exceed architectural limits."""
-        if len(content.agents) > MAX_AGENTS:
+        """Ensure bundle doesn't exceed architectural limits from config."""
+        settings = get_settings()
+        if len(content.agents) > settings.max_agents_per_bundle:
             raise BundleError(
-                f"Exceeded max agents: {len(content.agents)} > {MAX_AGENTS}"
+                f"Exceeded max agents: {len(content.agents)} > {settings.max_agents_per_bundle}"
             )
-        if len(content.flows) > MAX_FLOWS:
-            raise BundleError(f"Exceeded max flows: {len(content.flows)} > {MAX_FLOWS}")
-        if len(content.skills) > MAX_SKILLS:
-            raise BundleError(
-                f"Exceeded max skills: {len(content.skills)} > {MAX_SKILLS}"
-            )
+        # Note: flows/skills limits can be added to config if needed,
+        # using current defaults for now to keep it lean.
+        if len(content.flows) > 20:
+            raise BundleError(f"Exceeded max flows: {len(content.flows)} > 20")
+        if len(content.skills) > 30:
+            raise BundleError(f"Exceeded max skills: {len(content.skills)} > 30")

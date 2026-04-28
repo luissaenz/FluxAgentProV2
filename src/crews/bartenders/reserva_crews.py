@@ -27,39 +27,40 @@ from src.tools.demo.inventario_tool import (
 # MODELOS DE OUTPUT
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class AlertaClimaResult(BaseModel):
-    evento_id:         str
-    alerta_roja:       bool
-    desvio_pct:        float
-    descripcion:       str
+    evento_id: str
+    alerta_roja: bool
+    desvio_pct: float
+    descripcion: str
     # Si alerta_roja=True, estos campos informan al Agente 7
-    temp_historica:    float
+    temp_historica: float
     temp_pronosticada: float
 
 
 class OrdenCompraCreada(BaseModel):
-    evento_id:  str
-    orden_id:   str
-    total_ars:  int
-    motivo:     str
-    items:      list[dict]
-    mensaje:    str
+    evento_id: str
+    orden_id: str
+    total_ars: int
+    motivo: str
+    items: list[dict]
+    mensaje: str
 
 
 class StockReservadoResult(BaseModel):
-    evento_id:         str
-    reservas_ok:       int
+    evento_id: str
+    reservas_ok: int
     reservas_fallidas: int
-    alerta_faltante:   bool
-    items_a_comprar:   list[dict]
+    alerta_faltante: bool
+    items_a_comprar: list[dict]
 
 
 class StaffingAsignado(BaseModel):
-    evento_id:           str
+    evento_id: str
     bartenders_asignados: list[dict]
-    necesita_head:       bool
-    total_bartenders:    int
-    hoja_de_ruta:        str
+    necesita_head: bool
+    total_bartenders: int
+    hoja_de_ruta: str
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -160,7 +161,7 @@ def create_inventario_crew(
     Agente 6: calcula el stock necesario y lo reserva para el evento.
     Si hay faltante, alerta_faltante=True para que el flow llame al Agente 7.
     """
-    calc_tool    = CalcularStockNecesarioTool(connector=connector)
+    calc_tool = CalcularStockNecesarioTool(connector=connector)
     reserva_tool = ReservarStockTool(connector=connector)
 
     agent = Agent(
@@ -256,9 +257,7 @@ def create_compras_crew(
     )
 
     # Calcular items y total directamente (determinista)
-    items_orden, total = _calcular_items_orden(
-        connector, motivo, items_a_comprar
-    )
+    items_orden, total = _calcular_items_orden(connector, motivo, items_a_comprar)
 
     task = Task(
         description=f"""
@@ -310,12 +309,12 @@ def _calcular_items_orden(
     }
 
     # Precios para consumibles no en precios_bebidas
-    PRECIO_HIELO  = 3_000   # ARS por bolsa 2kg
-    PRECIO_AGUA   = 800     # ARS por botella 1.5L
+    PRECIO_HIELO = 3_000  # ARS por bolsa 2kg
+    PRECIO_AGUA = 800  # ARS por botella 1.5L
 
     FACTORES_CLIMA = {
         "HIELO-001": 1.50,
-        "AGUA-001":  1.30,
+        "AGUA-001": 1.30,
     }
     FACTOR_CLIMA_DEFAULT = 1.20  # para bebidas
 
@@ -323,12 +322,12 @@ def _calcular_items_orden(
     total = 0
 
     for item in items_base:
-        item_id  = item["item_id"]
+        item_id = item["item_id"]
         cantidad = item["cantidad"]
 
         # Ajustar cantidad si es alerta climática
         if motivo == "alerta_climatica":
-            factor   = FACTORES_CLIMA.get(item_id, FACTOR_CLIMA_DEFAULT)
+            factor = FACTORES_CLIMA.get(item_id, FACTOR_CLIMA_DEFAULT)
             cantidad = math.ceil(cantidad * factor)
 
         # Precio unitario
@@ -340,15 +339,17 @@ def _calcular_items_orden(
             precio_u = precios.get(item_id, 0)
 
         subtotal = cantidad * precio_u
-        total   += subtotal
+        total += subtotal
 
-        items_orden.append({
-            "item_id":         item_id,
-            "nombre":          item.get("nombre", item_id),
-            "cantidad":        cantidad,
-            "precio_unitario": precio_u,
-            "subtotal":        subtotal,
-        })
+        items_orden.append(
+            {
+                "item_id": item_id,
+                "nombre": item.get("nombre", item_id),
+                "cantidad": cantidad,
+                "precio_unitario": precio_u,
+                "subtotal": subtotal,
+            }
+        )
 
     return items_orden, total
 
@@ -360,18 +361,21 @@ def _guardar_orden(
     items: list[dict],
     total: int,
 ) -> str:
-    año      = datetime.now().year
+    año = datetime.now().year
     orden_id = f"OC-{año}-{str(uuid.uuid4())[:4].upper()}"
 
-    connector.write("ordenes_compra", {
-        "orden_id":         orden_id,
-        "evento_id":        evento_id,
-        "motivo":           motivo,
-        "proveedor":        "Distribuidora NOA",
-        "items":            items,
-        "total_ars":        total,
-        "status":           "pendiente",
-    })
+    connector.write(
+        "ordenes_compra",
+        {
+            "orden_id": orden_id,
+            "evento_id": evento_id,
+            "motivo": motivo,
+            "proveedor": "Distribuidora NOA",
+            "items": items,
+            "total_ars": total,
+            "status": "pendiente",
+        },
+    )
 
     return orden_id
 
@@ -423,20 +427,20 @@ def create_staffing_crew(
     )
 
     # Resolver staffing directamente (determinista)
-    asignados, necesita_head = _seleccionar_bartenders(
-        connector, pax, tipo_menu
-    )
+    asignados, necesita_head = _seleccionar_bartenders(connector, pax, tipo_menu)
 
     # Actualizar disponibilidad
     for b in asignados:
-        connector.update("bartenders_disponibles", b["bartender_id"], {
-            "disponible":            False,
-            "fecha_proxima_reserva": fecha_evento,
-        })
+        connector.update(
+            "bartenders_disponibles",
+            b["bartender_id"],
+            {
+                "disponible": False,
+                "fecha_proxima_reserva": fecha_evento,
+            },
+        )
 
-    _generar_hoja_de_ruta(
-        asignados, fecha_evento, duracion_horas, provincia, localidad
-    )
+    _generar_hoja_de_ruta(asignados, fecha_evento, duracion_horas, provincia, localidad)
 
     task = Task(
         description=f"""
@@ -447,7 +451,7 @@ def create_staffing_crew(
             provincia:  {provincia}
 
         Equipo asignado:
-        {[b['nombre'] for b in asignados]}
+        {[b["nombre"] for b in asignados]}
         Necesita head: {necesita_head}
 
         La hoja de ruta ya fue generada.
@@ -478,13 +482,10 @@ def _seleccionar_bartenders(
     Selecciona los mejores bartenders disponibles.
     Prioriza: especialidad premium para menú premium, mayor calificación.
     """
-    n_necesarios  = math.ceil(pax / 40)
+    n_necesarios = math.ceil(pax / 40)
     necesita_head = pax > 100
 
-    disponibles = connector.read(
-        "bartenders_disponibles",
-        {"disponible": True}
-    )
+    disponibles = connector.read("bartenders_disponibles", {"disponible": True})
 
     if not disponibles:
         raise ValueError("No hay bartenders disponibles para este evento")
@@ -503,12 +504,18 @@ def _seleccionar_bartenders(
     asignados: list[dict] = []
 
     if necesita_head:
-        heads = [b for b in ordenados if str(b.get("es_head_bartender", "")).upper() == "TRUE"]
+        heads = [
+            b
+            for b in ordenados
+            if str(b.get("es_head_bartender", "")).upper() == "TRUE"
+        ]
         if heads:
             head = heads[0]
             head["rol"] = "head"
             asignados.append(head)
-            ordenados = [b for b in ordenados if b["bartender_id"] != head["bartender_id"]]
+            ordenados = [
+                b for b in ordenados if b["bartender_id"] != head["bartender_id"]
+            ]
             n_necesarios -= 1
 
     # Resto del equipo
@@ -518,7 +525,7 @@ def _seleccionar_bartenders(
 
     if len(asignados) < math.ceil(pax / 40):
         raise ValueError(
-            f"Bartenders insuficientes: necesarios={math.ceil(pax/40)}, "
+            f"Bartenders insuficientes: necesarios={math.ceil(pax / 40)}, "
             f"disponibles={len(disponibles)}"
         )
 
@@ -534,8 +541,7 @@ def _generar_hoja_de_ruta(
 ) -> str:
     """Genera el texto de instrucciones para el equipo."""
     nombres = ", ".join(
-        f"{b['nombre']} ({b.get('rol', 'bartender')})"
-        for b in asignados
+        f"{b['nombre']} ({b.get('rol', 'bartender')})" for b in asignados
     )
     return (
         f"HOJA DE RUTA — {fecha_evento}\n"

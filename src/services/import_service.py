@@ -88,7 +88,6 @@ class ImportService:
             )
             raise
 
-
     def validate_only(self, zip_bytes: bytes) -> BundleValidationResult:
         """Validate a bundle without persisting anything.
 
@@ -97,7 +96,7 @@ class ImportService:
         """
         try:
             content = self.bundle_manager.process_zip(zip_bytes)
-            
+
             return BundleValidationResult(
                 status="success",
                 bundle_info=content.manifest.bundle_info,
@@ -108,11 +107,10 @@ class ImportService:
                 security_report={"ast_scan": "passed", "restricted_python": "passed"},
             )
         except Exception as e:
-            logger.warning("Bundle validation failed for org %s: %s", self.org_id, str(e))
-            return BundleValidationResult(
-                status="failed",
-                error=str(e)
+            logger.warning(
+                "Bundle validation failed for org %s: %s", self.org_id, str(e)
             )
+            return BundleValidationResult(status="failed", error=str(e))
 
     def _register_skills(self, content: any) -> None:
         """Register imported skills in the in-memory ToolRegistry."""

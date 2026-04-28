@@ -38,6 +38,7 @@ def _run_async_in_background(coro):
 
 class ApprovalRequest(BaseModel):
     """Payload for processing an approval decision."""
+
     action: str  # "approve" or "reject"
     notes: Optional[str] = None
 
@@ -51,6 +52,7 @@ class ApprovalRequest(BaseModel):
 
 class ApprovalDecision(BaseModel):
     """Legacy payload (backward compatibility with Phase 2-4)."""
+
     org_id: str
     decision: str  # "approved" | "rejected"
     decided_by: str
@@ -72,11 +74,7 @@ async def list_approvals(
     """List pending_approvals for the current org."""
     db = get_service_client()
 
-    query = (
-        db.table("pending_approvals")
-        .select("*")
-        .eq("org_id", org_id)
-    )
+    query = db.table("pending_approvals").select("*").eq("org_id", org_id)
 
     if status:
         query = query.eq("status", status)
@@ -106,7 +104,9 @@ async def process_approval(
     if "action" in body:
         action = body["action"]
         if action not in ("approve", "reject"):
-            raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
+            raise HTTPException(
+                status_code=422, detail="action must be 'approve' or 'reject'"
+            )
         decision = "approved" if action == "approve" else "rejected"
         decided_by = user_id
         body.get("notes", "")
@@ -114,12 +114,16 @@ async def process_approval(
     elif "decision" in body:
         decision = body["decision"]
         if decision not in ("approved", "rejected"):
-            raise HTTPException(status_code=422, detail="decision must be 'approved' or 'rejected'")
+            raise HTTPException(
+                status_code=422, detail="decision must be 'approved' or 'rejected'"
+            )
         decided_by = body.get("decided_by", "unknown")
         body.get("notes", "")
         effective_org_id = body.get("org_id", org_id)
     else:
-        raise HTTPException(status_code=422, detail="Must provide 'action' or 'decision'")
+        raise HTTPException(
+            status_code=422, detail="Must provide 'action' or 'decision'"
+        )
 
     with get_tenant_client(org_id) as db:
         # 1. Verify approval exists and is pending
@@ -141,10 +145,14 @@ async def process_approval(
 
         # 2. Mark approval as resolved
         db.execute_with_retry(
-            db.table("pending_approvals").update({
-                "status": decision,
-                "decided_by": decided_by,
-            }).eq("task_id", task_id)
+            db.table("pending_approvals")
+            .update(
+                {
+                    "status": decision,
+                    "decided_by": decided_by,
+                }
+            )
+            .eq("task_id", task_id)
         )
 
     # 4. Resume flow in background

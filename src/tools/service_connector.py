@@ -29,6 +29,7 @@ logger = structlog.get_logger(__name__)
 
 class ServiceConnectorInput(BaseModel):
     """Input genérico para ServiceConnectorTool."""
+
     tool_id: str = Field(description="ID de la tool (ej: stripe.create_customer)")
     input_data: dict = Field(default_factory=dict, description="Parámetros de la tool")
 
@@ -51,6 +52,7 @@ class ServiceConnectorTool(OrgBaseTool):
     4. Ejecutar HTTP con httpx
     5. Retornar resultado sanitizado
     """
+
     name: str = "service_connector"
     description: str = "Ejecuta una integración TIPO C del Service Catalog"
     args_schema: Type[BaseModel] = ServiceConnectorInput
@@ -84,7 +86,9 @@ class ServiceConnectorTool(OrgBaseTool):
             .execute()
         )
         if not integration.data:
-            return f"Error: Servicio '{service_id}' no está activo para esta organización"
+            return (
+                f"Error: Servicio '{service_id}' no está activo para esta organización"
+            )
 
         # 3. Resolver secreto (REGLA R3)
         secret_names = integration.data.get("secret_names", [])
@@ -114,7 +118,9 @@ class ServiceConnectorTool(OrgBaseTool):
             if auth_type == "oauth2":
                 headers["Authorization"] = f"Bearer {secret_value}"
             elif auth_type == "basic_auth":
-                headers["Authorization"] = f"Basic {base64.b64encode(secret_value.encode()).decode()}"
+                headers["Authorization"] = (
+                    f"Basic {base64.b64encode(secret_value.encode()).decode()}"
+                )
             else:  # api_key (default)
                 headers["Authorization"] = f"Bearer {secret_value}"
 
@@ -143,20 +149,22 @@ class ServiceConnectorTool(OrgBaseTool):
 
         # 6. Auditar en domain_events (best-effort)
         try:
-            db.table("domain_events").insert({
-                "org_id": self.org_id,
-                "aggregate_type": "service_integration",
-                "aggregate_id": tool_id,
-                "event_type": "tool_executed",
-                "payload": {
-                    "tool_id": tool_id,
-                    "service_id": service_id,
-                    "http_status": response.status_code if response else None,
-                    "success": response.is_success if response else False,
-                },
-                "actor": "service_connector",
-                "sequence": 0,
-            }).execute()
+            db.table("domain_events").insert(
+                {
+                    "org_id": self.org_id,
+                    "aggregate_type": "service_integration",
+                    "aggregate_id": tool_id,
+                    "event_type": "tool_executed",
+                    "payload": {
+                        "tool_id": tool_id,
+                        "service_id": service_id,
+                        "http_status": response.status_code if response else None,
+                        "success": response.is_success if response else False,
+                    },
+                    "actor": "service_connector",
+                    "sequence": 0,
+                }
+            ).execute()
         except Exception:
             logger.warning("audit_failed", tool_id=tool_id)
 

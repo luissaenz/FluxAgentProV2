@@ -34,6 +34,7 @@ scheduler = AsyncIOScheduler(timezone="America/Argentina/Tucuman")
 
 # ─── Job 1: Alerta climática automática ───────────────────────────────────
 
+
 @scheduler.scheduled_job(
     CronTrigger(hour=8, minute=0),
     id="check_climate_alerts",
@@ -65,37 +66,46 @@ async def check_upcoming_events_climate():
         ) or []
 
         if not eventos:
-            logger.info("scheduler.climate_check.no_eventos",
-                        target_date=str(target_date))
+            logger.info(
+                "scheduler.climate_check.no_eventos", target_date=str(target_date)
+            )
             return
 
-        logger.info("scheduler.climate_check.eventos_encontrados",
-                    count=len(eventos), target_date=str(target_date))
+        logger.info(
+            "scheduler.climate_check.eventos_encontrados",
+            count=len(eventos),
+            target_date=str(target_date),
+        )
 
         for evento in eventos:
             try:
                 flow = flow_registry.create(
                     "bartenders_alerta",
-                    org_id  = evento["org_id"],
-                    user_id = "scheduler",
+                    org_id=evento["org_id"],
+                    user_id="scheduler",
                 )
                 await flow.execute({"evento_id": evento["evento_id"]})
 
-                logger.info("scheduler.climate_check.flow_iniciado",
-                            evento_id = evento["evento_id"],
-                            org_id    = evento["org_id"])
+                logger.info(
+                    "scheduler.climate_check.flow_iniciado",
+                    evento_id=evento["evento_id"],
+                    org_id=evento["org_id"],
+                )
 
             except Exception as e:
                 # Un evento fallido no detiene los demás
-                logger.error("scheduler.climate_check.flow_error",
-                             evento_id = evento["evento_id"],
-                             error     = str(e))
+                logger.error(
+                    "scheduler.climate_check.flow_error",
+                    evento_id=evento["evento_id"],
+                    error=str(e),
+                )
 
     except Exception as e:
         logger.error("scheduler.climate_check.error", error=str(e))
 
 
 # ─── Job 2: Actualización de precios (Agente 11) ──────────────────────────
+
 
 @scheduler.scheduled_job(
     CronTrigger(day_of_week="mon", hour=7, minute=0),
@@ -123,10 +133,7 @@ async def update_prices_all_orgs():
         # Buscar orgs con bartenders configurados
         # (tienen al menos un bartender en bartenders_disponibles)
         orgs_result = (
-            db.table("bartenders_disponibles")
-            .select("org_id")
-            .execute()
-            .data
+            db.table("bartenders_disponibles").select("org_id").execute().data
         ) or []
 
         # Deduplicar org_ids
@@ -136,36 +143,40 @@ async def update_prices_all_orgs():
             logger.info("scheduler.price_update.no_orgs")
             return
 
-        logger.info("scheduler.price_update.orgs_encontradas",
-                    count=len(org_ids))
+        logger.info("scheduler.price_update.orgs_encontradas", count=len(org_ids))
 
         actualizados_total = 0
-        ofertas_total      = 0
+        ofertas_total = 0
 
         for org_id in org_ids:
             try:
                 connector = SupabaseMockConnector(
-                    org_id  = org_id,
-                    user_id = "scheduler",
+                    org_id=org_id,
+                    user_id="scheduler",
                 )
                 resultado = _actualizar_precios(connector)
 
                 actualizados_total += resultado["actualizados"]
-                ofertas_total      += resultado["ofertas"]
+                ofertas_total += resultado["ofertas"]
 
-                logger.info("scheduler.price_update.org_ok",
-                            org_id     = org_id,
-                            actualizados = resultado["actualizados"],
-                            ofertas    = resultado["ofertas"])
+                logger.info(
+                    "scheduler.price_update.org_ok",
+                    org_id=org_id,
+                    actualizados=resultado["actualizados"],
+                    ofertas=resultado["ofertas"],
+                )
 
             except Exception as e:
-                logger.error("scheduler.price_update.org_error",
-                             org_id = org_id, error = str(e))
+                logger.error(
+                    "scheduler.price_update.org_error", org_id=org_id, error=str(e)
+                )
 
-        logger.info("scheduler.price_update.completado",
-                    orgs          = len(org_ids),
-                    actualizados  = actualizados_total,
-                    ofertas       = ofertas_total)
+        logger.info(
+            "scheduler.price_update.completado",
+            orgs=len(org_ids),
+            actualizados=actualizados_total,
+            ofertas=ofertas_total,
+        )
 
     except Exception as e:
         logger.error("scheduler.price_update.error", error=str(e))

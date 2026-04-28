@@ -33,6 +33,7 @@ logger_struct = structlog.get_logger(__name__)
 
 # ── error-handling decorator ───────────────────────────────────
 
+
 def with_error_handling(func):
     """Decorator: on exception → mark state as FAILED, persist, re-raise."""
 
@@ -55,6 +56,7 @@ def with_error_handling(func):
 
 
 # ── BaseFlow ───────────────────────────────────────────────────
+
 
 class BaseFlow(ABC):
     """
@@ -114,9 +116,7 @@ class BaseFlow(ABC):
         4. run crew
         5. complete or fail
         """
-        logger.info(
-            "Starting flow %s for org %s", self.__class__.__name__, self.org_id
-        )
+        logger.info("Starting flow %s for org %s", self.__class__.__name__, self.org_id)
 
         # 1. Validate
         if not self.validate_input(input_data):
@@ -139,7 +139,7 @@ class BaseFlow(ABC):
             if self.state.status == FlowStatus.AWAITING_APPROVAL:
                 logger.info(
                     "Flow %s paused for approval. Sequential execution stopped.",
-                    self.state.task_id
+                    self.state.task_id,
                 )
                 await self.persist_state()
                 return self.state
@@ -150,10 +150,13 @@ class BaseFlow(ABC):
 
             # Emit token event if tokens were recorded
             if self.state.tokens_used > 0:
-                await self.emit_event("flow.tokens_recorded", {
-                    "tokens_used": self.state.tokens_used,
-                    "flow_type": self.flow_type,
-                })
+                await self.emit_event(
+                    "flow.tokens_recorded",
+                    {
+                        "tokens_used": self.state.tokens_used,
+                        "flow_type": self.flow_type,
+                    },
+                )
         except Exception as exc:
             logger.error("Flow failed: %s", exc)
             raise
@@ -195,7 +198,7 @@ class BaseFlow(ABC):
                     "max_retries": self.extra_kwargs.get("max_retries", 3),
                 }
             ).execute()
-        
+
         self.state = self.state_class(
             task_id=task_id,
             org_id=self.org_id,
@@ -206,12 +209,10 @@ class BaseFlow(ABC):
         )
 
         self.event_store = EventStore(
-            self.org_id, 
-            self.user_id, 
-            correlation_id=self.state.correlation_id
+            self.org_id, self.user_id, correlation_id=self.state.correlation_id
         )
         await self.emit_event("flow.created", {"input_data": input_data})
-        
+
         return task_id
 
     async def persist_state(self) -> None:
@@ -228,10 +229,13 @@ class BaseFlow(ABC):
             db.execute_with_retry(db.table("snapshots").upsert(snapshot))
 
             db.execute_with_retry(
-                db.table("tasks").update(
+                db.table("tasks")
+                .update(
                     {
                         "status": self.state.status,
-                        "result": self.state.output_data if self.state.output_data else None,
+                        "result": self.state.output_data
+                        if self.state.output_data
+                        else None,
                         "error": self.state.error,
                         "updated_at": datetime.now(timezone.utc).isoformat(),
                         "approval_required": self.state.approval_payload is not None,
@@ -243,12 +247,11 @@ class BaseFlow(ABC):
                         "approval_payload": self.state.approval_payload,
                         "tokens_used": self.state.tokens_used,
                     }
-                ).eq("id", self.state.task_id)
+                )
+                .eq("id", self.state.task_id)
             )
 
-    async def emit_event(
-        self, event_type: str, payload: Dict[str, Any]
-    ) -> None:
+    async def emit_event(self, event_type: str, payload: Dict[str, Any]) -> None:
         """Append a domain event and flush to DB."""
         if self.event_store and self.state:
             self.event_store.append(
@@ -286,25 +289,32 @@ class BaseFlow(ABC):
         svc = get_service_client()
 
         # 2. Guardar snapshot con esquema v2 (aggregate_*)
-        seq = execute_with_retry(svc.rpc("next_event_sequence", {
-            "p_aggregate_type": "flow",
-            "p_aggregate_id": self.state.task_id
-        })).data
+        seq = execute_with_retry(
+            svc.rpc(
+                "next_event_sequence",
+                {"p_aggregate_type": "flow", "p_aggregate_id": self.state.task_id},
+            )
+        ).data
 
-        execute_with_retry(svc.table("snapshots").upsert(
-            self.state.to_snapshot_v2(version=seq),
-            on_conflict="task_id"
-        ))
+        execute_with_retry(
+            svc.table("snapshots").upsert(
+                self.state.to_snapshot_v2(version=seq), on_conflict="task_id"
+            )
+        )
 
         # 3. Crear pending_approval (usa tenant client para RLS)
         with get_tenant_client(self.org_id, self.user_id) as db:
-            db.execute_with_retry(db.table("pending_approvals").insert({
-                "org_id": self.org_id,
-                "task_id": self.state.task_id,
-                "flow_type": self.flow_type,
-                "description": description,
-                "payload": payload,
-            }))
+            db.execute_with_retry(
+                db.table("pending_approvals").insert(
+                    {
+                        "org_id": self.org_id,
+                        "task_id": self.state.task_id,
+                        "flow_type": self.flow_type,
+                        "description": description,
+                        "payload": payload,
+                    }
+                )
+            )
 
         # 4. Actualizar task
         await self.persist_state()
@@ -319,7 +329,7 @@ class BaseFlow(ABC):
                 event_type="approval.requested",
                 payload={"description": description},
                 correlation_id=self.state.correlation_id,
-                actor=f"flow:{self.__class__.__name__}"
+                actor=f"flow:{self.__class__.__name__}",
             )
         except EventStoreError:
             # El Flow debe detenerse si no se puede registrar el evento
@@ -328,7 +338,9 @@ class BaseFlow(ABC):
 
         # El método retorna → el paso del Flow termina → el proceso puede finalizar
 
-    async def resume(self, task_id: str, decision: str, decided_by: str, notes: Optional[str] = None) -> None:
+    async def resume(
+        self, task_id: str, decision: str, decided_by: str, notes: Optional[str] = None
+    ) -> None:
         """
         Reanudar un Flow pausado después de la decisión del supervisor.
 
@@ -359,13 +371,15 @@ class BaseFlow(ABC):
         self.state = BaseFlowState.from_snapshot(snapshot.data)
         self.state.approval_decision = decision
         self.state.approval_decided_by = decided_by
-        
+
         # Guardar notas en el estado dinámico (BaseFlowState permite campos extra)
         if notes:
             self.state.last_notes = notes
 
         # 3. Actualizar event_store
-        self.event_store = EventStore(self.org_id, self.user_id, self.state.correlation_id)
+        self.event_store = EventStore(
+            self.org_id, self.user_id, self.state.correlation_id
+        )
 
         # 4. Emitir evento de decisión
         try:
@@ -376,7 +390,7 @@ class BaseFlow(ABC):
                 event_type=f"approval.{decision}",
                 payload={"decided_by": decided_by, "notes": notes},
                 correlation_id=self.state.correlation_id,
-                actor=f"user:{decided_by}"
+                actor=f"user:{decided_by}",
             )
         except EventStoreError:
             logger.error("Cannot emit approval.%s event", decision)

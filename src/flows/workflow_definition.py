@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 class AgentDefinition(BaseModel):
     """Definición de un agente dentro de un workflow."""
+
     role: str = Field(..., min_length=1, max_length=100)
     goal: str = Field(..., min_length=10)
     backstory: str = Field(..., min_length=10)
@@ -26,13 +27,17 @@ class AgentDefinition(BaseModel):
     @classmethod
     def model_must_be_allowed(cls, v: str) -> str:
         from src.flows.workflow_guardrails import ALLOWED_MODELS
+
         if v not in ALLOWED_MODELS:
-            raise ValueError(f"Modelo '{v}' no permitido. Usar uno de: {ALLOWED_MODELS}")
+            raise ValueError(
+                f"Modelo '{v}' no permitido. Usar uno de: {ALLOWED_MODELS}"
+            )
         return v
 
 
 class StepDefinition(BaseModel):
     """Definición de un paso dentro de un workflow."""
+
     id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     description: str = Field(..., min_length=10)
@@ -44,6 +49,7 @@ class StepDefinition(BaseModel):
 
 class ApprovalRule(BaseModel):
     """Regla de aprobación."""
+
     condition: str  # ej: "monto > 50000"
     description: str
 
@@ -55,6 +61,7 @@ class WorkflowDefinition(BaseModel):
     Es el output_pydantic del agente Architect:
     si el JSON no valida contra este schema, CrewAI reintenta automáticamente.
     """
+
     name: str = Field(..., min_length=3, max_length=100)
     description: str = Field(..., min_length=10)
     flow_type: str = Field(..., min_length=3, max_length=50)
@@ -67,6 +74,7 @@ class WorkflowDefinition(BaseModel):
     @classmethod
     def flow_type_must_be_snake_case(cls, v: str) -> str:
         import re
+
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
             raise ValueError(
                 "flow_type debe ser snake_case, minúsculas, "
@@ -109,5 +117,7 @@ class WorkflowDefinition(BaseModel):
 
         for sid in step_ids:
             if sid not in visited and dfs(sid):
-                raise ValueError(f"El grafo de dependencias tiene ciclos en step '{sid}'")
+                raise ValueError(
+                    f"El grafo de dependencias tiene ciclos en step '{sid}'"
+                )
         return self

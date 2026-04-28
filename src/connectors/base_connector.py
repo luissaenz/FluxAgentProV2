@@ -19,7 +19,6 @@ from typing import Any
 
 
 class BaseDataConnector(ABC):
-
     # ------------------------------------------------------------------
     # Operaciones sobre tablas operativas (tienen org_id + RLS)
     # ------------------------------------------------------------------
@@ -95,7 +94,9 @@ class BaseDataConnector(ABC):
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def get_config(self, table: str, filters: dict[str, Any] | None = None) -> list[dict]:
+    def get_config(
+        self, table: str, filters: dict[str, Any] | None = None
+    ) -> list[dict]:
         """
         Leer tablas de configuración global de la instalación.
 

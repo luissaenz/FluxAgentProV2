@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 
+
 def check_prompt_tool():
     prompt4 = Path("docs/prompt4.txt")
     content = prompt4.read_text(encoding="utf-8")

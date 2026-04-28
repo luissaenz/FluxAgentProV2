@@ -11,25 +11,33 @@ from src.services.security_guard import SecurityError, SecurityGuard
 
 
 def validate_bundle(
-    path: Path = typer.Argument(Path("."), help="Path to the bundle directory or .zip file to validate"),
+    path: Path = typer.Argument(
+        Path("."), help="Path to the bundle directory or .zip file to validate"
+    ),
 ):
     """Validate a bundle's structure, integrity, and security."""
-    
+
     # 1. Handle ZIP files (Paso 13 Critical Gap)
     if path.is_file() and path.suffix.lower() == ".zip":
         typer.echo(f"Validating ZIP bundle: {path.name}")
         try:
             with open(path, "rb") as f:
                 zip_bytes = f.read()
-            
+
             # Use 'cli-validation' as placeholder org_id
             manager = BundleManager(org_id="cli-validation")
             content = manager.process_zip(zip_bytes)
-            
-            bundle_name = content.manifest.bundle_info.name if content.manifest.bundle_info else "Unknown"
+
+            bundle_name = (
+                content.manifest.bundle_info.name
+                if content.manifest.bundle_info
+                else "Unknown"
+            )
             typer.echo(f"  OK: Manifest '{bundle_name}' is valid.")
             typer.echo("  OK: Integrity (SHA256) verified for all files.")
-            typer.echo(f"  OK: Security scan passed ({len(content.skills)} skills safe).")
+            typer.echo(
+                f"  OK: Security scan passed ({len(content.skills)} skills safe)."
+            )
             typer.echo(f"SUCCESS: Bundle {path.name} is valid and safe.")
             return
         except BundleError as e:
@@ -51,15 +59,19 @@ def validate_bundle(
 
     try:
         manifest = load_json(manifest_path)
-        print(f"Validating bundle directory: [bold]{manifest.get('name', 'Unknown')}[/bold]")
+        print(
+            f"Validating bundle directory: [bold]{manifest.get('name', 'Unknown')}[/bold]"
+        )
 
         # 1. Integrity Check (Hashes)
         print("VALIDATING integrity...")
         actual_hashes = calculate_dir_hashes(path)
         expected_hashes = manifest.get("hashes", {})
-        
+
         if not expected_hashes:
-            print("[yellow]![/yellow] No hashes found in manifest. Skipping integrity check. (Run 'fap package' to generate them)")
+            print(
+                "[yellow]![/yellow] No hashes found in manifest. Skipping integrity check. (Run 'fap package' to generate them)"
+            )
         else:
             mismatches = []
             for rel_path, expected_hash in expected_hashes.items():
@@ -67,7 +79,7 @@ def validate_bundle(
                     mismatches.append(f"File missing: {rel_path}")
                 elif actual_hashes[rel_path] != expected_hash:
                     mismatches.append(f"Hash mismatch: {rel_path}")
-            
+
             if mismatches:
                 print("[red]✗ Integrity check failed:[/red]")
                 for m in mismatches:
@@ -91,7 +103,7 @@ def validate_bundle(
                 except SecurityError as e:
                     print(f"  [red]FAILED:[/red] [bold]{skill_file.name}:[/bold] {e}")
                     raise typer.Exit(code=1)
-            
+
             if skills_found == 0:
                 print("  (No python skills found)")
         else:
@@ -104,4 +116,3 @@ def validate_bundle(
     except Exception as e:
         print(f"[red]Error:[/red] Validation failed: {e}")
         raise typer.Exit(code=1)
-

@@ -110,17 +110,23 @@ def save_memory(
     if ttl_hours is not None:
         valid_to = (datetime.now(UTC) + timedelta(hours=ttl_hours)).isoformat()
 
-    result = svc.table("memory_vectors").insert({
-        "id": memory_id,
-        "org_id": org_id,
-        "agent_role": agent_role,
-        "source_type": source_type,
-        "content": content,
-        "embedding": embedding,
-        "embedding_version": "text-embedding-3-small",
-        "metadata": metadata or {},
-        "valid_to": valid_to or "infinity",
-    }).execute()
+    result = (
+        svc.table("memory_vectors")
+        .insert(
+            {
+                "id": memory_id,
+                "org_id": org_id,
+                "agent_role": agent_role,
+                "source_type": source_type,
+                "content": content,
+                "embedding": embedding,
+                "embedding_version": "text-embedding-3-small",
+                "metadata": metadata or {},
+                "valid_to": valid_to or "infinity",
+            }
+        )
+        .execute()
+    )
 
     if not result.data:
         raise MemoryError(f"No se pudo persistir memoria para org {org_id}")
@@ -147,7 +153,9 @@ async def save_memory_async(
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         None,
-        lambda: save_memory(org_id, content, source_type, agent_role, metadata, ttl_hours),
+        lambda: save_memory(
+            org_id, content, source_type, agent_role, metadata, ttl_hours
+        ),
     )
 
 

@@ -28,7 +28,7 @@ import uuid
 from typing import Any
 
 # ── Supabase client for test data setup ──────────────────────────────
-from supabase import create_client, Client
+from supabase import Client, create_client
 
 # ── Test helpers ─────────────────────────────────────────────────────
 

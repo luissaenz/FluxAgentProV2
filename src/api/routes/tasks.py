@@ -81,7 +81,9 @@ async def get_task(
             raise HTTPException(status_code=400, detail="Invalid task ID")
 
         # Use the string representation for the DB query
-        result = db.execute_with_retry(db.table("tasks").select("*").eq("id", str(uuid_obj)))
+        result = db.execute_with_retry(
+            db.table("tasks").select("*").eq("id", str(uuid_obj))
+        )
 
         if not result.data:
             raise HTTPException(status_code=404, detail="Task not found")

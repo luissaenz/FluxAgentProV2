@@ -47,20 +47,19 @@ class BaseFlowState(BaseModel):
     retry_count: int = Field(default=0, ge=0)
     max_retries: int = Field(default=3, ge=0)
     tokens_used: int = Field(default=0, ge=0)
-    correlation_id: str = Field(..., description="ID de correlación para tracing de extremo a extremo")
+    correlation_id: str = Field(
+        ..., description="ID de correlación para tracing de extremo a extremo"
+    )
 
     # ── HITL: Human-in-the-Loop (Fase 2) ────────────────────────
     approval_payload: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Datos que el supervisor verá al aprobar"
+        default=None, description="Datos que el supervisor verá al aprobar"
     )
     approval_decision: Optional[str] = Field(
-        default=None,
-        description="Decisión del supervisor: approved | rejected"
+        default=None, description="Decisión del supervisor: approved | rejected"
     )
     approval_decided_by: Optional[str] = Field(
-        default=None,
-        description="Identificador del supervisor que decidió"
+        default=None, description="Identificador del supervisor que decidió"
     )
 
     model_config = {"use_enum_values": True, "extra": "allow"}
@@ -169,6 +168,8 @@ class BaseFlowState(BaseModel):
 
         # Ensure correlation_id exists for legacy support
         if "correlation_id" not in state_data:
-            state_data["correlation_id"] = f"legacy-task-{data.get('task_id', 'unknown')}"
-            
+            state_data["correlation_id"] = (
+                f"legacy-task-{data.get('task_id', 'unknown')}"
+            )
+
         return cls(**state_data)

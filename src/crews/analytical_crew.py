@@ -33,7 +33,16 @@ logger = logging.getLogger(__name__)
 # ── Intentos de clasificacion por keywords (fallback) ─────────────
 
 _INTENT_KEYWORDS: Dict[str, List[str]] = {
-    "agent_success_rate": ["agente", "agent", "exito", "success", "mejor", "tasa", "eficiente", "eficiencia"],
+    "agent_success_rate": [
+        "agente",
+        "agent",
+        "exito",
+        "success",
+        "mejor",
+        "tasa",
+        "eficiente",
+        "eficiencia",
+    ],
     "tickets_by_status": ["ticket", "estado", "status", "distribucion"],
     "flow_token_consumption": ["token", "consumo", "gasto", "costo", "llm"],
     "recent_events_summary": ["evento", "event", "reciente", "recent", "24", "hoy"],
@@ -114,7 +123,9 @@ class AnalyticalCrew(BaseCrew):
             },
         }
 
-    async def ask(self, question: str, query_type_hint: Optional[str] = None) -> Dict[str, Any]:
+    async def ask(
+        self, question: str, query_type_hint: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Procesar pregunta en lenguaje natural con el pipeline completo."""
         # Paso 1: Clasificar intencion (LLM o fallback)
         intent = query_type_hint or await self._classify_intent(question)
@@ -186,7 +197,9 @@ class AnalyticalCrew(BaseCrew):
         try:
             return await self._classify_intent_llm(question)
         except Exception as exc:
-            logger.warning("LLM intent classification failed, falling back to keywords: %s", exc)
+            logger.warning(
+                "LLM intent classification failed, falling back to keywords: %s", exc
+            )
             return self._classify_intent_keywords(question)
 
     async def _classify_intent_llm(self, question: str) -> str:
@@ -201,10 +214,13 @@ class AnalyticalCrew(BaseCrew):
         )
 
         # FIX ID-010: Llamada async no bloqueante
-        response = await self._llm_call_async(llm, [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": question},
-        ])
+        response = await self._llm_call_async(
+            llm,
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": question},
+            ],
+        )
 
         intent = response.strip().lower() if isinstance(response, str) else ""
 
@@ -247,19 +263,20 @@ class AnalyticalCrew(BaseCrew):
         )
 
         user_content = (
-            f"Pregunta: {question}\n"
-            f"Intent: {intent}\n"
-            f"Datos:\n```json\n{data_json}\n```"
+            f"Pregunta: {question}\nIntent: {intent}\nDatos:\n```json\n{data_json}\n```"
         )
         if event_context:
             user_content += event_context
 
         try:
             # FIX ID-010: Llamada async no bloqueante
-            response = await self._llm_call_async(llm, [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ])
+            response = await self._llm_call_async(
+                llm,
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ],
+            )
             summary = response.strip() if isinstance(response, str) else ""
 
             # FIX ID-004: Capturar tokens usados

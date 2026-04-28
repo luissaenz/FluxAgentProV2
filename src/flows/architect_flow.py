@@ -18,17 +18,19 @@ Flujo:
 
 from __future__ import annotations
 
+import json
 import logging
-import re
 import uuid
 from typing import Any, Dict, Optional
 
 from crewai import Agent, Crew, Process, Task
 
-from ..db.session import get_service_client, get_tenant_client
-from .base_flow import BaseFlow
+from src.db.session import get_service_client, get_tenant_client
+from src.flows.base_flow import BaseFlow
+from src.flows.state import BaseFlowState
+from src.utils.llm_parsing import extract_json_from_text, extract_token_usage
+
 from .registry import register_flow
-from .state import BaseFlowState
 from .workflow_definition import WorkflowDefinition
 from .workflow_guardrails import WorkflowValidationError, validate_workflow
 
@@ -37,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 class ArchitectState(BaseFlowState):
     """Estado del ArchitectFlow."""
+
     flow_type: str = "architect"
     extracted_definition: Optional[WorkflowDefinition] = None
     workflow_template_id: Optional[str] = None
@@ -80,15 +83,17 @@ class ArchitectFlow(BaseFlow):
         task_id = str(uuid4())
 
         with get_tenant_client(self.org_id, self.user_id) as db:
-            db.table("tasks").insert({
-                "id": task_id,
-                "org_id": self.org_id,
-                "flow_type": "architect_flow",
-                "flow_id": task_id,
-                "status": "pending",
-                "payload": input_data,
-                "correlation_id": correlation_id,
-            }).execute()
+            db.table("tasks").insert(
+                {
+                    "id": task_id,
+                    "org_id": self.org_id,
+                    "flow_type": "architect_flow",
+                    "flow_id": task_id,
+                    "status": "pending",
+                    "payload": input_data,
+                    "correlation_id": correlation_id,
+                }
+            ).execute()
 
         self.state = ArchitectState(
             task_id=task_id,
@@ -100,9 +105,7 @@ class ArchitectFlow(BaseFlow):
         )
 
         self.event_store = EventStore(
-            self.org_id, 
-            self.user_id, 
-            correlation_id=self.state.correlation_id
+            self.org_id, self.user_id, correlation_id=self.state.correlation_id
         )
         await self.emit_event("flow.created", {"input_data": input_data})
 
@@ -135,10 +138,11 @@ class ArchitectFlow(BaseFlow):
         # ── 5. Retorno de Definición (Bundle-Driven) ─────────────
         # NOTA: En la arquitectura v2, la persistencia se realiza vía Bundles.
         # El ArchitectFlow produce la definición, pero no la guarda en DB.
-        
+
         logger.info(
             "ArchitectFlow[%s] generó definición para workflow '%s' (sin persistir)",
-            self.state.task_id, safe_flow_type
+            self.state.task_id,
+            safe_flow_type,
         )
 
         return {
@@ -240,16 +244,10 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
         )
 
         result = await crew.kickoff_async(inputs={})
-        
-        # Track tokens
-        tokens = 0
-        if hasattr(result, "token_usage") and result.token_usage:
-            usage = result.token_usage
-            tokens = usage.get("total_tokens", 0) if isinstance(usage, dict) else getattr(usage, "total_tokens", 0)
-        elif hasattr(result, "usage_metrics") and result.usage_metrics:
-            usage = result.usage_metrics
-            tokens = usage.get("total_tokens", 0) if isinstance(usage, dict) else getattr(usage, "total_tokens", 0)
-        
+
+        # Track tokens using helper
+        tokens = extract_token_usage(result)
+
         if tokens:
             self.state.update_tokens(tokens)
         else:
@@ -258,40 +256,24 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
         return result
 
     def _parse_workflow_definition(self, raw_result: Any) -> WorkflowDefinition:
-        """Extraer y validar JSON del resultado del agente."""
-        import json
-
+        """Extraer y validar JSON del resultado del agente usando helper modular."""
         # Manejar CrewOutput u otros tipos
-        if hasattr(raw_result, "raw"):
-            raw_text = str(raw_result.raw)
-        else:
-            raw_text = str(raw_result)
-
+        raw_text = raw_result.raw if hasattr(raw_result, "raw") else str(raw_result)
         logger.debug("ArchitectFlow: raw_text a parsear: %s", raw_text)
 
-        # Buscar el bloque JSON { ... }
-        json_match = re.search(r"(\{[\s\S]*\})", raw_text)
-        if not json_match:
+        data = extract_json_from_text(raw_text)
+        if not data:
             raise ValueError(
-                f"El agente no retornó un objeto JSON. Resultado: '{raw_text[:200]}...'"
+                f"JSON inválido: El agente no retornó un objeto JSON procesable. Resultado: '{raw_text[:200]}...'"
             )
 
-        raw_text = json_match.group(1).strip()
-
-        if not raw_text:
-            raise ValueError(f"El agente retornó un resultado vacío: '{raw_text}'")
-
         try:
-            data = json.loads(raw_text)
             return WorkflowDefinition(**data)
-        except json.JSONDecodeError as e:
-            logger.error("Error parseando JSON: %s. Texto: %s", e, raw_text)
-            raise ValueError(f"El agente retornó JSON inválido: {e}")
         except Exception as e:
-            logger.error("Error validando WorkflowDefinition: %s. Data: %s", e, data if 'data' in dir() else 'N/A')
+            logger.error("Error validando WorkflowDefinition: %s. Data: %s", e, data)
             raise ValueError(
                 f"Validación de WorkflowDefinition falló: {e}\n"
-                f"JSON recibido: {raw_text[:500]}"
+                f"JSON recibido: {json.dumps(data, indent=2)[:500]}"
             )
 
     def _ensure_unique_flow_type(self, flow_type: str) -> str:
@@ -299,7 +281,7 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
         svc = get_service_client()
         current_name = flow_type
         attempts = 0
-        
+
         while attempts < 5:
             existing = (
                 svc.table("workflow_templates")
@@ -311,16 +293,18 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
 
             if not (existing and existing.data):
                 return current_name
-                
+
             # Si ya existe, generar nuevo nombre con sufijo derivado del org_id
             # Esto ayuda a la colisión entre orgs manteniendo legibilidad
             org_suffix = self.org_id.replace("-", "")[:8]
             import random
             import string
-            random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+
+            random_suffix = "".join(
+                random.choices(string.ascii_lowercase + string.digits, k=4)
+            )
             current_name = f"{flow_type}_{org_suffix}_{random_suffix}"
             attempts += 1
             logger.warning("flow_type ocupado, reintentando con '%s'", current_name)
 
         return f"{flow_type}_{uuid.uuid4().hex[:8]}"
-

@@ -60,9 +60,12 @@ class BaseCrew:
         if result is None:
             logger.error(
                 "Supabase query returned None for role '%s' in org '%s'. Check connectivity or client config.",
-                self.role, self.org_id
+                self.role,
+                self.org_id,
             )
-            raise CrewConfigError(f"Database unavailable or returned empty for role '{self.role}'")
+            raise CrewConfigError(
+                f"Database unavailable or returned empty for role '{self.role}'"
+            )
 
         if not result.data:
             raise CrewConfigError(

@@ -180,7 +180,7 @@ class SecurityGuard:
                 "RestrictedPython validation error for %s: %s", filename, str(e)
             )
             raise SecurityError(
-                f"Security validation failed during restricted " f"execution: {str(e)}"
+                f"Security validation failed during restricted execution: {str(e)}"
             ) from e
         finally:
             # Note: The worker thread will continue running until process exit

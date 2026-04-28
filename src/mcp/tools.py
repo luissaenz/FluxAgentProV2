@@ -68,8 +68,11 @@ STATIC_TOOLS = [
             "type": "object",
             "required": ["task_id"],
             "properties": {
-                "task_id": {"type": "string", "description": "UUID de la tarea a consultar"}
-            }
+                "task_id": {
+                    "type": "string",
+                    "description": "UUID de la tarea a consultar",
+                }
+            },
         },
     ),
     Tool(
@@ -79,8 +82,11 @@ STATIC_TOOLS = [
             "type": "object",
             "required": ["task_id"],
             "properties": {
-                "task_id": {"type": "string", "description": "UUID de la tarea a aprobar"}
-            }
+                "task_id": {
+                    "type": "string",
+                    "description": "UUID de la tarea a aprobar",
+                }
+            },
         },
     ),
     Tool(
@@ -90,8 +96,11 @@ STATIC_TOOLS = [
             "type": "object",
             "required": ["task_id"],
             "properties": {
-                "task_id": {"type": "string", "description": "UUID de la tarea a rechazar"}
-            }
+                "task_id": {
+                    "type": "string",
+                    "description": "UUID de la tarea a rechazar",
+                }
+            },
         },
     ),
 ]
@@ -103,6 +112,7 @@ def get_static_tools() -> list[Tool]:
 
 
 # ── Tool Handlers ────────────────────────────────────────────────
+
 
 async def handle_tool_call(
     name: str,
@@ -132,11 +142,12 @@ async def handle_tool_call(
 
     # 1. Intentar obtener handler estático
     handler = handlers.get(name)
-    
+
     # 2. Si no es estático, verificar si es un flow dinámico
     is_flow = False
     if handler is None:
         from .flow_to_tool import get_flow_tool_names
+
         if name in get_flow_tool_names():
             is_flow = True
         else:
@@ -166,14 +177,17 @@ def _make_result(data: Any) -> CallToolResult:
     """Helper: crea CallToolResult con JSON sanitizado."""
     sanitized = sanitize_output(data)
     return CallToolResult(
-        content=[TextContent(
-            type="text",
-            text=json.dumps(sanitized, ensure_ascii=False, default=str),
-        )],
+        content=[
+            TextContent(
+                type="text",
+                text=json.dumps(sanitized, ensure_ascii=False, default=str),
+            )
+        ],
     )
 
 
 # ── Individual Handlers ──────────────────────────────────────────
+
 
 async def _handle_list_flows(
     arguments: dict[str, Any],
@@ -185,12 +199,14 @@ async def _handle_list_flows(
     flows = []
     for flow_name in flow_registry.list_flows():
         meta = flow_registry.get_metadata(flow_name)
-        flows.append({
-            "name": flow_name,
-            "category": meta.get("category"),
-            "depends_on": meta.get("depends_on", []),
-            "description": meta.get("description", ""),
-        })
+        flows.append(
+            {
+                "name": flow_name,
+                "category": meta.get("category"),
+                "depends_on": meta.get("depends_on", []),
+                "description": meta.get("description", ""),
+            }
+        )
 
     return _make_result({"flows": flows, "count": len(flows)})
 
@@ -229,7 +245,9 @@ async def _handle_get_agent_detail(
         svc = get_service_client()
         result = (
             svc.table("agent_catalog")
-            .select("id, role, is_active, soul_json, allowed_tools, max_iter, created_at, updated_at")
+            .select(
+                "id, role, is_active, soul_json, allowed_tools, max_iter, created_at, updated_at"
+            )
             .eq("id", agent_id)
             .eq("org_id", config.org_id)
             .maybe_single()
@@ -249,9 +267,11 @@ async def _handle_get_server_time(
     config: Any,
 ) -> CallToolResult:
     """Retorna la hora UTC del servidor."""
-    return _make_result({
-        "server_time": datetime.now(timezone.utc).isoformat(),
-    })
+    return _make_result(
+        {
+            "server_time": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
 
 async def _handle_list_capabilities(
@@ -264,14 +284,16 @@ async def _handle_list_capabilities(
     static_count = len(STATIC_TOOLS)
     dynamic_count = len(build_flow_tools())
 
-    return _make_result({
-        "version": "5.0.0",
-        "org_id": config.org_id,
-        "transport": config.transport,
-        "tools_count": static_count + dynamic_count,
-        "static_tools": static_count,
-        "dynamic_tools": dynamic_count,
-    })
+    return _make_result(
+        {
+            "version": "5.0.0",
+            "org_id": config.org_id,
+            "transport": config.transport,
+            "tools_count": static_count + dynamic_count,
+            "static_tools": static_count,
+            "dynamic_tools": dynamic_count,
+        }
+    )
 
 
 async def _handle_get_task(
@@ -280,14 +302,14 @@ async def _handle_get_task(
 ) -> CallToolResult:
     """Consultar estado de una tarea."""
     from .handlers import handle_get_task
-    
+
     task_id = arguments.get("task_id")
     if not task_id:
         raise InvalidParams("task_id is required")
 
     # Mock claims for internal MCP call (Stdio doesn't have JWT, uses org_id from config)
     claims = {"sub": "mcp-stdio-user", "role": "service_role"}
-    
+
     res = await handle_get_task(config.org_id, task_id, claims)
     return _make_result(res)
 
@@ -298,7 +320,7 @@ async def _handle_approve_task(
 ) -> CallToolResult:
     """Aprobar tarea HITL."""
     from .handlers import handle_approve_task
-    
+
     task_id = arguments.get("task_id")
     if not task_id:
         raise InvalidParams("task_id is required")
@@ -314,7 +336,7 @@ async def _handle_reject_task(
 ) -> CallToolResult:
     """Rechazar tarea HITL."""
     from .handlers import handle_reject_task
-    
+
     task_id = arguments.get("task_id")
     if not task_id:
         raise InvalidParams("task_id is required")
@@ -331,12 +353,9 @@ async def _handle_execute_flow_with_name(
 ) -> CallToolResult:
     """Handler real que conoce el nombre del flujo."""
     from .handlers import handle_execute_flow
-    
+
     claims = {"sub": "mcp-stdio-user", "role": "service_role"}
     res = await handle_execute_flow(
-        org_id=config.org_id,
-        flow_type=name,
-        input_data=arguments,
-        claims=claims
+        org_id=config.org_id, flow_type=name, input_data=arguments, claims=claims
     )
     return _make_result(res)

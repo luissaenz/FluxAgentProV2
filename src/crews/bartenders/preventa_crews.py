@@ -22,41 +22,42 @@ from src.tools.demo.escandallo_tool import EscandalloTool
 # MODELOS DE OUTPUT
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class EventoRegistrado(BaseModel):
-    evento_id:      str
-    status:         str = "nuevo"
-    mensaje:        str
+    evento_id: str
+    status: str = "nuevo"
+    mensaje: str
 
 
 class FactorClimaticoResult(BaseModel):
-    evento_id:      str
-    mes:            int
-    factor_pct:     int
-    razon:          str
+    evento_id: str
+    mes: int
+    factor_pct: int
+    razon: str
 
 
 class EscandalloResult(BaseModel):
-    evento_id:          str
-    escandallo_final:   int
-    bloque1_productos:  int
+    evento_id: str
+    escandallo_final: int
+    bloque1_productos: int
     bloque2_equipamiento: int
-    bloque3_personal:   int
-    bloque4_logistica:  int
-    ajuste_climatico:   int
-    mermas:             int
-    imprevistos:        int
+    bloque3_personal: int
+    bloque4_logistica: int
+    ajuste_climatico: int
+    mermas: int
+    imprevistos: int
     bartenders_necesarios: int
     factor_climatico_aplicado: int
 
 
 class CotizacionGenerada(BaseModel):
-    evento_id:          str
-    cotizacion_id:      str
-    escandallo_total:   int
-    opcion_basica:      int
+    evento_id: str
+    cotizacion_id: str
+    escandallo_total: int
+    opcion_basica: int
     opcion_recomendada: int
-    opcion_premium:     int
-    factor_climatico:   int
+    opcion_premium: int
+    factor_climatico: int
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -150,18 +151,21 @@ def _registrar_evento(connector: BaseDataConnector, data: dict) -> dict:
     # Generar ID secuencial simple para demo
     evento_id = f"EVT-{año}-{str(uuid.uuid4())[:4].upper()}"
 
-    return connector.write("eventos", {
-        "evento_id":      evento_id,
-        "fecha_evento":   data["fecha_evento"],
-        "provincia":      data["provincia"],
-        "localidad":      data["localidad"],
-        "tipo_evento":    data["tipo_evento"],
-        "pax":            int(data["pax"]),
-        "duracion_horas": int(data["duracion_horas"]),
-        "tipo_menu":      data["tipo_menu"],
-        "restricciones":  data.get("restricciones"),
-        "status":         "nuevo",
-    })
+    return connector.write(
+        "eventos",
+        {
+            "evento_id": evento_id,
+            "fecha_evento": data["fecha_evento"],
+            "provincia": data["provincia"],
+            "localidad": data["localidad"],
+            "tipo_evento": data["tipo_evento"],
+            "pax": int(data["pax"]),
+            "duracion_horas": int(data["duracion_horas"]),
+            "tipo_menu": data["tipo_menu"],
+            "restricciones": data.get("restricciones"),
+            "status": "nuevo",
+        },
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -192,7 +196,7 @@ def create_meteorologico_crew(
     Retorna factor_pct para que el Agente 3 lo use en el escandallo.
     """
     tool = FactorClimaticoTool(connector=connector)
-    mes  = int(fecha_evento.split("-")[1])
+    mes = int(fecha_evento.split("-")[1])
 
     agent = Agent(
         role="Analista Climático NOA",
@@ -331,9 +335,9 @@ REGLAS RÍGIDAS:
 
 # Márgenes fijos (espejo de config_margenes en DB)
 MARGENES = {
-    "basica":      0.40,
+    "basica": 0.40,
     "recomendada": 0.45,
-    "premium":     0.50,
+    "premium": 0.50,
 }
 
 
@@ -371,9 +375,9 @@ def create_presupuestador_crew(
             factor_climatico: {factor_climatico}
 
         Opciones calculadas (NO modificar):
-            opcion_basica:      {opciones['basica']}
-            opcion_recomendada: {opciones['recomendada']}
-            opcion_premium:     {opciones['premium']}
+            opcion_basica:      {opciones["basica"]}
+            opcion_recomendada: {opciones["recomendada"]}
+            opcion_premium:     {opciones["premium"]}
 
         Pasos:
         1. Generar cotizacion_id con formato COT-YYYY-NNN
@@ -405,8 +409,7 @@ def create_presupuestador_crew(
 def _calcular_opciones(escandallo: int) -> dict[str, int]:
     """Fórmula: precio = escandallo / (1 - margen). Resultado redondeado."""
     return {
-        nombre: round(escandallo / (1 - margen))
-        for nombre, margen in MARGENES.items()
+        nombre: round(escandallo / (1 - margen)) for nombre, margen in MARGENES.items()
     }
 
 
@@ -423,20 +426,27 @@ def _guardar_cotizacion(
     año = datetime.now().year
     cotizacion_id = f"COT-{año}-{str(uuid.uuid4())[:4].upper()}"
 
-    connector.write("cotizaciones", {
-        "cotizacion_id":     cotizacion_id,
-        "evento_id":         evento_id,
-        "escandallo_total":  escandallo_total,
-        "opcion_basica":     opciones["basica"],
-        "opcion_recomendada":opciones["recomendada"],
-        "opcion_premium":    opciones["premium"],
-        "factor_climatico":  factor_climatico,
-        "status":            "generada",
-    })
+    connector.write(
+        "cotizaciones",
+        {
+            "cotizacion_id": cotizacion_id,
+            "evento_id": evento_id,
+            "escandallo_total": escandallo_total,
+            "opcion_basica": opciones["basica"],
+            "opcion_recomendada": opciones["recomendada"],
+            "opcion_premium": opciones["premium"],
+            "factor_climatico": factor_climatico,
+            "status": "generada",
+        },
+    )
 
-    connector.update("eventos", evento_id, {
-        "cotizacion_id": cotizacion_id,
-        "status":        "cotizado",
-    })
+    connector.update(
+        "eventos",
+        evento_id,
+        {
+            "cotizacion_id": cotizacion_id,
+            "status": "cotizado",
+        },
+    )
 
     return cotizacion_id

@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 
+
 def count_tools():
     docs_dir = Path("docs")
     total_found = 0

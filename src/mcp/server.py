@@ -48,7 +48,7 @@ async def handle_call_tool(name: str, arguments: dict | None):
         from mcp.types import CallToolResult, TextContent
 
         from .exceptions import mcp_error_to_response
-        
+
         error_resp = mcp_error_to_response(exc)
         return CallToolResult(
             content=[TextContent(type="text", text=json.dumps(error_resp["error"]))],

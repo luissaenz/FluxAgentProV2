@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-import sys
 import os
+import sys
 import time
 
 # Set Python path to find src if script is in /scripts
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.db.session import get_service_client
+
 
 def main():
     print("Test: Starting...", flush=True)

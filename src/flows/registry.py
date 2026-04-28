@@ -25,8 +25,8 @@ def _normalize_flow_name(name: str) -> str:
         "ComprasFlow" → "compras_flow"
     """
     # Convert CamelCase to snake_case
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
 class FlowRegistry:
@@ -210,7 +210,7 @@ class FlowRegistry:
 
     def get(self, name: str, org_id: str | None = None) -> Type:
         """Return the Flow class for *name*.
-        
+
         Order: Scoped Cache (org:name) -> Global Cache (name) -> DB lookup -> raise ValueError.
         """
         key = name.lower()
@@ -221,7 +221,7 @@ class FlowRegistry:
             scoped_key = f"{org_id}:{key}"
             if scoped_key in self._flows:
                 return self._flows[scoped_key]
-            
+
             scoped_norm = f"{org_id}:{normalized_key}"
             if scoped_norm in self._flows:
                 return self._flows[scoped_norm]
@@ -240,7 +240,9 @@ class FlowRegistry:
                 if flow_class:
                     return flow_class
             except Exception as e:
-                logger.debug("Failed DB lookup for flow '%s' in org '%s': %s", name, org_id, e)
+                logger.debug(
+                    "Failed DB lookup for flow '%s' in org '%s': %s", name, org_id, e
+                )
 
         raise ValueError(
             f"Flow '{name}' not found. Available in memory: {list(self._flows.keys())}"
@@ -262,37 +264,38 @@ class FlowRegistry:
                     .maybe_single()
                     .execute()
                 )
-                
+
                 if not (result and result.data):
                     return None
-                
+
                 definition = result.data["definition"]
-                
+
                 # Wrap in DynamicWorkflow
                 # SUPUESTO: DynamicWorkflow.register_class retorna una clase configurada
                 # que podemos registrar en memoria para el futuro.
                 # Nota: Necesitamos importar DynamicWorkflow localmente para evitar circulares.
-                
-                # Para evitar registrar clases temporales globalmente en _flows 
+
+                # Para evitar registrar clases temporales globalmente en _flows
                 # (lo que podría colisionar si diferentes orgs tienen el mismo flow_type),
                 # el análisis sugería retornar la clase configurada.
-                
+
                 # Creamos una subclase anónima de DynamicWorkflow para esta definición
                 class BoundDynamicFlow(DynamicWorkflow):
                     _registered_flow_name = flow_type
+
                     def __init__(self, **kwargs):
                         # Forzamos la definición en el constructor o via clase
                         super().__init__(**kwargs)
-                
+
                 # Inyectamos la definición en la clase para que DynamicWorkflow la use
                 BoundDynamicFlow.definition = definition
-                
+
                 # L1 Cache (Analisis-FINAL §2.2): Register in memory with org prefix
                 scoped_key = f"{org_id}:{flow_type}"
                 self._flows[scoped_key] = BoundDynamicFlow
-                
+
                 return BoundDynamicFlow
-                
+
         except Exception as exc:
             logger.error("Error loading flow '%s' from DB: %s", flow_type, exc)
             return None

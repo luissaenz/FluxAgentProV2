@@ -116,13 +116,15 @@ async def get_flow_transcript(
     events = []
     last_sequence = after_sequence
     for evt in raw_events:
-        events.append({
-            "id": evt.get("id"),
-            "event_type": evt.get("event_type"),
-            "payload": evt.get("payload"),
-            "sequence": evt.get("sequence"),
-            "created_at": evt.get("created_at"),
-        })
+        events.append(
+            {
+                "id": evt.get("id"),
+                "event_type": evt.get("event_type"),
+                "payload": evt.get("payload"),
+                "sequence": evt.get("sequence"),
+                "created_at": evt.get("created_at"),
+            }
+        )
         seq = evt.get("sequence")
         if seq is not None:
             last_sequence = seq

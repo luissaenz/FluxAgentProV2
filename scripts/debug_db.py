@@ -4,8 +4,9 @@ import sys
 
 # DEBUG VERSION
 print("DEBUG: 1. Loading libraries...", flush=True)
-from supabase import create_client
 import dotenv
+
+from supabase import create_client
 
 print("DEBUG: 2. Loading .env...", flush=True)
 dotenv.load_dotenv()

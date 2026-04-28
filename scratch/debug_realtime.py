@@ -1,8 +1,10 @@
 import asyncio
 import os
 import uuid
-from supabase import AsyncClient
+
 from dotenv import load_dotenv
+
+from supabase import AsyncClient
 
 load_dotenv()
 
@@ -14,7 +16,7 @@ async def main():
     print(f"URL: {url}")
     print(f"Key ends in: {key[-5:] if key else 'None'}")
 
-    from supabase import acreate_client, AsyncClientOptions
+    from supabase import AsyncClientOptions, acreate_client
     
     client: AsyncClient = await acreate_client(
         url, 

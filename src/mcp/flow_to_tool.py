@@ -31,19 +31,18 @@ def build_flow_tools() -> list[Tool]:
     tools = []
     for flow_name in flow_registry.list_flows():
         meta = flow_registry.get_metadata(flow_name)
-        schema = FLOW_INPUT_SCHEMAS.get(
-            flow_name, {"type": "object", "properties": {}}
-        )
+        schema = FLOW_INPUT_SCHEMAS.get(flow_name, {"type": "object", "properties": {}})
         description = (
-            meta.get("description")
-            or f"Ejecutar flow de trabajo: {flow_name}"
+            meta.get("description") or f"Ejecutar flow de trabajo: {flow_name}"
         )
 
-        tools.append(Tool(
-            name=flow_name,
-            description=description,
-            inputSchema=schema,
-        ))
+        tools.append(
+            Tool(
+                name=flow_name,
+                description=description,
+                inputSchema=schema,
+            )
+        )
 
     if not tools:
         logger.warning(
@@ -61,4 +60,5 @@ def get_flow_tool_names() -> list[str]:
     sin reconstruir los objetos Tool completos.
     """
     from src.flows.registry import flow_registry
+
     return flow_registry.list_flows()

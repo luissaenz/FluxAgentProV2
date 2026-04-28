@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.crews.analytical_crew import AnalyticalCrew
 
+
 async def check_summary():
     os.environ["PYTHONUTF8"] = "1"
     crew = AnalyticalCrew(org_id="00000000-0000-0000-0000-000000000000")

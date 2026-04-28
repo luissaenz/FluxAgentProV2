@@ -81,18 +81,32 @@ def _to_ticket_response(row: dict) -> TicketResponse:
         created_by=row.get("created_by"),
         assigned_to=row.get("assigned_to"),
         notes=row.get("notes"),
-        created_at=row["created_at"].isoformat() if isinstance(row.get("created_at"), datetime) else str(row.get("created_at", "")),
-        updated_at=row["updated_at"].isoformat() if isinstance(row.get("updated_at"), datetime) else str(row.get("updated_at", "")),
-        resolved_at=row["resolved_at"].isoformat() if isinstance(row.get("resolved_at"), datetime) else None,
+        created_at=row["created_at"].isoformat()
+        if isinstance(row.get("created_at"), datetime)
+        else str(row.get("created_at", "")),
+        updated_at=row["updated_at"].isoformat()
+        if isinstance(row.get("updated_at"), datetime)
+        else str(row.get("updated_at", "")),
+        resolved_at=row["resolved_at"].isoformat()
+        if isinstance(row.get("resolved_at"), datetime)
+        else None,
     )
 
 
-def _append_error_note(db, ticket_id: str, error_msg: str, error_type: str, correlation_id: Optional[str] = None) -> None:
+def _append_error_note(
+    db,
+    ticket_id: str,
+    error_msg: str,
+    error_type: str,
+    correlation_id: Optional[str] = None,
+) -> None:
     """Append error information to ticket notes, preserving existing content."""
     now = datetime.now(timezone.utc).isoformat()
 
     # Fetch current notes
-    result = db.table("tickets").select("notes").eq("id", ticket_id).maybe_single().execute()
+    result = (
+        db.table("tickets").select("notes").eq("id", ticket_id).maybe_single().execute()
+    )
     current_notes = result.data.get("notes", "") if result.data else ""
 
     # Format new error entry
@@ -104,15 +118,15 @@ def _append_error_note(db, ticket_id: str, error_msg: str, error_type: str, corr
     # Preserve existing notes, append new error
     updated_notes = new_note if not current_notes else f"{current_notes}\n{new_note}"
 
-    db.table("tickets").update({
-        "notes": updated_notes,
-        "updated_at": now,
-    }).eq("id", ticket_id).execute()
+    db.table("tickets").update(
+        {
+            "notes": updated_notes,
+            "updated_at": now,
+        }
+    ).eq("id", ticket_id).execute()
 
 
-def _handle_blocked_ticket(
-    db, ticket_id: str, result: Dict[str, Any]
-) -> None:
+def _handle_blocked_ticket(db, ticket_id: str, result: Dict[str, Any]) -> None:
     """Mark ticket as blocked with error details. Preserves existing notes.
 
     Single UPDATE to avoid race condition (ID-002 fix).
@@ -126,7 +140,9 @@ def _handle_blocked_ticket(
     now = datetime.now(timezone.utc).isoformat()
 
     # 1. Fetch current notes to append
-    res_notes = db.table("tickets").select("notes").eq("id", ticket_id).maybe_single().execute()
+    res_notes = (
+        db.table("tickets").select("notes").eq("id", ticket_id).maybe_single().execute()
+    )
     current_notes = res_notes.data.get("notes", "") if res_notes.data else ""
 
     # 2. Format new error entry
@@ -148,17 +164,17 @@ def _handle_blocked_ticket(
     db.table("tickets").update(update_data).eq("id", ticket_id).execute()
 
 
-def _handle_done_ticket(
-    db, ticket_id: str, task_id: str
-) -> None:
+def _handle_done_ticket(db, ticket_id: str, task_id: str) -> None:
     """Mark ticket as done with linked task_id."""
     now = datetime.now(timezone.utc).isoformat()
-    db.table("tickets").update({
-        "task_id": task_id,
-        "status": "done",
-        "resolved_at": now,
-        "updated_at": now,
-    }).eq("id", ticket_id).execute()
+    db.table("tickets").update(
+        {
+            "task_id": task_id,
+            "status": "done",
+            "resolved_at": now,
+            "updated_at": now,
+        }
+    ).eq("id", ticket_id).execute()
 
 
 # ── Routes ──────────────────────────────────────────────────
@@ -204,11 +220,7 @@ async def get_ticket(
     """Obtiene un ticket por ID."""
     with get_tenant_client(org_id) as db:
         result = (
-            db.table("tickets")
-            .select("*")
-            .eq("id", ticket_id)
-            .maybe_single()
-            .execute()
+            db.table("tickets").select("*").eq("id", ticket_id).maybe_single().execute()
         )
 
     if result.data is None:
@@ -281,16 +293,11 @@ async def update_ticket(
         if not flow_registry.has(update_data["flow_type"]):
             raise HTTPException(
                 status_code=400,
-                detail=f"Flow type '{update_data['flow_type']}' not found."
+                detail=f"Flow type '{update_data['flow_type']}' not found.",
             )
 
     with get_tenant_client(org_id) as db:
-        result = (
-            db.table("tickets")
-            .update(update_data)
-            .eq("id", ticket_id)
-            .execute()
-        )
+        result = db.table("tickets").update(update_data).eq("id", ticket_id).execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -312,11 +319,7 @@ async def execute_ticket(
     """
     with get_tenant_client(org_id) as db:
         ticket_result = (
-            db.table("tickets")
-            .select("*")
-            .eq("id", ticket_id)
-            .maybe_single()
-            .execute()
+            db.table("tickets").select("*").eq("id", ticket_id).maybe_single().execute()
         )
 
     if not ticket_result.data:
@@ -344,10 +347,12 @@ async def execute_ticket(
     # Cambiar a in_progress
     now = datetime.now(timezone.utc).isoformat()
     with get_tenant_client(org_id) as db:
-        db.table("tickets").update({
-            "status": "in_progress",
-            "updated_at": now,
-        }).eq("id", ticket_id).execute()
+        db.table("tickets").update(
+            {
+                "status": "in_progress",
+                "updated_at": now,
+            }
+        ).eq("id", ticket_id).execute()
 
     # Ejecutar el Flow
     correlation_id = f"ticket-{ticket_id}"
@@ -368,11 +373,15 @@ async def execute_ticket(
     except Exception as infra_exc:
         # Error de infraestructura (DB, red, etc)
         with get_tenant_client(org_id) as db:
-            _handle_blocked_ticket(db, ticket_id, {
-                "error": str(infra_exc),
-                "error_type": type(infra_exc).__name__,
-                "correlation_id": correlation_id,
-            })
+            _handle_blocked_ticket(
+                db,
+                ticket_id,
+                {
+                    "error": str(infra_exc),
+                    "error_type": type(infra_exc).__name__,
+                    "correlation_id": correlation_id,
+                },
+            )
         raise HTTPException(
             status_code=500,
             detail=f"Flow execution infrastructure error: {str(infra_exc)}",
@@ -382,7 +391,7 @@ async def execute_ticket(
     if result is None or not result or result.get("error"):
         with get_tenant_client(org_id) as db:
             _handle_blocked_ticket(db, ticket_id, result or {})
-        
+
         raise HTTPException(
             status_code=500,
             detail={
@@ -390,22 +399,19 @@ async def execute_ticket(
                 "ticket_id": ticket_id,
                 "task_id": result.get("task_id") if result else None,
                 "status": "blocked",
-                "error": (result.get("error") if result else "Unknown error") or "Unknown error",
-            }
+                "error": (result.get("error") if result else "Unknown error")
+                or "Unknown error",
+            },
         )
 
     # Éxito (ID-002)
     task_id = result.get("task_id")
     with get_tenant_client(org_id) as db:
         _handle_done_ticket(db, ticket_id, task_id)
-        
+
         # Recuperar ticket actualizado para devolver objeto completo (ID-005)
         updated_ticket = (
-            db.table("tickets")
-            .select("*")
-            .eq("id", ticket_id)
-            .maybe_single()
-            .execute()
+            db.table("tickets").select("*").eq("id", ticket_id).maybe_single().execute()
         )
 
     if not updated_ticket.data:
@@ -427,7 +433,13 @@ async def delete_ticket(
     """Elimina un ticket (Hard delete)."""
     with get_tenant_client(org_id) as db:
         # Primero verificamos si existe
-        check = db.table("tickets").select("id").eq("id", ticket_id).maybe_single().execute()
+        check = (
+            db.table("tickets")
+            .select("id")
+            .eq("id", ticket_id)
+            .maybe_single()
+            .execute()
+        )
         if not check.data:
             raise HTTPException(status_code=404, detail="Ticket not found")
 

@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 
+
 def verify_none_mapping():
     # Find a tool in a prompt that has auth.type = none
     found_tid = None

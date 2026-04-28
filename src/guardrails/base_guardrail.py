@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 # ── Org limits loader ──────────────────────────────────────────
 
+
 def load_org_limits(org_id: str) -> Dict[str, Any]:
     """
     Cargar límites configurados para la organización.
@@ -42,6 +43,7 @@ def load_org_limits(org_id: str) -> Dict[str, Any]:
 
 
 # ── Approval check factory ─────────────────────────────────────
+
 
 def make_approval_check(
     amount_field: str,
@@ -75,6 +77,7 @@ def make_approval_check(
                 return "solicitar_aprobacion"
             return "continuar"
     """
+
     def check(value: float, org_id: str) -> bool:
         limits = load_org_limits(org_id)
         threshold = limits.get(threshold_key, default_threshold)
@@ -84,7 +87,11 @@ def make_approval_check(
             logger.info(
                 "Guardrail triggered: %s=%.2f exceeds threshold=%.2f "
                 "(org_id=%s, key=%s)",
-                amount_field, value, threshold, org_id, threshold_key
+                amount_field,
+                value,
+                threshold,
+                org_id,
+                threshold_key,
             )
 
         return requires_approval
@@ -94,8 +101,10 @@ def make_approval_check(
 
 # ── Quota checker ─────────────────────────────────────────────
 
+
 class QuotaExceededError(Exception):
     """Se lanza cuando una org supera su cuota."""
+
     pass
 
 
@@ -120,6 +129,5 @@ def check_quota(org_id: str, quota_type: str, current_usage: int) -> None:
 
     if current_usage >= limit:
         raise QuotaExceededError(
-            f"Cuota '{quota_type}' agotada: {current_usage}/{limit} "
-            f"para org {org_id}"
+            f"Cuota '{quota_type}' agotada: {current_usage}/{limit} para org {org_id}"
         )

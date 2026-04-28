@@ -55,19 +55,24 @@ async def get_agent_detail(
             if metadata_result and metadata_result.data:
                 # Inyectar metadata en el objeto del agente
                 agent.update(metadata_result.data)
-            
+
         except Exception as exc:
             import logging
+
             logging.getLogger(__name__).warning(
                 "Error al recuperar metadata SOUL para el rol '%s' en la organización '%s'. "
-                "Causa probable: tabla agent_metadata no migrada o error de conectividad. Detalle: %s", 
-                agent_role, org_id, exc
+                "Causa probable: tabla agent_metadata no migrada o error de conectividad. Detalle: %s",
+                agent_role,
+                org_id,
+                exc,
             )
-        
+
         # Fallbacks finales: Garantizar que el frontend siempre tenga claves consistentes
         if not agent.get("display_name"):
-            agent["display_name"] = agent_role.replace("-", " ").title() if agent_role else "Unknown Agent"
-            
+            agent["display_name"] = (
+                agent_role.replace("-", " ").title() if agent_role else "Unknown Agent"
+            )
+
         agent.setdefault("soul_narrative", None)
         agent.setdefault("avatar_url", None)
 
@@ -90,13 +95,10 @@ async def get_agent_detail(
             .execute()
         )
 
-    total_tokens = sum(
-        t.get("tokens_used", 0)
-        for t in (tokens_result.data or [])
-    )
+    total_tokens = sum(t.get("tokens_used", 0) for t in (tokens_result.data or []))
 
     status_counts: dict = {}
-    for t in (tasks_result.data or []):
+    for t in tasks_result.data or []:
         s = t.get("status", "unknown")
         status_counts[s] = status_counts.get(s, 0) + 1
 
@@ -106,14 +108,19 @@ async def get_agent_detail(
     if allowed_tools:
         try:
             from ...tools.registry import tool_registry
+
             for tool_name in allowed_tools:
                 # SUPUESTO: Pass org_id for tenant-aware metadata lookup
                 tool_meta = tool_registry.get(tool_name, org_id=org_id)
                 if tool_meta:
-                    secret_refs.append({
-                        "tool": tool_name,
-                        "description": tool_meta.description if hasattr(tool_meta, 'description') else None,
-                    })
+                    secret_refs.append(
+                        {
+                            "tool": tool_name,
+                            "description": tool_meta.description
+                            if hasattr(tool_meta, "description")
+                            else None,
+                        }
+                    )
         except Exception:
             pass  # Si no se puede cargar el registry, continuar sin refs
 

@@ -28,8 +28,10 @@ logger = logging.getLogger(__name__)
 
 # ── Input Schemas ──────────────────────────────────────────────────
 
+
 class SQLAnalyticalInput(BaseModel):
     """Schema de input para SQLAnalyticalTool."""
+
     query_type: str = Field(
         ...,
         description=(
@@ -46,6 +48,7 @@ class SQLAnalyticalInput(BaseModel):
 
 class EventStoreInput(BaseModel):
     """Schema de input para EventStoreTool."""
+
     event_type: Optional[str] = Field(
         default=None,
         description="Filtrar por tipo de evento especifico",
@@ -61,6 +64,7 @@ class EventStoreInput(BaseModel):
 
 
 # ── SQLAnalyticalTool ──────────────────────────────────────────────
+
 
 @register_tool(
     name="sql_analytical",
@@ -90,10 +94,12 @@ class SQLAnalyticalTool(OrgBaseTool):
     def _run(self, query_type: str, params: str = "{}") -> str:
         """Ejecutar consulta analitica y retornar resultados como JSON string."""
         if query_type not in ALLOWED_ANALYTICAL_QUERIES:
-            return json.dumps({
-                "error": f"Query type '{query_type}' no permitido.",
-                "allowed": list(ALLOWED_ANALYTICAL_QUERIES.keys()),
-            })
+            return json.dumps(
+                {
+                    "error": f"Query type '{query_type}' no permitido.",
+                    "allowed": list(ALLOWED_ANALYTICAL_QUERIES.keys()),
+                }
+            )
 
         try:
             parsed_params = json.loads(params) if params else {}
@@ -105,26 +111,32 @@ class SQLAnalyticalTool(OrgBaseTool):
                 results = self._execute_query(db, query_type, parsed_params)
 
             if not results:
-                return json.dumps({
-                    "query_type": query_type,
-                    "data": [],
-                    "message": "No hay datos disponibles para esta consulta.",
-                    "row_count": 0,
-                })
+                return json.dumps(
+                    {
+                        "query_type": query_type,
+                        "data": [],
+                        "message": "No hay datos disponibles para esta consulta.",
+                        "row_count": 0,
+                    }
+                )
 
-            return json.dumps({
-                "query_type": query_type,
-                "data": results,
-                "row_count": len(results),
-            })
+            return json.dumps(
+                {
+                    "query_type": query_type,
+                    "data": results,
+                    "row_count": len(results),
+                }
+            )
 
         except Exception as exc:
             logger.error("Error ejecutando consulta analitica %s: %s", query_type, exc)
-            return json.dumps({
-                "error": "Fallo temporal en la recuperacion de metricas.",
-                "query_type": query_type,
-                "detail": str(exc),
-            })
+            return json.dumps(
+                {
+                    "error": "Fallo temporal en la recuperacion de metricas.",
+                    "query_type": query_type,
+                    "detail": str(exc),
+                }
+            )
 
     def _execute_query(self, db, query_type: str, params: dict) -> list:
         """Ejecutar la consulta especifica contra Supabase."""
@@ -175,13 +187,19 @@ class SQLAnalyticalTool(OrgBaseTool):
 
         result_list = []
         for role, data in stats.items():
-            rate = round(100.0 * data["completed"] / data["total"], 2) if data["total"] > 0 else 0
-            result_list.append({
-                "role": role,
-                "total_tasks": data["total"],
-                "completed_tasks": data["completed"],
-                "success_rate": rate,
-            })
+            rate = (
+                round(100.0 * data["completed"] / data["total"], 2)
+                if data["total"] > 0
+                else 0
+            )
+            result_list.append(
+                {
+                    "role": role,
+                    "total_tasks": data["total"],
+                    "completed_tasks": data["completed"],
+                    "success_rate": rate,
+                }
+            )
 
         result_list.sort(key=lambda x: x["success_rate"], reverse=True)
         return result_list[:10]
@@ -192,11 +210,7 @@ class SQLAnalyticalTool(OrgBaseTool):
         SELECT status, COUNT(*) as count FROM tickets WHERE org_id = X GROUP BY status ORDER BY count DESC
         """
         params = params  # reserved for future filters (e.g., status filter)
-        result = (
-            db.table("tickets")
-            .select("id, status")
-            .execute()
-        )
+        result = db.table("tickets").select("id, status").execute()
 
         tickets = result.data or []
         stats: dict[str, int] = {}
@@ -218,11 +232,7 @@ class SQLAnalyticalTool(OrgBaseTool):
         FROM tasks WHERE org_id = X AND tokens_used > 0 GROUP BY flow_type ORDER BY total_tokens DESC
         """
         params = params  # reserved for future filters
-        result = (
-            db.table("tasks")
-            .select("id, flow_type, tokens_used")
-            .execute()
-        )
+        result = db.table("tasks").select("id, flow_type, tokens_used").execute()
 
         tasks = result.data or []
         stats: dict[str, dict[str, int]] = {}
@@ -239,12 +249,16 @@ class SQLAnalyticalTool(OrgBaseTool):
 
         result_list = []
         for flow, data in stats.items():
-            result_list.append({
-                "flow_type": flow,
-                "total_runs": data["runs"],
-                "total_tokens": data["total_tokens"],
-                "avg_tokens": round(data["total_tokens"] / data["runs"], 2) if data["runs"] > 0 else 0,
-            })
+            result_list.append(
+                {
+                    "flow_type": flow,
+                    "total_runs": data["runs"],
+                    "total_tokens": data["total_tokens"],
+                    "avg_tokens": round(data["total_tokens"] / data["runs"], 2)
+                    if data["runs"] > 0
+                    else 0,
+                }
+            )
 
         result_list.sort(key=lambda x: x["total_tokens"], reverse=True)
         return result_list[:10]
@@ -277,7 +291,9 @@ class SQLAnalyticalTool(OrgBaseTool):
 
         return [
             {"event_type": event_type, "count": count}
-            for event_type, count in sorted(stats.items(), key=lambda x: x[1], reverse=True)
+            for event_type, count in sorted(
+                stats.items(), key=lambda x: x[1], reverse=True
+            )
         ][:20]
 
     def _query_tasks_by_flow(self, db, params: dict = None) -> list:
@@ -287,11 +303,7 @@ class SQLAnalyticalTool(OrgBaseTool):
         WHERE org_id = X GROUP BY flow_type, status ORDER BY flow_type, count DESC
         """
         params = params  # reserved for future filters
-        result = (
-            db.table("tasks")
-            .select("id, flow_type, status")
-            .execute()
-        )
+        result = db.table("tasks").select("id, flow_type, status").execute()
 
         tasks = result.data or []
         stats: dict[str, dict[str, int]] = {}
@@ -308,17 +320,20 @@ class SQLAnalyticalTool(OrgBaseTool):
         result_list = []
         for flow, status_counts in stats.items():
             for status, count in status_counts.items():
-                result_list.append({
-                    "flow_type": flow,
-                    "status": status,
-                    "count": count,
-                })
+                result_list.append(
+                    {
+                        "flow_type": flow,
+                        "status": status,
+                        "count": count,
+                    }
+                )
 
         result_list.sort(key=lambda x: (x["flow_type"], -x["count"]))
         return result_list
 
 
 # ── EventStoreTool ─────────────────────────────────────────────────
+
 
 @register_tool(
     name="event_store",
@@ -337,7 +352,12 @@ class EventStoreTool(OrgBaseTool):
     description: str = "Consulta eventos de dominio historicos."
     args_schema: Type[BaseModel] = EventStoreInput
 
-    def _run(self, event_type: Optional[str] = None, aggregate_type: Optional[str] = None, limit: int = 50) -> str:
+    def _run(
+        self,
+        event_type: Optional[str] = None,
+        aggregate_type: Optional[str] = None,
+        limit: int = 50,
+    ) -> str:
         """Consultar eventos del EventStore."""
         limit = min(limit, 200)
 
@@ -345,39 +365,49 @@ class EventStoreTool(OrgBaseTool):
             events = self._query_events(event_type, aggregate_type, limit)
 
             if not events:
-                return json.dumps({
-                    "event_type": event_type,
-                    "aggregate_type": aggregate_type,
-                    "events": [],
-                    "message": "No se encontraron eventos con los filtros solicitados.",
-                    "count": 0,
-                })
+                return json.dumps(
+                    {
+                        "event_type": event_type,
+                        "aggregate_type": aggregate_type,
+                        "events": [],
+                        "message": "No se encontraron eventos con los filtros solicitados.",
+                        "count": 0,
+                    }
+                )
 
             simplified = []
             for evt in events:
-                simplified.append({
-                    "event_type": evt.get("event_type"),
-                    "aggregate_type": evt.get("aggregate_type"),
-                    "aggregate_id": evt.get("aggregate_id"),
-                    "sequence": evt.get("sequence"),
-                    "created_at": evt.get("created_at"),
-                })
+                simplified.append(
+                    {
+                        "event_type": evt.get("event_type"),
+                        "aggregate_type": evt.get("aggregate_type"),
+                        "aggregate_id": evt.get("aggregate_id"),
+                        "sequence": evt.get("sequence"),
+                        "created_at": evt.get("created_at"),
+                    }
+                )
 
-            return json.dumps({
-                "event_type": event_type,
-                "aggregate_type": aggregate_type,
-                "events": simplified,
-                "count": len(simplified),
-            })
+            return json.dumps(
+                {
+                    "event_type": event_type,
+                    "aggregate_type": aggregate_type,
+                    "events": simplified,
+                    "count": len(simplified),
+                }
+            )
 
         except Exception as exc:
             logger.error("Error consultando EventStore: %s", exc)
-            return json.dumps({
-                "error": "Fallo temporal en la recuperacion de eventos.",
-                "detail": str(exc),
-            })
+            return json.dumps(
+                {
+                    "error": "Fallo temporal en la recuperacion de eventos.",
+                    "detail": str(exc),
+                }
+            )
 
-    def _query_events(self, event_type: Optional[str], aggregate_type: Optional[str], limit: int) -> list:
+    def _query_events(
+        self, event_type: Optional[str], aggregate_type: Optional[str], limit: int
+    ) -> list:
         """Consultar eventos desde Supabase."""
         with get_tenant_client(self.org_id, user_id=None) as db:
             query = db.table("domain_events").select(
@@ -389,10 +419,6 @@ class EventStoreTool(OrgBaseTool):
             if aggregate_type:
                 query = query.eq("aggregate_type", aggregate_type)
 
-            result = (
-                query.order("created_at", desc=True)
-                .limit(limit)
-                .execute()
-            )
+            result = query.order("created_at", desc=True).limit(limit).execute()
 
             return result.data or []

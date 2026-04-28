@@ -23,6 +23,7 @@ router = APIRouter(prefix="/analytical", tags=["analytical"])
 
 class AnalyticalAskRequest(BaseModel):
     """Request para consulta analítica."""
+
     question: str = Field(..., min_length=1, description="Pregunta en lenguaje natural")
     query_type: Optional[str] = Field(
         None,
@@ -32,6 +33,7 @@ class AnalyticalAskRequest(BaseModel):
 
 class AnalyticalAskResponse(BaseModel):
     """Respuesta del asistente analítico."""
+
     question: str
     query_type: str
     data: List[Dict[str, Any]]
@@ -41,12 +43,14 @@ class AnalyticalAskResponse(BaseModel):
 
 class AnalyticalQueryInfo(BaseModel):
     """Información de una consulta analítica disponible."""
+
     key: str
     description: str
 
 
 class AnalyticalQueriesResponse(BaseModel):
     """Lista de consultas analíticas disponibles."""
+
     queries: List[AnalyticalQueryInfo]
 
 

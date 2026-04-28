@@ -12,7 +12,9 @@ from src.cli.utils import create_manifest_base, save_json
 def init_bundle(
     name: str = typer.Argument(..., help="Name of the bundle to create"),
     author: str = typer.Option("dev@org.com", help="Author of the bundle"),
-    path: Path = typer.Option(Path("."), help="Path where the bundle folder will be created"),
+    path: Path = typer.Option(
+        Path("."), help="Path where the bundle folder will be created"
+    ),
 ):
     """Initialize a new FAP Bundle structure."""
     bundle_path = path / name
@@ -32,7 +34,9 @@ def init_bundle(
         manifest = create_manifest_base(name, author)
         save_json(bundle_path / "manifest.json", manifest)
 
-        print(f"[green]SUCCESS:[/green] Bundle [bold]{name}[/bold] initialized successfully at {bundle_path}")
+        print(
+            f"[green]SUCCESS:[/green] Bundle [bold]{name}[/bold] initialized successfully at {bundle_path}"
+        )
         print("\nStructure created:")
         for sd in subdirs:
             print(f"  - {sd}/")

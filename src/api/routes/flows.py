@@ -87,11 +87,11 @@ async def list_available_flows(
     for flow_type in flow_registry.list_flows():
         meta = flow_registry.get_metadata(flow_type)
         flow_category = meta.get("category")
-        
+
         # Filtrar por categoría si se especifica
         if category and flow_category != category:
             continue
-            
+
         # Excluir system si se solicita
         if exclude_system and flow_category == "system":
             continue

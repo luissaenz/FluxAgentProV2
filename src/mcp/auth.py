@@ -70,8 +70,7 @@ def _verify_es256(token: str, issuer: str) -> dict:
 
 
 def _verify_hs256(token: str, secret: str, issuer: str) -> dict:
-    """Verify an HS256‑signed token using the Supabase secret.
-    """
+    """Verify an HS256‑signed token using the Supabase secret."""
     try:
         payload = pyjwt.decode(
             token,

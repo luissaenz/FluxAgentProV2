@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DomainEvent:
     """Immutable domain event waiting in the flush queue.
-    
+
     Attributes:
         event_id: Unique ID of the event record.
         org_id: UUID of the organization.
@@ -49,6 +49,7 @@ class DomainEvent:
 
 class EventStoreError(Exception):
     """El Flow debe detenerse si se lanza este error (Regla R6)."""
+
     pass
 
 
@@ -78,7 +79,12 @@ class EventStore:
         )
     """
 
-    def __init__(self, org_id: str, user_id: Optional[str] = None, correlation_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        org_id: str,
+        user_id: Optional[str] = None,
+        correlation_id: Optional[str] = None,
+    ) -> None:
         self.org_id = org_id
         self.user_id = user_id
         self.correlation_id = correlation_id
@@ -178,28 +184,39 @@ class EventStore:
             # Use TenantClient to set app.org_id for RLS
             with get_tenant_client(org_id) as db:
                 # Obtener siguiente secuencia atómica (con FOR UPDATE)
-                seq_result = db.execute_with_retry(db.rpc("next_event_sequence", {
-                    "p_aggregate_type": aggregate_type,
-                    "p_aggregate_id": aggregate_id
-                }))
+                seq_result = db.execute_with_retry(
+                    db.rpc(
+                        "next_event_sequence",
+                        {
+                            "p_aggregate_type": aggregate_type,
+                            "p_aggregate_id": aggregate_id,
+                        },
+                    )
+                )
 
                 sequence = seq_result.data
 
                 # Insertar evento (append-only, RLS valida org_id)
-                db.execute_with_retry(db.table("domain_events").insert({
-                    "org_id": org_id,
-                    "aggregate_type": aggregate_type,
-                    "aggregate_id": aggregate_id,
-                    "event_type": event_type,
-                    "payload": payload,
-                    "correlation_id": correlation_id,
-                    "actor": actor or "system",
-                    "sequence": sequence,
-                }))
+                db.execute_with_retry(
+                    db.table("domain_events").insert(
+                        {
+                            "org_id": org_id,
+                            "aggregate_type": aggregate_type,
+                            "aggregate_id": aggregate_id,
+                            "event_type": event_type,
+                            "payload": payload,
+                            "correlation_id": correlation_id,
+                            "actor": actor or "system",
+                            "sequence": sequence,
+                        }
+                    )
+                )
 
             logger.debug(
                 "Event appended_sync: %s seq=%d agg=%s",
-                event_type, sequence, aggregate_id
+                event_type,
+                sequence,
+                aggregate_id,
             )
 
         except Exception as e:

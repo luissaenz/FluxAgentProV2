@@ -75,17 +75,17 @@ class ToolRegistry:
     def get(self, name: str, org_id: str | None = None) -> Type:
         """Get a tool by name. Order: tenant-scoped memory -> global memory -> DB lookup -> filesystem fallback."""
         key = name.lower()
-        
+
         # 1. Check tenant-scoped memory first (if org_id provided)
         if org_id:
             scoped_key = f"{org_id}:{key}"
             if scoped_key in self._tools:
                 return self._tools[scoped_key]
-        
+
         # 2. Check global memory registry
         if key in self._tools:
             return self._tools[key]
-            
+
         # 3. DB Lookup (skill_catalog)
         if org_id:
             try:
@@ -93,7 +93,9 @@ class ToolRegistry:
                 if tool_class:
                     return tool_class
             except Exception as e:
-                logger.debug("Failed DB lookup for tool '%s' in org '%s': %s", name, org_id, e)
+                logger.debug(
+                    "Failed DB lookup for tool '%s' in org '%s': %s", name, org_id, e
+                )
 
         # 4. Fallback to filesystem (src/tools/demo/*.py)
         try:
@@ -124,39 +126,48 @@ class ToolRegistry:
                     .maybe_single()
                     .execute()
                 )
-                
+
                 if not (result and result.data):
                     return None
-                
+
                 code_source = result.data["code_source"]
-                
+
                 # 1. Security Scan (AST)
                 guard = SecurityGuard()
-                guard.scan_source(code_source) # Raises SecurityError if unsafe
-                
+                guard.scan_source(code_source)  # Raises SecurityError if unsafe
+
                 # 2. Restricted Compilation
                 # Note: We use 'exec' mode. The code must define a class that we can extract.
                 filename = f"<db_skill_{org_id}_{name}>"
                 byte_code = compile_restricted(code_source, filename, "exec")
-                
+
                 # 3. Execution in restricted namespace
                 # We provide a safe built-in environment
                 from RestrictedPython import safe_builtins
+
                 loc: Dict[str, Any] = {}
                 # SUPUESTO: Las skills de DB deben seguir el patrón de las de disco:
                 # Deben definir una clase que herede de BaseTool o similar.
                 exec(byte_code, {"__builtins__": safe_builtins}, loc)
-                
+
                 # 4. Extract Tool class
                 for attr in loc.values():
-                    if isinstance(attr, type) and "Tool" in attr.__name__ and not attr.__name__.startswith("Base"):
+                    if (
+                        isinstance(attr, type)
+                        and "Tool" in attr.__name__
+                        and not attr.__name__.startswith("Base")
+                    ):
                         # Register in memory (tenant-scoped)
                         self.register(name=f"{org_id}:{name}")(attr)
                         return attr
-                        
-                logger.warning("DB Skill '%s' for org '%s' found but no Tool class detected in source.", name, org_id)
+
+                logger.warning(
+                    "DB Skill '%s' for org '%s' found but no Tool class detected in source.",
+                    name,
+                    org_id,
+                )
                 return None
-                
+
         except Exception as exc:
             logger.error("Error loading skill '%s' from DB: %s", name, exc)
             return None
@@ -164,16 +175,16 @@ class ToolRegistry:
     def _load_from_filesystem(self, name: str) -> Optional[Type]:
         """Try to dynamically import a tool from src.tools.demo."""
         import importlib
-        
+
         # Normalize name (strip prefix and _tool suffix if present)
         # SUPUESTO: Filesystem tools are always global/demo
         clean_name = name.split(":")[-1].replace("_tool", "")
-        
+
         module_paths = [
             f"src.tools.demo.{clean_name}",
-            f"src.tools.demo.{clean_name}_tool"
+            f"src.tools.demo.{clean_name}_tool",
         ]
-        
+
         for module_path in module_paths:
             try:
                 module = importlib.import_module(module_path)
@@ -186,7 +197,7 @@ class ToolRegistry:
                             return attr
             except ImportError:
                 continue
-                
+
         return None
 
     def get_metadata(self, name: str) -> Optional[ToolMetadata]:

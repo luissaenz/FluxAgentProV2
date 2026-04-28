@@ -76,7 +76,8 @@ async def architect_chat(
 
     # Clasificar si hay suficiente contexto
     user_messages = [
-        m for m in get_conversation(conversation_id, org_id).get("messages", [])
+        m
+        for m in get_conversation(conversation_id, org_id).get("messages", [])
         if m.get("role") == "user"
     ]
 
@@ -84,8 +85,10 @@ async def architect_chat(
         # Suficiente contexto → generar
         update_status(conversation_id, org_id, "in_progress")
         add_message(
-            conversation_id, org_id, "assistant",
-            "Estoy diseñando tu workflow. Te aviso cuando esté listo."
+            conversation_id,
+            org_id,
+            "assistant",
+            "Estoy diseñando tu workflow. Te aviso cuando esté listo.",
         )
 
         background.add_task(
@@ -164,24 +167,17 @@ async def _run_architect_background(
         flow_type = result.get("flow_type")
         msg = result.get("message", f"Workflow '{flow_type}' diseñado exitosamente.")
 
-        add_message(
-            conversation_id, org_id, "assistant",
-            msg
-        )
+        add_message(conversation_id, org_id, "assistant", msg)
 
         # En arquitectura Bundle-Driven, no hay template_id hasta que se importe.
         # Marcamos como completado pasando None en template_id.
         link_workflow(conversation_id, org_id, None)
 
-        logger.info(
-            "ArchitectFlow[%s] completó: %s",
-            conversation_id, flow_type
-        )
+        logger.info("ArchitectFlow[%s] completó: %s", conversation_id, flow_type)
 
     except Exception as exc:
         logger.error("ArchitectFlow[%s] falló: %s", conversation_id, exc)
         update_status(conversation_id, org_id, "failed")
         add_message(
-            conversation_id, org_id, "assistant",
-            f"No pude generar el workflow: {exc}"
+            conversation_id, org_id, "assistant", f"No pude generar el workflow: {exc}"
         )

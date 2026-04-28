@@ -49,9 +49,7 @@ async def handle_execute_flow(
     # 2. Check flow existence
     if not flow_registry.has(flow_type):
         available = flow_registry.list_flows()
-        raise MethodNotFound(
-            f"Flow '{flow_type}' not found. Available: {available}"
-        )
+        raise MethodNotFound(f"Flow '{flow_type}' not found. Available: {available}")
 
     # 3. Prepare execution context
     if not correlation_id:
@@ -64,16 +62,20 @@ async def handle_execute_flow(
     state = await flow.execute(input_data, correlation_id=correlation_id)
 
     # 5. Notify via SSE
-    await sse_manager.broadcast(org_id, "task_update", {
-        "task_id": state.task_id,
-        "status": state.status,
-        "correlation_id": correlation_id
-    })
+    await sse_manager.broadcast(
+        org_id,
+        "task_update",
+        {
+            "task_id": state.task_id,
+            "status": state.status,
+            "correlation_id": correlation_id,
+        },
+    )
 
     return {
         "task_id": state.task_id,
         "status": state.status,
-        "correlation_id": correlation_id
+        "correlation_id": correlation_id,
     }
 
 
@@ -118,12 +120,12 @@ async def handle_get_task(
         )
         if not task.data:
             raise NotFound(f"Task {task_id} not found for org {org_id}")
-        
+
         # If task exists but no snapshot, it might be in early 'pending' state
         return {
             "task_id": task_id,
             "status": task.data["status"],
-            "message": "Snapshot not yet generated"
+            "message": "Snapshot not yet generated",
         }
 
     # 3. Reconstruct and format response
@@ -150,10 +152,7 @@ async def handle_reject_task(
 
 
 async def _process_decision(
-    org_id: str,
-    task_id: str,
-    claims: Dict[str, Any],
-    decision: str
+    org_id: str, task_id: str, claims: Dict[str, Any], decision: str
 ) -> Dict[str, Any]:
     """Common logic for HITL decisions. Updates DB and resumes flow."""
     # 1. Authorize
@@ -173,14 +172,18 @@ async def _process_decision(
     )
 
     if not pending.data:
-        raise NotFound(f"No pending approval found for task {task_id} with status 'pending'")
+        raise NotFound(
+            f"No pending approval found for task {task_id} with status 'pending'"
+        )
 
     # 3. Update pending_approvals record
-    svc.table("pending_approvals").update({
-        "status": decision,
-        "decided_by": user_id,
-        "decided_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
-    }).eq("id", pending.data["id"]).execute()
+    svc.table("pending_approvals").update(
+        {
+            "status": decision,
+            "decided_by": user_id,
+            "decided_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+    ).eq("id", pending.data["id"]).execute()
 
     # 4. Resume flow execution
     # We retrieve the flow_type from the pending record to instantiate the right class
@@ -193,15 +196,14 @@ async def _process_decision(
 
     # 5. Notify via SSE
     if flow.state:
-        await sse_manager.broadcast(org_id, "task_update", {
-            "task_id": task_id,
-            "status": flow.state.status,
-            "decision": decision
-        })
+        await sse_manager.broadcast(
+            org_id,
+            "task_update",
+            {"task_id": task_id, "status": flow.state.status, "decision": decision},
+        )
 
     return {
         "task_id": task_id,
         "status": flow.state.status if flow.state else "processed",
-        "decision": decision
+        "decision": decision,
     }
-

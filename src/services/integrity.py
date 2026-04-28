@@ -38,7 +38,8 @@ def verify_integrity(data: bytes, expected_hash: str) -> bool:
     if actual_hash != expected_hash:
         logger.warning(
             "Integrity check failed. Expected: %s, Actual: %s",
-            expected_hash, actual_hash
+            expected_hash,
+            actual_hash,
         )
         return False
     return True

@@ -1,6 +1,9 @@
 import asyncio
+
 from dotenv import load_dotenv
+
 from src.db.session import get_service_client
+
 
 async def verify_agent_enrichment():
     load_dotenv()

@@ -15,19 +15,28 @@ class Settings(BaseSettings):
     supabase_service_key: str = Field(..., description="Supabase service-role key")
 
     # ── Supabase Auth (Phase 5) ────────────────────────────────
-    supabase_jwt_secret: str = Field("", description="Supabase JWT signing secret for token verification")
+    supabase_jwt_secret: str = Field(
+        "", description="Supabase JWT signing secret for token verification"
+    )
 
     # ── LLM Providers ─────────────────────────────────────────
     anthropic_api_key: Optional[str] = Field(None, description="Anthropic API key")
     openai_api_key: Optional[str] = Field(None, description="OpenAI API key")
     groq_api_key: Optional[str] = Field(None, description="Groq API key")
     openrouter_api_key: Optional[str] = Field(None, description="OpenRouter API key")
-    openrouter_model: str = Field("openrouter/free", description="OpenRouter model name")
+    openrouter_model: str = Field(
+        "openrouter/free", description="OpenRouter model name"
+    )
     deepseek_api_key: Optional[str] = Field(None, description="DeepSeek API key")
-    
+
     # Selection
-    llm_provider: str = Field("groq", description="Preferred LLM provider (groq | openrouter | openai | anthropic)")
-    groq_model: str = Field("groq/llama-3.3-70b-versatile", description="Default Groq model")
+    llm_provider: str = Field(
+        "groq",
+        description="Preferred LLM provider (groq | openrouter | openai | anthropic)",
+    )
+    groq_model: str = Field(
+        "groq/llama-3.3-70b-versatile", description="Default Groq model"
+    )
 
     def get_llm(self) -> Any:
         """Return a configured CrewAI LLM instance based on llm_provider."""
@@ -40,18 +49,31 @@ class Settings(BaseSettings):
         elif self.llm_provider == "openai":
             return LLM(model="gpt-4o", api_key=self.openai_api_key)
         elif self.llm_provider == "anthropic":
-            return LLM(model="claude-3-5-sonnet-20240620", api_key=self.anthropic_api_key)
+            return LLM(
+                model="claude-3-5-sonnet-20240620", api_key=self.anthropic_api_key
+            )
         else:
             raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
 
     # ── Application ───────────────────────────────────────────
-    app_env: str = Field("development", description="development | staging | production")
+    app_env: str = Field(
+        "development", description="development | staging | production"
+    )
     log_level: str = Field("INFO", description="Logging level")
+
+    # ── Bundle Constraints ────────────────────────────────────
+    max_agents_per_bundle: int = Field(
+        15, description="Maximum agents allowed in a single bundle"
+    )
+    max_bundle_size_mb: int = Field(10, description="Maximum ZIP bundle size in MB")
+    bundle_import_timeout: float = Field(
+        30.0, description="Timeout for atomic bundle import in seconds"
+    )
 
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
-        "extra": "ignore"  # Ignore NEXT_PUBLIC_* and other extra fields from .env
+        "extra": "ignore",  # Ignore NEXT_PUBLIC_* and other extra fields from .env
     }
 
 

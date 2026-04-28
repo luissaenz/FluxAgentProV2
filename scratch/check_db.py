@@ -1,7 +1,9 @@
 import asyncio
 import os
-from supabase import acreate_client
+
 from dotenv import load_dotenv
+
+from supabase import acreate_client
 
 load_dotenv()
 

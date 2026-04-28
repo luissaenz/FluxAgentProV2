@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class VaultError(Exception):
     """Error al obtener un secreto del vault."""
+
     pass
 
 
@@ -54,9 +55,7 @@ def get_secret(org_id: str, secret_name: str) -> str:
     )
 
     if not result.data:
-        raise VaultError(
-            f"Secreto '{secret_name}' no configurado para org '{org_id}'"
-        )
+        raise VaultError(f"Secreto '{secret_name}' no configurado para org '{org_id}'")
 
     return result.data["secret_value"]
 
@@ -72,12 +71,7 @@ def list_secrets(org_id: str) -> List[str]:
     """
     svc = get_service_client()
 
-    result = (
-        svc.table("secrets")
-        .select("name")
-        .eq("org_id", org_id)
-        .execute()
-    )
+    result = svc.table("secrets").select("name").eq("org_id", org_id).execute()
 
     return [row["name"] for row in result.data]
 
@@ -99,4 +93,5 @@ async def get_secret_async(org_id: str, secret_name: str) -> str:
         VaultError: Si el secreto no existe o no se puede acceder.
     """
     import asyncio
+
     return await asyncio.to_thread(get_secret, org_id, secret_name)

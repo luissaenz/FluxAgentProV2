@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+
 def final_scan():
     seed = Path("data/service_catalog_seed.json")
     data = json.loads(seed.read_text(encoding="utf-8"))

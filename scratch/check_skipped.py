@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 
+
 def check_skipped():
     docs_dir = Path("docs")
     total_raw = 0

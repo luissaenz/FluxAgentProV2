@@ -4,10 +4,12 @@
 REST VERSION (using requests to avoid httpx/http2 hanging issues).
 """
 
-import sys
 import os
-import requests
+import sys
+
 import dotenv
+import requests
+
 
 def main():
     print("Starting database cleanup (REST mode)...", flush=True)

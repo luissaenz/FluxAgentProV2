@@ -6,12 +6,14 @@ from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
+
 class SSEConnectionManager:
     """Singleton manager for SSE connections by org_id.
-    
+
     Allows broadcasting events (task updates, tool results) to all clients
     connected to a specific organization.
     """
+
     _instance = None
 
     def __new__(cls):
@@ -26,8 +28,11 @@ class SSEConnectionManager:
         if org_id not in self.active_connections:
             self.active_connections[org_id] = []
         self.active_connections[org_id].append(queue)
-        logger.info("SSE Client connected to org_id=%s. Active connections for org: %d", 
-                    org_id, len(self.active_connections[org_id]))
+        logger.info(
+            "SSE Client connected to org_id=%s. Active connections for org: %d",
+            org_id,
+            len(self.active_connections[org_id]),
+        )
         return queue
 
     async def disconnect(self, org_id: str, queue: asyncio.Queue):
@@ -45,14 +50,12 @@ class SSEConnectionManager:
             return
 
         # Prepare message for sse-starlette format
-        message = {
-            "event": event_type,
-            "data": data
-        }
-        
+        message = {"event": event_type, "data": data}
+
         logger.debug("Broadcasting event '%s' to org_id=%s", event_type, org_id)
         for queue in self.active_connections[org_id]:
             await queue.put(message)
+
 
 # Global singleton instance
 sse_manager = SSEConnectionManager()
