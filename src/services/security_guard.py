@@ -8,6 +8,7 @@ from __future__ import annotations
 import ast
 import concurrent.futures
 import logging
+from typing import Optional
 
 from RestrictedPython import compile_restricted, safe_builtins
 
@@ -75,8 +76,15 @@ class SecurityError(Exception):
 class SecurityGuard:
     """Provides static and dynamic security analysis for Python code."""
 
-    def __init__(self, timeout_seconds: int = 30):
+    def __init__(
+        self, 
+        timeout_seconds: int = 30,
+        allowed_modules: Optional[set[str]] = None,
+        forbidden_modules: Optional[set[str]] = None
+    ):
         self.timeout_seconds = timeout_seconds
+        self.allowed_modules = allowed_modules if allowed_modules is not None else ALLOWED_MODULES
+        self.forbidden_modules = forbidden_modules if forbidden_modules is not None else FORBIDDEN_MODULES
 
     def validate_skill(self, source_code: str, filename: str = "skill.py") -> bool:
         """Validate source code using AST analysis and dry-run compilation.
@@ -131,12 +139,12 @@ class SecurityGuard:
     def _check_module(self, root_module: str, full_module: str, filename: str):
         """Verify if a module is forbidden or not in the allowlist."""
         # 1. Check blacklist (Explicitly forbidden)
-        if root_module in FORBIDDEN_MODULES:
+        if root_module in self.forbidden_modules:
             raise SecurityError(f"Forbidden import '{full_module}' in {filename}")
 
         # 2. Check allowlist
         # Note: per OC Analysis D2: "only allowlist... blacklist not enough".
-        if root_module not in ALLOWED_MODULES and root_module != "":
+        if root_module not in self.allowed_modules and root_module != "":
             raise SecurityError(
                 f"Module '{root_module}' not in allowlist for {filename}"
             )

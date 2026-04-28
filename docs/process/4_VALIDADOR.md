@@ -144,7 +144,7 @@ Cada issue debe ser **atómico** (un problema por item):
 
 ## 📋 Formato de Salida
 
-**Destino:** `D:\Develop\Personal\FluxAgentPro-v2\LAST\validacion.md`
+**Destino 1:** `D:\Develop\Personal\FluxAgentPro-v2\LAST\validacion.md`
 
 > [!IMPORTANT]
 > **REGLA DE ORO DE ESCRITURA:**
@@ -179,12 +179,6 @@ Cada issue debe ser **atómico** (un problema por item):
 ### 🔴 Críticos
 - **ID-001:** [Descripción] → Criterio/Corrección afectada: [#N / D#N] → Recomendación: [Acción concreta]
 
-### 🟡 Importantes
-- **ID-002:** [Descripción] → Tipo: [Categoría] → Recomendación: [Acción concreta]
-
-### 🔵 Mejoras
-- **ID-003:** [Descripción] → Recomendación: [Sugerencia]
-
 ## Estadísticas
 - Correcciones al plan: [X/Y aplicadas]
 - Criterios de aceptación: [X/Y cumplidos]
@@ -192,6 +186,15 @@ Cada issue debe ser **atómico** (un problema por item):
 - Issues importantes: [N]
 - Mejoras sugeridas: [N]
 ```
+
+**Destino 2:** Actualiza o crea el documento `D:\Develop\Personal\FluxAgentPro-v2\docs\sugest.md` incorporando las issues 🟡 y 🔵
+
+### 🟡 Importantes
+- **ID-002:** [Paso/Fase #] [Descripción] → Tipo: [Categoría] → Recomendación: [Acción concreta]
+
+### 🔵 Mejoras
+- **ID-003:** [Paso/Fase #] [Descripción] → Recomendación: [Sugerencia]
+
 
 ---
 

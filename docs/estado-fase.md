@@ -1,22 +1,23 @@
-# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v14
+# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v15
 
 > 📅 Documento actualizado: 2026-04-28
-> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 16 - Auditoría de Integridad Técnica)
+> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 17 - CLI Refinement / The Local Forge)
 
 ---
 
 ## 1. Resumen de Fase
 
-El objetivo de esta fase ha sido la estabilización y auditoría integral del sistema **Bundle-Driven**. Tras completar la certificación funcional (Paso 13), el foco se trasladó a garantizar la integridad técnica profunda, resolviendo discrepancias entre el diseño y la implementación real, y blindando la seguridad del sandbox de ejecución.
+El objetivo de esta fase (**Fase III: Refinamiento y DX**) es elevar la experiencia del desarrollador (DX) y garantizar que el flujo **Local-First** sea robusto, seguro y un espejo fiel del entorno de producción. Tras cerrar la auditoría técnica del backend (Paso 16), el foco se ha trasladado al **FAP-CLI**, convirtiéndolo en una herramienta de grado profesional para desarrollo local.
 
-**Estado Actual:** 🚀 **SISTEMA AUDITADO Y CERTIFICADO.** Se han verificado 9/9 criterios de corrección técnica y seguridad. El sistema es robusto, atómico y está listo para escalar.
+**Estado Actual:** 🚀 **PASO 17 COMPLETADO Y VALIDADO.** El CLI ahora soporta validación sincronizada, sandbox local restrictivo y flujo completo de autenticación y publicación.
 
 | Paso | Descripción | Estado |
 |:---|:---|:---|
-| T1-T13| Construcción, Certificación y Cierre MVP | ✅ Completado |
-| T14 | Refactorización Clean Code y Handoff | ✅ Completado |
-| T15 | Roadmap Post-MVP (Hot-Reload, SemVer, IA, Hardening) | ✅ Completado |
-| T16 | **Auditoría de Integridad Técnica (Correcciones Críticas)** | ✅ Completado |
+| T1-T16| Auditoría de Integridad Técnica y Cierre MVP | ✅ Completado |
+| T17 | **CLI Refinement (The Local Forge)** | ✅ Completado |
+| T18 | Warmup & Persistence (The Registry Bridge) | ⏳ Pendiente |
+| T19 | SemVer & Version Guard | ⏳ Pendiente |
+| T20 | Dashboard & Wizard (The Visual Entry) | ⏳ Pendiente |
 
 ---
 
@@ -24,32 +25,35 @@ El objetivo de esta fase ha sido la estabilización y auditoría integral del si
 
 ### Qué ya está implementado y funcional (verificado contra código):
 
-**Auditoría e Integridad (Paso 16):**
-- **Atomicidad RPC Certificada (T16.1):** Función `import_bundle_atomic` en PL/pgSQL implementada. Garantiza rollbacks totales ante fallos en cualquier parte del ZIP (verificado en `supabase/migrations/0027_bundle_rpc.sql`).
-- **Seguridad Mandatoria en Registry (T16.2):** `ToolRegistry` ahora obliga el uso de `SecurityGuard.validate_skill` para toda carga desde DB, eliminando el bypass previo (verificado en `src/tools/registry.py`).
-- **Unique Key Constraints (T16.3):** Restricciones de unicidad funcional `(org_id, role)` para agentes y `(org_id, flow_type)` para flujos aplicadas (verificado en migración 0027).
-- **Desacoplamiento de ArchitectFlow (T16.4):** El flujo ya no persiste directamente en la DB; retorna JSON/Base64 para que el `ImportService` maneje la atomicidad (verificado en `src/flows/architect_flow.py`).
+**Refinamiento de CLI (Paso 17):**
+- **Autenticación Persistente (T17.1):** `fap login` implementado. Guarda tokens en `~/.fap/config.json` con permisos restringidos (chmod 600 en POSIX) usando Pydantic para la persistencia (verificado en `src/cli/config.py`).
+- **Sincronización de Seguridad (T17.2):** `fap validate --sync` descarga la configuración de seguridad del servidor (`GET /api/bundles/security-config`) para asegurar que la validación local coincida con la del backend (verificado en `src/cli/commands/validate.py`).
+- **Sandbox Local (T17.3):** `fap run` permite ejecutar skills localmente usando `RestrictedPython` y el mismo `SecurityGuard` del servidor, garantizando que si una skill corre localmente, correrá en FAP (verificado en `src/cli/commands/run.py`).
+- **Pipeline de Publicación (T17.4):** `fap publish` automatiza el empaquetado y subida del bundle usando el token de acceso persistido (verificado en `src/cli/commands/publish.py`).
 
-**Calidad y Estabilidad:**
-- **Pipeline de Calidad:** 0 errores/warnings en `ruff` y `ESLint` tras correcciones de linting.
-- **Suite de Pruebas:** **314 tests pasados** (230 unitarios + 84 integración).
+**Integridad de Backend:**
+- **Endpoint de Configuración de Seguridad:** Nuevo endpoint `/api/bundles/security-config` que expone módulos permitidos/prohibidos y versión de Python (verificado en `src/api/routes/bundles.py`).
+- **Atomicidad Certificada:** `import_bundle_atomic` garantiza transaccionalidad total (verificado en migración 0027).
 
 ---
 
 ## 3. Contratos Técnicos Vigentes
 
 ### Patrones de Código en Uso (Verificados):
-- **RLS (Row Level Security):** Usa `current_org_id()` que lee la variable de sesión `app.org_id` configurada mediante la función RPC `set_config` (Verificado en `001_set_config_rpc.sql`).
-- **Auth:** Implementado con `PyJWT` (soporta ES256 y HS256).
-- **Sandboxing:** `RestrictedPython >= 7.0` con filtrado AST de módulos prohibidos (`os`, `sys`, `subprocess`).
-- **Registry:** Lookup de 4 niveles en `ToolRegistry` (Tenant Cache -> DB Skill -> DB Tool -> Built-in).
+- **RLS (Row Level Security):** Usa `current_org_id()` que lee la variable de sesión `app.org_id` configurada mediante la función RPC `set_config`. ⚠️ *Nota: El plan sugiere `auth.uid()`, pero el código real usa consistentemente el patrón de variable de sesión `app.org_id`* (Verificado en `001_set_config_rpc.sql` y `025_agent_catalog_rls_update.sql`).
+- **Auth:** Implementado con `PyJWT`. El CLI usa `httpx` para todas las comunicaciones autenticadas.
+- **Sandboxing:** `RestrictedPython >= 7.0` con filtrado AST. Sincronizado entre CLI y Backend.
+- **Registry:** Lookup de 4 niveles en `ToolRegistry` con inyección de dependencias de seguridad.
 
-### APIs y Endpoints (Verificados):
-| Ruta | Método | Descripción | Fuente |
-|:---|:---|:---|:---|
-| `/api/bundles/validate` | `POST` | Validación Dry-run en memoria | `src/api/routes/bundles.py` |
-| `/api/bundles/import` | `POST` | Importación Atómica vía RPC | `src/api/routes/bundles.py` |
-| `/api/bundles/history` | `GET` | Historial de importaciones por Tenant | `src/api/routes/bundles.py` |
+### Estructura del CLI (`fap`):
+| Comando | Función | Archivo |
+|:---|:---|:---|
+| `fap init` | Inicializa estructura de proyecto local | `src/cli/commands/init.py` |
+| `fap login` | Gestiona autenticación y tokens | `src/cli/commands/login.py` |
+| `fap validate` | Valida bundle (local o remoto con `--sync`) | `src/cli/commands/validate.py` |
+| `fap run` | Ejecuta skill en sandbox local | `src/cli/commands/run.py` |
+| `fap package` | Genera ZIP con `manifest.json` | `src/cli/commands/package.py` |
+| `fap publish` | Empaqueta y sube a FAP | `src/cli/commands/publish.py` |
 
 ---
 
@@ -57,29 +61,29 @@ El objetivo de esta fase ha sido la estabilización y auditoría integral del si
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |:---|:---|:---|:---|:---|
+| T17 | ✅ | `src/cli/`, `src/api/routes/bundles.py`, `pyproject.toml` | Adopción de `Typer` para CLI y `httpx` para red. Paridad de sandbox local/remoto. | DX Nivel Pro |
 | T16 | ✅ | `registry.py`, `import_service.py`, `0027_bundle_rpc.sql` | Unificación de criterios de auditoría y cierre de brechas de seguridad | Fase II Auditada |
-| T15 | ✅ | `import_service.py`, `registry.py`, `architect_flow.py` | Adopción de SemVer e IA Bundle-Builder | Roadmap Validado |
 
 ---
 
-## 5. Criterios de Aceptación (Fase II - Paso 16)
+## 5. Criterios de Aceptación (Fase III - Paso 17)
 
 | # | Criterio | Verificación |
 |:---|:---|:---|
-| 1 | Fallo parcial en bundle provoca rollback total | ✅ Verificado (SQL RPC) |
-| 2 | Intento de duplicar rol en org falla por Constraint | ✅ Verificado (DB Index) |
-| 3 | Todo skill dinámico es validado por `SecurityGuard` | ✅ Verificado (`ToolRegistry`) |
-| 4 | Código base cumple con estándar de linting | ✅ Verificado (0 Errores) |
-| 5 | Consistencia absoluta plan vs implementación | ✅ Verificado (Auditoría ATG) |
+| 1 | `fap login` persiste credenciales de forma segura | ✅ Verificado (`CLIConfig`) |
+| 2 | `fap run` bloquea módulos prohibidos localmente | ✅ Verificado (`SecurityGuard` in CLI) |
+| 3 | `fap validate --sync` actualiza reglas desde el server | ✅ Verificado (Endpoint /security-config) |
+| 4 | `fap publish` realiza el flujo completo PACK -> UPLOAD | ✅ Verificado (Functional Test) |
+| 5 | El CLI es instalable como script de sistema (`pip install -e .`) | ✅ Verificado (`project.scripts` en toml) |
 
 ---
 
 ## 6. Estado del Repositorio
 
 **Hitos Finales Alcanzados:**
-- Certificación de integridad técnica Paso 16.
-- Sistema de orquestación **Bundle-Driven** estable, seguro y atómico.
-- Preparado para transición a la Fase III (Escalabilidad y Ecosistema).
+- CLI Refinement (Paso 17) completado al 100%.
+- Ecosistema **Local-First** funcional: El desarrollador puede codificar, probar y publicar sin salir de la terminal.
+- Sincronización de seguridad garantizada entre cliente y servidor.
 
 ---
 *Documento actualizado por Antigravity (ATG) siguiendo 0_CONTEXTO.md.*

@@ -17,6 +17,28 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/bundles", tags=["Bundles"])
 
 
+@router.get(
+    "/security-config",
+    status_code=status.HTTP_200_OK,
+    summary="Get current security configuration",
+)
+async def get_security_config():
+    """
+    Returns the current security configuration used by the server's sandbox.
+    Used by the CLI to synchronize local validation.
+    """
+    import sys
+
+    from src.services.security_guard import ALLOWED_MODULES, FORBIDDEN_MODULES
+
+    return {
+        "allowed_modules": sorted(list(ALLOWED_MODULES)),
+        "forbidden_modules": sorted(list(FORBIDDEN_MODULES)),
+        "timeout_seconds": 30,
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+    }
+
+
 @router.post(
     "/import",
     response_model=BundleRPCResult,
