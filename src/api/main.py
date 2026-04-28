@@ -22,6 +22,7 @@ import src.tools.builtin  # noqa: F401
 from .routes.agents import router as agents_router
 from .routes.analytical_chat import router as analytical_chat_router
 from .routes.approvals import router as approvals_router
+from .routes.bundles import router as bundles_router
 from .routes.chat import router as chat_router
 from .routes.flow_metrics import router as flow_metrics_router
 from .routes.flows import router as flows_router
@@ -104,6 +105,7 @@ app.include_router(agents_router)  # Semana 2: agent detail
 app.include_router(transcripts_router)  # Semana 2: transcripts
 app.include_router(analytical_chat_router)  # Phase 4: analytical assistant
 app.include_router(integrations_router)  # Phase 5: service catalog TIPO C
+app.include_router(bundles_router)
 app.include_router(mcp_router)
 
 

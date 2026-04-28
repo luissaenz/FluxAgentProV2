@@ -77,7 +77,8 @@ class BaseCrew:
         tools = []
         for tool_name in allowed_tools:
             try:
-                tool_cls = tool_registry.get(tool_name)
+                # SUPUESTO: Pass org_id to search in tenant-scoped memory first
+                tool_cls = tool_registry.get(tool_name, org_id=self.org_id)
                 tools.append(tool_cls(org_id=self.org_id))
             except ValueError:
                 logger.warning("Tool '%s' not found in registry", tool_name)

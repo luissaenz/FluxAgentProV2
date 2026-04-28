@@ -83,18 +83,35 @@ Actúa como un **Principal Software Engineer** especializado en code review y as
 ### FASE 1 — Checklist de Criterios de Aceptación
 Toma CADA criterio de aceptación del `analisis-FINAL.md` y evalúalo:
 
-| # | Criterio | Estado | Evidencia |
-|---|----------|--------|-----------|
 | 1 | [Criterio del análisis] | ✅ Cumple / ❌ No cumple | [Dónde se verifica en el código] |
 | 2 | ... | ... | ... |
 
+---
+
+### FASE 1.5 — Verificación de Calidad y Estabilidad (OBLIGATORIA)
+
+> [!IMPORTANT]
+> Esta fase garantiza que el código nuevo no rompe funcionalidades existentes y cumple con los estándares del proyecto.
+
+**Proceso:**
+1. **Linting & Format:** Ejecutá `npm run lint`. Si falla, es un issue 🔴.
+2. **Tests Unitarios:** Ejecutá `uv run pytest tests/unit`. Si falla algún test relevante al cambio, es un issue 🔴.
+3. **Tests de Integración:** Ejecutá `uv run pytest tests/integration` (solo si el cambio afecta la comunicación entre servicios). Si falla, es un issue 🔴.
+
+| # | Verificación | Comando | Resultado |
+|---|---|---|---|
+| Q1 | Lint & Format | `npm run lint` | ✅ Pass / ❌ Fail |
+| Q2 | Tests Unitarios | `uv run pytest tests/unit` | ✅ Pass / ❌ Fail |
+| Q3 | Tests Integración| `uv run pytest tests/integration` | ✅ Pass / ❌ Fail |
+
+---
+
 ### FASE 2 — Validación Técnica Complementaria
-Solo DESPUÉS de las fases 0 y 1, revisa:
+Solo DESPUÉS de las fases 0, 1 y 1.5, revisa:
 1. **Consistencia con estado-fase.md:** ¿Respeta contratos y convenciones?
 2. **Consistencia con código existente:** ¿Los patrones del código nuevo coinciden con los del código existente? (decoradores, middleware, RLS, logging)
-3. **Panel de Problems:** ¿Hay errores, warnings o TODOs nuevos?
+3. **Imports válidos:** ¿Todos los imports apuntan a módulos que existen?
 4. **Robustez básica:** ¿Los try/except están donde deben estar?
-5. **Imports válidos:** ¿Todos los imports apuntan a módulos que existen?
 
 ### FASE 3 — Lista de Issues
 Cada issue debe ser **atómico** (un problema por item):
@@ -146,6 +163,13 @@ Cada issue debe ser **atómico** (un problema por item):
 | # | Criterio | Estado | Evidencia |
 |---|----------|--------|-----------|
 | 1 | ... | ✅ / ❌ | ... |
+
+## Fase 1.5: Verificación de Calidad y Estabilidad
+| # | Verificación | Comando | Resultado |
+|---|---|---|---|
+| Q1 | Lint & Format | `npm run lint` | ✅ Pass / ❌ Fail |
+| Q2 | Tests Unitarios | `uv run pytest tests/unit` | ✅ Pass / ❌ Fail |
+| Q3 | Tests Integración| `uv run pytest tests/integration` | ✅ Pass / ❌ Fail |
 
 ## Resumen
 [Justificación técnica de la decisión en 3-5 líneas]

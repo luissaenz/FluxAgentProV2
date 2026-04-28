@@ -159,8 +159,9 @@ class TestToolResolution:
         tools = crew._resolve_tools(["db_read", "web_search"])
 
         assert len(tools) == 2
-        mock_registry.get.assert_any_call("db_read")
-        mock_registry.get.assert_any_call("web_search")
+        # SUPUESTO: Ensure org_id is passed to get() for tenant isolation
+        mock_registry.get.assert_any_call("db_read", org_id=sample_org_id)
+        mock_registry.get.assert_any_call("web_search", org_id=sample_org_id)
         mock_tool_class.assert_called_with(org_id=sample_org_id)
 
     @patch("src.crews.base_crew.tool_registry")

@@ -126,15 +126,15 @@ class TestArchitectFlowExecution:
             result = await flow._run_crew()
 
         # Verify result structure
+        # Verify result structure (Analysis D1: Returns definition, no DB persistence)
         assert "flow_type" in result
-        assert "template_id" in result
-        assert "agents_created" in result
+        assert "definition" in result
+        assert "agents" in result
+        assert "message" in result
         assert "steps_count" in result
         assert result["steps_count"] == 2
-
-        # Verify state was updated
-        assert flow.state.workflow_template_id is not None
-        assert len(flow.state.agents_created) == 2
+        assert result["flow_type"] == valid_workflow_definition.flow_type
+        assert result["definition"]["name"] == valid_workflow_definition.name
 
     @pytest.mark.asyncio
     async def test_executes_architect_agent(
@@ -336,6 +336,7 @@ class TestFlowTypeUniqueness:
 class TestTemplatePersistence:
     """_persist_template() behavior."""
 
+    @pytest.mark.skip(reason="Persistencia directa desactivada en Paso 5/6 - Bundle-driven")
     @pytest.mark.asyncio
     async def test_inserts_workflow_template(
         self, mock_tenant_client, sample_org_id, valid_workflow_definition
@@ -391,6 +392,7 @@ class TestTemplatePersistence:
 class TestAgentPersistence:
     """_persist_agents() behavior."""
 
+    @pytest.mark.skip(reason="Persistencia directa desactivada en Paso 5/6 - Bundle-driven")
     @pytest.mark.asyncio
     async def test_inserts_new_agents(
         self, mock_tenant_client, sample_org_id, valid_workflow_definition
@@ -455,6 +457,7 @@ class TestAgentPersistence:
         assert len(created) == 1
         assert "validator" in created
 
+    @pytest.mark.skip(reason="Persistencia directa desactivada en Paso 5/6 - Bundle-driven")
     @pytest.mark.asyncio
     async def test_upserts_with_correct_data(self, mock_tenant_client, sample_org_id):
         """_persist_agents upserts with correct agent data."""
@@ -516,6 +519,7 @@ class TestAgentPersistence:
 class TestDynamicFlowRegistration:
     """_register_dynamic_flow() behavior."""
 
+    @pytest.mark.skip(reason="Registro dinámico directo desactivado en Paso 5/6 - Bundle-driven")
     def test_registers_flow_in_registry(self, sample_org_id, valid_workflow_definition):
         """_register_dynamic_flow registers flow in FLOW_REGISTRY."""
         flow = ArchitectFlow(org_id=sample_org_id)

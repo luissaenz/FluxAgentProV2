@@ -72,13 +72,59 @@ class ToolRegistry:
 
     # ── lookup ──────────────────────────────────────────────────
 
-    def get(self, name: str) -> Type:
+    def get(self, name: str, org_id: str | None = None) -> Type:
+        """Get a tool by name. Order: tenant-scoped memory -> global memory -> filesystem fallback."""
         key = name.lower()
-        if key not in self._tools:
-            raise ValueError(
-                f"Tool '{name}' not found. Available: {list(self._tools.keys())}"
-            )
-        return self._tools[key]
+        
+        # 1. Check tenant-scoped memory first (if org_id provided)
+        if org_id:
+            scoped_key = f"{org_id}:{key}"
+            if scoped_key in self._tools:
+                return self._tools[scoped_key]
+        
+        # 2. Check global memory registry
+        if key in self._tools:
+            return self._tools[key]
+            
+        # 3. Fallback to filesystem (src/tools/demo/*.py)
+        try:
+            tool_class = self._load_from_filesystem(key)
+            if tool_class:
+                return tool_class
+        except Exception as e:
+            logger.debug("Failed filesystem fallback for tool '%s': %s", name, e)
+
+        raise ValueError(
+            f"Tool '{name}' not found. Available in memory: {list(self._tools.keys())}"
+        )
+
+    def _load_from_filesystem(self, name: str) -> Optional[Type]:
+        """Try to dynamically import a tool from src.tools.demo."""
+        import importlib
+        
+        # Normalize name (strip prefix and _tool suffix if present)
+        # SUPUESTO: Filesystem tools are always global/demo
+        clean_name = name.split(":")[-1].replace("_tool", "")
+        
+        module_paths = [
+            f"src.tools.demo.{clean_name}",
+            f"src.tools.demo.{clean_name}_tool"
+        ]
+        
+        for module_path in module_paths:
+            try:
+                module = importlib.import_module(module_path)
+                for attr_name in dir(module):
+                    attr = getattr(module, attr_name)
+                    if isinstance(attr, type):
+                        if "Tool" in attr_name and not attr_name.startswith("Base"):
+                            # Register it in memory for next time as global
+                            self.register(name=name)(attr)
+                            return attr
+            except ImportError:
+                continue
+                
+        return None
 
     def get_metadata(self, name: str) -> Optional[ToolMetadata]:
         return self._metadata.get(name.lower())

@@ -107,7 +107,8 @@ async def get_agent_detail(
         try:
             from ...tools.registry import tool_registry
             for tool_name in allowed_tools:
-                tool_meta = tool_registry.get(tool_name)
+                # SUPUESTO: Pass org_id for tenant-aware metadata lookup
+                tool_meta = tool_registry.get(tool_name, org_id=org_id)
                 if tool_meta:
                     secret_refs.append({
                         "tool": tool_name,

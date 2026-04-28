@@ -8,59 +8,55 @@ El objetivo de esta fase es eliminar la creación manual de agentes e implementa
 2. **T2. BundleManager**: Parseo en memoria, extracción y validación de hashes (SHA256). *(Completado)* ✅
 3. **T3. Security (Sandboxing)**: Escaneo AST y sandboxing con `RestrictedPython`. *(Completado)* ✅
 4. **T4. Persistencia Atómica**: Refactor de RLS, validación de RPC `import_bundle_atomic` y modelos de datos. *(Completado)* ✅
-5. **T5. Pipeline de Importación (API)**: Endpoint `/bundles/import` e invocación de la transacción RPC. *(Depende de T2, T3 y T4)*
-6. **T6. Refactor Existente**: Modificar `ArchitectFlow` para no insertar directamente y habilitar un `ToolRegistry` híbrido. *(Depende de T5)*
+5. **T5. Pipeline de Importación (API)**: Endpoint `/api/bundles/import` e orquestador `ImportService`. *(Completado)* ✅
+6. **T6. Refactor Existente**: Modificar `ArchitectFlow` para no insertar directamente y habilitar un `ToolRegistry` híbrido y scoped. *(Completado)* ✅
 7. **T7. FAP-CLI**: Utilidad de línea de comandos para empaquetado y validación. *(Depende de T5)*
 
 ## 2. Estado Actual del Proyecto
 
 > [!IMPORTANT]
-> Se han completado los pasos **T0 a T4**. El sistema ya cuenta con la capacidad de persistir bundles de forma atómica y multi-tenant en la base de datos, con integridad y seguridad verificadas.
+> Se han completado los pasos **T0 a T6**. El sistema ya cuenta con el pipeline completo de importación operativo, validado técnica y funcionalmente bajo aislamiento multi-tenant.
 
 - **Qué ya está implementado y funcional:**
-  - **Persistencia Atómica**: Función RPC `import_bundle_atomic` validada con suite de pruebas unitarias y de integración.
-  - **RLS Refactores**: Migración `0026` actualizada para usar `current_org_id()` y bypass de `service_role` (estándar del proyecto).
-  - **Suite de Pruebas**: 100% de éxito en tests de estabilización, seguridad y ahora persistencia atómica (`tests/test_bundle_rpc.py`).
-  - **Security Sandbox**: Sandboxing híbrido con `RestrictedPython` y escaneo AST funcional.
-  - **Bundle Foundation**: `BundleManager`, `SecurityGuard` e `IntegrityGuard` en `src/services/`.
-  - **Modelos RPC**: Schemas Pydantic `BundleRPCPayload` y `BundleRPCResult` en `src/services/bundle_schemas.py`.
+  - **API de Bundles**: Endpoint `POST /api/bundles/import` operativo con soporte para multipart/form-data.
+  - **Orquestador de Importación**: `ImportService` integra validación de integridad, seguridad (RestrictedPython), persistencia atómica (Supabase RPC) y registro in-memory dinámico.
+  - **Aislamiento Tenant (ToolRegistry)**: Búsqueda de herramientas scoped por `org_id`. Las herramientas importadas vía bundle solo son visibles para la organización propietaria.
+  - **Refactor de ArchitectFlow**: Desacoplado de la persistencia directa; ahora produce definiciones JSON listas para ser empaquetadas como bundles.
+  - **Suite de Pruebas Unificada**: 100% de éxito en 226 tests unitarios y 75 tests de integración (Incluyendo resolución de regresiones de arquitectura).
 - **Qué no existe aún (Pendiente de implementación):**
-  - El endpoint de subida `/api/bundles/import` **no existe** (Tarea T5).
-  - El servicio de orquestación `ImportService` (Tarea T5).
-  - Refactorización de `ArchitectFlow` (Tarea T6).
+  - **FAP-CLI**: Utilidad para desarrolladores para validar y empaquetar bundles localmente (Tarea T7).
 - **Discrepancias plan vs código:**
-  - 📝 CORRECCIÓN: El plan original sugería persistencia vía API directa, pero se ha consolidado el uso de **RPC Atómico** como único camino de persistencia.
+  - 📝 CORRECCIÓN: El `ToolRegistry` se ha implementado como un sistema híbrido (Memoria > Disco) con aislamiento estricto por prefijos (`org_id:name`) para cumplir con los requisitos de seguridad multi-tenant.
 
 ## 3. Contratos Técnicos Vigentes
 
 - **Modelos de datos / schemas:**
-  - `bundle_imports`, `skill_catalog`, `agent_catalog` (extendido), `workflow_templates` (extendido).
-  - Schemas Pydantic: `BundleManifest`, `BundleContent`, `BundleRPCPayload`, `BundleRPCResult`.
+  - `bundle_imports`, `skill_catalog`, `agent_catalog`, `workflow_templates`.
+  - Schemas Pydantic: `BundleManifest`, `BundleContent`, `BundleRPCPayload`.
 - **Patrones de código en uso:**
-  - **Patrón RLS**: Uso de `(auth.role() = 'service_role' OR org_id::text = current_org_id())` (Verificado en `024` y `026`).
-  - **Validación de Bundles**: Verificación de hashes SHA256 obligatoria previo a cualquier procesamiento.
-  - **Sandboxing**: Prohibición de imports de sistema y timeout de 30s para skills.
-  - **RPC Signature**: `import_bundle_atomic(p_org_id UUID, p_payload JSONB)`.
-- **Dependencias instaladas:** `fastapi`, `supabase`, `pydantic`, `RestrictedPython>=7.0`, `crewai`, `litellm`, `ruff`.
+  - **Patrón RLS**: Uso de `(auth.role() = 'service_role' OR org_id::text = current_org_id())`.
+  - **Tool Scoping**: Registro de herramientas en memoria usando prefijo `{org_id}:{tool_name}`.
+  - **Modern Datetime**: Uso obligatorio de `datetime.now(UTC)` (verificado en `src/db/memory.py`).
+  - **Bundle-Driven Architect**: El flujo de arquitecto es el generador de esquemas, pero no el persistidor.
+- **Dependencias instaladas:** `fastapi`, `supabase`, `pydantic`, `RestrictedPython>=7.0`, `crewai`, `litellm`, `ruff`, `pytest`.
 
 ## 4. Decisiones de Arquitectura Tomadas
 
-- **Transacciones Atómicas vía RPC**: Confirmado el uso de `import_bundle_atomic` para garantizar integridad (All-or-Nothing).
-- **Tenant Isolation**: Delegación total al parámetro `p_org_id` y validación vía RLS.
-- **Upsert Strategy**: Los bundles actualizan registros existentes basados en claves únicas de negocio (`org_id + role` / `org_id + flow_type`).
-- **In-Memory ZIP Processing**: Procesamiento en RAM para evitar ataques de Path Traversal y optimizar velocidad.
+- **Namespace Isolation en ToolRegistry**: Decisión crítica para evitar colisiones entre organizaciones compartiendo el mismo proceso de servidor.
+- **Desacoplamiento de Persistencia en Flujos**: Toda mutación de estado de "definición" (agentes/workflows) debe pasar ahora por el pipeline de bundles para garantizar seguridad.
+- **Validación E2E en Ciclo de Desarrollo**: La suite de pruebas debe pasar obligatoriamente al 100% antes de aprobar cualquier cambio de arquitectura (Verificado en Iteración 4 de validación).
 
 ## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
 | T0. Estabilización | ✅ Completado | `architect_flow.py`, `conftest.py` | Relajación de umbrales de latencia. | 100% tests en verde. |
-| T2. Foundation | ✅ Completado | `src/services/*`, `026_bundle_system.sql` | Índice único por org en flujos. | Integrity y Memory-Only parsing. |
-| T3. Security | ✅ Completado | `security_guard.py`, `027_bundle_rpc.sql` | Timeout y Blacklist real. | 16 tests de seguridad al 100%. |
-| T4. Persistencia | ✅ Completado | `026_bundle_system.sql`, `bundle_schemas.py` | Refactor RLS a `current_org_id()`. | Suite de tests `test_bundle_rpc.py` exitosa. |
+| T2-T4. Foundation | ✅ Completado | `src/services/*`, `026_bundle_system.sql` | RPC Atómico como único camino. | Integridad y Seguridad verificadas. |
+| T5. Pipeline API | ✅ Completado | `src/api/routes/bundles.py`, `import_service.py` | Orquestación centralizada en `ImportService`. | Endpoint `/api/bundles/import` funcional. |
+| T6. Refactor & Scoping| ✅ Completado | `registry.py`, `base_crew.py`, `architect_flow.py` | Aislamiento por prefijo en ToolRegistry. | Regresiones de tests resueltas. |
 
 ## 6. Criterios Generales de Aceptación MVP
-- El happy path (empaquetar bundle válido → importar → confirmar en DB) funciona end-to-end.
-- Los fallos (hashes incorrectos, skills maliciosas, errores SQL) se bloquean o revierten (Rollback).
-- El sistema es 100% multi-tenant y respeta las políticas RLS.
-- El código ejecuta sin errores ni warnings nuevos.
+- El happy path (empaquetar ZIP → POST API → persistencia en DB → ejecución por agente) funciona end-to-end.
+- Las regresiones técnicas han sido eliminadas (Mocks actualizados, tests de integración sincronizados).
+- El sistema es 100% multi-tenant y seguro contra inyección de código malicioso en bundles.
+- El código ejecuta sin errores ni warnings (Linter Ruff & ESLint al 100%).

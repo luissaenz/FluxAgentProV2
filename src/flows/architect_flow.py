@@ -136,30 +136,23 @@ class ArchitectFlow(BaseFlow):
         safe_flow_type = self._ensure_unique_flow_type(workflow_def.flow_type)
         workflow_def.flow_type = safe_flow_type
 
-        # ── 5. Persistir template ──────────────────────────────
-        template_id = await self._persist_template(workflow_def)
-        self.state.workflow_template_id = template_id
-
-        # ── 6. Persistir agentes ────────────────────────────────
-        agents_created = await self._persist_agents(workflow_def)
-        self.state.agents_created = agents_created
-
-        # ── 7. Registrar dinámicamente ─────────────────────────
-        self._register_dynamic_flow(safe_flow_type, workflow_def)
-
+        # ── 5. Retorno de Definición (Bundle-Driven) ─────────────
+        # NOTA: En la arquitectura v2, la persistencia se realiza vía Bundles.
+        # El ArchitectFlow produce la definición, pero no la guarda en DB.
+        
         logger.info(
-            "ArchitectFlow[%s] creó workflow '%s' con %d agentes",
-            self.state.task_id, safe_flow_type, len(agents_created)
+            "ArchitectFlow[%s] generó definición para workflow '%s' (sin persistir)",
+            self.state.task_id, safe_flow_type
         )
 
         return {
             "flow_type": safe_flow_type,
-            "template_id": template_id,
-            "agents_created": agents_created,
+            "definition": workflow_def.model_dump(),
+            "agents": [a.model_dump() for a in workflow_def.agents],
             "steps_count": len(workflow_def.steps),
             "message": (
-                f"Workflow '{workflow_def.name}' creado. "
-                f"Ejecutalo con POST /webhooks/{self.org_id}/{safe_flow_type}"
+                f"Workflow '{workflow_def.name}' generado exitosamente. "
+                "Para activarlo, descargue el Bundle e impórtelo vía POST /api/bundles/import"
             ),
         }
 
@@ -338,7 +331,8 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
     async def _persist_template(
         self, workflow_def: WorkflowDefinition
     ) -> str:
-        """Insertar workflow_templates y retornar el ID."""
+        """DEPRECATED: Use Bundle Import API instead."""
+        logger.warning("Llamada a método persist_template obsoleta.")
         conversation_id = self.state.input_data.get("conversation_id")
         template_id = str(uuid.uuid4())
 
@@ -363,7 +357,8 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
     async def _persist_agents(
         self, workflow_def: WorkflowDefinition
     ) -> list[str]:
-        """Insertar agentes en agent_catalog (upsert). Retorna roles creados."""
+        """DEPRECATED: Use Bundle Import API instead."""
+        logger.warning("Llamada a método persist_agents obsoleta.")
         created = []
 
         with get_tenant_client(self.org_id, self.state.user_id) as db:
@@ -402,7 +397,8 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
     def _register_dynamic_flow(
         self, flow_type: str, workflow_def: WorkflowDefinition
     ) -> None:
-        """Registrar el workflow generado dinámicamente en FLOW_REGISTRY."""
+        """DEPRECATED: Use Bundle Import API instead."""
+        logger.warning("Llamada a método register_dynamic_flow obsoleta.")
         from .dynamic_flow import DynamicWorkflow
 
         DynamicWorkflow.register(

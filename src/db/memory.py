@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import BaseModel
@@ -108,7 +108,7 @@ def save_memory(
     memory_id = str(uuid.uuid4())
     valid_to: Optional[str] = None
     if ttl_hours is not None:
-        valid_to = (datetime.utcnow() + timedelta(hours=ttl_hours)).isoformat()
+        valid_to = (datetime.now(UTC) + timedelta(hours=ttl_hours)).isoformat()
 
     result = svc.table("memory_vectors").insert({
         "id": memory_id,
