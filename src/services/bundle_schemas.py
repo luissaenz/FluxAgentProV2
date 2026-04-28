@@ -70,3 +70,15 @@ class BundleRPCResult(BaseModel):
     flows_count: int = 0
     skills_count: int = 0
     error: Optional[str] = None
+
+
+class BundleValidationResult(BaseModel):
+    """Result of a dry-run bundle validation."""
+    status: str = "success"
+    bundle_info: Optional[BundleInfo] = None
+    agents_count: int = 0
+    flows_count: int = 0
+    skills_count: int = 0
+    security_report: Optional[Dict] = None
+    warnings: List[str] = Field(default_factory=list)
+    error: Optional[str] = None

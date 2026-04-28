@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from src.api.middleware import require_org_id
 from src.services.bundle_manager import BundleError
-from src.services.bundle_schemas import BundleRPCResult
+from src.services.bundle_schemas import BundleRPCResult, BundleValidationResult
 from src.services.import_service import ImportService
 from src.services.security_guard import SecurityError
 
@@ -64,6 +64,42 @@ async def import_bundle(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error during import: {str(e)}",
+        )
+    finally:
+        await file.close()
+
+
+@router.post(
+    "/validate",
+    response_model=BundleValidationResult,
+    status_code=status.HTTP_200_OK,
+    summary="Validate a ZIP bundle without importing (Dry-run)",
+)
+async def validate_bundle(
+    file: UploadFile = File(...),
+    org_id: str = Depends(require_org_id),
+):
+    """
+    Dry-run validation of a ZIP bundle.
+    Returns metadata and security report without modifying the database.
+    """
+    if not file.filename.endswith(".zip"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only ZIP files are supported",
+        )
+
+    try:
+        zip_bytes = await file.read()
+        service = ImportService(org_id=org_id)
+        result = service.validate_only(zip_bytes)
+        return result
+
+    except Exception as e:
+        logger.exception("Unexpected error validating bundle for org %s", org_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error during validation: {str(e)}",
         )
     finally:
         await file.close()

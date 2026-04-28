@@ -10,7 +10,7 @@ import logging
 from src.db.session import get_tenant_client
 
 from .bundle_manager import BundleManager
-from .bundle_schemas import BundleRPCPayload, BundleRPCResult
+from .bundle_schemas import BundleRPCPayload, BundleRPCResult, BundleValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +87,32 @@ class ImportService:
                 "Unexpected error during RPC execution for org %s", self.org_id
             )
             raise
+
+
+    def validate_only(self, zip_bytes: bytes) -> BundleValidationResult:
+        """Validate a bundle without persisting anything.
+
+        Returns:
+            BundleValidationResult: Details about the bundle and any issues.
+        """
+        try:
+            content = self.bundle_manager.process_zip(zip_bytes)
+            
+            return BundleValidationResult(
+                status="success",
+                bundle_info=content.manifest.bundle_info,
+                agents_count=len(content.agents),
+                flows_count=len(content.flows),
+                skills_count=len(content.skills),
+                # SUPUESTO: Full security report could be more detailed, for now we return success if it passed
+                security_report={"ast_scan": "passed", "restricted_python": "passed"},
+            )
+        except Exception as e:
+            logger.warning("Bundle validation failed for org %s: %s", self.org_id, str(e))
+            return BundleValidationResult(
+                status="failed",
+                error=str(e)
+            )
 
     def _register_skills(self, content: any) -> None:
         """Register imported skills in the in-memory ToolRegistry."""
