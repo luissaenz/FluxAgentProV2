@@ -60,6 +60,7 @@ class BundleRPCPayload(BaseModel):
 
     bundle_name: str
     bundle_hash: str
+    version: str = "1.0.0"
     agents: List[Dict] = Field(default_factory=list)
     flows: List[Dict] = Field(default_factory=list)
     skills: Dict[str, str] = Field(default_factory=dict)

@@ -30,6 +30,12 @@ class BundleError(Exception):
     pass
 
 
+class VersionConflictError(BundleError):
+    """Raised when a bundle version is invalid or a downgrade is attempted."""
+
+    pass
+
+
 class BundleManager:
     """Manages the lifecycle of a bundle from ZIP to parsed content."""
 

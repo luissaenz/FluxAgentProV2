@@ -221,6 +221,35 @@ class ToolRegistry:
         self._metadata.clear()
         self._instances.clear()
 
+    def invalidate_tenant_cache(self, org_id: str) -> None:
+        """Clear all tools and instances cached for a specific tenant.
+
+        This enables 'Hot-Reload' by forcing the registry to reload skills
+        from the database or re-register them from a new bundle.
+        """
+        prefix = f"{org_id}:"
+
+        # 1. Remove tools
+        keys_to_remove = [k for k in self._tools.keys() if k.startswith(prefix)]
+        for k in keys_to_remove:
+            self._tools.pop(k, None)
+            self._metadata.pop(k, None)
+            logger.debug("Removed cached tool from memory: %s", k)
+
+        # 2. Remove instances (Singletons)
+        # SUPUESTO: Instances might have been created with scoped or unscoped names.
+        # We also clear instances whose name starts with the prefix.
+        instance_keys = [k for k in self._instances.keys() if k.startswith(prefix)]
+        for k in instance_keys:
+            self._instances.pop(k, None)
+            logger.debug("Invalidated tool instance: %s", k)
+
+        logger.info("Invalidated cache for tenant: %s", org_id)
+
+    def refresh_tenant(self, org_id: str) -> None:
+        """Alias for invalidate_tenant_cache to match Roadmap terminology."""
+        self.invalidate_tenant_cache(org_id)
+
 
 # ── global singleton ────────────────────────────────────────────
 tool_registry = ToolRegistry()

@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from src.api.middleware import require_org_id
-from src.services.bundle_manager import BundleError
+from src.services.bundle_manager import BundleError, VersionConflictError
 from src.services.bundle_schemas import BundleRPCResult, BundleValidationResult
 from src.services.import_service import ImportService
 from src.services.security_guard import SecurityError
@@ -56,6 +56,9 @@ async def import_bundle(
 
         return result
 
+    except VersionConflictError as e:
+        logger.warning("Version conflict for org %s: %s", org_id, str(e))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except (BundleError, SecurityError) as e:
         logger.warning("Bundle validation failed for org %s: %s", org_id, str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -103,3 +106,48 @@ async def validate_bundle(
         )
     finally:
         await file.close()
+
+
+@router.get(
+    "/history",
+    status_code=status.HTTP_200_OK,
+    summary="List bundle import history",
+)
+async def list_history(
+    org_id: str = Depends(require_org_id),
+):
+    """Get the history of all bundle imports for the current organization."""
+    service = ImportService(org_id=org_id)
+    return service.list_history()
+
+
+@router.get(
+    "/{bundle_id}/details",
+    status_code=status.HTTP_200_OK,
+    summary="Get bundle contents details",
+)
+async def get_bundle_details(
+    bundle_id: str,
+    org_id: str = Depends(require_org_id),
+):
+    """Fetch the list of agents, flows and skills included in a specific bundle."""
+    service = ImportService(org_id=org_id)
+    return service.get_details(bundle_id)
+
+
+@router.delete(
+    "/{bundle_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Soft-delete a bundle",
+)
+async def delete_bundle(
+    bundle_id: str,
+    org_id: str = Depends(require_org_id),
+):
+    """
+    Deactivate a bundle and all its associated components (soft-delete).
+    This will mark them as inactive in the database and clear the in-memory cache.
+    """
+    service = ImportService(org_id=org_id)
+    service.delete_bundle(bundle_id)
+    return None

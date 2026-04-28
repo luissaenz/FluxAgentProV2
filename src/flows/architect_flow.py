@@ -135,12 +135,14 @@ class ArchitectFlow(BaseFlow):
         safe_flow_type = self._ensure_unique_flow_type(workflow_def.flow_type)
         workflow_def.flow_type = safe_flow_type
 
-        # ── 5. Retorno de Definición (Bundle-Driven) ─────────────
-        # NOTA: En la arquitectura v2, la persistencia se realiza vía Bundles.
-        # El ArchitectFlow produce la definición, pero no la guarda en DB.
+        # 5. Generate ZIP Bundle (Roadmap T15.4)
+        bundle_zip = self._generate_bundle_zip(workflow_def)
+        import base64
+
+        bundle_b64 = base64.b64encode(bundle_zip).decode("utf-8")
 
         logger.info(
-            "ArchitectFlow[%s] generó definición para workflow '%s' (sin persistir)",
+            "ArchitectFlow[%s] generated definition and ZIP bundle for workflow '%s'",
             self.state.task_id,
             safe_flow_type,
         )
@@ -150,11 +152,48 @@ class ArchitectFlow(BaseFlow):
             "definition": workflow_def.model_dump(),
             "agents": [a.model_dump() for a in workflow_def.agents],
             "steps_count": len(workflow_def.steps),
+            "bundle_b64": bundle_b64,
             "message": (
-                f"Workflow '{workflow_def.name}' generado exitosamente. "
-                "Para activarlo, descargue el Bundle e impórtelo vía POST /api/bundles/import"
+                f"Workflow '{workflow_def.name}' generated exitosamente. "
+                "The ZIP bundle is included in 'bundle_b64'. "
+                "Para activarlo, impórtelo vía POST /api/bundles/import"
             ),
         }
+
+    def _generate_bundle_zip(self, workflow_def: WorkflowDefinition) -> bytes:
+        """Create a valid FAP ZIP bundle in memory."""
+        import hashlib
+        import io
+        import zipfile
+
+        buffer = io.BytesIO()
+        hashes = {}
+
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as z:
+            # 1. Add agents
+            for agent in workflow_def.agents:
+                path = f"agents/{agent.role}.json"
+                data = json.dumps(agent.model_dump(), indent=2).encode("utf-8")
+                z.writestr(path, data)
+                hashes[path] = hashlib.sha256(data).hexdigest()
+
+            # 2. Add flow definition
+            flow_path = f"flows/{workflow_def.flow_type}.json"
+            flow_data = json.dumps(workflow_def.model_dump(), indent=2).encode("utf-8")
+            z.writestr(flow_path, flow_data)
+            hashes[flow_path] = hashlib.sha256(flow_data).hexdigest()
+
+            # 3. Add manifest
+            manifest = {
+                "name": workflow_def.name,
+                "version": "1.0.0",
+                "description": workflow_def.description,
+                "hashes": hashes,
+            }
+            manifest_data = json.dumps(manifest, indent=2).encode("utf-8")
+            z.writestr("manifest.json", manifest_data)
+
+        return buffer.getvalue()
 
     async def _execute_architect_agent(self, description: str) -> Any:
         """Ejecutar el agente Architect que produce la definición."""

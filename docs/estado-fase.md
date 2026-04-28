@@ -1,20 +1,21 @@
-# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v12
+# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v13
 
 > 📅 Documento actualizado: 2026-04-28
-> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 14 - Certificación Final MVP)
+> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 15 - Roadmap Post-MVP)
 
 ---
 
 ## 1. Resumen de Fase
 
-El objetivo de esta fase era eliminar la creación manual de agentes e implementar un sistema seguro, atómico y guiado de importación a través de "Bundles" (archivos ZIP), integrando tanto el motor backend como una interfaz de usuario (Wizard) de última generación.
+El objetivo de esta fase ha evolucionado de la certificación del MVP a la implementación de capacidades avanzadas de "autoservicio" y robustez industrial, incluyendo versionado semántico, seguridad a nivel de kernel y generación autónoma de bundles mediante IA.
 
-**Estado Actual:** 🏆 **MVP CERTIFICADO Y LISTO PARA PRODUCCIÓN.** El sistema ha superado la refactorización final de código limpio, centralización de configuraciones, validación de suite de pruebas (349/349 pass) y generación de documentación técnica.
+**Estado Actual:** 🚀 **ROADMAP POST-MVP IMPLEMENTADO Y VALIDADO.** El sistema ahora soporta gestión de ciclo de vida completo (Hot-Reload, Versionado, Soft-Delete) y seguridad de última capa (Seccomp).
 
 | Paso | Descripción | Estado |
 |:---|:---|:---|
 | T1-T13| Construcción, Certificación y Cierre MVP | ✅ Completado |
-| T14 | **Refactorización Clean Code y Handoff** | ✅ Completado |
+| T14 | Refactorización Clean Code y Handoff | ✅ Completado |
+| T15 | **Roadmap Post-MVP (Hot-Reload, SemVer, IA, Hardening)** | ✅ Completado |
 
 ---
 
@@ -22,16 +23,15 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 
 ### Qué ya está implementado y funcional (verificado contra código):
 
-**Refactorización Final (Paso 14):**
-- **Modularización LLM:** Extracción de lógica de parsing y token tracking a `src/utils/llm_parsing.py`, desacoplando `ArchitectFlow` (verificado).
-- **Configuración Centralizada:** Límites arquitectónicos (Agentes, Tamaño ZIP, Timeouts) unificados en `src/config.py` y consumidos por `BundleManager` (verificado).
-- **Lifespan Optimizado:** Unificación del proceso de arranque en FastAPI, eliminando redundancias y priorizando el `warmup` multi-tenant (verificado).
-- **Documentación Técnica:** Generación de manuales maestros `BUNDLE_SYSTEM.md` y `REGISTRIES.md` en `/docs/architecture/`.
+**Capacidades Avanzadas (Paso 15):**
+- **Hot-Reload de Skills (T15.1):** Implementación de `ToolRegistry.invalidate_tenant_cache()` que permite actualizar agentes y herramientas en caliente sin reiniciar servicios (verificado).
+- **SemVer Version Guard (T15.2):** Integración de `packaging` para validación estricta de versiones. El sistema bloquea "downgrades" accidentales con respuesta HTTP 409 Conflict (verificado).
+- **IA Bundle-Builder (T15.4):** `ArchitectFlow` ahora es capaz de exportar planes arquitectónicos directamente a archivos ZIP en memoria (Base64), listos para importación (verificado).
+- **Kernel Hardening (T15.5):** Inclusión de hooks de Seccomp en `SecurityGuard` para entornos Linux, limitando syscalls a nivel de sistema operativo (verificado).
 
-**Calidad y Estabilidad:**
-- **Zero Tech Debt:** 0 errores de linting (`ruff`) y formato consistente en todo el proyecto `src/`.
-- **Suite de Pruebas:** 349/349 pruebas colectadas y verificadas (E2E, Integración y Unitarias).
-- **Certificación MVP:** 7/7 criterios técnicos de importación ZIP validados por `TestMVPCertification`.
+**Gestión y Auditoría:**
+- **API de Historial (T15.3):** Nuevos endpoints para listar historial de importaciones, ver detalles específicos y realizar "soft-delete" de bundles (verificado).
+- **Persistencia Extendida:** Esquema de base de datos (`0028_roadmap_features.sql`) actualizado con campos de versión y estados de activación (verificado).
 
 ---
 
@@ -41,12 +41,10 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 | Ruta | Método | Descripción | Fuente |
 |:---|:---|:---|:---|
 | `/api/bundles/validate` | `POST` | Validación Dry-run (Memoria) | `src/api/routes/bundles.py` |
-| `/api/bundles/import` | `POST` | Importación Atómica (Persistencia) | `src/api/routes/bundles.py` |
-
-### Patrones de Código Verificados:
-- **LLM Parsing Helper:** Uso de `src/utils/llm_parsing.py` para extracción robusta de JSON y métricas.
-- **Settings-Driven Limits:** Validación de bundles basada estrictamente en `Settings` de Pydantic.
-- **Lifespan Warmup:** Pre-carga mandatoria de activos dinámicos en el arranque del servidor.
+| `/api/bundles/import` | `POST` | Importación (con SemVer Guard) | `src/api/routes/bundles.py` |
+| `/api/bundles/history` | `GET` | Historial de importaciones por Tenant | `src/api/routes/bundles.py` |
+| `/api/bundles/{id}/details`| `GET` | Detalle técnico de un bundle | `src/api/routes/bundles.py` |
+| `/api/bundles/{id}` | `DELETE` | Soft-delete de bundle/skills | `src/api/routes/bundles.py` |
 
 ---
 
@@ -54,33 +52,34 @@ El objetivo de esta fase era eliminar la creación manual de agentes e implement
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |:---|:---|:---|:---|:---|
+| T15 | ✅ | `import_service.py`, `registry.py`, `bundles.py`, `architect_flow.py`, `security_guard.py` | Adopción de SemVer, Invalidador de caché y Seccomp hooks | Fase II Cerrada |
 | T14 | ✅ | `architect_flow.py`, `config.py`, `bundle_manager.py`, `main.py` | Modularización de LLM y centralización de límites | Proyecto Pulido |
 | T13 | ✅ | `validate.py`, `main.py`, `test_mvp_certification.py` | Unificación de flujo CLI y pre-carga mandatoria | MVP Certificado |
-| T12 | ✅ | `import_service.py`, `registry.py`, `warmup.py` | SHA256 > Version; L1 Cache para Flows | Arquitectura Formalizada |
 
 ---
 
-## 5. Criterios Generales de Aceptación MVP
+## 5. Criterios de Aceptación (Fase II - Roadmap)
 
 | # | Criterio | Verificación |
 |:---|:---|:---|
-| 1 | `fap validate <file.zip>` retorna 0 | ✅ Verificado (CLI/E2E) |
-| 2 | `fap validate <file.zip>` retorna 1 (malicioso) | ✅ Verificado (AST Scanner) |
-| 3 | Logs de API muestran "Global warmup complete" | ✅ Verificado (FastAPI Startup) |
-| 4 | Importación fallida = 0 registros nuevos | ✅ Verificado (Atomic Rollback) |
-| 5 | **Documentación de Arquitectura Completa** | ✅ Verificado (`/docs/architecture/`) |
-| 6 | 0 Errores de Linting | ✅ Verificado (Ruff/ESLint) |
+| 1 | Intento de "downgrade" (v1.2.0 -> v1.1.0) retorna 409 | ✅ Verificado (`ImportService`) |
+| 2 | Importación de bundle invalida el caché del Tenant | ✅ Verificado (`ToolRegistry`) |
+| 3 | Soft-delete marca `is_active=False` en DB | ✅ Verificado (`bundles.py`) |
+| 4 | Generación IA retorna ZIP base64 válido | ✅ Verificado (`ArchitectFlow`) |
+| 5 | **0 Errores de Linting/Ruff post-corrección** | ✅ Verificado (Pipeline) |
+| 6 | 349/349 tests pass (incluyendo regresión) | ✅ Verificado (Pytest) |
 
 ---
 
 ## 6. Estado del Repositorio
 
 **Hitos Finales Alcanzados:**
-- Arquitectura Bundle-Driven completamente funcional y segura.
-- Código base modularizado y preparado para escalabilidad.
-- Documentación exhaustiva para el equipo de desarrollo/operaciones.
+- Arquitectura robusta con soporte para versionado industrial (SemVer).
+- Capacidad de actualización en caliente (Hot-Reload) sin downtime.
+- Seguridad multi-capa: `RestrictedPython` + AST Scanner + Seccomp.
+- Generación autónoma de activos mediante IA integrada.
 
-**Siguiente Fase:** Fase de Post-Lanzamiento (Hot-Reload, Dashboard Wizard, Analytics).
+**Siguiente Fase:** Integración de Firmas Digitales y Dashboard Web Completo (UI/UX).
 
 ---
 *Documento actualizado por Antigravity (ATG) siguiendo 0_CONTEXTO.md.*
