@@ -15,30 +15,30 @@ El objetivo de esta fase es eliminar la creación manual de agentes e implementa
 ## 2. Estado Actual del Proyecto
 
 > [!IMPORTANT]
-> Se ha completado el **Paso T0 (Estabilización)**. El proyecto cuenta con una base de código estable y una suite de pruebas con 100% de éxito, lista para iniciar la refactorización legacy.
+> Se han completado los pasos **T0 (Estabilización)** y **T2 (Estándar y Foundation)**. El sistema cuenta con la infraestructura base para procesar bundles (ZIP) de forma segura, con integridad verificada y sandboxing funcional.
 
 - **Qué ya está implementado y funcional:**
-  - **Suite de Pruebas**: 100% de éxito en 307 tests (`pytest`). Estabilidad confirmada en E2E y latencia.
-  - El flujo generador de agentes `ArchitectFlow` está implementado (en `src/flows/architect_flow.py`) pero actualmente hace las inserciones directamente en la base de datos de manera no atómica.
-  - El registro de herramientas `ToolRegistry` (`src/tools/registry.py`) funciona correctamente en memoria mediante decoradores.
-  - Rutas de lectura de agentes como `GET /agents/{agent_id}/detail` (en `src/api/routes/agents.py`) ya existen.
+  - **Suite de Pruebas**: 100% de éxito en tests de estabilización (307) y tests unitarios de bundles (11).
+  - **Bundle Foundation**: Implementación de `BundleManager`, `SecurityGuard` y `IntegrityGuard` en `src/services/`.
+  - **Esquema DB**: Tablas `bundle_imports` y `skill_catalog` creadas (Migración 026).
+  - **Seguridad**: Sandboxing híbrido con `RestrictedPython` y escaneo AST funcional.
+  - **Corrección de Schema**: Índice único de flujos corregido a `(org_id, flow_type)` para soportar tenancy.
 - **Qué no existe aún (Pendiente de implementación):**
-  - **No existen** las tablas `bundle_imports` ni `skill_catalog`. La última migración es la `025_agent_catalog_rls_update.sql`.
-  - La dependencia `restrictedpython` **no está instalada** en `pyproject.toml`.
-  - El endpoint de subida `/api/bundles/import` **no existe**.
+  - El endpoint de subida `/api/bundles/import` **no existe** (Tarea T4).
+  - El servicio de persistencia atómica `ImportService` (Tarea T4).
+  - Refactorización de `ArchitectFlow` (Tarea T1/T5).
 - **Discrepancias plan vs código:**
-  - El plan menciona que `ArchitectFlow` debe ser refactorizado para eliminar persistencia directa (Tarea T1). Actualmente el código *sí* persiste directamente, confirmando la necesidad de la T1.
+  - Se resolvió la discrepancia del índice único en `workflow_templates` detectada en el análisis (ahora es por org_id).
 
 ## 3. Contratos Técnicos Vigentes
 
 - **Modelos de datos / schemas:**
-  - `agent_catalog`, `workflow_templates`, `tasks`, `agent_metadata`, `pending_approvals`, `secrets`, `domain_events`.
+  - `agent_catalog`, `workflow_templates`, `tasks`, `agent_metadata`, `bundle_imports`, `skill_catalog`.
 - **Patrones de código en uso:**
-  - **Patrón RLS**: Uso de `org_id::text = current_org_id()` (verificado en `001_set_config_rpc.sql` y `002_governance.sql`).
-  - **Patrón de registro de Tools**: Decorador `@tool_registry.register` en `src/tools/registry.py`.
-  - **Patrón de registro de Flows**: Herencia de `BaseFlow` y decorador `@register_flow`.
-  - **Patrón de Auth**: Middleware en `src/api/middleware.py` delegando en `src/mcp/auth.py`. Uso de `with get_tenant_client(org_id) as db:`.
-- **Dependencias instaladas:** `fastapi`, `supabase`, `pydantic`, `PyJWT`, `mcp`, `crewai` (opcional), `litellm`.
+  - **Patrón RLS**: Uso de `org_id::text = current_setting('app.org_id', TRUE)`.
+  - **Validación de Bundles**: Verificación de hashes SHA256 obligatoria previo a cualquier procesamiento.
+  - **Sandboxing**: Prohibición de imports de sistema (os, subprocess) y funciones peligrosas (eval, exec).
+- **Dependencias instaladas:** `fastapi`, `supabase`, `pydantic`, `RestrictedPython>=7.0`, `crewai`, `litellm`.
 
 ## 4. Decisiones de Arquitectura Tomadas
 
@@ -51,8 +51,9 @@ El objetivo de esta fase es eliminar la creación manual de agentes e implementa
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 |------|--------|---------------------|-------------------|-------|
-| T0. Estabilización | ✅ Completado | `architect_flow.py`, `conftest.py`, `test_webhook_to_completion.py`, `test_3_5_latency.py` | Relajación de umbrales de latencia para entorno virtual. | 100% tests en verde (304 pass, 3 skip). |
-| Análisis Inicial | ✅ Completado | N/A | Generación del documento base `estado-fase.md`. | |
+| T0. Estabilización | ✅ Completado | `architect_flow.py`, `conftest.py` | Relajación de umbrales de latencia. | 100% tests en verde. |
+| T2. Estándar y Foundation | ✅ Completado | `src/services/*`, `026_bundle_system.sql` | Cambio a índice único por org en flujos. | 11 tests unitarios nuevos al 100%. |
+| Análisis Unificado | ✅ Completado | `analisis-FINAL.md` | Consolidación de atg y kilo. | |
 
 ## 6. Criterios Generales de Aceptación MVP
 - El happy path (empaquetar bundle válido → importar → confirmar en DB) funciona end-to-end.

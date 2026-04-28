@@ -29,6 +29,7 @@ dependencies = [
     # MCP Server (Phase 5)
     "mcp>=1.0.0,<2.0.0",
     "sse-starlette>=0.21.0",
+    "RestrictedPython>=7.0",
 ]
 
 [project.optional-dependencies]
