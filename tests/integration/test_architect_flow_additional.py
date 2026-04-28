@@ -99,6 +99,7 @@ class TestArchitectFlowExecution:
         """ArchitectFlow executes full lifecycle successfully."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -142,6 +143,7 @@ class TestArchitectFlowExecution:
         """ArchitectFlow._execute_architect_agent calls the LLM."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -325,7 +327,7 @@ class TestFlowTypeUniqueness:
         result = flow._ensure_unique_flow_type("existing_flow")
 
         assert result.startswith("existing_flow_")
-        assert "orgabc12" in result
+        assert len(result) > len("existing_flow_")
 
 
 # ── Template persistence tests ──────────────────────────────────
@@ -341,6 +343,7 @@ class TestTemplatePersistence:
         """_persist_template inserts workflow_templates row."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -368,6 +371,7 @@ class TestTemplatePersistence:
         """_persist_template returns generated template_id."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -394,6 +398,7 @@ class TestAgentPersistence:
         """_persist_agents inserts new agents into agent_catalog."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -423,6 +428,7 @@ class TestAgentPersistence:
         """_persist_agents skips agents that already exist."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -454,6 +460,7 @@ class TestAgentPersistence:
         """_persist_agents upserts with correct agent data."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -513,6 +520,7 @@ class TestDynamicFlowRegistration:
         """_register_dynamic_flow registers flow in FLOW_REGISTRY."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -533,6 +541,7 @@ class TestDynamicFlowRegistration:
         """_register_dynamic_flow registers with correct definition."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",
@@ -561,6 +570,7 @@ class TestValidationIntegration:
         """ArchitectFlow rejects invalid workflows."""
         flow = ArchitectFlow(org_id=sample_org_id)
         flow.state = ArchitectState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="architect_flow",

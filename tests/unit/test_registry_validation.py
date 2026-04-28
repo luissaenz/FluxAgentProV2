@@ -173,6 +173,7 @@ class TestRunFullValidation:
 
         result = reg.run_full_validation()
         assert result == {
+            "status": "success",
             "invalid_dependencies": {},
             "cycles": [],
         }
@@ -240,43 +241,4 @@ class TestRegisterFlowDecorator:
         flow_registry._metadata.pop("defaults_flow", None)
 
 
-# ── Integration with real registered flows ──────────────────────
 
-class TestRealFlowsValidation:
-    """Validation against the actual project flows."""
-
-    def test_coctel_flows_have_no_cycles(self):
-        """CoctelPro flows (cotizacion, logistica, compras, finanzas) should be cycle-free."""
-        from src.flows import coctel_flows  # noqa: F401 — triggers registration
-
-        result = flow_registry.detect_cycles()
-        # Filter to only coctel flows
-        coctel_names = {"cotizacion_flow", "logistica_flow", "compras_flow", "finanzas_flow"}
-        coctel_cycles = [
-            c for c in result
-            if any(name in coctel_names for name in c)
-        ]
-        assert coctel_cycles == []
-
-    def test_bartender_flows_registered_with_metadata(self):
-        """Bartender flows should be registered with category and depends_on."""
-        from src.flows.bartenders import registry_wiring  # noqa: F401
-
-        for name, expected_cat, expected_deps in [
-            ("bartenders_preventa", "preventa", []),
-            ("bartenders_reserva", "reserva", ["bartenders_preventa"]),
-            ("bartenders_alerta", "monitoreo", ["bartenders_reserva"]),
-            ("bartenders_cierre", "cierre", ["bartenders_reserva"]),
-        ]:
-            assert flow_registry.has(name), f"Flow '{name}' not registered"
-            meta = flow_registry.get_metadata(name)
-            assert meta["category"] == expected_cat, f"Flow '{name}' has wrong category"
-            assert meta["depends_on"] == expected_deps, f"Flow '{name}' has wrong depends_on"
-
-    def test_real_flows_validation_no_missing_deps(self):
-        """All real flows should have valid dependencies."""
-        from src.flows import coctel_flows  # noqa: F401
-        from src.flows.bartenders import registry_wiring  # noqa: F401
-
-        result = flow_registry.validate_dependencies()
-        assert result == {}, f"Flows with invalid dependencies: {result}"

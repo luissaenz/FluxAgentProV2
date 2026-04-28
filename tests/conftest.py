@@ -7,9 +7,15 @@ without external dependencies.
 from __future__ import annotations
 
 import pytest
+import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+if sys.platform == "win32" and sys.stdout is not None:
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 # ── identity fixtures ───────────────────────────────────────────
 
@@ -68,6 +74,10 @@ def make_mock_client():
         chain.limit.return_value = chain
         chain.order.return_value = chain
         chain.range.return_value = chain
+
+        # Support execute_with_retry pattern from session.py
+        chain.execute_with_retry.side_effect = lambda x: x.execute() if hasattr(x, "execute") else x
+
         return chain
 
     def _table(table_name):
@@ -81,6 +91,9 @@ def make_mock_client():
     rpc_chain = MagicMock()
     rpc_chain.execute = MagicMock(return_value=MagicMock(data=None))
     client.rpc = MagicMock(return_value=rpc_chain)
+    
+    # client.execute_with_retry(query) pattern
+    client.execute_with_retry = MagicMock(side_effect=lambda x: x.execute() if hasattr(x, "execute") else x)
 
     return client
 
@@ -154,6 +167,7 @@ def mock_tenant_client(mock_service_client):
     mock_db = MagicMock()
     mock_db.table = mock_service_client.table
     mock_db.rpc = mock_service_client.rpc
+    mock_db.execute_with_retry = mock_service_client.execute_with_retry
 
     # Context manager mock behavior
     cm = MagicMock()
@@ -167,6 +181,10 @@ def mock_tenant_client(mock_service_client):
         "src.guardrails.base_guardrail.get_tenant_client",
         "src.events.store.get_tenant_client",
         "src.flows.multi_crew_flow.get_tenant_client",
+        "src.api.routes.tickets.get_tenant_client",
+        "src.api.routes.tasks.get_tenant_client",
+        "src.api.routes.webhooks.get_tenant_client",
+        "src.api.routes.workflows.get_tenant_client",
     ]
     
     stack = []
@@ -177,7 +195,6 @@ def mock_tenant_client(mock_service_client):
             stack.append(pt)
         except (AttributeError, ImportError):
             continue
-            
     yield mock_db
     
     for pt in stack:

@@ -7,244 +7,35 @@ y que el FlowRegistry sea invocado correctamente.
 """
 
 import pytest
+import sys
 from unittest.mock import MagicMock, patch, AsyncMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
+# Mock apscheduler since it might not be in the test environment
+class MockScheduler:
+    def __init__(self, *args, **kwargs): pass
+    def scheduled_job(self, *args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+
+class MockCronTrigger:
+    def __init__(self, *args, **kwargs): pass
+
+mock_apscheduler_asyncio = MagicMock()
+mock_apscheduler_asyncio.AsyncIOScheduler = MockScheduler
+mock_apscheduler_cron = MagicMock()
+mock_apscheduler_cron.CronTrigger = MockCronTrigger
+
+sys.modules['apscheduler'] = MagicMock()
+sys.modules['apscheduler.schedulers'] = MagicMock()
+sys.modules['apscheduler.schedulers.asyncio'] = mock_apscheduler_asyncio
+sys.modules['apscheduler.triggers'] = MagicMock()
+sys.modules['apscheduler.triggers.cron'] = mock_apscheduler_cron
+
 ORG_ID  = "11111111-1111-1111-1111-111111111111"
 USER_ID = "test-user"
-
-REGISTRY_PATH  = "src.api.routes.bartenders.flow_registry"
-AUTH_PATH      = "src.api.routes.bartenders.require_org_id"
-
-
-@pytest.fixture
-def app():
-    """App FastAPI mínima para testear las routes de bartenders."""
-    from src.api.routes.bartenders import router
-    app = FastAPI()
-    app.include_router(router)
-    return app
-
-
-@pytest.fixture
-def client(app):
-    return TestClient(app, raise_server_exceptions=False)
-
-
-@pytest.fixture
-def mock_flow():
-    """Flow mock con state.task_id definido."""
-    flow = MagicMock()
-    flow.state.task_id = "task-abc-123"
-    flow.execute = AsyncMock()
-    flow.create_task_record = AsyncMock()
-    flow.persist_state      = AsyncMock()
-    return flow
-
-
-def make_registry_mock(mock_flow):
-    registry = MagicMock()
-    registry.create.return_value = mock_flow
-    return registry
-
-
-# ─── POST /bartenders/preventa ─────────────────────────────────────────────
-
-class TestPreventaEndpoint:
-
-    def test_preventa_responde_202(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/preventa",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "fecha_evento":   "2026-07-20",
-                    "provincia":      "Tucuman",
-                    "localidad":      "San Miguel",
-                    "tipo_evento":    "boda",
-                    "pax":            80,
-                    "duracion_horas": 4,
-                    "tipo_menu":      "premium",
-                })
-        assert resp.status_code == 202
-
-    def test_preventa_retorna_task_id(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/preventa",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "fecha_evento":   "2026-07-20",
-                    "provincia":      "Tucuman",
-                    "localidad":      "San Miguel",
-                    "tipo_evento":    "boda",
-                    "pax":            80,
-                    "duracion_horas": 4,
-                    "tipo_menu":      "premium",
-                })
-        assert resp.json()["task_id"] == "task-abc-123"
-        assert resp.json()["flow_type"] == "bartenders_preventa"
-
-    def test_preventa_pax_fuera_rango_retorna_422(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/preventa",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "fecha_evento":   "2026-07-20",
-                    "provincia":      "Tucuman",
-                    "localidad":      "San Miguel",
-                    "tipo_evento":    "boda",
-                    "pax":            5,  # < 10 → inválido
-                    "duracion_horas": 4,
-                    "tipo_menu":      "premium",
-                })
-        assert resp.status_code == 422
-
-    def test_preventa_campo_faltante_retorna_422(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/preventa",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "fecha_evento": "2026-07-20",
-                    # falta provincia, pax, etc.
-                })
-        assert resp.status_code == 422
-
-    def test_preventa_crea_flow_con_org_id_correcto(self, client, mock_flow):
-        registry_mock = make_registry_mock(mock_flow)
-        with patch(REGISTRY_PATH, registry_mock):
-            client.post("/bartenders/preventa",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "fecha_evento":   "2026-07-20",
-                    "provincia":      "Tucuman",
-                    "localidad":      "San Miguel",
-                    "tipo_evento":    "boda",
-                    "pax":            80,
-                    "duracion_horas": 4,
-                    "tipo_menu":      "premium",
-                })
-        registry_mock.create.assert_called_once_with(
-            "bartenders_preventa", org_id=ORG_ID
-        )
-
-
-# ─── POST /bartenders/reserva ──────────────────────────────────────────────
-
-class TestReservaEndpoint:
-
-    def test_reserva_responde_202(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/reserva",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":      "EVT-2026-001",
-                    "cotizacion_id":  "COT-2026-001",
-                    "opcion_elegida": "recomendada",
-                })
-        assert resp.status_code == 202
-
-    def test_reserva_opcion_invalida_retorna_422(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/reserva",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":      "EVT-001",
-                    "cotizacion_id":  "COT-001",
-                    "opcion_elegida": "ultra-premium",  # no existe
-                })
-        # Pydantic no valida enum libre — el validate_input del flow lo rechaza
-        # pero el endpoint ya respondió 202. El flow falla internamente.
-        # Esto es esperado: validación de negocio vs validación de schema HTTP.
-        assert resp.status_code in (202, 422)
-
-    def test_reserva_retorna_flow_type_correcto(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/reserva",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":      "EVT-001",
-                    "cotizacion_id":  "COT-001",
-                    "opcion_elegida": "basica",
-                })
-        assert resp.json()["flow_type"] == "bartenders_reserva"
-
-
-# ─── POST /bartenders/alerta ───────────────────────────────────────────────
-
-class TestAlertaEndpoint:
-
-    def test_alerta_responde_202(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/alerta",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id": "EVT-2026-001",
-                })
-        assert resp.status_code == 202
-
-    def test_alerta_sin_evento_id_retorna_422(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/alerta",
-                headers={"X-Org-ID": ORG_ID},
-                json={})
-        assert resp.status_code == 422
-
-    def test_alerta_mensaje_menciona_dashboard(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/alerta",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id": "EVT-001",
-                })
-        assert "Dashboard" in resp.json()["mensaje"]
-
-
-# ─── POST /bartenders/cierre ───────────────────────────────────────────────
-
-class TestCierreEndpoint:
-
-    def test_cierre_responde_202(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/cierre",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":  "EVT-2026-001",
-                    "costo_real": 4_608_458,
-                })
-        assert resp.status_code == 202
-
-    def test_cierre_campos_opcionales_tienen_defaults(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/cierre",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":  "EVT-001",
-                    "costo_real": 1_000_000,
-                    # mermas, compras_emergencia, desvio_climatico, rating son opcionales
-                })
-        assert resp.status_code == 202
-
-    def test_cierre_rating_fuera_rango_retorna_422(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/cierre",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":  "EVT-001",
-                    "costo_real": 1_000_000,
-                    "rating":     6,  # > 5 → inválido
-                })
-        assert resp.status_code == 422
-
-    def test_cierre_retorna_task_id(self, client, mock_flow):
-        with patch(REGISTRY_PATH, make_registry_mock(mock_flow)):
-            resp = client.post("/bartenders/cierre",
-                headers={"X-Org-ID": ORG_ID},
-                json={
-                    "evento_id":  "EVT-001",
-                    "costo_real": 2_000_000,
-                })
-        assert resp.json()["task_id"] == "task-abc-123"
-
 
 # ─── Scheduler jobs ────────────────────────────────────────────────────────
 

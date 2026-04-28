@@ -312,9 +312,9 @@ supabase >= 2.10.0
 | # | Tarea | Estimación | Prioridad |
 |---|-------|-----------|-----------|
 | T9 | Dashboard Wizard UI | 8h | BAJA |
-| T10 | Bundle-Builder Agent | 8h | BAJA |
+| T20 | Bundle-Builder Agent | 8h | BAJA |
 
-> **Bundle-Builder Agent** (T10) no está en el critical path. Puede implementarse después de que el import core funcione.
+> **Bundle-Builder Agent** (T20) no está en el critical path. Puede implementarse después de que el import core funcione.
 
 ### Dependencias entre Tareas
 

@@ -34,6 +34,7 @@ class TestRequestApproval:
         task_id = str(uuid4())
         flow = DummyFlowForHITL(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="DummyFlowForHITL",
@@ -57,6 +58,7 @@ class TestRequestApproval:
         task_id = str(uuid4())
         flow = DummyFlowForHITL(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="DummyFlowForHITL",
@@ -76,6 +78,7 @@ class TestRequestApproval:
         task_id = str(uuid4())
         flow = DummyFlowForHITL(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="DummyFlowForHITL",
@@ -188,11 +191,12 @@ class TestOnApproved:
     """_on_approved() hook por defecto."""
 
     @pytest.mark.asyncio
-    async def test_sets_state_to_running(self, sample_org_id):
-        """Por defecto, _on_approved() marca como RUNNING."""
+    async def test_sets_state_to_completed(self, sample_org_id):
+        """Por defecto, _on_approved() marca como COMPLETED."""
         task_id = str(uuid4())
         flow = DummyFlowForHITL(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="DummyFlowForHITL",
@@ -205,7 +209,7 @@ class TestOnApproved:
             with patch.object(flow, 'emit_event', new_callable=AsyncMock):
                 await flow._on_approved()
 
-        assert flow.state.status == FlowStatus.RUNNING
+        assert flow.state.status == FlowStatus.COMPLETED
         assert flow.state.approval_payload is None  # Limpiado tras uso
 
 
@@ -218,6 +222,7 @@ class TestOnRejected:
         task_id = str(uuid4())
         flow = DummyFlowForHITL(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="DummyFlowForHITL",
@@ -231,3 +236,4 @@ class TestOnRejected:
 
         assert flow.state.status == FlowStatus.FAILED
         assert "Rejected by supervisor" in flow.state.error
+

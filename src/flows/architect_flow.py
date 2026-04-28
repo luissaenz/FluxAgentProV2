@@ -305,15 +305,12 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
             )
 
     def _ensure_unique_flow_type(self, flow_type: str) -> str:
-        """Si flow_type ya existe globalmente, buscar uno libre con sufijo."""
-        import random
-        import string
-        
+        """Si flow_type ya existe globalmente, buscar uno libre con sufijo basado en org_id."""
         svc = get_service_client()
         current_name = flow_type
         attempts = 0
         
-        while attempts < 10:
+        while attempts < 5:
             existing = (
                 svc.table("workflow_templates")
                 .select("id")
@@ -325,9 +322,13 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
             if not (existing and existing.data):
                 return current_name
                 
-            # Si ya existe, generar nuevo nombre con sufijo aleatorio corto
-            suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
-            current_name = f"{flow_type}_{suffix}"
+            # Si ya existe, generar nuevo nombre con sufijo derivado del org_id
+            # Esto ayuda a la colisión entre orgs manteniendo legibilidad
+            org_suffix = self.org_id.replace("-", "")[:8]
+            import random
+            import string
+            random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+            current_name = f"{flow_type}_{org_suffix}_{random_suffix}"
             attempts += 1
             logger.warning("flow_type ocupado, reintentando con '%s'", current_name)
 

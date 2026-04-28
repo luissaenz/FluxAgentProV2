@@ -7,11 +7,11 @@ Usan un conector mock para no depender de Supabase.
 
 import pytest
 from unittest.mock import MagicMock
-from src.tools.bartenders.escandallo_tool import EscandalloTool, EscandalloOutput
-from src.tools.bartenders.clima_tool import (
+from src.tools.demo.escandallo_tool import EscandalloTool, EscandalloOutput
+from src.tools.demo.clima_tool import (
     FactorClimaticoTool, PronosticoRealTool
 )
-from src.tools.bartenders.inventario_tool import (
+from src.tools.demo.inventario_tool import (
     CalcularStockNecesarioTool, ReservarStockTool
 )
 

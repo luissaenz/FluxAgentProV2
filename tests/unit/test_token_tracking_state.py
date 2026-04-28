@@ -5,10 +5,9 @@ from src.flows.state import BaseFlowState
 class TestTokenTracking(unittest.TestCase):
     def setUp(self):
         self.task_id = str(uuid4())
-        self.org_id = str(uuid4())
         self.state = BaseFlowState(
             task_id=self.task_id,
-            org_id=self.org_id,
+            org_id=str(uuid4()),
             flow_type="test_flow",
             correlation_id=f"test-corr-{self.task_id}"
         )
@@ -53,3 +52,4 @@ class TestTokenTracking(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -121,12 +121,25 @@ def _handle_blocked_ticket(
     error_msg = result.get("error") or "Unknown error"
     error_type = result.get("error_type") or "Exception"
     task_id = result.get("task_id")
-
-    _append_error_note(db, ticket_id, error_msg, error_type, result.get("correlation_id"))
+    correlation_id = result.get("correlation_id")
 
     now = datetime.now(timezone.utc).isoformat()
+
+    # 1. Fetch current notes to append
+    res_notes = db.table("tickets").select("notes").eq("id", ticket_id).maybe_single().execute()
+    current_notes = res_notes.data.get("notes", "") if res_notes.data else ""
+
+    # 2. Format new error entry
+    prefix = f"[{now}]"
+    if correlation_id:
+        prefix += f" [Trace: {correlation_id}]"
+    new_note = f"{prefix} {error_type}: {error_msg}"
+    updated_notes = new_note if not current_notes else f"{current_notes}\n{new_note}"
+
+    # 3. Perform single UPDATE
     update_data: Dict[str, Any] = {
         "status": "blocked",
+        "notes": updated_notes,
         "updated_at": now,
     }
     if task_id:

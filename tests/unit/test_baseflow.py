@@ -44,20 +44,22 @@ class _FailingFlow(BaseFlow):
 class TestBaseFlowState:
     def test_start(self, sample_org_id):
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-        )
+            )
         state.start()
         assert state.status == FlowStatus.RUNNING.value
         assert state.started_at is not None
 
     def test_complete(self, sample_org_id):
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-        )
+            )
         state.start()
         state.complete({"answer": 42})
         assert state.status == FlowStatus.COMPLETED.value
@@ -66,10 +68,11 @@ class TestBaseFlowState:
 
     def test_fail(self, sample_org_id):
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-        )
+            )
         state.start()
         state.fail("something broke")
         assert state.status == FlowStatus.FAILED.value
@@ -78,13 +81,15 @@ class TestBaseFlowState:
     def test_uuid_validation_rejects_garbage(self):
         with pytest.raises(ValueError, match="Invalid UUID"):
             BaseFlowState(
-                task_id="not-a-uuid",
+            correlation_id="test-corr-id",
+            task_id="not-a-uuid",
                 org_id=str(uuid4()),
                 flow_type="test",
-            )
+                )
 
     def test_to_snapshot_roundtrip(self, sample_org_id):
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
@@ -137,3 +142,4 @@ class TestExecuteLifecycle:
 
         with pytest.raises(ValueError, match="Input validation failed"):
             await flow.execute({})
+

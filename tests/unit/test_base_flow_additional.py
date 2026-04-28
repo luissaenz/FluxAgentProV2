@@ -60,10 +60,11 @@ class TestFlowStatus:
     def test_status_comparison_with_string(self):
         """Status can be compared with string values."""
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=str(uuid4()),
             flow_type="test",
-        )
+            )
         # With use_enum_values=True, status is stored as string
         state.start()
         assert state.status == "running"
@@ -78,28 +79,31 @@ class TestRetryLogic:
     def test_default_retry_count(self, sample_org_id):
         """Default retry_count is 0."""
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-        )
+            )
         assert state.retry_count == 0
 
     def test_default_max_retries(self, sample_org_id):
         """Default max_retries is 3."""
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-        )
+            )
         assert state.max_retries == 3
 
     def test_can_increment_retry_count(self, sample_org_id):
         """Retry count can be incremented."""
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-        )
+            )
         state.retry_count += 1
         assert state.retry_count == 1
 
@@ -107,7 +111,8 @@ class TestRetryLogic:
         """Pydantic validator prevents negative retry_count."""
         with pytest.raises(Exception):  # Pydantic ValidationError
             BaseFlowState(
-                task_id=str(uuid4()),
+            correlation_id="test-corr-id",
+            task_id=str(uuid4()),
                 org_id=sample_org_id,
                 flow_type="test",
                 retry_count=-1,
@@ -127,6 +132,7 @@ class TestPersistState:
         """persist_state() updates both tasks and snapshots tables."""
         flow = TestableFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
@@ -158,10 +164,11 @@ class TestPersistState:
         """persist_state() includes approval-related fields."""
         flow = TestableFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
-        )
+            )
         flow.state.await_approval()
         flow.state.approval_payload = {"monto": 1000}
 
@@ -188,10 +195,11 @@ class TestEmitEvent:
         """emit_event() calls EventStore.append and flush."""
         flow = TestableFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
-        )
+            )
         flow.event_store = MagicMock()
         flow.event_store.flush = AsyncMock()
 
@@ -205,10 +213,11 @@ class TestEmitEvent:
         """emit_event() with no event_store is a no-op."""
         flow = TestableFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
-        )
+            )
         flow.event_store = None
 
         # Should not raise
@@ -349,3 +358,4 @@ class TestValidateInputContract:
 
         with pytest.raises(ValueError, match="Input validation failed"):
             await flow.execute({"test": "data"})
+

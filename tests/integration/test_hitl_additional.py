@@ -65,6 +65,7 @@ class TestRequestApprovalIntegration:
         task_id = str(uuid4())
         flow = ApprovalTestFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="ApprovalTestFlow",
@@ -117,6 +118,7 @@ class TestRequestApprovalIntegration:
         task_id = str(uuid4())
         flow = ApprovalTestFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=task_id,
             org_id=sample_org_id,
             flow_type="ApprovalTestFlow",
@@ -254,6 +256,7 @@ class TestSnapshotSchemaV2:
     def test_to_snapshot_v2_includes_all_fields(self, sample_org_id):
         """to_snapshot_v2() includes all required fields."""
         state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
@@ -276,6 +279,7 @@ class TestSnapshotSchemaV2:
     def test_from_snapshot_with_v2_schema(self, sample_org_id):
         """from_snapshot() works with v2 schema."""
         original_state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
@@ -301,6 +305,7 @@ class TestEventStoreBlocking:
         """emit_event() blocks until flush() completes."""
         flow = ApprovalTestFlow(org_id=sample_org_id)
         flow.state = BaseFlowState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test_flow",
@@ -363,3 +368,4 @@ class TestApprovalWorkflowE2E:
         # 4. Flow should be completed
         assert flow.state.status == FlowStatus.COMPLETED.value
         assert flow.state.output_data == {"result": "approved_and_completed"}
+

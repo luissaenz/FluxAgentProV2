@@ -12,7 +12,7 @@ Además se validan los criterios de aceptación del análisis.
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from uuid import uuid4
 from datetime import datetime as dt
 from datetime import timezone
@@ -71,7 +71,7 @@ class TestTicketExecutionValidation:
         # Setup: mock ticket without flow_type
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -92,7 +92,7 @@ class TestTicketExecutionValidation:
         """POST /tickets/{id}/execute con status in_progress retorna 409."""
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -116,7 +116,7 @@ class TestTicketExecutionValidation:
         """POST /tickets/{id}/execute con status done retorna 409."""
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -148,7 +148,7 @@ class TestTicketExecutionFailure:
         now = dt.now(timezone.utc).isoformat()
 
         # Mock: ticket retrieval for validation
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -186,7 +186,7 @@ class TestTicketExecutionFailure:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -216,7 +216,7 @@ class TestTicketExecutionFailure:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -246,7 +246,7 @@ class TestTicketExecutionFailure:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -289,7 +289,7 @@ class TestTicketExecutionFailure:
         task_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -336,8 +336,8 @@ class TestTicketExecutionSuccess:
         task_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        # Mock: ticket retrieval for validation
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        # Mock: ticket retrieval for validation and after success
+        ticket_backlog = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -348,6 +348,7 @@ class TestTicketExecutionSuccess:
             "created_at": now,
             "updated_at": now,
         }
+        ticket_done = {**ticket_backlog, "status": "done", "task_id": task_id, "resolved_at": now}
 
         with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
              patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
@@ -359,20 +360,15 @@ class TestTicketExecutionSuccess:
                 "error_type": None,
             }
 
-            # Mock: updated ticket retrieval after success
-            mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
-                "id": ticket_id,
-                "org_id": sample_org_id,
-                "title": "Test ticket",
-                "flow_type": "TestFlow",
-                "status": "done",
-                "task_id": task_id,
-                "resolved_at": now,
-                "input_data": {},
-                "notes": None,
-                "created_at": now,
-                "updated_at": now,
-            }
+            # Setup sequential response for execute()
+            # 1. Validation select, 2. in_progress update, 3. done update, 4. final select
+            mock_execute_call = mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute
+            mock_execute_call.side_effect = [
+                MagicMock(data=ticket_backlog),
+                MagicMock(data=[]), 
+                MagicMock(data=[]),    
+                MagicMock(data=ticket_done)       
+            ]
 
             response = client.post(f"/tickets/{ticket_id}/execute")
 
@@ -388,7 +384,8 @@ class TestTicketExecutionSuccess:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        # Mock: ticket retrieval for validation and after success
+        ticket_backlog = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -399,6 +396,7 @@ class TestTicketExecutionSuccess:
             "created_at": now,
             "updated_at": now,
         }
+        ticket_done = {**ticket_backlog, "status": "done", "task_id": str(uuid4()), "resolved_at": now}
 
         with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
              patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
@@ -409,19 +407,16 @@ class TestTicketExecutionSuccess:
                 "error": None,
                 "error_type": None,
             }
-            mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
-                "id": ticket_id,
-                "org_id": sample_org_id,
-                "title": "Test ticket",
-                "flow_type": "TestFlow",
-                "status": "done",
-                "task_id": str(uuid4()),
-                "resolved_at": now,
-                "input_data": {},
-                "notes": None,
-                "created_at": now,
-                "updated_at": now,
-            }
+            
+            # Setup sequential response for execute()
+            # 1. Validation select, 2. in_progress update, 3. done update, 4. final select
+            mock_execute_call = mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute
+            mock_execute_call.side_effect = [
+                MagicMock(data=ticket_backlog),
+                MagicMock(data=[]), 
+                MagicMock(data=[]),    
+                MagicMock(data=ticket_done)       
+            ]
 
             client.post(f"/tickets/{ticket_id}/execute")
 
@@ -443,7 +438,7 @@ class TestInfrastructureErrorHandling:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -479,7 +474,7 @@ class TestAppendErrorNote:
         from src.api.routes.tickets import _append_error_note
 
         # Mock existing notes
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "notes": "Nota anterior"
         }
 
@@ -499,7 +494,7 @@ class TestAppendErrorNote:
         """Nueva nota se crea cuando no hay notas existentes."""
         from src.api.routes.tickets import _append_error_note
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "notes": ""
         }
 
@@ -517,7 +512,7 @@ class TestAppendErrorNote:
         """_append_error_note maneja None en error_msg y error_type."""
         from src.api.routes.tickets import _append_error_note
 
-        mock_tenant_client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "notes": ""
         }
 

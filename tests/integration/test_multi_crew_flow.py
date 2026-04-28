@@ -37,6 +37,7 @@ class TestDecideNextCrew:
     def test_routes_to_crew_b_when_required(self, sample_org_id):
         flow = MultiCrewFlow(org_id=sample_org_id)
         flow.state = MultiCrewState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="multi_crew",
@@ -48,6 +49,7 @@ class TestDecideNextCrew:
     def test_routes_to_crew_c_by_default(self, sample_org_id):
         flow = MultiCrewFlow(org_id=sample_org_id)
         flow.state = MultiCrewState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="multi_crew",
@@ -59,6 +61,7 @@ class TestDecideNextCrew:
     def test_routes_to_crew_c_when_output_is_none(self, sample_org_id):
         flow = MultiCrewFlow(org_id=sample_org_id)
         flow.state = MultiCrewState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="multi_crew",
@@ -204,6 +207,7 @@ class TestMultiCrewState:
 
     def test_default_crew_outputs_are_none(self, sample_org_id):
         state = MultiCrewState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="multi_crew",
@@ -214,6 +218,7 @@ class TestMultiCrewState:
 
     def test_serialises_crew_outputs(self, sample_org_id):
         state = MultiCrewState(
+            correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="multi_crew",

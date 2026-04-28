@@ -176,6 +176,7 @@ class BaseFlow(ABC):
                 self.flow_type,
                 self.org_id,
             )
+            correlation_id = str(uuid4())
 
         task_id = str(uuid4())
         flow_name = self.flow_type

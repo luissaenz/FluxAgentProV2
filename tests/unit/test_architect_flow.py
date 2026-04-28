@@ -50,9 +50,12 @@ class TestArchitectFlow:
         """Si el flow_type ya existe, se agrega sufijo del org_id."""
         flow = ArchitectFlow(org_id="org-abc-123")
 
-        mock_svc.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
-            MagicMock(data={"id": "existing"})
-        )
+        # Mock execute() to return data on first call (collision) and None on second (free)
+        mock_execute = mock_svc.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
+        mock_execute.side_effect = [
+            MagicMock(data={"id": "existing"}),
+            MagicMock(data=None)
+        ]
 
         result = flow._ensure_unique_flow_type("existing_flow")
         assert result.startswith("existing_flow_")
