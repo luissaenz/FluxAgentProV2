@@ -30,6 +30,10 @@ interface NavItem {
   title: string
   url: string
   icon: LucideIcon
+  items?: {
+    title: string
+    url: string
+  }[]
 }
 
 interface NavMainProps {
@@ -45,7 +49,16 @@ export const defaultNavItems: NavItem[] = [
   { title: 'Agentes', url: '/agents', icon: Bot },
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },
-  { title: 'Integraciones', url: '/integrations', icon: Puzzle },
+  { 
+    title: 'Integraciones', 
+    url: '/integrations', 
+    icon: Puzzle,
+    items: [
+      { title: 'Catálogo', url: '/integrations' },
+      { title: 'Bundles (Wizard)', url: '/integrations/bundles' },
+      { title: 'Historial Bundles', url: '/integrations/bundles/history' },
+    ]
+  },
   { title: 'Chat MDC', url: '/architect', icon: MessageSquare },
 ]
 
@@ -61,13 +74,14 @@ export function NavMain({ items }: NavMainProps) {
       <SidebarGroupLabel>Navegación</SidebarGroupLabel>
       <SidebarMenu>
         {navItems.map((item) => {
-          const isActive =
+          const isParentActive =
             item.url === '/'
               ? pathname === '/'
               : pathname.startsWith(item.url)
+          
           return (
             <SidebarMenuItem key={item.url}>
-              <SidebarMenuButton asChild isActive={isActive}>
+              <SidebarMenuButton asChild isActive={isParentActive}>
                 <Link href={item.url}>
                   <item.icon className="h-4 w-4" />
                   <span>{item.title}</span>
@@ -78,6 +92,26 @@ export function NavMain({ items }: NavMainProps) {
                   )}
                 </Link>
               </SidebarMenuButton>
+              {item.items && item.items.length > 0 && isParentActive && (
+                <div className="ml-6 mt-1 flex flex-col gap-1 border-l pl-2">
+                  {item.items.map((subItem) => {
+                    const isSubActive = pathname === subItem.url
+                    return (
+                      <Link
+                        key={subItem.url}
+                        href={subItem.url}
+                        className={`text-xs py-1 px-2 rounded-md transition-colors ${
+                          isSubActive 
+                            ? 'bg-secondary text-secondary-foreground font-medium' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                      >
+                        {subItem.title}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </SidebarMenuItem>
           )
         })}

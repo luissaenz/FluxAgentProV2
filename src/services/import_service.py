@@ -136,7 +136,7 @@ class ImportService:
                     .select("version")
                     .eq("org_id", self.org_id)
                     .eq("bundle_name", bundle_name)
-                    .order("created_at", desc=True)
+                    .order("imported_at", desc=True)
                     .limit(1)
                     .execute()
                 )
@@ -196,7 +196,7 @@ class ImportService:
                 db.table("bundle_imports")
                 .select("*")
                 .eq("org_id", self.org_id)
-                .order("created_at", desc=True)
+                .order("imported_at", desc=True)
                 .execute()
             )
             return result.data or []
@@ -225,7 +225,7 @@ class ImportService:
             # Fetch skills
             skills = (
                 db.table("skill_catalog")
-                .select("name")
+                .select("name, code_source")
                 .eq("bundle_id", bundle_id)
                 .execute()
                 .data
@@ -235,7 +235,7 @@ class ImportService:
                 "bundle_id": bundle_id,
                 "agents": [a["role"] for a in agents],
                 "flows": [f["flow_type"] for f in flows],
-                "skills": [s["name"] for s in skills],
+                "skills": [{"name": s["name"], "code": s["code_source"]} for s in skills],
             }
 
     def delete_bundle(self, bundle_id: str) -> bool:

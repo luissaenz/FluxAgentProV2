@@ -87,11 +87,25 @@ export function ValidationReport({ report }: ValidationReportProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Escaneo de AST (Sintaxis segura)</span>
-                  <span className="text-green-500 font-bold uppercase">Passed</span>
+                  {report.security_report?.ast_scanned ? (
+                    <span className="text-green-500 font-bold uppercase flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> PASSED
+                    </span>
+                  ) : (
+                    <span className="text-amber-500 font-bold uppercase">SKIPPED</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Compilación RestrictedPython</span>
-                  <span className="text-green-500 font-bold uppercase">Verified</span>
+                  {report.security_report?.restricted_python_verified ? (
+                    <span className="text-green-500 font-bold uppercase flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> VERIFIED
+                    </span>
+                  ) : (
+                    <span className="text-red-500 font-bold uppercase flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> FAILED
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
