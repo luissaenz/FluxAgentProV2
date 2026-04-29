@@ -15,8 +15,9 @@ Dos responsabilidades separadas:
 
 from typing import Any
 
-from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from src.tools.base_tool import OrgBaseTool
 
 # ─── Modelos ───────────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ MOCK_DEFAULT_DELTA: float = 0.0
 # ─── Tool 1: Factor Climático Histórico (Agente 2) ─────────────────────────
 
 
-class FactorClimaticoTool(BaseTool):
+class FactorClimaticoTool(OrgBaseTool):
     name: str = "obtener_factor_climatico"
     description: str = (
         "Obtiene el factor de riesgo climático histórico para un mes dado, "
@@ -120,7 +121,7 @@ class FactorClimaticoTool(BaseTool):
 # ─── Tool 2: Pronóstico Real con Mock (Agente 5) ───────────────────────────
 
 
-class PronosticoRealTool(BaseTool):
+class PronosticoRealTool(OrgBaseTool):
     name: str = "verificar_pronostico_real"
     description: str = (
         "Verifica el pronóstico meteorológico real para un evento específico "

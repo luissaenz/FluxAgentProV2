@@ -51,7 +51,7 @@ class ToolRegistry:
         Usage::
 
             @tool_registry.register("fetch_url", description="Fetch URL content")
-            class FetchURLTool(BaseTool): ...
+            class FetchURLTool(OrgBaseTool): ...
         """
 
         def decorator(tool_class: Type) -> Type:

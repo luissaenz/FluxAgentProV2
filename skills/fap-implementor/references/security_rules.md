@@ -42,10 +42,16 @@ No podés usar las siguientes funciones incorporadas de Python:
 ## 4. Acceso a Atributos
 - Está prohibido el acceso a atributos que comiencen con doble guion bajo (`__`), como `__subclasses__`, `__globals__`, etc., para evitar escapes del sandbox.
 
-## 5. Recomendación para Funcionalidad Externa
+## 5. Desarrollo de Herramientas (Tools) y Secretos
+Para crear herramientas (`Tools`) que interactúen con APIs externas o requieran autenticación:
+- Es **estrictamente obligatorio** heredar de `OrgBaseTool` (importado desde `src.tools.base_tool`). Queda prohibido el uso directo de `BaseTool` de crewai.
+- Los secretos (tokens, passwords, API keys) NUNCA deben exponerse en el código ni ser retornados al LLM.
+- Se debe utilizar exclusivamente el método `self._get_secret("nombre_secreto")` para recuperar credenciales internamente dentro del método `_run()` de la herramienta. El LLM solo debe recibir el *resultado* de la operación, nunca el secreto en sí.
+
+## 6. Recomendación para Funcionalidad Externa
 Si necesitás interactuar con el mundo exterior (archivos, APIs, base de datos), **NO** intentes hacerlo directamente en la skill. En su lugar:
 1.  Utilizá el **Model Context Protocol (MCP)** si está disponible.
-2.  Delegá la tarea a un Agente que tenga las herramientas necesarias.
+2.  Delegá la tarea a un Agente que tenga las herramientas necesarias (construidas sobre `OrgBaseTool`).
 3.  Utilizá las interfaces de persistencia proporcionadas por el framework de FAP si están disponibles en el contexto.
 
 ---

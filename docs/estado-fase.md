@@ -32,7 +32,8 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 - **Soporte Universal Windows (Paso 7):** Corrección activa de errores de encoding (UTF-8 wrapper) en el CLI (`main.py`).
 - **Observabilidad de Hashing (Paso 7):** Generación e impresión explícita de hashes por archivo durante el empaquetado.
 - **Certificación Real E2E (Paso 9):** Integración activa de `pytest.main()` dentro de `scripts/certify_fase4.py`.
-- **Higiene Automatizada (Paso 9):** Script `scripts/sanitize_codebase.py` para aplicar reglas consistentes de linting/formatting (`ruff`).
+- **Higiene Automatizada (Paso 9):** Script `scripts/sanitize_codebase.py` para aplicar reglas consistentes de linting/formatting (`ruff`).- **Herramienta de DX para Migración (Paso 8):** Script `scripts/migrate_basetool.py` para refactorizar automatizadamente importaciones legacy a `OrgBaseTool`.
+- **Aislamiento Multi-Tenant de Tools (Paso 8):** Refactor de `src/tools/analytical.py` y herramientas de sistema para heredar obligatoriamente de `OrgBaseTool`.
 
 ### ⚠️ Parcialmente Implementado
 - *Ninguno. Todos los componentes de la Fase IV están operativos.*
@@ -64,6 +65,8 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 - **Atomic Bundle Import:** Uso del RPC `import_bundle_atomic`.
 - **Certificación Activa:** El proceso de certificación no es solo de comprobación estática, sino que ejecuta los tests de integración reales (`pytest`).
 - **Encoding Predictivo:** Se fuerza explícitamente `utf-8` en flujos I/O para asegurar compatibilidad interplataforma en salidas CLI.
+- **Resolución Dual de Herramientas (Paso 8):** `LocalExecutor` registra herramientas por filename y ClassName (ej. `{org_id}:dual_tool`).
+- **Restricción de Secretos en Bundles (Paso 8):** Uso exclusivo de `self._get_secret()` en `OrgBaseTool` (verificado en `security_rules.md`).
 
 ---
 
@@ -89,7 +92,7 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 | **S5** | ✅ | `architect_flow.py`, `security_guard.py` | Dogfooding & Python Flows. | System Bundle |
 | **S6** | ✅ | `test_parity_suite.py`, `certify_fase4.py` | Suite E2E & Certificación. | Completado Inicial |
 | **S7** | ✅ | `package.py`, `dev.py`, `main.py` | Saneamiento rutas/encoding. | Paridad Absoluta |
-| **S8** | ✅ | `local_executor.py` | Multi-tenancy Mock. | Seguridad |
+| **S8** | ✅ | `local_executor.py`, `analytical.py`, `migrate_basetool.py` | Multi-tenancy Mock, Resolución Dual y `OrgBaseTool`. | Seguridad y DX |
 | **S9** | ✅ | `certify_fase4.py`, `sanitize_codebase.py`| QA Activo e Higiene. | **FASE CERRADA** |
 
 ---

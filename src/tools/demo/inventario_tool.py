@@ -20,8 +20,9 @@ Tres tools separadas con responsabilidades claras:
 import math
 from typing import Any
 
-from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from src.tools.base_tool import OrgBaseTool
 
 # ─── Modelos ───────────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ BUFFER_SEGURIDAD = 1.10
 # ─── Tool 1: Calcular Stock Necesario ─────────────────────────────────────
 
 
-class CalcularStockNecesarioTool(BaseTool):
+class CalcularStockNecesarioTool(OrgBaseTool):
     name: str = "calcular_stock_necesario"
     description: str = (
         "Calcula la cantidad exacta de cada producto necesaria para un evento, "
@@ -187,7 +188,7 @@ class CalcularStockNecesarioTool(BaseTool):
 # ─── Tool 2: Reservar Stock ───────────────────────────────────────────────
 
 
-class ReservarStockTool(BaseTool):
+class ReservarStockTool(OrgBaseTool):
     name: str = "reservar_stock_evento"
     description: str = (
         "Reserva el stock físico necesario para un evento. "
@@ -251,7 +252,7 @@ class ReservarStockTool(BaseTool):
 # ─── Tool 3: Liberar Stock ────────────────────────────────────────────────
 
 
-class LiberarStockTool(BaseTool):
+class LiberarStockTool(OrgBaseTool):
     name: str = "liberar_stock_evento"
     description: str = (
         "Libera el stock reservado para un evento cancelado. "

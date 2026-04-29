@@ -205,3 +205,40 @@ class TestParitySuite:
             result = crew.run(task_description="test", inputs={})
             assert result == "Mocked Result"
             assert mock_run.called
+
+    def test_org_base_tool_inheritance_and_dual_resolution(self):
+        """Verifies that OrgBaseTool is inherited and dual resolution works."""
+        from src.tools.base_tool import OrgBaseTool
+        from src.tools.registry import tool_registry
+
+        class TestDualTool(OrgBaseTool):
+            name: str = "dual_tool"
+            description: str = "Test tool"
+
+            def _run(self) -> str:
+                _ = self._get_secret("test_secret")
+                return "Used secret, result is safe."
+
+        # Register using dual keys
+        org_id = "test-tenant"
+        tool_registry.register(name=f"{org_id}:dual_tool")(TestDualTool)
+        tool_registry.register(name=f"{org_id}:TestDualTool")(TestDualTool)
+
+        # Retrieve by filename equivalent
+        tool_class_1 = tool_registry.get("dual_tool", org_id=org_id)
+        assert tool_class_1 is TestDualTool
+        assert issubclass(tool_class_1, OrgBaseTool)
+
+        # Retrieve by ClassName equivalent
+        tool_class_2 = tool_registry.get("TestDualTool", org_id=org_id)
+        assert tool_class_2 is TestDualTool
+        assert issubclass(tool_class_2, OrgBaseTool)
+
+        # Verify secret is not exposed in output
+        tool_instance = tool_class_1(org_id=org_id)
+        with patch.object(
+            tool_instance, "_get_secret", return_value="SUPER_SECRET_TOKEN"
+        ):
+            result = tool_instance._run()
+            assert "SUPER_SECRET_TOKEN" not in result
+            assert result == "Used secret, result is safe."

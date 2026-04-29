@@ -24,8 +24,9 @@ Distancias NOA (km ida):
 import math
 from typing import Any
 
-from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from src.tools.base_tool import OrgBaseTool
 
 # ─── Modelos de input/output ───────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ PRECIO_AGUA_POR_LITRO = 400  # ARS
 # ─── Tool ──────────────────────────────────────────────────────────────────
 
 
-class EscandalloTool(BaseTool):
+class EscandalloTool(OrgBaseTool):
     name: str = "calcular_escandallo"
     description: str = (
         "Calcula el escandallo de costos completo para un evento en 4 bloques: "
