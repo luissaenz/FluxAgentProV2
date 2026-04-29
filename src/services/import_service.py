@@ -92,8 +92,9 @@ class ImportService:
                         bundle_name,
                         result.bundle_id,
                     )
-                    # Analysis-FINAL §2.4: Runtime registration of skills
+                    # Analysis-FINAL §2.4: Runtime registration of skills and flows
                     self._register_skills(content)
+                    self._register_flows(content)
 
                 return result
 
@@ -283,10 +284,18 @@ class ImportService:
         tool_registry.invalidate_tenant_cache(self.org_id)
         flow_registry.invalidate_tenant_cache(self.org_id)
 
+        # Analysis Final §88: Trust system bundles
+        is_system = content.manifest.bundle_info and content.manifest.bundle_info.author == "FAP-CORE"
+
         # We use a safe environment similar to SecurityGuard
         safe_env = RestrictedPython.safe_builtins.copy()
         # SUPUESTO: Standard __import__ is needed to resolve allowed imports (pydantic, etc)
         safe_env["__import__"] = __import__
+
+        # If system, allow access to src
+        if is_system:
+            # Note: RestrictedPython might still block some things, but this helps AST-level
+            pass
 
         for filename, code in content.skills.items():
             skill_name = filename.replace(".py", "").lower()
@@ -319,5 +328,58 @@ class ImportService:
                 logger.warning(
                     "Failed to register imported skill '%s' in memory: %s",
                     skill_name,
+                    e,
+                )
+
+    def _register_flows(self, content: any) -> None:
+        """Register imported Python flows in the in-memory FlowRegistry."""
+        import RestrictedPython
+
+        from src.flows.registry import flow_registry
+
+        # Analysis Final §88: Trust system bundles
+        is_system = content.manifest.bundle_info and content.manifest.bundle_info.author == "FAP-CORE"
+
+        # Safe environment
+        safe_env = RestrictedPython.safe_builtins.copy()
+        safe_env["__import__"] = __import__
+
+        # Support flows/ in content
+        # Note: BundleContent.flows can contain both JSON and Python flows
+        for flow_data in content.flows:
+            if not flow_data.get("is_python"):
+                continue
+
+            flow_type = flow_data["flow_type"]
+            code = flow_data["code_source"]
+            
+            try:
+                # Compile and execute
+                byte_code = RestrictedPython.compile_restricted(
+                    code, filename=f"{flow_type}.py", mode="exec"
+                )
+
+                exec_globals = {"__builtins__": safe_env}
+                exec(byte_code, exec_globals)
+
+                # Find the Flow class
+                for attr_name, attr in exec_globals.items():
+                    if isinstance(attr, type) and not attr_name.startswith("_"):
+                        # We look for a class that inherits from BaseFlow or similar
+                        # Since we can't easily check isinstance(attr, BaseFlow) without importing it
+                        # we check if it has create_task_record or _run_crew
+                        if hasattr(attr, "create_task_record") or hasattr(attr, "_run_crew"):
+                            scoped_name = f"{self.org_id}:{flow_type}"
+                            flow_registry.register(scoped_name)(attr)
+                            logger.info(
+                                "Registered imported Python flow in memory for tenant %s: %s",
+                                self.org_id,
+                                flow_type,
+                            )
+                            break
+            except Exception as e:
+                logger.warning(
+                    "Failed to register imported flow '%s' in memory: %s",
+                    flow_type,
                     e,
                 )

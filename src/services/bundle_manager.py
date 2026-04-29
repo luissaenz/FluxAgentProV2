@@ -85,6 +85,12 @@ class BundleManager:
                 manifest_data = json.loads(z.read("manifest.json"))
                 manifest = BundleManifest(**manifest_data)
 
+                # Analysis Final §88: Trust system bundles
+                if manifest.bundle_info and manifest.bundle_info.author == "FAP-CORE":
+                    logger.info("System bundle detected: '%s'. Enabling core access.", manifest.bundle_info.name)
+                    self.security_guard.is_system = True
+                    self.security_guard.allowed_modules.add("src")
+
                 # Calculate bundle hash for audit (Analisis-FINAL §2.1)
                 bundle_hash = hashlib.sha256(zip_bytes).hexdigest()
                 content = BundleContent(
@@ -132,6 +138,21 @@ class BundleManager:
             content.agents.append(json.loads(data))
         elif path.startswith("flows/") and path.endswith(".json"):
             content.flows.append(json.loads(data))
+        elif path.startswith("flows/") and path.endswith(".py"):
+            # Analysis Final §25: Support Python flows
+            filename = path.split("/")[-1]
+            flow_type = filename.replace(".py", "").lower()
+            code = data.decode("utf-8")
+
+            # Validate security
+            self.security_guard.validate_skill(code, filename)
+
+            content.flows.append({
+                "flow_type": flow_type,
+                "code_source": code,
+                "is_python": True,
+                "name": flow_type.replace("_", " ").title()
+            })
         elif path.startswith("skills/") and path.endswith(".py"):
             # Skills are stored as raw source code strings
             filename = path.split("/")[-1]
@@ -159,3 +180,40 @@ class BundleManager:
             raise BundleError(f"Exceeded max flows: {len(content.flows)} > 20")
         if len(content.skills) > 30:
             raise BundleError(f"Exceeded max skills: {len(content.skills)} > 30")
+
+    def create_bundle(self, manifest: BundleManifest, agents: List[Dict], flows: List[Dict], skills: Dict[str, str]) -> bytes:
+        """Create a valid FAP ZIP bundle in memory.
+        
+        Analysis Final §89: Centralize ZIP creation logic.
+        """
+        buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as z:
+            # 1. Add agents
+            for agent in agents:
+                role = agent.get("role", "unknown")
+                path = f"agents/{role}.json"
+                data = json.dumps(agent, indent=2).encode("utf-8")
+                z.writestr(path, data)
+                
+            # 2. Add flows
+            for flow in flows:
+                flow_type = flow.get("flow_type", "unknown")
+                if flow.get("is_python"):
+                    path = f"flows/{flow_type}.py"
+                    data = flow["code_source"].encode("utf-8")
+                else:
+                    path = f"flows/{flow_type}.json"
+                    data = json.dumps(flow, indent=2).encode("utf-8")
+                z.writestr(path, data)
+                
+            # 3. Add skills
+            for filename, code in skills.items():
+                path = f"skills/{filename}"
+                z.writestr(path, code.encode("utf-8"))
+                
+            # 4. Add manifest
+            manifest_data = json.dumps(manifest.model_dump(), indent=2).encode("utf-8")
+            z.writestr("manifest.json", manifest_data)
+            
+        return buffer.getvalue()

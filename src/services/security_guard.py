@@ -40,7 +40,7 @@ FORBIDDEN_MODULES = {
     "urllib3",
 }
 
-# Allowed modules (Análisis Final §67)
+# Allowed modules (Análisis Final §67 + Paso 5 Dogfooding)
 # Any module NOT in this list AND not in standard safe list will be blocked.
 # SUPUESTO: Standard library modules like 'math', 'json', 're' are allowed.
 ALLOWED_MODULES = {
@@ -61,6 +61,12 @@ ALLOWED_MODULES = {
     "itertools",
     "pydantic_core",
     "annotated_types",
+    # Added for Paso 5 Dogfooding
+    "io",
+    "zipfile",
+    "hashlib",
+    "base64",
+    "string",
 }
 
 # Forbidden functions/calls
@@ -80,11 +86,17 @@ class SecurityGuard:
         self, 
         timeout_seconds: int = 30,
         allowed_modules: Optional[set[str]] = None,
-        forbidden_modules: Optional[set[str]] = None
+        forbidden_modules: Optional[set[str]] = None,
+        is_system: bool = False
     ):
         self.timeout_seconds = timeout_seconds
-        self.allowed_modules = allowed_modules if allowed_modules is not None else ALLOWED_MODULES
+        self.allowed_modules = allowed_modules if allowed_modules is not None else ALLOWED_MODULES.copy()
         self.forbidden_modules = forbidden_modules if forbidden_modules is not None else FORBIDDEN_MODULES
+        self.is_system = is_system
+
+        # Analysis Final §88: Trust-based security for system bundles
+        if self.is_system:
+            self.allowed_modules.add("src")
 
     def validate_skill(self, source_code: str, filename: str = "skill.py") -> bool:
         """Validate source code using AST analysis and dry-run compilation.
@@ -95,9 +107,35 @@ class SecurityGuard:
         self._scan_ast(source_code, filename)
 
         # 2. RestrictedPython Compilation (with timeout)
-        self._verify_compilation(source_code, filename)
+        # Skip RestrictedPython if it's a system bundle to support async/await
+        if not self.is_system:
+            self._verify_compilation(source_code, filename)
+        else:
+            # Still verify standard compilation
+            try:
+                compile(source_code, filename, "exec")
+            except Exception as e:
+                raise SecurityError(f"Standard compilation failed for {filename}: {e}")
 
         return True
+
+    def execute(self, source_code: str, filename: str = "dynamic_flow.py") -> Dict[str, Any]:
+        """Execute validated code and return globals.
+        
+        Analysis Final §88: Privileged execution for system bundles.
+        """
+        # Always validate first
+        self.validate_skill(source_code, filename)
+        
+        exec_globals = {"__builtins__": __builtins__ if self.is_system else safe_builtins}
+        
+        # Execute
+        try:
+            exec(source_code, exec_globals)
+            return exec_globals
+        except Exception as e:
+            logger.error("Execution failed for %s: %s", filename, e)
+            raise SecurityError(f"Execution failed: {e}")
 
     def _scan_ast(self, source_code: str, filename: str):
         """Perform static analysis on source code to find patterns."""

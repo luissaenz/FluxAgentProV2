@@ -16,6 +16,7 @@ class BundleInfo(BaseModel):
     name: str = Field(..., min_length=3, max_length=100)
     description: Optional[str] = None
     version: str = Field(default="1.0.0")
+    author: Optional[str] = Field(default="user")
 
 
 class BundleManifest(BaseModel):

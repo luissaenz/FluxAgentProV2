@@ -257,7 +257,7 @@ class FlowRegistry:
             with get_tenant_client(org_id) as db:
                 result = (
                     db.table("workflow_templates")
-                    .select("definition")
+                    .select("definition, is_python, code_source")
                     .eq("org_id", org_id)
                     .eq("flow_type", flow_type)
                     .eq("is_active", True)
@@ -265,29 +265,47 @@ class FlowRegistry:
                     .execute()
                 )
 
-                if not (result and result.data):
+                # 1. Python Flow Handling
+                if result.data.get("is_python"):
+                    from src.services.security_guard import SecurityGuard
+                    
+                    code = result.data["code_source"]
+                    guard = SecurityGuard(is_system=True) # Assume system trust for DB-stored code
+                    
+                    try:
+                        exec_globals = guard.execute(code)
+                        # Look for the flow class in exec_globals
+                        # We expect only one BaseFlow subclass or a naming convention
+                        flow_class = None
+                        for val in exec_globals.values():
+                            if isinstance(val, type) and hasattr(val, "_registered_flow_name"):
+                                flow_class = val
+                                break
+                        
+                        if not flow_class:
+                             raise ValueError(f"No Flow class found in code for '{flow_type}'")
+                             
+                        # Cache it
+                        scoped_key = f"{org_id}:{flow_type}"
+                        self._flows[scoped_key] = flow_class
+                        return flow_class
+                        
+                    except Exception as e:
+                        logger.error("Failed to execute Python flow '%s': %s", flow_type, e)
+                        return None
+
+                # 2. Dynamic JSON Flow Handling
+                definition = result.data["definition"]
+                if not definition:
                     return None
 
-                definition = result.data["definition"]
-
                 # Wrap in DynamicWorkflow
-                # SUPUESTO: DynamicWorkflow.register_class retorna una clase configurada
-                # que podemos registrar en memoria para el futuro.
-                # Nota: Necesitamos importar DynamicWorkflow localmente para evitar circulares.
-
-                # Para evitar registrar clases temporales globalmente en _flows
-                # (lo que podría colisionar si diferentes orgs tienen el mismo flow_type),
-                # el análisis sugería retornar la clase configurada.
-
-                # Creamos una subclase anónima de DynamicWorkflow para esta definición
                 class BoundDynamicFlow(DynamicWorkflow):
                     _registered_flow_name = flow_type
 
                     def __init__(self, **kwargs):
-                        # Forzamos la definición en el constructor o via clase
                         super().__init__(**kwargs)
 
-                # Inyectamos la definición en la clase para que DynamicWorkflow la use
                 BoundDynamicFlow.definition = definition
 
                 # L1 Cache (Analisis-FINAL §2.2): Register in memory with org prefix
