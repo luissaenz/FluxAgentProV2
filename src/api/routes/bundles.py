@@ -7,7 +7,12 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from src.api.middleware import require_org_id
-from src.services.bundle_manager import BundleError, VersionConflictError
+from src.services.bundle_manager import (
+    BundleError,
+    MalformedVersionError,
+    VersionConflictError,
+    VersionDowngradeError,
+)
 from src.services.bundle_schemas import BundleRPCResult, BundleValidationResult
 from src.services.import_service import ImportService
 from src.services.security_guard import SecurityError
@@ -81,8 +86,15 @@ async def import_bundle(
 
         return result
 
+    except MalformedVersionError as e:
+        logger.warning("Malformed version for org %s: %s", org_id, str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except VersionDowngradeError as e:
+        logger.warning("Version downgrade conflict for org %s: %s", org_id, str(e))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except VersionConflictError as e:
         logger.warning("Version conflict for org %s: %s", org_id, str(e))
+        # Fallback for any other version conflicts
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except (BundleError, SecurityError) as e:
         logger.warning("Bundle validation failed for org %s: %s", org_id, str(e))

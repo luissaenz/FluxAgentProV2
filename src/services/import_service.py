@@ -11,7 +11,12 @@ from packaging.version import InvalidVersion, Version
 
 from src.db.session import get_tenant_client
 
-from .bundle_manager import BundleManager, VersionConflictError
+from .bundle_manager import (
+    BundleManager,
+    MalformedVersionError,
+    VersionConflictError,
+    VersionDowngradeError,
+)
 from .bundle_schemas import BundleRPCPayload, BundleRPCResult, BundleValidationResult
 
 logger = logging.getLogger(__name__)
@@ -109,8 +114,8 @@ class ImportService:
             # 1. Validate format ALWAYS (Analysis TP-V5)
             new_v = Version(new_version_str)
         except InvalidVersion:
-            raise VersionConflictError(
-                f"Invalid semantic version format: {new_version_str}"
+            raise MalformedVersionError(
+                f"Bundle '{bundle_name}' has invalid semantic version format: {new_version_str}"
             )
 
         if force:
@@ -152,8 +157,8 @@ class ImportService:
                             new_version_str,
                             current_version_str,
                         )
-                        raise VersionConflictError(
-                            f"Incoming version {new_version_str} is lower than current {current_version_str}. "
+                        raise VersionDowngradeError(
+                            f"Bundle '{bundle_name}' version {new_version_str} is lower than current {current_version_str}. "
                             "Use force=true to override."
                         )
 

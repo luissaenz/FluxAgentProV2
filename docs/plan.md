@@ -55,6 +55,14 @@ El proceso priorizado para el desarrollador sigue este flujo:
 -   **Historial de Despliegue**: Timeline de qué bundles se han aplicado y por quién.
 -   **Complejidad**: Alta | **Tiempo**: 16h
 
+### Paso 21: Maintenance & Polish (Quality Sprint)
+**Objetivo**: Resolver inconsistencias menores y mejorar la observabilidad del sistema.
+-   **Consistencia API**: Corregir mapeo HTTP para versiones malformadas (de 409 a 400).
+-   **Observabilidad de Registro**: Añadir logs de nivel INFO en `FlowRegistry` para cargas exitosas desde DB.
+-   **Troubleshooting Mejorado**: Incluir `bundle_name` en los mensajes de error de `VersionGuard`.
+-   **Sincronización de Estado**: Asegurar que `docs/estado-fase.md` refleje siempre el estado real tras cada paso.
+-   **Complejidad**: Muy Baja | **Tiempo**: 2h
+
 ---
 
 ## 🛡️ Seguridad y Hardening (Post-MVP)

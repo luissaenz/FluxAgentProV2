@@ -36,6 +36,18 @@ class VersionConflictError(BundleError):
     pass
 
 
+class MalformedVersionError(BundleError):
+    """Raised when a semantic version string is invalid."""
+
+    pass
+
+
+class VersionDowngradeError(VersionConflictError):
+    """Raised when an import attempts to downgrade a bundle version."""
+
+    pass
+
+
 class BundleManager:
     """Manages the lifecycle of a bundle from ZIP to parsed content."""
 

@@ -1,89 +1,97 @@
-# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v20
+# Estado de Fase: Sistema de Importación de Bundles (ZIP) — v21
 
-> 📅 Documento actualizado: 2026-04-28
-> 📝 Modo: ACTUALIZACIÓN (Cierre de Paso 20 - Dashboard & Wizard)
+> 📅 **Fecha:** 2026-04-28
+> 📝 **Estado:** ACTUALIZACIÓN (Cierre de Fase III - Refinamiento y DX)
 
 ---
 
 ## 1. Resumen de Fase
 
-El objetivo de esta fase (**Fase III: Refinamiento y DX**) ha sido elevar la experiencia del desarrollador (DX) y del administrador de la plataforma, garantizando que el flujo **Local-First** sea robusto y que el despliegue en la nube sea visual, auditable y seguro. Con la implementación del Dashboard & Wizard, se cierra el ciclo de vida completo de los bundles.
+El objetivo de la **Fase III: Refinamiento y DX** ha sido consolidar el flujo **Local-First** mediante herramientas de CLI profesionales y una interfaz de gestión visual (Dashboard). Se ha robustecido la persistencia, la seguridad del sandbox y la observabilidad del sistema, permitiendo un despliegue de bundles atómico, versionado y auditable.
 
-**Estado Actual:** 🏁 **FASE III COMPLETADA.** El sistema cuenta con un pipeline completo desde la creación local (CLI) hasta la gestión visual (Dashboard) con auditoría de código en tiempo real.
-
-| Paso | Descripción | Estado |
-|:---|:---|:---|
-| T1-T16| Auditoría de Integridad Técnica y Cierre MVP | ✅ Completado |
-| T17 | CLI Refinement (The Local Forge) | ✅ Completado |
-| T18 | Warmup & Persistence (The Registry Bridge) | ✅ Completado |
-| T19 | SemVer & Version Guard | ✅ Completado |
-| T20 | **Dashboard & Wizard (The Visual Entry)** | ✅ Completado |
+**Estado Actual:** 🏁 **FASE III COMPLETADA.** El sistema es 100% funcional desde el empaquetado local hasta la activación en la nube.
 
 ---
 
 ## 2. Estado Actual del Proyecto
 
-### Qué ya está implementado y funcional (verificado contra código):
+### ✅ Implementado y Funcional (Verificado en Código)
+- **Lazy Loading Persistente:** Registries (`ToolRegistry` y `FlowRegistry`) con búsqueda en 2 niveles (Memoria -> DB) y aislamiento multi-tenant.
+- **Importación Atómica:** Procedimiento RPC `import_bundle_atomic` que garantiza integridad referencial en importaciones masivas.
+- **Security Guard:** Sandbox basado en `RestrictedPython` con escaneo AST y límites de ejecución (30s timeout).
+- **SemVer Version Guard:** Lógica de protección contra downgrades con soporte para flag `force`.
+- **Dashboard & Wizard:** Interfaz visual para subida, validación y auditoría de bundles en tiempo real.
+- **FAP-CLI:** Herramienta de línea de comandos para `init`, `validate`, `package` y `publish`.
+- **Especialización de Errores:** Distinción entre `MalformedVersionError` (400) y `VersionDowngradeError` (409) para mejor DX.
 
-**Dashboard & Wizard (Paso 20):**
-- **Bundle Wizard:** Interfaz interactiva de 3 pasos (Subida -> Validación -> Despliegue) con soporte para archivos ZIP y reporte de seguridad dinámico.
-- **Validación en Tiempo Real:** Integración con el endpoint `/validate` para pre-visualizar el contenido del bundle (conteo de agentes/skills) y detectar conflictos de versión antes de persistir.
-- **Control de Downgrades Visual:** Interfaz de advertencia cuando se detecta una versión inferior, permitiendo el bypass mediante un checkbox de "Force Downgrade" que inyecta el flag `force=true`.
-- **Bundle Timeline (Historial):** Auditoría histórica de despliegues ordenada cronológicamente por `imported_at`. Permite visualizar el estado de cada importación y acceder a sus detalles.
-- **Auditoría de Código (Audit Viewer):** Visor de código fuente premium integrado que permite inspeccionar el código de las skills importadas directamente desde el historial de bundles.
+### ⚠️ Parcialmente Implementado
+- *N/A (Fase III cerrada)*
 
-**Backend & API (Soporte Paso 20):**
-- **Endpoint de Detalles:** Recuperación enriquecida de componentes que incluye el `code_source` de las skills para auditoría (verificado en `src/services/import_service.py`).
-- **Endpoint de Historial:** Listado de importaciones ordenado por `imported_at` descendente.
-- **FAP Client (Lib):** Cliente API refactorizado para manejar `FormData` de forma transparente, permitiendo subidas multipart seguras sin sobrescribir el boundary del navegador.
+### ❌ No Existe Aún (Post-MVP)
+- **Retry con Backoff:** El sistema falla rápido (fail-fast) para mantener simplicidad.
+- **Seccomp Sandbox:** Hardening a nivel de OS (planeado para Post-MVP).
+- **Firmas Criptográficas:** Validación de bundles mediante claves PKI.
 
 ---
 
 ## 3. Contratos Técnicos Vigentes
 
-### APIs y Endpoints (Actualizados):
-| Endpoint | Método | Parámetros Críticos | Descripción |
-|:---|:---|:---|:---|
-| `/api/bundles/validate` | `POST` | `file: File` | Validación dry-run del bundle. |
-| `/api/bundles/import` | `POST` | `file: File, force: bool` | Importación atómica con bypass opcional de versión. |
-| `/api/bundles/history` | `GET` | - | Lista el historial de importaciones del tenant. |
-| `/api/bundles/{id}/details` | `GET` | `bundle_id: str` | Retorna componentes y código fuente de un bundle. |
+### 📊 Modelos de Datos (Migraciones 0026-0028)
+- `bundle_imports`: Trazabilidad de cada ZIP subido (hash, version, timestamp).
+- `skill_catalog`: Almacena código fuente (`code_source`) y bytecode compilado.
+- `agent_catalog`: Definiciones JSON de agentes.
+- `workflow_templates`: Definiciones de flujos.
 
-### Patrones de Código en Uso (Verificados):
-- **Form Data Handling:** El cliente API `fapFetch` detecta instancias de `FormData` y elimina el header `Content-Type` manual para permitir que el navegador gestione el multipart boundary correctamente.
-- **Audit Logging:** Las skills persisten su código fuente original en la columna `code_source` de `skill_catalog` para trazabilidad administrativa.
-- **Visual Feedback:** Uso de `sonner` para notificaciones y estados de carga (skeletons/spinners) consistentes con el sistema de diseño.
+### 🌐 Endpoints API (Verificados en `src/api/routes/bundles.py`)
+| Método | Ruta | Descripción |
+| :--- | :--- | :--- |
+| `POST` | `/api/bundles/validate` | Validación dry-run (sin persistencia). |
+| `POST` | `/api/bundles/import` | Importación atómica (ZIP + opcional force=true). |
+| `GET` | `/api/bundles/history` | Historial de importaciones del tenant. |
+| `GET` | `/api/bundles/{id}/details` | Contenido detallado y código de un bundle. |
+| `DELETE` | `/api/bundles/{id}` | Desactivación (Soft-delete) del bundle y sus componentes. |
+
+### 🛠️ Patrones de Código en Uso
+- **Auth Pattern:** Uso de `PyJWT` (HS256/ES256) con inyección de `org_id` vía `Depends(require_org_id)`.
+- **RLS Pattern:** `auth.uid()` y `auth.jwt() -> 'org_id'` para aislamiento de datos.
+- **Registry Pattern:** Inyección de dependencias en `SecurityGuard` y registro en memoria con prefijo `org_id:`.
+- **Hydration Logging:** Logs de nivel `INFO` tras cargas exitosas desde base de datos en `src/tools/registry.py` y `src/flows/registry.py`.
 
 ---
 
-## 4. Registro de Pasos Completados
+## 4. Decisiones de Arquitectura Tomadas
+
+- **Local-First Priority:** El bundle es el **único** camino de entrada para lógica de negocio. No se permiten ediciones manuales en DB.
+- **Atomicidad PostgreSQL:** Uso extensivo de RPC en PL/pgSQL para evitar estados inconsistentes durante fallos de red.
+- **Sandbox Híbrido:** Escaneo AST preventivo + Ejecución restringida en `RestrictedPython`.
+- **Versioning:** Estricto cumplimiento de Semantic Versioning para evitar sobreescrituras accidentales.
+
+### 📝 Correcciones al Plan Maestro
+- ⚠️ **Auth:** Se utiliza `PyJWT` en lugar de `python-jose` (deprecada).
+- ⚠️ **RLS:** Se utiliza el patrón de JWT Claims de Supabase para `org_id` en lugar de variables de sesión personalizadas.
+
+---
+
+## 5. Registro de Pasos Completados
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
-|:---|:---|:---|:---|:---|
-| T20 | ✅ | `bundles.py`, `import_service.py`, `BundlesWizardPage.tsx`, `BundleTimeline.tsx`, `api.ts` | Auditoría visual de código. Cliente API compatible con FormData. | **Cierre Fase III** |
-| T19 | ✅ | `import_service.py`, `bundles.py`, `test_version_guard.py` | Uso de `packaging` para SemVer. HTTP 409 para conflictos. Flag `force` para bypass. | SemVer Pro |
-| T18 | ✅ | `warmup.py`, `main.py`, `registry.py`, `0028_roadmap_features.sql` | Warmup síncrono. Soft-delete universal. | Resiliencia 100% |
+| :--- | :--- | :--- | :--- | :--- |
+| **T21** | ✅ | `bundles.py`, `import_service.py` | Errores 400/409, logs INFO. | Quality Sprint Finalizado |
+| **T20** | ✅ | `BundlesWizardPage.tsx`, `api.ts` | Wizard Drag&Drop, Auditoría Visual. | Cierre de Interfaz |
+| **T19** | ✅ | `import_service.py` | Lógica SemVer y Version Guard. | Protección de Versión |
+| **T18** | ✅ | `warmup.py`, `registry.py` | `WarmupService` para hidratación DB. | Resiliencia de Reinicio |
+| **T17** | ✅ | `cli/main.py` | Refinamiento de `fap validate` y `login`. | DX Local |
 
 ---
 
-## 5. Criterios de Aceptación (Fase III - Paso 20)
+## 6. Criterios Generales de Aceptación MVP (Fase III)
 
-| # | Criterio | Verificación |
-|:---|:---|:---|
-| 1 | Subir ZIP y ver reporte de validación antes de importar | ✅ Verificado (`BundlesWizardPage.tsx`) |
-| 2 | El historial muestra los bundles ordenados por fecha de importación | ✅ Verificado (`import_service.py:199`) |
-| 3 | Se puede ver el código fuente de las skills en el modal de auditoría | ✅ Verificado (`BundleTimeline.tsx` + `get_details`) |
-| 4 | El checkbox "Force" funciona para resolver conflictos de versión | ✅ Verificado (Integración Wizard -> API) |
-| 5 | Navegación sincronizada en el sidebar del dashboard | ✅ Verificado (`nav-main.tsx`) |
-
----
-
-## 6. Estado del Repositorio
-
-**Hitos Finales de la Fase III:**
-- **Pipeline End-to-End**: Desde `fap package` en local hasta el Wizard en el Dashboard, el flujo está cerrado y validado.
-- **Transparencia & Seguridad**: El sistema no solo bloquea versiones inferiores, sino que permite auditar visualmente qué código se está ejecutando.
-- **Listo para Próxima Etapa**: La base del sistema de bundles es sólida y escalable para futuras integraciones y marketplace de agentes.
+- [x] El flujo **Empaquetar -> Validar -> Importar** funciona sin errores.
+- [x] Los componentes (Agentes/Skills) son inmediatamente utilizables tras la importación.
+- [x] El sistema bloquea versiones inferiores por defecto (`VersionDowngradeError`).
+- [x] El código de las skills se puede auditar visualmente desde el Dashboard.
+- [x] Los errores de importación son atómicos (no dejan residuos en la DB).
+- [x] No existen linters ni warnings críticos en el core del sistema.
 
 ---
-*Documento actualizado por Antigravity (ATG) siguiendo 0_CONTEXTO.md.*
+*Documento generado automáticamente por el Arquitecto de Contexto (Antigravity) siguiendo el protocolo 0_CONTEXTO.md.*

@@ -294,6 +294,11 @@ class FlowRegistry:
                 scoped_key = f"{org_id}:{flow_type}"
                 self._flows[scoped_key] = BoundDynamicFlow
 
+                logger.info(
+                    "Successfully loaded flow '%s' from DB for org '%s'",
+                    flow_type, org_id
+                )
+
                 return BoundDynamicFlow
 
         except Exception as exc:

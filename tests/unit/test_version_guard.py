@@ -13,7 +13,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.services.bundle_manager import VersionConflictError
+from src.services.bundle_manager import (
+    MalformedVersionError,
+    VersionDowngradeError,
+)
 from src.services.import_service import ImportService
 
 
@@ -54,8 +57,9 @@ class TestVersionGuard:
     def test_downgrade_blocked(self):
         """Scenario: 1.1.0 -> 1.0.0 (Blocked)"""
         with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version("1.1.0")):
-            with pytest.raises(VersionConflictError) as exc:
+            with pytest.raises(VersionDowngradeError) as exc:
                 self.service._check_version_guard("1.0.0", "my-bundle")
+            assert "Bundle 'my-bundle'" in str(exc.value)
             assert "is lower than current" in str(exc.value)
 
     def test_downgrade_forced_allowed(self):
@@ -78,9 +82,10 @@ class TestVersionGuard:
     def test_malformed_version(self):
         """Scenario: Version string 'xyz' (Rejected)"""
         with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version(None)):
-            with pytest.raises(VersionConflictError) as exc:
+            with pytest.raises(MalformedVersionError) as exc:
                 self.service._check_version_guard("xyz", "my-bundle")
-            assert "Invalid semantic version format" in str(exc.value)
+            assert "Bundle 'my-bundle'" in str(exc.value)
+            assert "invalid semantic version format" in str(exc.value)
 
     def test_semver_complex_comparison(self):
         """Scenario: 1.10.0 > 1.2.0 (Allowed)"""

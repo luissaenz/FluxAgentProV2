@@ -159,6 +159,11 @@ class ToolRegistry:
                     ):
                         # Register in memory (tenant-scoped)
                         self.register(name=f"{org_id}:{name}")(attr)
+                        logger.info(
+                            "Successfully loaded skill '%s' from DB for org '%s'",
+                            name,
+                            org_id,
+                        )
                         return attr
 
                 logger.warning(
