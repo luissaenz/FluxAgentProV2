@@ -247,6 +247,11 @@ class MockLLMManager:
         self.last_call = {"args": args, "kwargs": kwargs}
         if self.responses:
             return self.responses.pop(0)
+
+        # Retornar JSON si detectamos peticiones a pydantic o response_format
+        if "response_format" in kwargs or "pydantic" in str(kwargs).lower():
+            return '{"status": "success", "data": "mocked"}'
+
         return "Default Mocked LLM Response"
 
 

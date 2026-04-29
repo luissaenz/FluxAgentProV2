@@ -58,9 +58,9 @@ def main():
             break
 
     if success:
-        print(f"\n{GREEN}✨ Codebase is clean and sanitized! ✨{RESET}")
+        print(f"\n{GREEN}[OK] Codebase is clean and sanitized! [OK]{RESET}")
     else:
-        print(f"\n{RED}❌ Sanitization failed. Please check the errors above.{RESET}")
+        print(f"\n{RED}[X] Sanitization failed. Please check the errors above.{RESET}")
         sys.exit(1)
 
 
