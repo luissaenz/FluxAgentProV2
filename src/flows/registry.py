@@ -208,7 +208,7 @@ class FlowRegistry:
 
     # ── lookup ──────────────────────────────────────────────────
 
-    def get(self, name: str, org_id: str | None = None) -> Type:
+    def get(self, name: str, org_id: str | None = None, strict_mode: bool = True) -> Type:
         """Return the Flow class for *name*.
 
         Order: Scoped Cache (org:name) -> Global Cache (name) -> DB lookup -> raise ValueError.

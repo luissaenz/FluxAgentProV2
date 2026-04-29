@@ -97,7 +97,17 @@ class ToolRegistry:
                     "Failed DB lookup for tool '%s' in org '%s': %s", name, org_id, e
                 )
 
-        # 4. Fallback to filesystem (src/tools/demo/*.py)
+        # 4. Fallback to filesystem (src/tools/demo/*.py) (Gated by Strict Mode)
+        from src.config import get_settings
+
+        if get_settings().fap_strict_mode:
+            logger.info(
+                "Strict mode active: Skipping filesystem fallback for tool '%s'", name
+            )
+            raise ValueError(
+                f"Tool '{name}' not found. Strict mode active, filesystem fallback disabled."
+            )
+
         try:
             tool_class = self._load_from_filesystem(key)
             if tool_class:

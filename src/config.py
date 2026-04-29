@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     app_env: str = Field(
         "development", description="development | staging | production"
     )
+    fap_strict_mode: bool = Field(
+        True,
+        description="Enforces production parity by disabling filesystem fallback in registries",
+    )
     log_level: str = Field("INFO", description="Logging level")
 
     # ── Bundle Constraints ────────────────────────────────────
