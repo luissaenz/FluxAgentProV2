@@ -2,12 +2,28 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from typing import Any, Dict
+from uuid import uuid4
 
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel
+
+from ...crews.base_crew import BaseCrew
 from ...db.session import get_tenant_client
-from ..middleware import require_org_id
+from ..middleware import require_org_id, verify_org_membership
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+class RunAgentRequest(BaseModel):
+    """Request para ejecutar un agente."""
+    input_data: Dict[str, Any] = {}
+
+
+class RunAgentResponse(BaseModel):
+    """Respuesta al ejecutar un agente."""
+    task_id: str
+    status: str
 
 
 @router.get("/{agent_id}/detail")
@@ -21,7 +37,6 @@ async def get_agent_detail(
     Incluye: datos del catalog, metricas de tokens, tareas recientes,
     y referencias a credenciales en Vault (solo nombres, nunca valores).
     """
-    from fastapi import HTTPException
 
     with get_tenant_client(org_id) as db:
         # 1. Registro base del catálogo
@@ -133,3 +148,73 @@ async def get_agent_detail(
         },
         "credentials": secret_refs,
     }
+
+
+@router.post("/{role}/run", response_model=RunAgentResponse)
+async def run_agent(
+    role: str,
+    request: RunAgentRequest,
+    background_tasks: BackgroundTasks,
+    auth: dict = Depends(verify_org_membership),
+):
+    """
+    Ejecutar un agente específico por su rol.
+    Retorna un task_id para polling.
+    """
+    org_id = auth["org_id"]
+    
+    # 1. Generate task_id and correlation_id for persistence
+    task_id = str(uuid4())
+    correlation_id = f"manual-agent-{role}-{org_id[:8]}-{uuid4().hex[:6]}"
+
+    # 2. Create initial task record in 'pending' state
+    with get_tenant_client(org_id) as db:
+        db.table("tasks").insert({
+            "id": task_id,
+            "org_id": org_id,
+            "flow_type": f"agent:{role}",
+            "status": "pending",
+            "payload": request.input_data,
+            "correlation_id": correlation_id,
+        }).execute()
+
+    # 3. Start execution in background
+    async def _execute():
+        try:
+            # Initialize BaseCrew
+            crew = BaseCrew(org_id=org_id, role=role)
+
+            # Mark as running
+            with get_tenant_client(org_id) as db:
+                db.table("tasks").update({"status": "running"}).eq("id", task_id).execute()
+
+            # Execute
+            result = await crew.run_async(
+                task_description="Execute assigned task",
+                inputs=request.input_data
+            )
+            
+            # Update to completed
+            with get_tenant_client(org_id) as db:
+                db.table("tasks").update({
+                    "status": "completed",
+                    "result": str(result),
+                    "tokens_used": crew.get_last_tokens_used()
+                }).eq("id", task_id).execute()
+                
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("Agent execution failed: %s", e)
+            # Update to failed
+            with get_tenant_client(org_id) as db:
+                db.table("tasks").update({
+                    "status": "failed",
+                    "error": str(e)
+                }).eq("id", task_id).execute()
+
+    background_tasks.add_task(_execute)
+    
+    return RunAgentResponse(
+        task_id=task_id,
+        status="accepted"
+    )

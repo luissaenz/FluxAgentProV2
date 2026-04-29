@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from ..config import get_settings
+from ..config import get_settings  # noqa: F401
 from ..db.session import get_service_client
 from ..tools.registry import tool_registry
 
@@ -103,27 +103,13 @@ class BaseCrew:
         Returns:
             CrewOutput from crew.kickoff() with token usage attached.
         """
-        from crewai import Agent, Crew, Process, Task
+        from crewai import Crew, Process, Task
 
         config = self._load_agent_config()
-        soul = config.get("soul_json", {})
-        settings = get_settings()
-        llm = settings.get_llm()
 
         # Resolve tools from allowed_tools list
-        allowed_tools = config.get("allowed_tools", [])
-        tools = self._resolve_tools(allowed_tools)
-
-        agent = Agent(
-            role=soul.get("role", self.role),
-            goal=soul.get("goal", "Complete the assigned task."),
-            backstory=soul.get("backstory", "You are a specialised agent."),
-            verbose=False,
-            allow_delegation=False,  # Rule R2
-            llm=llm,
-            max_iter=config.get("max_iter", 5),  # Rule R8
-            tools=tools,
-        )
+        from .factory import AgentFactory
+        agent = AgentFactory.create_agent(config, self.org_id)
 
         task = Task(
             description=task_description,
@@ -192,26 +178,12 @@ class BaseCrew:
 
         Use this in async Flows to avoid blocking the event loop.
         """
-        from crewai import Agent, Crew, Process, Task
+        from crewai import Crew, Process, Task
 
         config = self._load_agent_config()
-        soul = config.get("soul_json", {})
-        settings = get_settings()
-        llm = settings.get_llm()
 
-        allowed_tools = config.get("allowed_tools", [])
-        tools = self._resolve_tools(allowed_tools)
-
-        agent = Agent(
-            role=soul.get("role", self.role),
-            goal=soul.get("goal", "Complete the assigned task."),
-            backstory=soul.get("backstory", "You are a specialised agent."),
-            verbose=False,
-            allow_delegation=False,
-            llm=llm,
-            max_iter=config.get("max_iter", 5),
-            tools=tools,
-        )
+        from .factory import AgentFactory
+        agent = AgentFactory.create_agent(config, self.org_id)
 
         task = Task(
             description=task_description,

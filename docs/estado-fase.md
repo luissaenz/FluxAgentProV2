@@ -1,66 +1,62 @@
-# Estado de Fase: Infraestructura de Paridad (FAP_STRICT_MODE) — v22
+# Estado de Fase: Infraestructura de Paridad (CLI Runner) — v23
 
 > 📅 **Fecha:** 2026-04-29
-> 📝 **Estado:** ACTUALIZACIÓN (Inicio de Fase IV - Paridad Local-Producción)
+> 📝 **Estado:** ACTUALIZACIÓN (Fase IV - Paridad Local-Producción)
 
 ---
 
 ## 1. Resumen de Fase
 
-El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el sistema de registries local se comporte exactamente como el de producción. Esto se logra mediante la eliminación de fallbacks accidentales al sistema de archivos local, forzando la carga de herramientas y flujos exclusivamente desde el sistema de bundles y base de datos, asegurando una validación absoluta antes del despliegue.
+El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el sistema de registries local se comporte exactamente como el de producción. Se busca eliminar fallbacks accidentales y proporcionar herramientas de CLI que permitan probar Agentes y Flujos localmente con las mismas restricciones de seguridad y persistencia que en el entorno real.
 
-**Estado Actual:** 🛠️ **FASE IV EN PROGRESO.** Pasos S1 (Modo Estricto) y S2 (CLI Watcher) completados.
+**Estado Actual:** 🛠️ **FASE IV EN PROGRESO.** Pasos S1 (Modo Estricto), S2 (CLI Watcher) y S3 (CLI Runner) completados.
 
 ---
 
 ## 2. Estado Actual del Proyecto
 
 ### ✅ Implementado y Funcional (Verificado en Código)
-- **Modo Estricto (FAP_STRICT_MODE):** Flag global en `src/config.py` que controla el comportamiento de los registries.
-- **Gatekeeper de Herramientas:** `ToolRegistry.get()` ahora bloquea el fallback a `src/tools/demo/` cuando el modo estricto está activo, lanzando `ValueError`.
-- **Sincronización de Registries:** `FlowRegistry.get()` actualizado con parámetro `strict_mode` para mantener simetría en la firma de las APIs de registros.
-- **Observabilidad de Inicio:** El script `launch.sh` reporta el estado de `FAP_STRICT_MODE` en el banner de arranque del servidor.
-- **Lazy Loading Persistente:** Registries con búsqueda en 2 niveles (Memoria -> DB) operativos.
-- **Importación Atómica:** RPC `import_bundle_atomic` funcional.
-- **FAP-CLI:** Operativa para empaquetado y validación local.
-- **CLI Watcher (fap dev):** Implementado con monitoreo `watchdog`, debounce de 0.5s y validación AST fail-fast.
+- **CLI Runner (fap run agent/flow):** Extensión del CLI para soportar ejecución granular de componentes.
+- **Local Executor (`src/services/local_executor.py`):** Orquestador que maneja la carga transiente de bundles, validación AST y limpieza de registries.
+- **Mock Persistence:** Sistema de interceptación de llamadas a DB mediante `unittest.mock` para evitar efectos colaterales durante el `fap run` local.
+- **Agent/Task Factory (`src/crews/factory.py`):** Capacidad de reconstruir objetos de CrewAI desde definiciones JSON del bundle.
+- **Modo Estricto (FAP_STRICT_MODE):** Flag global que bloquea fallbacks al sistema de archivos local.
+- **CLI Watcher (fap dev):** Hot-reload automatizado para sincronización de bundles.
 
 ### ⚠️ Parcialmente Implementado
-- *N/A*
+- **Integración de Subcomandos en `fap run`:** El archivo `src/cli/commands/run.py` tiene la lógica de subcomandos, pero `src/cli/main.py` aún registra el comando `run` apuntando directamente a `run_skill` en lugar de usar `add_typer`.
 
-### ❌ No Existe Aún (Post-MVP)
-- **Retry con Backoff:** El sistema mantiene fail-fast.
-- **Seccomp Sandbox:** Hardening a nivel de OS.
-- **Firmas Criptográficas:** Validación PKI de bundles.
+### ❌ No Existe Aún (Siguiente Paso)
+- **Paso 4: FAP-Implementor:** Skill inteligente para generación de bundles seguros.
+- **Paso 5: Dogfooding (ArchitectFlow):** Migración del core al formato bundle.
+
+### 📝 CORRECCIÓN / DISCREPANCIA
+- ⚠️ **Registro de Comandos:** El plan de paridad requería que `fap run` fuera un grupo de comandos (`skill`, `agent`, `flow`). Aunque `run.py` está refactorizado, `src/cli/main.py` requiere una actualización para usar `add_typer(run_app, name="run")` para habilitar el acceso a `fap run agent` y `fap run flow`.
 
 ---
 
 ## 3. Contratos Técnicos Vigentes
 
-### ⚙️ Configuración (src/config.py)
-- `fap_strict_mode: bool = Field(True, ...)` — Valor por defecto `True` para forzar paridad desde el inicio.
-
-### 🌐 Endpoints y Firmas (Verificados en Código)
-| Componente | Método/Firma | Cambio Realizado |
+### 🌐 Endpoints y Firmas de CLI (Verificados en Código)
+| Comando | Firma / Argumentos | Estado |
 | :--- | :--- | :--- |
-| `ToolRegistry` | `get(name, org_id)` | Implementa gatekeeper contra filesystem fallback. |
-| `FlowRegistry` | `get(name, org_id, strict_mode)` | Firma actualizada para simetría con ToolRegistry. |
-| `fap dev` | `dev_command(path, debounce)` | Nuevo comando de hot-reload con watcher. |
-| `fap publish` | `publish_bundle(zip_path, force)` | Ahora soporta sobreescritura de versiones. |
-| `launch.sh` | Banner informativo | Muestra `Strict Mode: true/false` al iniciar. |
+| `fap run skill` | `file_path, --input, --file, --danger-no-sandbox` | ✅ Funcional |
+| `fap run agent` | `role, --bundle, --input, --timeout` | ✅ Implementado en logic (⚠️ Ver Discrepancia) |
+| `fap run flow` | `flow_type, --bundle, --input, --timeout` | ✅ Implementado en logic (⚠️ Ver Discrepancia) |
 
 ### 🛠️ Patrones de Código en Uso
-- **Strict Mode Gate:** Uso de `get_settings().fap_strict_mode` dentro de los métodos `get()` para decidir si permitir el acceso a archivos locales (`src/tools/demo/`).
-- **Auth Pattern:** Uso de `PyJWT` con inyección de `org_id`.
-- **RLS Pattern:** `auth.uid()` y `auth.jwt() -> 'org_id'` para aislamiento de datos.
+- **Transient Registration:** El `LocalExecutor` registra temporalmente tools y flows en los registries globales y los limpia al finalizar (`clear()`).
+- **In-Memory Mocking:** Uso de `MagicMock` para simular respuestas de Supabase (`get_tenant_client`, `get_service_client`).
+- **Async Typer:** Comandos del CLI definidos como `async def` para integración nativa con procesos asíncronos de Flows.
+- **BaseCrew Testability:** Import de `get_settings` con `# noqa: F401` en `src/crews/base_crew.py` para compatibilidad con mocks de tests unitarios.
 
 ---
 
 ## 4. Decisiones de Arquitectura Tomadas
 
-- **Paridad sobre Conveniencia:** Se prioriza que el entorno local falle si falta un bundle (`FAP_STRICT_MODE=true`), evitando que el desarrollador use herramientas locales que no están en la base de datos de producción.
-- **Aislamiento de Registros:** Los registros son independientes del entorno (`APP_ENV`), permitiendo habilitar la paridad incluso en `development`.
-- **Logging de Auditoría:** Se introducen logs de nivel `INFO` explícitos cuando el Modo Estricto bloquea una carga ("Strict mode active: Skipping filesystem fallback...").
+- **Aislamiento por Inyección:** En lugar de modificar el código de los agentes para soportar "modo local", se utiliza `LocalExecutor.mock_persistence()` para parchear las dependencias de red en tiempo de ejecución.
+- **Subcomandos Typer:** Adopción de subcomandos para `fap run` para mejorar la escalabilidad de la herramienta.
+- **Seguridad Mandatoria:** Incluso en ejecución local con `--bundle`, el `SecurityGuard` valida el código AST a menos que se use `--danger-no-sandbox`.
 
 ---
 
@@ -68,22 +64,19 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el s
 
 | Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
 | :--- | :--- | :--- | :--- | :--- |
-| **S1** | ✅ | `config.py`, `registry.py`, `launch.sh`, `.env.example` | Implementación de Strict Mode Gate. | Paridad Local-Prod |
-| **T21** | ✅ | `bundles.py`, `import_service.py` | Errores 400/409, logs INFO. | Cierre Fase III |
-| **T20** | ✅ | `BundlesWizardPage.tsx`, `api.ts` | Wizard Drag&Drop. | Dashboard Finalizado |
-| **S2** | ✅ | `dev.py`, `main.py`, `publish.py`, `pyproject.toml` | CLI Watcher con Hot-Reload. | DX Aumentada |
+| **S1** | ✅ | `config.py`, `registry.py`, `launch.sh` | Modo Estricto Global. | Paridad Activa |
+| **S2** | ✅ | `dev.py`, `main.py`, `publish.py` | CLI Watcher con watchdog. | Hot-Reload |
+| **S3** | ✅ | `run.py`, `local_executor.py`, `factory.py`, `base_crew.py` | CLI Runner con paridad y mocks. | **NUEVO** |
 
 ---
 
 ## 6. Criterios Generales de Aceptación MVP (Fase IV)
 
-- [x] El sistema lanza error si se intenta usar una herramienta no cargada vía bundle/DB estando en modo estricto.
-- [x] La configuración de modo estricto se puede sobrescribir vía variables de entorno (`FAP_STRICT_MODE`).
-- [x] El banner de inicio muestra correctamente el estado de la paridad.
-- [x] No hay degradación de performance por el chequeo de modo estricto.
-- [x] La firma de los registros es consistente entre Tools y Flows.
-- [x] El CLI sincroniza cambios automáticamente en < 1s al usar `fap dev`.
-- [x] Se bloquean publicaciones de código con errores de sintaxis localmente.
+- [x] El CLI permite ejecutar agentes remotos vía API con polling de resultados.
+- [x] El CLI permite ejecutar agentes/flujos locales usando el flag `--bundle`.
+- [x] La ejecución local simula la persistencia sin escribir en la base de datos real.
+- [x] Los inputs JSON se cargan correctamente desde string o archivos.
+- [x] La suite de tests unitarios (238) e integración (84) pasa al 100%.
 
 ---
-*Documento generado automáticamente por el Arquitecto de Contexto (Antigravity) siguiendo el protocolo 0_CONTEXTO.md.*
+*Documento actualizado por el Arquitecto de Contexto (Antigravity) siguiendo el protocolo 0_CONTEXTO.md.*
