@@ -1,83 +1,111 @@
-# 🗺️ PLAN MAESTRO: ARQUITECTURA BUNDLE-DRIVEN (V3)
+# 🗺️ PLAN DE IMPLEMENTACIÓN: FASE IV — ECOSISTEMA Y PARIDAD TOTAL
 
-## 🎯 Visión y Objetivo Principal
-Establecer un ecosistema donde el desarrollo de sistemas agénticos sea **Local-First**. El usuario desarrolla, prueba y valida sus agentes, flujos y habilidades en su entorno local utilizando herramientas de CLI, para luego empaquetarlos en **Bundles (ZIP)** que son importados de forma atómica y segura en la plataforma FluxAgentPro (FAP).
-
-**Regla de Oro:** El Bundle es el **único** camino de entrada para la lógica de negocio (Agentes, Flujos, Skills). No existen formularios de creación manual en el Dashboard.
+Este documento detalla la hoja de ruta técnica para alcanzar la paridad absoluta entre el desarrollo local y el entorno de producción en **FluxAgentPro-v2**, garantizando un ciclo de vida de desarrollo (SDLC) profesional, seguro y extremadamente rápido.
 
 ---
 
-## 🏗️ Estado de la Arquitectura (Certificación Fase II)
-Al 2026-04-28, el núcleo del sistema ha sido auditado y certificado con **340 tests en verde**:
-1.  **Validación de Integridad**: `BundleManager` procesa ZIPs in-memory con verificación SHA256.
-2.  **Sandbox de Seguridad**: `SecurityGuard` implementa escaneo AST y `RestrictedPython` con timeout de 30s.
-3.  **Persistencia Atómica**: RPC `import_bundle_atomic` garantiza transaccionalidad total (Todo o Nada).
-4.  **Registro Híbrido**: `ToolRegistry` soporta carga dinámica desde DB con fallback a disco.
+## 🎯 Objetivos de la Fase IV
+1.  **Paridad "Local-as-Production"**: Eliminar los "atajos" de carga desde disco. Todo código local debe correr bajo las mismas restricciones que en producción (`RestrictedPython`, `SecurityGuard`).
+2.  **Feedback en Tiempo Real**: Implementar un sistema de "Hot-Reload" mediante el CLI que sincronice cambios locales con la base de datos en < 2 segundos.
+3.  **FAP-Implementor Skill**: Desarrollar un escuadrón técnico automatizado (fork de `skill-creator`) capaz de generar bundles válidos y seguros de forma agnóstica al modelo.
+4.  **Dogfooding**: Migrar el núcleo del sistema (`ArchitectFlow`) al formato de Bundles.
 
 ---
 
-## 🔄 El Workflow "Forge-to-Cloud"
-El proceso priorizado para el desarrollador sigue este flujo:
+## 🚀 Pasos de Implementación
 
-1.  **FORGE (Local)**: `fap init` genera la estructura. El dev escribe código Python para skills y JSON para agentes.
-2.  **TEST (Local)**: `fap validate` simula el sandbox de FAP localmente para detectar errores de importación o brechas de seguridad.
-3.  **PACK (Local)**: `fap package` genera el ZIP final con hashes firmados en el `manifest.json`.
-4.  **IMPORT (Remote)**: El bundle se envía a FAP vía API/CLI.
-5.  **ACTIVATE (Remote)**: El sistema hidrata el `ToolRegistry` y los agentes quedan listos para su ejecución en Crews.
+### Paso 1: Infraestructura de Paridad (Modo Estricto)
+**Objetivo:** Forzar al sistema a comportarse como un entorno de producción, incluso en local.
+
+*   **Acciones:**
+    *   Implementar `FAP_STRICT_MODE` en `ToolRegistry` y `FlowRegistry`.
+    *   Configurar el entorno local para que la variable sea `true` por defecto.
+    *   Desactivar el fallback a `src/tools/demo/*.py` cuando el modo estricto esté activo.
+*   **Implicancias:**
+    *   **Seguridad**: Garantiza que ningún código "sucio" en el sistema de archivos se ejecute sin pasar por el `SecurityGuard`.
+    *   **DX**: El desarrollador *debe* publicar sus cambios para verlos, eliminando el riesgo de "funciona en mi máquina pero no en prod".
+    *   **Rendimiento**: Se reduce la búsqueda innecesaria en disco.
+
+### Paso 2: CLI Watcher — `fap dev`
+**Objetivo:** Automatizar el ciclo de Publicación -> Base de Datos.
+
+*   **Acciones:**
+    *   Crear el comando `fap dev <path_to_bundle>`.
+    *   Utilizar `watchdog` para monitorear cambios en el código fuente del bundle.
+    *   Al detectar cambios:
+        1.  Validación estática rápida (AST check).
+        2.  Empaquetado en ZIP (Bundle).
+        3.  Publicación atómica vía `fap-cli publish` a la API local.
+        4.  Invalidación de caché de registries en el servidor local.
+*   **Implicancias:**
+    *   **Velocidad**: Sincronización transparente sin intervención del usuario.
+    *   **Integridad**: Si el código local rompe las reglas de seguridad, el watcher lo detecta y aborta la publicación antes de romper la base de datos.
+
+### Paso 3: CLI Runner — `fap run agent/flow`
+**Objetivo:** Permitir pruebas granulares de componentes específicos desde la terminal.
+
+*   **Acciones:**
+    *   Extender `src/cli/commands/run.py` para soportar agentes y flujos completos.
+    *   Aceptar un flag `--bundle` para ejecutar el bundle local *como si estuviera en la DB*, pasando por el pipeline de validación completo.
+*   **Implicancias:**
+    *   **Debugging**: Permite depurar la lógica de agentes sin necesidad de usar el Dashboard o la UI.
+    *   **Aislamiento**: Facilita la creación de tests unitarios que verifiquen el comportamiento de un bundle de forma aislada.
+
+### Paso 4: FAP-Implementor (Fork de `skill-creator`)
+**Objetivo:** Crear una herramienta inteligente para la generación de agentes "FAP-ificados".
+
+*   **Acciones:**
+    *   Realizar un fork de la skill `skill-creator` de Anthropic.
+    *   **FAP-ificación**: Modificar el prompt base para que entienda:
+        *   Estructura de Bundles (`manifest.json`, subcarpetas).
+        *   Restricciones de `RestrictedPython` (uso de `BaseTool`, no `os/subprocess`).
+        *   Integración con MCP para tareas que requieran salir del sandbox.
+    *   **Agnosticismo**: Asegurar que la lógica de generación no dependa de características exclusivas de un modelo (ej: Claude-only syntax), permitiendo que funcione con Gemini, GPT-4, etc.
+*   **Implicancias:**
+    *   **Escalabilidad**: Cualquier usuario podrá generar agentes complejos simplemente describiendo su intención.
+    *   **Cumplimiento**: La skill generará código que *ya es válido* para el `SecurityGuard`, reduciendo los errores de importación.
+
+### Paso 5: Dogfooding — Migración de `ArchitectFlow`
+**Objetivo:** Utilizar el sistema de bundles para el componente más crítico del sistema.
+
+*   **Acciones:**
+    *   Extraer `src/flows/architect_flow.py` y sus dependencias.
+    *   Empaquetarlo como el bundle oficial `fap-core-architect`.
+    *   Eliminar la carga estática del código del core.
+*   **Implicancias:**
+    *   **Mantenibilidad**: El "arquitecto" puede actualizarse independientemente del servidor core.
+    *   **Validación Real**: Si el sistema puede manejar su propio flujo arquitectónico como un bundle, puede manejar cualquier cosa.
+
+### Paso 6: Suite de Validación E2E
+**Objetivo:** Certificar la Fase IV como finalizada.
+
+*   **Acciones:**
+    *   Crear tests que simulen un flujo completo:
+        1.  `fap dev` detecta cambio.
+        2.  `fap-implementor` genera una nueva herramienta.
+        3.  `fap run` ejecuta el agente con la nueva herramienta.
+        4.  Verificar persistencia en Supabase.
+*   **Implicancias:**
+    *   **Confianza**: Garantiza que la arquitectura de la Fase IV es resiliente y está lista para ser escalada.
 
 ---
 
-## 🛠️ Roadmap de Implementación: Fase III (Refinamiento y DX)
+## ⏱️ Estimación de Esfuerzo (Horas Totales: 47h)
 
-### Paso 17: CLI Refinement (The Local Forge)
-**Objetivo**: Convertir el CLI en una herramienta de grado profesional para desarrollo local.
--   **Mejora de `fap validate`**: Sincronizar las listas de módulos permitidos/prohibidos con el servidor.
--   **Comando `fap run`**: Permitir la ejecución de una skill local dentro del sandbox de `RestrictedPython` para pruebas rápidas.
--   **Autenticación**: Implementar `fap login` para gestionar tokens de organización y facilitar el `fap publish`.
--   **Complejidad**: Media | **Tiempo**: 8h
-
-### Paso 18: Warmup & Persistence (The Registry Bridge)
-**Objetivo**: Garantizar que el sistema sea resiliente a reinicios.
--   **Implementación de `WarmupService`**: Servicio que al arrancar escanea la tabla `skill_catalog` y pre-registra las habilidades en el `ToolRegistry`.
--   **Invalidación Dinámica**: Asegurar que al borrar un bundle, el caché de memoria se limpie en todos los nodos (si aplica).
--   **Complejidad**: Media | **Tiempo**: 6h
-
-### Paso 19: SemVer & Version Guard
-**Objetivo**: Control total sobre el despliegue y actualizaciones.
--   **Semantic Versioning**: Implementar lógica en `ImportService` para comparar la versión del bundle entrante contra la existente.
--   **Downgrade Prevention**: Bloquear importaciones de versiones menores a menos que se use un flag `--force`.
--   **Complejidad**: Baja | **Tiempo**: 4h
-
-### Paso 20: Dashboard & Wizard (The Visual Entry)
-**Objetivo**: Proveer una interfaz visual para la gestión de bundles.
--   **Wizard de Importación**: Interfaz de arrastrar y soltar (Drag & Drop) para bundles.
--   **Vista de Auditoría**: Visualizar el contenido de un bundle importado (lista de agentes y código de skills).
--   **Historial de Despliegue**: Timeline de qué bundles se han aplicado y por quién.
--   **Complejidad**: Alta | **Tiempo**: 16h
-
-### Paso 21: Maintenance & Polish (Quality Sprint)
-**Objetivo**: Resolver inconsistencias menores y mejorar la observabilidad del sistema.
--   **Consistencia API**: Corregir mapeo HTTP para versiones malformadas (de 409 a 400).
--   **Observabilidad de Registro**: Añadir logs de nivel INFO en `FlowRegistry` para cargas exitosas desde DB.
--   **Troubleshooting Mejorado**: Incluir `bundle_name` en los mensajes de error de `VersionGuard`.
--   **Sincronización de Estado**: Asegurar que `docs/estado-fase.md` refleje siempre el estado real tras cada paso.
--   **Complejidad**: Muy Baja | **Tiempo**: 2h
+| Hito | Tiempo | Prioridad |
+|---|---|---|
+| Infraestructura & Modo Estricto | 5h | Crítica |
+| CLI Watcher (`fap dev`) | 10h | Alta |
+| CLI Runner (Extensión) | 6h | Media |
+| Dogfooding (`ArchitectFlow`) | 10h | Alta |
+| Skill Builder (`fap-implementor`) | 8h | Media |
+| Validación Final & E2E | 8h | Alta |
 
 ---
 
-## 🛡️ Seguridad y Hardening (Post-MVP)
-1.  **Seccomp Sandbox**: Implementar filtros de system calls en el worker para prevenir escapes de `RestrictedPython`.
-2.  **Auditoría de Dependencias**: Escaneo automático de vulnerabilidades en los `ALLOWED_MODULES`.
-3.  **Firmas Criptográficas**: Validación de bundles mediante claves públicas/privadas de proveedores.
+## ⚠️ Riesgos y Mitigaciones
 
----
-
-## 📊 Métricas de Calidad y Éxito
--   **Tests E2E**: El 100% de los casos de importación (B1-B9) deben mantenerse en verde.
--   **Latencia**: La validación e importación de un bundle de 10 agentes debe ser < 5 segundos.
--   **Aislamiento**: Verificación mediante tests de penetración de que una Org no puede inyectar código en el espacio de otra.
-
----
-
-## 🔮 Futuro: El Marketplace de Agentes
-Una vez consolidado el flujo local, el sistema evolucionará hacia un marketplace donde los bundles podrán ser importados directamente desde repositorios públicos o privados (GitHub/GitLab/S3), permitiendo despliegues automáticos (CI/CD) de sistemas agénticos.
+1.  **Riesgo:** La sincronización constante de `fap dev` genera versiones innecesarias en la DB.
+    *   **Mitigación:** Implementar un flag `is_dev` en los bundles para que el sistema local sobreescriba la versión de desarrollo en lugar de crear un historial infinito.
+2.  **Riesgo:** La skill `fap-implementor` genera código que el LLM no puede ejecutar localmente.
+    *   **Mitigación:** Incluir un paso de "Pre-validación" en la skill que ejecute el `SecurityGuard` antes de presentar el código al usuario.
