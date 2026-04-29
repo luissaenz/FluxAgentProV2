@@ -8,7 +8,8 @@ from src.cli.commands.init import init_bundle
 from src.cli.commands.login import login
 from src.cli.commands.package import package_bundle
 from src.cli.commands.publish import publish_bundle
-from src.cli.commands.run import run_skill
+from src.cli.commands.run import app as run_app
+from src.cli.commands.scaffold import scaffold_command
 from src.cli.commands.validate import validate_bundle
 
 app = typer.Typer(
@@ -23,7 +24,8 @@ app.command("login")(login)
 app.command("validate")(validate_bundle)
 app.command("package")(package_bundle)
 app.command("publish")(publish_bundle)
-app.command("run")(run_skill)
+app.add_typer(run_app, name="run")
+app.command("scaffold")(scaffold_command)
 app.command("dev")(dev_command)
 app.command("export-agents")(export_agents)
 

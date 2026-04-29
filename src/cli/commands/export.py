@@ -6,8 +6,9 @@ from pathlib import Path
 import typer
 from rich import print
 
-from src.cli.utils import calculate_dir_hashes, create_manifest_base, save_json
+from src.cli.utils import save_json
 from src.db.session import get_service_client
+from src.utils.bundle_utils import calculate_bundle_hashes, create_base_manifest
 
 
 def export_agents(
@@ -63,12 +64,12 @@ def export_agents(
             print(f"  - Exported: [cyan]{role}[/cyan]")
 
         # 5. Create manifest with initial hashes
-        manifest = create_manifest_base(f"migration_{org_id[:8]}")
+        manifest = create_base_manifest(f"migration_{org_id[:8]}")
+        
+        # Recalculate hashes to make it "package-ready"
+        manifest["hashes"] = calculate_bundle_hashes(output)
         save_json(output / "manifest.json", manifest)
 
-        # Recalculate hashes to make it "package-ready"
-        manifest["hashes"] = calculate_dir_hashes(output)
-        save_json(output / "manifest.json", manifest)
 
         print(
             f"\n[bold green]OK:[/bold green] Exported {len(result.data)} agents to [bold]{output}[/bold]."

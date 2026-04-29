@@ -6,7 +6,8 @@ from pathlib import Path
 import typer
 from rich import print
 
-from src.cli.utils import create_manifest_base, save_json
+from src.cli.utils import save_json
+from src.utils.bundle_utils import create_base_manifest
 
 
 def init_bundle(
@@ -31,8 +32,9 @@ def init_bundle(
             os.makedirs(bundle_path / sd)
 
         # Create initial manifest
-        manifest = create_manifest_base(name, author)
+        manifest = create_base_manifest(name, author=author)
         save_json(bundle_path / "manifest.json", manifest)
+
 
         print(
             f"[green]SUCCESS:[/green] Bundle [bold]{name}[/bold] initialized successfully at {bundle_path}"

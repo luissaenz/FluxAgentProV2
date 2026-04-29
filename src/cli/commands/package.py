@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich import print
 
-from src.cli.utils import calculate_dir_hashes, load_json, save_json
+from src.utils.bundle_utils import update_manifest_hashes
 
 
 def package_bundle(
@@ -29,16 +29,15 @@ def package_bundle(
         raise typer.Exit(code=1)
 
     try:
-        manifest = load_json(manifest_path)
-        bundle_name = manifest.get("name", "bundle")
-
-        # 1. Update Hashes
+        # 1. Update Hashes and get manifest (ensures v2.0)
+        print("GENERATING hashes and ensuring v2.0 schema...")
+        manifest = update_manifest_hashes(path)
+        bundle_info = manifest.get("bundle_info", {})
+        bundle_name = bundle_info.get("name", "bundle")
+        
         print(f"PACKAGING bundle: [bold]{bundle_name}[/bold]")
-        print("GENERATING hashes...")
-        new_hashes = calculate_dir_hashes(path)
-        manifest["hashes"] = new_hashes
-        save_json(manifest_path, manifest)
-        print("[green]OK:[/green] Manifest updated.")
+        print("[green]OK:[/green] Manifest updated and hashes generated.")
+
 
         # 2. Create ZIP
         zip_filename = output if output else Path(f"{bundle_name}.zip")

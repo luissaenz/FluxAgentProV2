@@ -66,8 +66,9 @@ def run_skill(
             console.print(f"[red]SECURITY BLOCKED:[/red] {e}")
             raise typer.Exit(code=1)
     else:
-        if not typer.confirm("⚠️  WARNING: Running without sandbox is dangerous. Continue?"):
+        if not typer.confirm("WARNING: Running without sandbox is dangerous. Continue?"):
             raise typer.Abort()
+
 
     console.print(f"[cyan]Executing [bold]{file_path.name}[/bold]...[/cyan]\n")
     
@@ -104,7 +105,7 @@ def run_skill(
         raise typer.Exit(code=1)
 
 @app.command("agent")
-async def run_agent(
+def run_agent(
     role: str = typer.Argument(..., help="Agent role to execute"),
     bundle: Optional[Path] = typer.Option(None, "--bundle", "-b", help="Path to local bundle directory"),
     input_str: Optional[str] = typer.Option(None, "--input", "-i", help="JSON input string"),
@@ -115,12 +116,13 @@ async def run_agent(
     inputs = _load_inputs(input_str, input_file)
     
     if bundle:
-        await _run_local_agent(role, bundle, inputs)
+        asyncio.run(_run_local_agent(role, bundle, inputs))
     else:
-        await _run_remote_agent(role, inputs, timeout)
+        asyncio.run(_run_remote_agent(role, inputs, timeout))
+
 
 @app.command("flow")
-async def run_flow(
+def run_flow(
     flow_type: str = typer.Argument(..., help="Flow type to execute"),
     bundle: Optional[Path] = typer.Option(None, "--bundle", "-b", help="Path to local bundle directory"),
     input_str: Optional[str] = typer.Option(None, "--input", "-i", help="JSON input string"),
@@ -131,9 +133,10 @@ async def run_flow(
     inputs = _load_inputs(input_str, input_file)
     
     if bundle:
-        await _run_local_flow(flow_type, bundle, inputs)
+        asyncio.run(_run_local_flow(flow_type, bundle, inputs))
     else:
-        await _run_remote_flow(flow_type, inputs, timeout)
+        asyncio.run(_run_remote_flow(flow_type, inputs, timeout))
+
 
 # --- Internal Implementations ---
 

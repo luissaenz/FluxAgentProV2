@@ -31,6 +31,12 @@
 
 ---
 
+
+---
+
+> [!IMPORTANT]
+> **REGLA DE UNIFICACIÓN (DX & Tooling):** Es obligatorio identificar las propuestas de herramientas de soporte (scaffolding, scripts de validación, generadores) de todos los agentes. El Unificador debe seleccionar la mejor o fusionarlas en una solución única en la Sección 3 (Diseño Técnico).
+
 ## 1. Resumen Ejecutivo
 
 Este paso tiene como objetivo blindar el sistema contra la ejecución de código malicioso contenido en los bundles de agentes. Aunque existe una base del `SecurityGuard`, se han detectado fallos críticos de integración y omisiones en las listas de bloqueo que invalidarían la seguridad del sistema en producción.
@@ -80,6 +86,9 @@ La unificación concluye que el diseño debe evolucionar de una validación pasi
 -   Función `import_bundle_atomic(payload JSONB)`.
 -   Lógica de Upsert coordinado para `agent_catalog`, `workflow_templates` y `skill_catalog`.
 
+#### 4. Infraestructura de Soporte (DX)
+- **Herramientas**: Implementación de utilidades como scaffolding o scripts de automatización para reducir el error humano y acelerar el desarrollo del paso.
+
 ---
 
 ## 4. Decisiones Tecnológicas
@@ -110,6 +119,7 @@ La unificación concluye que el diseño debe evolucionar de una validación pasi
 
 | # | Tarea | Complejidad | Tiempo Est. |
 |---|---|---|---|
+| 0 | **DX & Tooling**: Implementar herramientas de soporte (scaffolding, scripts) | Media | 1.5h |
 | 1 | **Migración 027**: Crear RPC `import_bundle_atomic` | Alta | 2.5h |
 | 2 | **Refuerzo SecurityGuard**: Listas completas y validación AST mejorada | Media | 1.5h |
 | 3 | **Implementación Timeout**: ThreadPoolExecutor en validation | Media | 1.5h |

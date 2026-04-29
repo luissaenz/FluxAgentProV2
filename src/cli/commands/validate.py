@@ -9,9 +9,10 @@ import typer
 from rich import print
 
 from src.cli.config import CLIConfig
-from src.cli.utils import calculate_dir_hashes, load_json
+from src.cli.utils import load_json
 from src.services.bundle_manager import BundleError, BundleManager
 from src.services.security_guard import SecurityError, SecurityGuard
+from src.utils.bundle_utils import calculate_bundle_hashes
 
 
 def get_remote_security_config(config: CLIConfig) -> Optional[dict]:
@@ -118,7 +119,8 @@ def validate_bundle(
 
         # 1. Integrity Check (Hashes)
         print("VALIDATING integrity...")
-        actual_hashes = calculate_dir_hashes(path)
+        actual_hashes = calculate_bundle_hashes(path)
+
         expected_hashes = manifest.get("hashes", {})
 
         if not expected_hashes:
