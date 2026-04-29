@@ -7,9 +7,9 @@
 
 ## 1. Resumen de Fase
 
-El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el sistema de registries local se comportara exactamente como el de producción. Se han eliminado los fallbacks accidentales y se han proporcionado herramientas de CLI que permitan probar Agentes y Flujos localmente con las mismas restricciones de seguridad y persistencia que en el entorno real.
+El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el sistema de registries local se comportara exactamente como el de producción. Se han eliminado los fallbacks accidentales y se han proporcionado herramientas de CLI que permitan probar Agentes y Flujos localmente con las mismas restricciones de seguridad y persistencia que en el entorno real. Adicionalmente, se saneó la infraestructura resolviendo problemas de rutas relativas, encoding en Windows y mejorando la observabilidad del ciclo de empaquetado.
 
-**Estado Actual:** ✅ **FASE IV COMPLETADA.** Todos los pasos (S1-S6) han sido implementados, validados y certificados.
+**Estado Actual:** ✅ **FASE IV COMPLETADA.** Todos los pasos (S1-S9) han sido implementados, validados y certificados.
 
 ---
 
@@ -28,6 +28,11 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 - **CLI Runner (fap run agent/flow):** Extensión del CLI para soportar ejecución granular de componentes.
 - **CLI Watcher (fap dev):** Hot-reload automatizado para sincronización de bundles.
 - **Security Guard (`src/services/security_guard.py`):** Implementación de allowlist y validación AST con `RestrictedPython`.
+- **Saneamiento de Rutas (Paso 7):** Resolución unificada a rutas absolutas en `fap dev` y `fap package`.
+- **Soporte Universal Windows (Paso 7):** Corrección activa de errores de encoding (UTF-8 wrapper) en el CLI (`main.py`).
+- **Observabilidad de Hashing (Paso 7):** Generación e impresión explícita de hashes por archivo durante el empaquetado.
+- **Certificación Real E2E (Paso 9):** Integración activa de `pytest.main()` dentro de `scripts/certify_fase4.py`.
+- **Higiene Automatizada (Paso 9):** Script `scripts/sanitize_codebase.py` para aplicar reglas consistentes de linting/formatting (`ruff`).
 
 ### ⚠️ Parcialmente Implementado
 - *Ninguno. Todos los componentes de la Fase IV están operativos.*
@@ -57,6 +62,8 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 - **Mock-Driven Testing:** Uso de `MockLLMManager` en `tests/conftest.py` para pruebas E2E deterministas sin coste de tokens.
 - **System Bundle Trust:** Los bundles con `author: FAP-CORE` activan `is_system=True`.
 - **Atomic Bundle Import:** Uso del RPC `import_bundle_atomic`.
+- **Certificación Activa:** El proceso de certificación no es solo de comprobación estática, sino que ejecuta los tests de integración reales (`pytest`).
+- **Encoding Predictivo:** Se fuerza explícitamente `utf-8` en flujos I/O para asegurar compatibilidad interplataforma en salidas CLI.
 
 ---
 
@@ -66,6 +73,8 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 - **Hibridación de Seguridad:** Se mantiene el escaneo de AST para TODOS los bundles, pero se permite ejecución privilegiada solo a componentes de sistema.
 - **Agnosticismo de Bundles:** El generador de bundles no depende de la lógica interna de un modelo específico.
 - **Supresión Selectiva de Warnings:** Configuración en `pyproject.toml` para ignorar `DeprecationWarning` de dependencias externas (Supabase) que generaban ruido en los logs de certificación.
+- **Paths Absolutos Mandatorios:** Abandono del manejo de rutas relativas inter-componentes para prevenir errores de CWD en binarios y watchers.
+- **Aislamiento Simulado Local:** Inyección dinámica de contexto (vía mocks) en la suite de pruebas para emular un entorno multi-tenant sin servidor real.
 
 ---
 
@@ -78,7 +87,10 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 | **S3** | ✅ | `run.py`, `main.py` | CLI Runner con subcomandos. | Funcional |
 | **S4** | ✅ | `scaffold.py`, `bundle_utils.py` | Generación segura v2.0. | Implementor OK |
 | **S5** | ✅ | `architect_flow.py`, `security_guard.py` | Dogfooding & Python Flows. | System Bundle |
-| **S6** | ✅ | `test_parity_suite.py`, `certify_fase4.py` | Suite E2E & Certificación. | **COMPLETADO** |
+| **S6** | ✅ | `test_parity_suite.py`, `certify_fase4.py` | Suite E2E & Certificación. | Completado Inicial |
+| **S7** | ✅ | `package.py`, `dev.py`, `main.py` | Saneamiento rutas/encoding. | Paridad Absoluta |
+| **S8** | ✅ | `local_executor.py` | Multi-tenancy Mock. | Seguridad |
+| **S9** | ✅ | `certify_fase4.py`, `sanitize_codebase.py`| QA Activo e Higiene. | **FASE CERRADA** |
 
 ---
 

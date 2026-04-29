@@ -11,10 +11,13 @@ from src.utils.bundle_utils import create_base_manifest
 app = typer.Typer(help="Scaffold new FAP bundles.")
 console = Console()
 
+
 @app.callback(invoke_without_command=True)
 def scaffold_command(
     name: str = typer.Argument(..., help="Name of the bundle to scaffold"),
-    target_dir: Path = typer.Option(Path("."), "--dir", "-d", help="Directory where to create the bundle"),
+    target_dir: Path = typer.Option(
+        Path("."), "--dir", "-d", help="Directory where to create the bundle"
+    ),
 ):
     """
     Create a new bundle structure (agents, skills, flows, manifest.json).
@@ -22,7 +25,9 @@ def scaffold_command(
     bundle_path = target_dir / name
 
     if bundle_path.exists():
-        console.print(f"[yellow]Warning:[/yellow] Directory [bold]{bundle_path}[/bold] already exists.")
+        console.print(
+            f"[yellow]Warning:[/yellow] Directory [bold]{bundle_path}[/bold] already exists."
+        )
         if not typer.confirm("Do you want to scaffold inside it?"):
             raise typer.Abort()
     else:
@@ -42,15 +47,20 @@ def scaffold_command(
             json.dump(manifest, f, indent=2)
         console.print("[green]Created manifest.json[/green]")
     else:
-        console.print("[blue]Info:[/blue] manifest.json already exists, skipping creation.")
+        console.print(
+            "[blue]Info:[/blue] manifest.json already exists, skipping creation."
+        )
 
-    console.print(f"\n[green]Successfully scaffolded bundle [bold]{name}[/bold] at {bundle_path}[/green]")
+    console.print(
+        f"\n[green]Successfully scaffolded bundle [bold]{name}[/bold] at {bundle_path}[/green]"
+    )
     console.print("[cyan]Structure:[/cyan]")
     console.print(f"  {name}/")
     console.print("  ├── agents/")
     console.print("  ├── skills/")
     console.print("  ├── flows/")
     console.print("  └── manifest.json")
+
 
 if __name__ == "__main__":
     app()

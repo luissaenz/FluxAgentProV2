@@ -8,6 +8,7 @@ from supabase import AsyncClient
 
 load_dotenv()
 
+
 async def main():
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_KEY")
@@ -17,14 +18,13 @@ async def main():
     print(f"Key ends in: {key[-5:] if key else 'None'}")
 
     from supabase import AsyncClientOptions, acreate_client
-    
+
     client: AsyncClient = await acreate_client(
-        url, 
+        url,
         key,
         options=AsyncClientOptions(
-            postgrest_client_timeout=10,
-            storage_client_timeout=10
-        )
+            postgrest_client_timeout=10, storage_client_timeout=10
+        ),
     )
 
     task_id = f"debug-{uuid.uuid4().hex[:8]}"
@@ -41,20 +41,20 @@ async def main():
         schema="public",
         table="domain_events",
         # filter=f"aggregate_id=eq.{task_id}", # Try without filter first
-        callback=callback
+        callback=callback,
     )
-    
+
     res = await channel.subscribe()
     print(f"Subscribe result: {res}")
-    
+
     # Wait a bit for WS to be ready
     await asyncio.sleep(2)
 
     print("Inserting event...")
     # Insert via RPC or direct (service_role can direct insert)
-    # We must set current_org_id if we want RLS to pass for non-service_role, 
+    # We must set current_org_id if we want RLS to pass for non-service_role,
     # but here we are service_role.
-    
+
     # Simulate what EventStore does
     ev_data = {
         "org_id": org_id,
@@ -62,10 +62,10 @@ async def main():
         "aggregate_id": task_id,
         "event_type": "debug_event",
         "payload": {"msg": "hello"},
-        "sequence": 1
+        "sequence": 1,
     }
-    
-    # We need to set app.org_id for the insert policy if it's strict, 
+
+    # We need to set app.org_id for the insert policy if it's strict,
     # but 010 says service_role bypasses it.
     insert_res = await client.table("domain_events").insert(ev_data).execute()
     print(f"Insert result: {insert_res.data}")
@@ -83,6 +83,7 @@ async def main():
         print("FAILURE: No events received via Realtime.")
 
     await client.aclose()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

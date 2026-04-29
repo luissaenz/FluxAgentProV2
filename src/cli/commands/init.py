@@ -35,7 +35,6 @@ def init_bundle(
         manifest = create_base_manifest(name, author=author)
         save_json(bundle_path / "manifest.json", manifest)
 
-
         print(
             f"[green]SUCCESS:[/green] Bundle [bold]{name}[/bold] initialized successfully at {bundle_path}"
         )

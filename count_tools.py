@@ -9,7 +9,7 @@ def extract_all_json_arrays(text):
         try:
             arr = json.loads(m)
             results.extend(arr)
-        except:
+        except Exception:
             pass
     return results
 

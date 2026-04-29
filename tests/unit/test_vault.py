@@ -16,7 +16,9 @@ class TestGetSecret:
         """Cuando el secreto existe → retorna el valor."""
         # Configure mock
         mock_result = MagicMock(data={"secret_value": "sk-12345"})
-        mock_service_client.table("secrets").select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = mock_result
+        mock_service_client.table(
+            "secrets"
+        ).select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = mock_result
 
         result = get_secret("org_abc", "api_key")
 
@@ -24,7 +26,11 @@ class TestGetSecret:
 
     def test_get_secret_raises_when_not_found(self, mock_service_client):
         """Cuando el secreto no existe → lanza VaultError."""
-        mock_service_client.table("secrets").select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data=None)
+        mock_service_client.table(
+            "secrets"
+        ).select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
+            data=None
+        )
 
         with pytest.raises(VaultError) as exc_info:
             get_secret("org_abc", "inexistente")
@@ -33,7 +39,11 @@ class TestGetSecret:
 
     def test_get_secret_calls_with_correct_org_id(self, mock_service_client):
         """get_secret() filtra por org_id y name."""
-        mock_service_client.table("secrets").select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data={"secret_value": "dummy"})
+        mock_service_client.table(
+            "secrets"
+        ).select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
+            data={"secret_value": "dummy"}
+        )
 
         get_secret("org_xyz", "my_secret")
 
@@ -47,10 +57,14 @@ class TestListSecrets:
 
     def test_list_secrets_returns_names(self, mock_service_client):
         """Lista de nombres, no valores."""
-        mock_service_client.table("secrets").select.return_value.eq.return_value.execute.return_value = MagicMock(data=[
-            {"name": "stripe_key"},
-            {"name": "smtp_password"},
-        ])
+        mock_service_client.table(
+            "secrets"
+        ).select.return_value.eq.return_value.execute.return_value = MagicMock(
+            data=[
+                {"name": "stripe_key"},
+                {"name": "smtp_password"},
+            ]
+        )
 
         result = list_secrets("org_abc")
 
@@ -58,7 +72,9 @@ class TestListSecrets:
 
     def test_list_secrets_empty(self, mock_service_client):
         """Org sin secretos → lista vacía."""
-        mock_service_client.table("secrets").select.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
+        mock_service_client.table(
+            "secrets"
+        ).select.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
 
         result = list_secrets("org_empty")
 
@@ -70,9 +86,14 @@ class TestSecretIsolation:
 
     def test_get_secret_not_in_return_value(self, mock_service_client):
         """_get_secret() no debe estar en el valor de retorno de _run()."""
-        mock_service_client.table("secrets").select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data={"secret_value": "tok_987"})
+        mock_service_client.table(
+            "secrets"
+        ).select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
+            data={"secret_value": "tok_987"}
+        )
 
         from src.tools.base_tool import SendMessageTool
+
         tool = SendMessageTool(org_id="org_abc")
         result = tool._run(to="+1234567890", message="Hello")
 

@@ -87,11 +87,15 @@ class SecurityGuard:
         timeout_seconds: int = 30,
         allowed_modules: Optional[set[str]] = None,
         forbidden_modules: Optional[set[str]] = None,
-        is_system: bool = False
+        is_system: bool = False,
     ):
         self.timeout_seconds = timeout_seconds
-        self.allowed_modules = allowed_modules if allowed_modules is not None else ALLOWED_MODULES.copy()
-        self.forbidden_modules = forbidden_modules if forbidden_modules is not None else FORBIDDEN_MODULES
+        self.allowed_modules = (
+            allowed_modules if allowed_modules is not None else ALLOWED_MODULES.copy()
+        )
+        self.forbidden_modules = (
+            forbidden_modules if forbidden_modules is not None else FORBIDDEN_MODULES
+        )
         self.is_system = is_system
 
         # Analysis Final §88: Trust-based security for system bundles
@@ -119,9 +123,11 @@ class SecurityGuard:
 
         return True
 
-    def execute(self, source_code: str, filename: str = "dynamic_code.py") -> Dict[str, Any]:
+    def execute(
+        self, source_code: str, filename: str = "dynamic_code.py"
+    ) -> Dict[str, Any]:
         """Execute validated code and return globals.
-        
+
         Analysis Final §88: Privileged execution for system bundles.
         """
         # Always validate first
@@ -131,10 +137,13 @@ class SecurityGuard:
             exec_globals = {"__builtins__": __builtins__}
         else:
             import builtins
+
             exec_globals = {"__builtins__": safe_builtins.copy()}
             exec_globals["__builtins__"]["__import__"] = __import__
             if hasattr(builtins, "__build_class__"):
-                exec_globals["__builtins__"]["__build_class__"] = builtins.__build_class__
+                exec_globals["__builtins__"]["__build_class__"] = (
+                    builtins.__build_class__
+                )
 
         # Execute
         try:
@@ -207,6 +216,7 @@ class SecurityGuard:
             # Dry-run execution to catch infinite loops
             # Use safe_builtins + controlled __import__
             import builtins
+
             safe_env = safe_builtins.copy()
             safe_env["__import__"] = __import__
             if hasattr(builtins, "__build_class__"):
@@ -215,7 +225,7 @@ class SecurityGuard:
             exec_globals = {
                 "__builtins__": safe_env,
                 "__metaclass__": type,
-                "__name__": filename
+                "__name__": filename,
             }
 
             exec(byte_code, exec_globals)

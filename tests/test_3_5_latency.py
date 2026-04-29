@@ -111,7 +111,12 @@ async def _count_events_in_db(supabase: AsyncClient, aggregate_id: str) -> int:
 
 async def _cleanup_events(supabase: AsyncClient, aggregate_id: str) -> None:
     """Elimina eventos de test para mantener la DB limpia."""
-    await supabase.table("domain_events").delete().eq("aggregate_id", aggregate_id).execute()
+    await (
+        supabase.table("domain_events")
+        .delete()
+        .eq("aggregate_id", aggregate_id)
+        .execute()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -150,7 +155,9 @@ class LatencyValidator:
                 res = await self.supabase.rpc("get_server_time", {}).execute()
             except Exception as exc:
                 # Issue ID-005: Mejora de feedback ante fallo de calibración
-                logger.warning("RPC get_server_time falló o no disponible (%s); offset = 0.", exc)
+                logger.warning(
+                    "RPC get_server_time falló o no disponible (%s); offset = 0.", exc
+                )
                 self.clock_offset_ms = 0.0
                 return
 
@@ -234,7 +241,9 @@ class LatencyValidator:
 
         logger.info(
             "  [REALTIME] Evento detectado: Type=%s, AggID=%s (Esperando=%s)",
-            evt_type, agg_id, self.task_id
+            evt_type,
+            agg_id,
+            self.task_id,
         )
 
         if str(agg_id) != str(self.task_id):
@@ -367,17 +376,21 @@ class LatencyValidator:
 
     async def _insert_event(self, sequence: int, event_type: str) -> None:
         """Inserta un evento directamente en DB (solo warm-up)."""
-        await self.supabase.table("domain_events").insert(
-            {
-                "org_id": self.org_id,
-                "aggregate_type": "task",
-                "aggregate_id": self.task_id,
-                "event_type": event_type,
-                "correlation_id": f"lat-test-{self.task_id}",
-                "payload": {"step": sequence, "msg": "warmup"},
-                "sequence": sequence,
-            }
-        ).execute()
+        await (
+            self.supabase.table("domain_events")
+            .insert(
+                {
+                    "org_id": self.org_id,
+                    "aggregate_type": "task",
+                    "aggregate_id": self.task_id,
+                    "event_type": event_type,
+                    "correlation_id": f"lat-test-{self.task_id}",
+                    "payload": {"step": sequence, "msg": "warmup"},
+                    "sequence": sequence,
+                }
+            )
+            .execute()
+        )
 
     # ── 5. Análisis ────────────────────────────────────────────────────
 
@@ -407,7 +420,9 @@ class LatencyValidator:
             "metrics": {
                 "events_received": received_count,
                 "events_in_db": db_count,
-                "integrity_pct": 100.0 if integrity_ok else (received_count / db_count * 100 if db_count else 0),
+                "integrity_pct": 100.0
+                if integrity_ok
+                else (received_count / db_count * 100 if db_count else 0),
                 "latency_avg_ms": round(avg_lat, 2),
                 "latency_p95_ms": round(p95_lat, 2),
                 "latency_min_ms": round(min_lat, 2),
@@ -431,9 +446,15 @@ class LatencyValidator:
         logger.info("  Eventos recibidos : %d / %d (DB)", received_count, db_count)
         logger.info("  Integridad        : %.1f%%", report["metrics"]["integrity_pct"])
         logger.info("  Latencia Media    : %.2fms", avg_lat)
-        logger.info("  Latencia P95      : %.2fms  (objetivo < %dms)", p95_lat, P95_THRESHOLD_MS)
+        logger.info(
+            "  Latencia P95      : %.2fms  (objetivo < %dms)", p95_lat, P95_THRESHOLD_MS
+        )
         logger.info("  Latencia Mín      : %.2fms", min_lat)
-        logger.info("  Latencia Máx      : %.2fms  (objetivo < %dms)", p100_lat, MAX_LATENCY_THRESHOLD_MS)
+        logger.info(
+            "  Latencia Máx      : %.2fms  (objetivo < %dms)",
+            p100_lat,
+            MAX_LATENCY_THRESHOLD_MS,
+        )
         logger.info("-" * 60)
 
         passed = (
@@ -454,8 +475,11 @@ class LatencyValidator:
             report["reason"] = "; ".join(reasons)
             logger.error("❌ CERTIFICACIÓN FALLIDA: %s", report["reason"])
         else:
-            logger.info("✅ CERTIFICACIÓN EXITOSA: P95 < %.0fms, MAX < %.0fms, integridad 100%%",
-                        P95_THRESHOLD_MS, MAX_LATENCY_THRESHOLD_MS)
+            logger.info(
+                "✅ CERTIFICACIÓN EXITOSA: P95 < %.0fms, MAX < %.0fms, integridad 100%%",
+                P95_THRESHOLD_MS,
+                MAX_LATENCY_THRESHOLD_MS,
+            )
 
         # Guardar reporte
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -514,7 +538,9 @@ class TestLatencyValidation:
     """Batería de tests de latencia para Paso 3.5."""
 
     @pytest.mark.asyncio
-    async def test_clock_calibration(self, supabase_client: AsyncClient, test_org_id: str) -> None:
+    async def test_clock_calibration(
+        self, supabase_client: AsyncClient, test_org_id: str
+    ) -> None:
         """La calibración del reloj debe ejecutarse sin error."""
         validator = LatencyValidator(supabase_client, "calib-only", test_org_id)
         await validator.calibrate_clock()
@@ -624,9 +650,9 @@ class TestLatencyValidation:
             db_count = await _count_events_in_db(supabase_client, task_id)
             received_count = len(validator.events_received)
 
-            assert db_count == received_count, (
-                f"Integridad fallida: DB={db_count}, recibidos={received_count}"
-            )
+            assert (
+                db_count == received_count
+            ), f"Integridad fallida: DB={db_count}, recibidos={received_count}"
 
         finally:
             await validator.close()

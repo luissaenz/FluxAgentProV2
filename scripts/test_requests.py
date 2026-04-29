@@ -10,10 +10,7 @@ dotenv.load_dotenv()
 URL = os.getenv("SUPABASE_URL")
 KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
-headers = {
-    "apikey": KEY,
-    "Authorization": f"Bearer {KEY}"
-}
+headers = {"apikey": KEY, "Authorization": f"Bearer {KEY}"}
 
 rest_url = f"{URL}/rest/v1/organizations?select=id&limit=1"
 print(f"URL: {rest_url}", flush=True)

@@ -20,16 +20,20 @@ from src.flows.state import FlowStatus
 
 # ── helpers ──────────────────────────────────────────────────────
 
+
 def _make_crew_mock(raw_output: str):
     """Create a mock BaseCrew whose run_async returns a mock result."""
     crew_instance = MagicMock()
-    crew_instance.run_async = AsyncMock(return_value=MagicMock(
-        __str__=lambda self: raw_output,
-    ))
+    crew_instance.run_async = AsyncMock(
+        return_value=MagicMock(
+            __str__=lambda self: raw_output,
+        )
+    )
     return crew_instance
 
 
 # ── Router tests ─────────────────────────────────────────────────
+
 
 class TestDecideNextCrew:
     """Router bifurcates correctly based on Crew A output."""
@@ -72,6 +76,7 @@ class TestDecideNextCrew:
 
 
 # ── Full flow execution tests ────────────────────────────────────
+
 
 class TestMultiCrewExecution:
     """Integration tests for the full multi-crew lifecycle."""
@@ -123,6 +128,7 @@ class TestMultiCrewExecution:
         crew_a_mock.run_async = AsyncMock(side_effect=crew_a_run)
 
         with patch("src.flows.multi_crew_flow.BaseCrew") as MockBaseCrew:
+
             def side_effect(org_id, role):
                 if role == "analyst":
                     return crew_a_mock
@@ -133,7 +139,7 @@ class TestMultiCrewExecution:
             MockBaseCrew.side_effect = side_effect
 
             # Override router to go to crew_b
-            with patch.object(flow, '_decide_next_crew', return_value="crew_b"):
+            with patch.object(flow, "_decide_next_crew", return_value="crew_b"):
                 state = await flow.execute({"data": "test"})
 
         assert state.status == FlowStatus.COMPLETED.value
@@ -156,6 +162,7 @@ class TestMultiCrewExecution:
         mock_service_client.rpc.return_value.execute.return_value = MagicMock(data=1)
 
         with patch("src.flows.multi_crew_flow.BaseCrew") as MockBaseCrew:
+
             def side_effect(org_id, role):
                 if role == "analyst":
                     return crew_a_mock
@@ -165,10 +172,11 @@ class TestMultiCrewExecution:
 
             MockBaseCrew.side_effect = side_effect
 
-            with patch.object(flow, '_decide_next_crew', return_value="crew_b"):
+            with patch.object(flow, "_decide_next_crew", return_value="crew_b"):
                 # Make the approval check always return True (monto exceeds threshold)
                 with patch.object(
-                    MultiCrewFlow, '_approval_check',
+                    MultiCrewFlow,
+                    "_approval_check",
                     staticmethod(lambda value, org_id: True),
                 ):
                     state = await flow.execute({"data": "high value"})
@@ -186,6 +194,7 @@ class TestMultiCrewExecution:
         crew_c_mock = _make_crew_mock("Review")
 
         with patch("src.flows.multi_crew_flow.BaseCrew") as MockBaseCrew:
+
             def side_effect(org_id, role):
                 if role == "analyst":
                     return crew_a_mock

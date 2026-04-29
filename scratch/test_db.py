@@ -13,5 +13,6 @@ def test():
         res = db.table("service_catalog").select("count").execute()
         print(f"Connection OK: {res}")
 
+
 if __name__ == "__main__":
     test()

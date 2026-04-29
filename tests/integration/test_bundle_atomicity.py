@@ -41,8 +41,7 @@ class TestAtomicityRollback:
 
         # Create bundle with 3 agents
         agents = [
-            json.dumps({"role": f"agent_{i}", "goal": f"Goal {i}"})
-            for i in range(3)
+            json.dumps({"role": f"agent_{i}", "goal": f"Goal {i}"}) for i in range(3)
         ]
         manifest_hashes = {}
         zip_files = {}
@@ -74,11 +73,12 @@ class TestAtomicityRollback:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
 
@@ -108,10 +108,12 @@ class TestAtomicityRollback:
             "hashes": {"agents/role_1.json": calculate_sha256(agent_json.encode())},
         }
 
-        zip_bytes = create_test_zip({
-            "manifest.json": json.dumps(manifest),
-            "agents/role_1.json": agent_json,
-        })
+        zip_bytes = create_test_zip(
+            {
+                "manifest.json": json.dumps(manifest),
+                "agents/role_1.json": agent_json,
+            }
+        )
 
         # Mock RPC to return failed status
         mock_db = MagicMock()
@@ -128,11 +130,12 @@ class TestAtomicityRollback:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
             # process_bundle returns failed result (no exception raised)
@@ -157,10 +160,12 @@ class TestAtomicityRollback:
             "hashes": {"agents/tester.json": calculate_sha256(agent_json.encode())},
         }
 
-        zip_bytes = create_test_zip({
-            "manifest.json": json.dumps(manifest),
-            "agents/tester.json": agent_json,
-        })
+        zip_bytes = create_test_zip(
+            {
+                "manifest.json": json.dumps(manifest),
+                "agents/tester.json": agent_json,
+            }
+        )
 
         # Mock successful RPC response
         mock_db = MagicMock()
@@ -179,11 +184,12 @@ class TestAtomicityRollback:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
             result = service.process_bundle(zip_bytes)

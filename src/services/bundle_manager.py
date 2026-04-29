@@ -87,7 +87,10 @@ class BundleManager:
 
                 # Analysis Final §88: Trust system bundles
                 if manifest.bundle_info and manifest.bundle_info.author == "FAP-CORE":
-                    logger.info("System bundle detected: '%s'. Enabling core access.", manifest.bundle_info.name)
+                    logger.info(
+                        "System bundle detected: '%s'. Enabling core access.",
+                        manifest.bundle_info.name,
+                    )
                     self.security_guard.is_system = True
                     self.security_guard.allowed_modules.add("src")
 
@@ -109,6 +112,14 @@ class BundleManager:
                     # Verify hash
                     if not verify_integrity(file_data, expected_hash):
                         raise BundleError(f"Integrity check failed for '{rel_path}'")
+
+                    # Analysis Final §2.3: Logging for Hashing Observability
+                    sha = (
+                        expected_hash.replace("sha256:", "")
+                        if ":" in expected_hash
+                        else expected_hash
+                    )
+                    logger.info("Verified hash for %s: %s", rel_path, sha[:8])
 
                     # Sort into categories
                     self._parse_file_content(rel_path, file_data, content)
@@ -147,12 +158,14 @@ class BundleManager:
             # Validate security
             self.security_guard.validate_skill(code, filename)
 
-            content.flows.append({
-                "flow_type": flow_type,
-                "code_source": code,
-                "is_python": True,
-                "name": flow_type.replace("_", " ").title()
-            })
+            content.flows.append(
+                {
+                    "flow_type": flow_type,
+                    "code_source": code,
+                    "is_python": True,
+                    "name": flow_type.replace("_", " ").title(),
+                }
+            )
         elif path.startswith("skills/") and path.endswith(".py"):
             # Skills are stored as raw source code strings
             filename = path.split("/")[-1]
@@ -181,9 +194,15 @@ class BundleManager:
         if len(content.skills) > 30:
             raise BundleError(f"Exceeded max skills: {len(content.skills)} > 30")
 
-    def create_bundle(self, manifest: BundleManifest, agents: List[Dict], flows: List[Dict], skills: Dict[str, str]) -> bytes:
+    def create_bundle(
+        self,
+        manifest: BundleManifest,
+        agents: List[Dict],
+        flows: List[Dict],
+        skills: Dict[str, str],
+    ) -> bytes:
         """Create a valid FAP ZIP bundle in memory.
-        
+
         Analysis Final §89: Centralize ZIP creation logic + Auto-hashing.
         """
         buffer = io.BytesIO()

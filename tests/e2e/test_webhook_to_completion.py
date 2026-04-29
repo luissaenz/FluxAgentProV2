@@ -15,6 +15,7 @@ from src.api.main import app
 
 # ── helpers ─────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def client():
     """Synchronous TestClient wrapping the FastAPI app."""
@@ -33,6 +34,7 @@ def client():
 
 
 # ── tests ───────────────────────────────────────────────────────
+
 
 class TestWebhookTrigger:
     """POST /webhooks/trigger contract tests."""

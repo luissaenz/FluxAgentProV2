@@ -10,6 +10,7 @@ from src.services.import_service import ImportService
 
 SYSTEM_ORG_ID = "00000000-0000-0000-0000-000000000000"
 
+
 async def seed_architect_bundle():
     """
     Crea e importa el bundle de sistema del ArchitectFlow.
@@ -31,10 +32,10 @@ async def seed_architect_bundle():
         name="ArchitectFlow Core",
         version="2.0.0",
         description="FAP System Architect - Capaz de generar nuevos bundles.",
-        author="FAP-CORE", # CRÍTICO: Esto activa el modo privilegiado
+        author="FAP-CORE",  # CRÍTICO: Esto activa el modo privilegiado
         flows=["architect_flow"],
         agents=["Workflow Architect"],
-        skills=[]
+        skills=[],
     )
 
     # 3. Crear el agente que necesita el architect (definido en architect_flow.py)
@@ -44,8 +45,8 @@ async def seed_architect_bundle():
         "role": "Workflow Architect",
         "goal": "Analizar la descripción NL y producir una definición de workflow válida.",
         "backstory": "Eres un arquitecto de sistemas especializado en transformar requisitos en workflows.",
-        "model": "gpt-4o", # O el default
-        "max_iter": 5
+        "model": "gpt-4o",  # O el default
+        "max_iter": 5,
     }
 
     # 4. Generar el ZIP usando BundleManager
@@ -53,12 +54,10 @@ async def seed_architect_bundle():
     bundle_bytes = bm.create_bundle(
         manifest=manifest,
         agents=[architect_agent],
-        flows=[{
-            "flow_type": "architect_flow",
-            "is_python": True,
-            "code_source": flow_code
-        }],
-        skills={}
+        flows=[
+            {"flow_type": "architect_flow", "is_python": True, "code_source": flow_code}
+        ],
+        skills={},
     )
 
     import_service = ImportService(SYSTEM_ORG_ID)
@@ -71,7 +70,9 @@ async def seed_architect_bundle():
     except Exception as e:
         print(f"❌ Error durante la importación: {e}")
         import traceback
+
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     asyncio.run(seed_architect_bundle())

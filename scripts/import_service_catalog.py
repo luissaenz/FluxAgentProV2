@@ -60,7 +60,9 @@ def fix_required_schema(schema: dict) -> dict:
         schema["required"] = required_fields
 
     # Check for 'required: true' inside individual properties and move to top level
-    collected_required = list(required_fields) if isinstance(required_fields, list) else []
+    collected_required = (
+        list(required_fields) if isinstance(required_fields, list) else []
+    )
     for prop_name, prop_def in properties.items():
         if isinstance(prop_def, dict) and prop_def.pop("required", None) is True:
             if prop_name not in collected_required:
@@ -110,16 +112,18 @@ def extract_tools(tools: list[dict]) -> list[dict]:
                 elif field == "requires_approval":
                     tool_profile["requires_approval"] = False
 
-        tool_records.append({
-            "id": tool["id"],
-            "service_id": tool["provider"]["id"],
-            "name": tool.get("name", tool["id"]),
-            "version": tool.get("version", "1.0.0"),
-            "input_schema": input_schema,
-            "output_schema": output_schema,
-            "execution": execution,
-            "tool_profile": tool_profile,
-        })
+        tool_records.append(
+            {
+                "id": tool["id"],
+                "service_id": tool["provider"]["id"],
+                "name": tool.get("name", tool["id"]),
+                "version": tool.get("version", "1.0.0"),
+                "input_schema": input_schema,
+                "output_schema": output_schema,
+                "execution": execution,
+                "tool_profile": tool_profile,
+            }
+        )
 
     return tool_records
 

@@ -369,4 +369,3 @@ class TestApprovalWorkflowE2E:
         # 4. Flow should be completed
         assert flow.state.status == FlowStatus.COMPLETED.value
         assert flow.state.output_data == {"result": "approved_and_completed"}
-

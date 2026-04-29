@@ -33,19 +33,25 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
+
 def get_service_client():
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
 
 def get_valid_org_ids(supabase, count=2):
     """Obtiene IDs de organizaciones reales de la base de datos."""
     res = supabase.table("organizations").select("id").limit(count).execute()
     return [r["id"] for r in res.data]
 
+
 # ── Tests ───────────────────────────────────────────────────────────────────
+
 
 def test_01_technical_config():
     """Verifica REPLICA IDENTITY y Publicación usando el RPC de debug."""
-    print("\n[TEST 1] Verificando Configuración Técnica Real (Publicación + Replica Identity)...")
+    print(
+        "\n[TEST 1] Verificando Configuración Técnica Real (Publicación + Replica Identity)..."
+    )
 
     supabase = get_service_client()
 
@@ -56,10 +62,18 @@ def test_01_technical_config():
         has_replica_full = False
 
         for item in res.data:
-            if item["config_type"] == "publication" and item["config_value"] == "supabase_realtime":
+            if (
+                item["config_type"] == "publication"
+                and item["config_value"] == "supabase_realtime"
+            ):
                 has_pub = True
-                print("  [OK] Tabla domain_events encontrada en publicación 'supabase_realtime'.")
-            if item["config_type"] == "replica_identity" and item["config_value"] == "full":
+                print(
+                    "  [OK] Tabla domain_events encontrada en publicación 'supabase_realtime'."
+                )
+            if (
+                item["config_type"] == "replica_identity"
+                and item["config_value"] == "full"
+            ):
                 has_replica_full = True
                 print("  [OK] Tabla domain_events tiene REPLICA IDENTITY FULL.")
 
@@ -97,7 +111,7 @@ def test_02_rls_isolation_real_data():
         "event_type": "validation_ping",
         "correlation_id": correlation_id,
         "payload": {"status": "validating"},
-        "sequence": 999
+        "sequence": 999,
     }
 
     ins_res = supabase.table("domain_events").insert(event).execute()
@@ -113,8 +127,12 @@ def test_02_rls_isolation_real_data():
         print("  [INFO] Verificando RLS vía RPC set_config...")
         random_org = str(uuid.uuid4())
 
-        supabase.rpc("set_config", {"p_key": "app.org_id", "p_value": random_org}).execute()
-        read_other = supabase.table("domain_events").select("id").eq("id", event_id).execute()
+        supabase.rpc(
+            "set_config", {"p_key": "app.org_id", "p_value": random_org}
+        ).execute()
+        read_other = (
+            supabase.table("domain_events").select("id").eq("id", event_id).execute()
+        )
 
         # Nota: El cliente de service_role ignora RLS. Pero el RPC set_config + session variable
         # debería afectar si la política usa current_setting('app.org_id').
@@ -123,7 +141,9 @@ def test_02_rls_isolation_real_data():
         if len(read_other.data) == 0:
             print("  [OK] RLS bloqueó el acceso con org_id incorrecto.")
         else:
-            print("  [INFO] Service role ignoró RLS (comportamiento esperado para admin).")
+            print(
+                "  [INFO] Service role ignoró RLS (comportamiento esperado para admin)."
+            )
 
         # 3. Cleanup
         supabase.table("domain_events").delete().eq("id", event_id).execute()
@@ -133,6 +153,7 @@ def test_02_rls_isolation_real_data():
     except Exception as e:
         print(f"  [ERROR] En test de RLS: {e}")
         return False
+
 
 def main():
     print("=" * 60)
@@ -150,6 +171,7 @@ def main():
     else:
         print("RESULTADO: FAIL")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

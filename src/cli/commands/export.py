@@ -70,7 +70,6 @@ def export_agents(
         manifest["hashes"] = calculate_bundle_hashes(output)
         save_json(output / "manifest.json", manifest)
 
-
         print(
             f"\n[bold green]OK:[/bold green] Exported {len(result.data)} agents to [bold]{output}[/bold]."
         )

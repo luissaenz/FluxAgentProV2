@@ -44,19 +44,28 @@ class TestVersionGuard:
 
     def test_upgrade_allowed(self):
         """Scenario: 1.0.0 -> 1.1.0 (Allowed)"""
-        with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version("1.0.0")):
+        with patch(
+            "src.services.import_service.get_tenant_client",
+            return_value=self.mock_db_version("1.0.0"),
+        ):
             # Should NOT raise
             self.service._check_version_guard("1.1.0", "my-bundle")
 
     def test_same_version_allowed(self):
         """Scenario: 1.1.0 -> 1.1.0 (Allowed)"""
-        with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version("1.1.0")):
+        with patch(
+            "src.services.import_service.get_tenant_client",
+            return_value=self.mock_db_version("1.1.0"),
+        ):
             # Should NOT raise
             self.service._check_version_guard("1.1.0", "my-bundle")
 
     def test_downgrade_blocked(self):
         """Scenario: 1.1.0 -> 1.0.0 (Blocked)"""
-        with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version("1.1.0")):
+        with patch(
+            "src.services.import_service.get_tenant_client",
+            return_value=self.mock_db_version("1.1.0"),
+        ):
             with pytest.raises(VersionDowngradeError) as exc:
                 self.service._check_version_guard("1.0.0", "my-bundle")
             assert "Bundle 'my-bundle'" in str(exc.value)
@@ -69,19 +78,27 @@ class TestVersionGuard:
 
     def test_new_bundle_allowed(self):
         """Scenario: No previous version exists (Allowed)"""
-        with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version(None)):
+        with patch(
+            "src.services.import_service.get_tenant_client",
+            return_value=self.mock_db_version(None),
+        ):
             # Should NOT raise
             self.service._check_version_guard("1.0.0", "new-bundle")
 
     def test_bundle_isolation(self):
         """Scenario: Bundle A (2.0.0) exists, Bundle B (1.0.0) is allowed."""
-        mock_cm = self.mock_db_version(None) # Return nothing for Bundle B
-        with patch("src.services.import_service.get_tenant_client", return_value=mock_cm):
+        mock_cm = self.mock_db_version(None)  # Return nothing for Bundle B
+        with patch(
+            "src.services.import_service.get_tenant_client", return_value=mock_cm
+        ):
             self.service._check_version_guard("1.0.0", "bundle-b")
 
     def test_malformed_version(self):
         """Scenario: Version string 'xyz' (Rejected)"""
-        with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version(None)):
+        with patch(
+            "src.services.import_service.get_tenant_client",
+            return_value=self.mock_db_version(None),
+        ):
             with pytest.raises(MalformedVersionError) as exc:
                 self.service._check_version_guard("xyz", "my-bundle")
             assert "Bundle 'my-bundle'" in str(exc.value)
@@ -89,6 +106,9 @@ class TestVersionGuard:
 
     def test_semver_complex_comparison(self):
         """Scenario: 1.10.0 > 1.2.0 (Allowed)"""
-        with patch("src.services.import_service.get_tenant_client", return_value=self.mock_db_version("1.2.0")):
+        with patch(
+            "src.services.import_service.get_tenant_client",
+            return_value=self.mock_db_version("1.2.0"),
+        ):
             # Should NOT raise
             self.service._check_version_guard("1.10.0", "my-bundle")

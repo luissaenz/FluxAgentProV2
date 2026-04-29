@@ -242,7 +242,9 @@ class ImportService:
                 "bundle_id": bundle_id,
                 "agents": [a["role"] for a in agents],
                 "flows": [f["flow_type"] for f in flows],
-                "skills": [{"name": s["name"], "code": s["code_source"]} for s in skills],
+                "skills": [
+                    {"name": s["name"], "code": s["code_source"]} for s in skills
+                ],
             }
 
     def delete_bundle(self, bundle_id: str) -> bool:
@@ -325,7 +327,9 @@ class ImportService:
                 for attr_name, attr in exec_globals.items():
                     if isinstance(attr, type) and not attr_name.startswith("_"):
                         # Check if it looks like a flow
-                        if hasattr(attr, "create_task_record") or hasattr(attr, "_run_crew"):
+                        if hasattr(attr, "create_task_record") or hasattr(
+                            attr, "_run_crew"
+                        ):
                             scoped_name = f"{self.org_id}:{flow_type}"
                             flow_registry.register(scoped_name)(attr)
                             logger.info(

@@ -145,7 +145,9 @@ class ToolRegistry:
 
                 # 1. Security Scan (AST + Compilation check)
                 guard = SecurityGuard()
-                guard.validate_skill(code_source, filename)  # Raises SecurityError if unsafe
+                guard.validate_skill(
+                    code_source, filename
+                )  # Raises SecurityError if unsafe
 
                 # 2. Restricted Compilation
                 # Note: We use 'exec' mode. The code must define a class that we can extract.

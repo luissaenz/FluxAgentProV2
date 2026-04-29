@@ -1,5 +1,4 @@
-"""tests/test_bundle_rpc.py — Unit tests for the Bundle RPC payload and result models.
-"""
+"""tests/test_bundle_rpc.py — Unit tests for the Bundle RPC payload and result models."""
 
 import pytest
 from pydantic import ValidationError
@@ -14,7 +13,7 @@ def test_bundle_rpc_payload_validation():
         "bundle_hash": "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         "agents": [{"role": "analyst", "goal": "analyze"}],
         "flows": [{"flow_type": "standard", "name": "Standard Flow"}],
-        "skills": {"skill1.py": "print('hello')"}
+        "skills": {"skill1.py": "print('hello')"},
     }
 
     payload = BundleRPCPayload(**valid_payload)
@@ -36,7 +35,7 @@ def test_bundle_rpc_result_parsing():
         "bundle_id": "550e8400-e29b-41d4-a716-446655440000",
         "agents_count": 2,
         "flows_count": 1,
-        "skills_count": 3
+        "skills_count": 3,
     }
 
     result = BundleRPCResult(**rpc_response)
@@ -51,7 +50,7 @@ def test_bundle_rpc_result_error():
     error_response = {
         "status": "failed",
         "bundle_id": "",
-        "error": "Duplicate key violation"
+        "error": "Duplicate key violation",
     }
 
     result = BundleRPCResult(**error_response)

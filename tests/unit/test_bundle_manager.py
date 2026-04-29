@@ -46,15 +46,17 @@ def test_process_valid_bundle(manager):
         "bundle_info": {"name": "test-bundle"},
         "hashes": {
             "agents/tester.json": agent_hash,
-            "skills/test_skill.py": skill_hash
-        }
+            "skills/test_skill.py": skill_hash,
+        },
     }
 
-    zip_bytes = create_test_zip({
-        "manifest.json": json.dumps(manifest),
-        "agents/tester.json": agent_json,
-        "skills/test_skill.py": skill_py
-    })
+    zip_bytes = create_test_zip(
+        {
+            "manifest.json": json.dumps(manifest),
+            "agents/tester.json": agent_json,
+            "skills/test_skill.py": skill_py,
+        }
+    )
 
     content = manager.process_zip(zip_bytes)
 
@@ -65,25 +67,18 @@ def test_process_valid_bundle(manager):
 
 
 def test_hash_mismatch(manager):
-    manifest = {
-        "hashes": {
-            "agents/fake.json": "sha256:" + "a" * 64
-        }
-    }
+    manifest = {"hashes": {"agents/fake.json": "sha256:" + "a" * 64}}
 
-    zip_bytes = create_test_zip({
-        "manifest.json": json.dumps(manifest),
-        "agents/fake.json": "{}"
-    })
+    zip_bytes = create_test_zip(
+        {"manifest.json": json.dumps(manifest), "agents/fake.json": "{}"}
+    )
 
     with pytest.raises(BundleError, match="Integrity check failed"):
         manager.process_zip(zip_bytes)
 
 
 def test_missing_manifest(manager):
-    zip_bytes = create_test_zip({
-        "agents/none.json": "{}"
-    })
+    zip_bytes = create_test_zip({"agents/none.json": "{}"})
 
     with pytest.raises(BundleError, match="Missing 'manifest.json'"):
         manager.process_zip(zip_bytes)
@@ -112,17 +107,11 @@ def test_malicious_skill_in_bundle(manager):
     skill_py = "import os\nos.system('rm -rf /')"
     skill_hash = calculate_sha256(skill_py.encode())
 
-    manifest = {
-        "version": "2.0",
-        "hashes": {
-            "skills/exploit.py": skill_hash
-        }
-    }
+    manifest = {"version": "2.0", "hashes": {"skills/exploit.py": skill_hash}}
 
-    zip_bytes = create_test_zip({
-        "manifest.json": json.dumps(manifest),
-        "skills/exploit.py": skill_py
-    })
+    zip_bytes = create_test_zip(
+        {"manifest.json": json.dumps(manifest), "skills/exploit.py": skill_py}
+    )
 
     # The SecurityError from SecurityGuard should be caught by BundleManager
     # and wrapped in a BundleError with "Security validation failed" message
@@ -159,10 +148,9 @@ def test_zip_size_exceeds_50mb():
     total_size = len(zip_bytes)
 
     # Verify we actually created a ZIP > 50MB
-    assert total_size > 50 * 1024 * 1024, (
-        f"Test setup error: ZIP size is {total_size}, should exceed 50MB"
-    )
+    assert (
+        total_size > 50 * 1024 * 1024
+    ), f"Test setup error: ZIP size is {total_size}, should exceed 50MB"
 
     with pytest.raises(BundleError, match="exceeds limit"):
         manager.process_zip(zip_bytes)
-

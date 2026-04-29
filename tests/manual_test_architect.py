@@ -12,13 +12,16 @@ from src.flows.registry import flow_registry
 from src.flows.state import FlowStatus
 
 # Configurar logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("manual_test_architect")
 
+
 async def run_architect_demo():
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🚀 INICIANDO DEMOSTRACIÓN DE FASE 4: ARCHITECT FLOW")
-    print("="*60)
+    print("=" * 60)
 
     # 1. Configurar datos de prueba
     # Usamos una organización de prueba (debe existir en la DB)
@@ -40,15 +43,14 @@ async def run_architect_demo():
 
     print("\n⚙️ Ejecutando ArchitectFlow...")
     try:
-        state = await flow.execute(input_data={
-            "description": prompt,
-            "conversation_id": str(uuid4())
-        })
+        state = await flow.execute(
+            input_data={"description": prompt, "conversation_id": str(uuid4())}
+        )
 
         # 3. Mostrar resultados
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("📊 RESULTADO DE LA GENERACIÓN")
-        print("="*60)
+        print("=" * 60)
         print(f"ID de Tarea:    {state.task_id}")
         print(f"Estado Final:   {state.status}")
 
@@ -64,7 +66,9 @@ async def run_architect_demo():
 
             # 4. Verificar registro dinámico
             is_registered = flow_type in flow_registry._flows
-            print(f"¿Registrado en FLOW_REGISTRY?: {'✅ SÍ' if is_registered else '❌ NO'}")
+            print(
+                f"¿Registrado en FLOW_REGISTRY?: {'✅ SÍ' if is_registered else '❌ NO'}"
+            )
 
             # 5. Limpieza (opcional - borrar de DB para no ensuciar)
             # Para esta demo lo dejamos persistido para inspección manual si se desea
@@ -76,6 +80,7 @@ async def run_architect_demo():
     except Exception as e:
         logger.error(f"Error durante la ejecución: {e}", exc_info=True)
         print(f"\n❌ Error fatal: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(run_architect_demo())

@@ -68,11 +68,12 @@ class TestBundleUpsert:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
 
@@ -81,14 +82,14 @@ class TestBundleUpsert:
             manifest_v1 = {
                 "version": "2.0",
                 "bundle_info": {"name": "test-bundle-v1"},
-                "hashes": {
-                    "agents/tester.json": calculate_sha256(agent_v1.encode())
-                },
+                "hashes": {"agents/tester.json": calculate_sha256(agent_v1.encode())},
             }
-            zip_v1 = create_test_zip({
-                "manifest.json": json.dumps(manifest_v1),
-                "agents/tester.json": agent_v1,
-            })
+            zip_v1 = create_test_zip(
+                {
+                    "manifest.json": json.dumps(manifest_v1),
+                    "agents/tester.json": agent_v1,
+                }
+            )
 
             result_v1 = service.process_bundle(zip_v1)
             assert result_v1.status == "success"
@@ -99,14 +100,14 @@ class TestBundleUpsert:
             manifest_v2 = {
                 "version": "2.0",
                 "bundle_info": {"name": "test-bundle-v2"},
-                "hashes": {
-                    "agents/tester.json": calculate_sha256(agent_v2.encode())
-                },
+                "hashes": {"agents/tester.json": calculate_sha256(agent_v2.encode())},
             }
-            zip_v2 = create_test_zip({
-                "manifest.json": json.dumps(manifest_v2),
-                "agents/tester.json": agent_v2,
-            })
+            zip_v2 = create_test_zip(
+                {
+                    "manifest.json": json.dumps(manifest_v2),
+                    "agents/tester.json": agent_v2,
+                }
+            )
 
             service.process_bundle(zip_v2)
 
@@ -131,12 +132,16 @@ class TestBundleUpsert:
         manifest = {
             "version": "2.0",
             "bundle_info": {"name": "unique-bundle"},
-            "hashes": {"agents/unique_role.json": calculate_sha256(agent_json.encode())},
+            "hashes": {
+                "agents/unique_role.json": calculate_sha256(agent_json.encode())
+            },
         }
-        zip_bytes = create_test_zip({
-            "manifest.json": json.dumps(manifest),
-            "agents/unique_role.json": agent_json,
-        })
+        zip_bytes = create_test_zip(
+            {
+                "manifest.json": json.dumps(manifest),
+                "agents/unique_role.json": agent_json,
+            }
+        )
 
         # Track if any duplicate key error would occur
         error_raised = {"value": None}
@@ -155,11 +160,12 @@ class TestBundleUpsert:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
 
@@ -190,11 +196,13 @@ class TestBundleUpsert:
                 "agents/role_b.json": calculate_sha256(agent_2.encode()),
             },
         }
-        zip_bytes = create_test_zip({
-            "manifest.json": json.dumps(manifest),
-            "agents/role_a.json": agent_1,
-            "agents/role_b.json": agent_2,
-        })
+        zip_bytes = create_test_zip(
+            {
+                "manifest.json": json.dumps(manifest),
+                "agents/role_a.json": agent_1,
+                "agents/role_b.json": agent_2,
+            }
+        )
 
         rpc_call_count = {"value": 0}
 
@@ -211,11 +219,12 @@ class TestBundleUpsert:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
             result = service.process_bundle(zip_bytes)

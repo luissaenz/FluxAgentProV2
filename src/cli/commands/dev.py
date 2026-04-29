@@ -35,7 +35,10 @@ class BundleEventHandler(FileSystemEventHandler):
         path = Path(event.src_path)
 
         # Filter by name/extension
-        if path.suffix.lower() in self.ignored_patterns or path.name in self.ignored_patterns:
+        if (
+            path.suffix.lower() in self.ignored_patterns
+            or path.name in self.ignored_patterns
+        ):
             return
 
         # Also ignore hidden files or files in ignored directories
@@ -94,7 +97,9 @@ class BundleEventHandler(FileSystemEventHandler):
 
             except SecurityError as e:
                 print(f"[red]STOPPED:[/red] Security validation failed: {e}")
-                print("[yellow]Bundle NOT published. Fix the error to resume sync.[/yellow]")
+                print(
+                    "[yellow]Bundle NOT published. Fix the error to resume sync.[/yellow]"
+                )
             except typer.Exit as e:
                 # Typer exit usually means one of the sub-commands printed its own error
                 exit_code = getattr(e, "exit_code", 0)
@@ -105,10 +110,16 @@ class BundleEventHandler(FileSystemEventHandler):
 
 
 def dev_command(
-    path: Path = typer.Argument(Path("."), help="Path to the bundle directory to watch"),
-    debounce: float = typer.Option(0.5, "--debounce", "-d", help="Debounce time in seconds"),
+    path: Path = typer.Argument(
+        Path("."), help="Path to the bundle directory to watch"
+    ),
+    debounce: float = typer.Option(
+        0.5, "--debounce", "-d", help="Debounce time in seconds"
+    ),
 ):
     """Watch for changes and automatically publish the bundle (Hot-Reload)."""
+    path = Path(path).absolute()
+
     if not path.is_dir():
         print(f"[red]Error:[/red] [bold]{path}[/bold] is not a directory.")
         raise typer.Exit(code=1)
@@ -119,7 +130,9 @@ def dev_command(
         raise typer.Exit(code=1)
 
     print(f"[bold green]Watcher started[/bold green] on [bold]{path.absolute()}[/bold]")
-    print("[dim]Monitoring agents/, flows/, skills/, context/. Press Ctrl+C to stop.[/dim]\n")
+    print(
+        "[dim]Monitoring agents/, flows/, skills/, context/. Press Ctrl+C to stop.[/dim]\n"
+    )
 
     event_handler = BundleEventHandler(path, debounce_seconds=debounce)
     observer = Observer()

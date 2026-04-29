@@ -14,7 +14,7 @@ def main():
     headers = {
         "apikey": KEY,
         "Authorization": f"Bearer {KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
     base_rest = f"{URL}/rest/v1"
 
@@ -23,7 +23,10 @@ def main():
     active_org_ids = list(set([m["org_id"] for m in r.json()]))
 
     if not active_org_ids:
-        print("No active organizations with members found. Aborting cleanup to avoid data loss.", flush=True)
+        print(
+            "No active organizations with members found. Aborting cleanup to avoid data loss.",
+            flush=True,
+        )
         return
 
     # 2. Delete organizations WITHOUT members
@@ -39,15 +42,23 @@ def main():
 
     # 3. Rename the main organization if it's still named CoctelPro
     for oid in active_org_ids:
-        r_detail = requests.get(f"{base_rest}/organizations?id=eq.{oid}", headers=headers).json()
-        if r_detail and ("Coctel" in r_detail[0]["name"] or "Demo" in r_detail[0]["name"]):
-            print(f"   Renaming {r_detail[0]['name']} to 'FluxAgentPro HQ'...", flush=True)
-            requests.patch(f"{base_rest}/organizations?id=eq.{oid}", headers=headers, json={
-                "name": "FluxAgentPro HQ",
-                "slug": "fap-hq"
-            })
+        r_detail = requests.get(
+            f"{base_rest}/organizations?id=eq.{oid}", headers=headers
+        ).json()
+        if r_detail and (
+            "Coctel" in r_detail[0]["name"] or "Demo" in r_detail[0]["name"]
+        ):
+            print(
+                f"   Renaming {r_detail[0]['name']} to 'FluxAgentPro HQ'...", flush=True
+            )
+            requests.patch(
+                f"{base_rest}/organizations?id=eq.{oid}",
+                headers=headers,
+                json={"name": "FluxAgentPro HQ", "slug": "fap-hq"},
+            )
 
     print("\nCLEANUP COMPLETE!", flush=True)
+
 
 if __name__ == "__main__":
     main()

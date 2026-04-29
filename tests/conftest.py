@@ -14,11 +14,12 @@ import pytest
 
 if sys.platform == "win32" and sys.stdout is not None:
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
 # ── identity fixtures ───────────────────────────────────────────
+
 
 @pytest.fixture
 def sample_org_id() -> str:
@@ -36,6 +37,7 @@ def sample_input_data() -> dict:
 
 
 # ── Supabase mock factory ──────────────────────────────────────
+
 
 def make_mock_client():
     """Build a fully-mocked Supabase Client."""
@@ -77,7 +79,9 @@ def make_mock_client():
         chain.range.return_value = chain
 
         # Support execute_with_retry pattern from session.py
-        chain.execute_with_retry.side_effect = lambda x: x.execute() if hasattr(x, "execute") else x
+        chain.execute_with_retry.side_effect = (
+            lambda x: x.execute() if hasattr(x, "execute") else x
+        )
 
         return chain
 
@@ -94,12 +98,15 @@ def make_mock_client():
     client.rpc = MagicMock(return_value=rpc_chain)
 
     # client.execute_with_retry(query) pattern
-    client.execute_with_retry = MagicMock(side_effect=lambda x: x.execute() if hasattr(x, "execute") else x)
+    client.execute_with_retry = MagicMock(
+        side_effect=lambda x: x.execute() if hasattr(x, "execute") else x
+    )
 
     return client
 
 
 # ── service client fixture ─────────────────────────────────────
+
 
 @pytest.fixture
 def mock_service_client():
@@ -134,6 +141,7 @@ def mock_service_client():
 
 # ── anon client fixture ────────────────────────────────────────
 
+
 @pytest.fixture
 def mock_anon_client():
     """Mock for get_anon_client() — patches multiple potential import points."""
@@ -160,6 +168,7 @@ def mock_anon_client():
 
 
 # ── TenantClient fixture ────────────────────────────────────────
+
 
 @pytest.fixture
 def mock_tenant_client(mock_service_client):
@@ -205,6 +214,7 @@ def mock_tenant_client(mock_service_client):
 
 # ── Event Store mock ────────────────────────────────────────────
 
+
 @pytest.fixture
 def mock_event_store():
     """Mock the EventStore so flush() is a no-op."""
@@ -212,7 +222,9 @@ def mock_event_store():
         mock_db = MagicMock()
         chain = MagicMock()
         chain.execute = MagicMock(return_value=MagicMock(data=[]))
-        mock_db.table = MagicMock(return_value=MagicMock(insert=MagicMock(return_value=chain)))
+        mock_db.table = MagicMock(
+            return_value=MagicMock(insert=MagicMock(return_value=chain))
+        )
         mock_gtc.return_value.__enter__ = MagicMock(return_value=mock_db)
         mock_gtc.return_value.__exit__ = MagicMock(return_value=False)
         yield mock_gtc
@@ -220,8 +232,10 @@ def mock_event_store():
 
 # ── LLM Mocking ──────────────────────────────────────────────────
 
+
 class MockLLMManager:
     """Mock manager for LLM interactions."""
+
     def __init__(self):
         self.responses = []
         self.last_call = None
@@ -235,13 +249,18 @@ class MockLLMManager:
             return self.responses.pop(0)
         return "Default Mocked LLM Response"
 
+
 @pytest.fixture
 def mock_llm_manager():
     return MockLLMManager()
 
 
 # Ensure missing LLM modules don't break test discovery/execution
-for mod_name in ["langchain_openai", "langchain_community", "langchain_community.chat_models"]:
+for mod_name in [
+    "langchain_openai",
+    "langchain_community",
+    "langchain_community.chat_models",
+]:
     if mod_name not in sys.modules:
         sys.modules[mod_name] = MagicMock()
 
@@ -249,12 +268,13 @@ for mod_name in ["langchain_openai", "langchain_community", "langchain_community
 @pytest.fixture(autouse=True)
 def global_llm_mock():
     """Automatically mock all major LLM provider entry points."""
-    with patch("langchain_openai.ChatOpenAI") as mock_openai, \
-         patch("langchain_community.chat_models.ChatOllama") as mock_ollama, \
-         patch("crewai.Agent") as mock_agent, \
-         patch("crewai.Task") as mock_task, \
-         patch("crewai.Crew") as mock_crew:
-
+    with (
+        patch("langchain_openai.ChatOpenAI") as mock_openai,
+        patch("langchain_community.chat_models.ChatOllama") as mock_ollama,
+        patch("crewai.Agent") as mock_agent,
+        patch("crewai.Task") as mock_task,
+        patch("crewai.Crew") as mock_crew,
+    ):
         # Setup default mock responses
         mock_instance = MagicMock()
         mock_instance.invoke.return_value = MagicMock(content="Mocked LLM Result")
@@ -270,5 +290,5 @@ def global_llm_mock():
             "ollama": mock_ollama,
             "crew": mock_crew,
             "agent": mock_agent,
-            "task": mock_task
+            "task": mock_task,
         }

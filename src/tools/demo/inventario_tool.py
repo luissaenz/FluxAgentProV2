@@ -113,7 +113,6 @@ class CalcularStockNecesarioTool(BaseTool):
         pax: int,
         tipo_menu: str,
     ) -> StockNecesarioOutput:
-
         consumo = self.connector.get_config_one(
             "config_consumo_pax", {"tipo_menu": tipo_menu}
         )
@@ -204,7 +203,6 @@ class ReservarStockTool(BaseTool):
         evento_id: str,
         items: list[dict],  # lista de {item_id, cantidad, nombre, unidad}
     ) -> ReservarStockOutput:
-
         exitosas: list[ReservaResultado] = []
         fallidas: list[ReservaResultado] = []
         a_comprar: list[ItemNecesario] = []
@@ -268,7 +266,6 @@ class LiberarStockTool(BaseTool):
         evento_id: str,
         items: list[dict],  # misma estructura que ReservarStockTool
     ) -> LiberarStockOutput:
-
         liberados: list[ReservaResultado] = []
 
         for item in items:

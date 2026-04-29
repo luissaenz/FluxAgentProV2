@@ -139,7 +139,6 @@ class PronosticoRealTool(BaseTool):
         provincia: str,
         fecha_evento: str,  # formato YYYY-MM-DD
     ) -> PronosticoRealOutput:
-
         mes = self._extraer_mes(fecha_evento)
         temp_historica = TEMP_HISTORICA_NOA.get(mes, 20.0)
         temp_pronosticada = self._fetch_real_forecast(evento_id, mes)

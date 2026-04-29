@@ -1,6 +1,6 @@
 """tests/e2e/test_mvp_certification.py — MVP Architecture Certification Suite.
 
-This suite verifies the 7 critical acceptance criteria for the Phase 3 
+This suite verifies the 7 critical acceptance criteria for the Phase 3
 Bundle-Driven architecture, as defined in analisis-FINAL.md §5.
 """
 
@@ -54,7 +54,7 @@ def create_valid_bundle_zip(tmp_path: Path, name: str = "valid-bundle") -> bytes
             "hashes": {
                 skill_path: calculate_sha256(skill_code.encode("utf-8")),
                 agent_path: calculate_sha256(json.dumps(agent_data).encode("utf-8")),
-            }
+            },
         }
         z.writestr("manifest.json", json.dumps(manifest))
 
@@ -85,13 +85,13 @@ class TestMVPCertification:
             "bundle_id": "test-uuid",
             "agents_count": 1,
             "flows_count": 0,
-            "skills_count": 1
+            "skills_count": 1,
         }
 
         response = api_client.post(
             "/api/bundles/import",
             files={"file": ("bundle.zip", zip_bytes, "application/zip")},
-            headers={"X-Org-Id": "test-org"}
+            headers={"X-Org-Id": "test-org"},
         )
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -107,7 +107,7 @@ class TestMVPCertification:
             manifest = {
                 "version": "2.0",
                 "bundle_info": {"name": "tampered"},
-                "hashes": {"skills/bad.py": "sha256:" + "0" * 64}
+                "hashes": {"skills/bad.py": "sha256:" + "0" * 64},
             }
             z.writestr("manifest.json", json.dumps(manifest))
 
@@ -127,7 +127,9 @@ class TestMVPCertification:
             manifest = {
                 "version": "2.0",
                 "bundle_info": {"name": "malicious"},
-                "hashes": {"skills/exploit.py": calculate_sha256(malicious_code.encode())}
+                "hashes": {
+                    "skills/exploit.py": calculate_sha256(malicious_code.encode())
+                },
             }
             z.writestr("manifest.json", json.dumps(manifest))
 
@@ -138,17 +140,21 @@ class TestMVPCertification:
         assert result.exit_code == 1
         assert "Forbidden import 'os'" in result.output
 
-    def test_c5_atomicity_rollback_simulation(self, api_client, tmp_path, mock_tenant_client):
+    def test_c5_atomicity_rollback_simulation(
+        self, api_client, tmp_path, mock_tenant_client
+    ):
         """C5: Fallo en RPC = rollback (simulado por excepción)."""
         zip_bytes = create_valid_bundle_zip(tmp_path)
 
         # Mock RPC failure (Exception)
-        mock_tenant_client.rpc.return_value.execute.side_effect = Exception("Atomic Failure")
+        mock_tenant_client.rpc.return_value.execute.side_effect = Exception(
+            "Atomic Failure"
+        )
 
         response = api_client.post(
             "/api/bundles/import",
             files={"file": ("bundle.zip", zip_bytes, "application/zip")},
-            headers={"X-Org-Id": "test-org"}
+            headers={"X-Org-Id": "test-org"},
         )
 
         # API maps internal errors to 500 or 400 depending on implementation
@@ -160,7 +166,7 @@ class TestMVPCertification:
         # Mock templates response
         mock_service_client.table("workflow_templates").execute.return_value.data = [
             {"org_id": "org-1"},
-            {"org_id": "org-2"}
+            {"org_id": "org-2"},
         ]
 
         # Mock the specific warmup_registries to avoid deeper lookups
@@ -172,6 +178,7 @@ class TestMVPCertification:
     def test_c7_restrictedpython_version(self):
         """C7: RestrictedPython >= 7.0 instalado."""
         import RestrictedPython
+
         # Simple check of package metadata or existence
         assert hasattr(RestrictedPython, "__version__") or RestrictedPython is not None
         # In a real environment we'd check version string,

@@ -25,10 +25,9 @@ async def test_handle_execute_flow_success(mock_service_client, sample_org_id):
 
         # Mock the flow execution in registry
         mock_flow = MagicMock()
-        mock_flow.execute = AsyncMock(return_value=MagicMock(
-            task_id="task_abc",
-            status="running"
-        ))
+        mock_flow.execute = AsyncMock(
+            return_value=MagicMock(task_id="task_abc", status="running")
+        )
 
         with patch("src.mcp.handlers.flow_registry") as mock_reg:
             mock_reg.has.return_value = True
@@ -38,7 +37,7 @@ async def test_handle_execute_flow_success(mock_service_client, sample_org_id):
                 org_id=sample_org_id,
                 flow_type="test_flow",
                 input_data=input_data,
-                claims=claims
+                claims=claims,
             )
 
             assert res["task_id"] == "task_abc"
@@ -63,8 +62,8 @@ async def test_handle_get_task_success(mock_service_client, sample_org_id):
             "status": "completed",
             "result": {"foo": "bar"},
             "error": None,
-            "logic_state": {}
-        }
+            "logic_state": {},
+        },
     }
 
     # Patch get_service_client explicitly for this module
@@ -89,11 +88,13 @@ async def test_handle_approve_task_success(mock_service_client, sample_org_id):
         "id": 1,
         "task_id": task_id,
         "flow_type": "generic_flow",
-        "status": "pending"
+        "status": "pending",
     }
 
     with patch("src.mcp.handlers.get_service_client", return_value=mock_service_client):
-        mock_service_client.table("pending_approvals").execute.return_value.data = mock_pending
+        mock_service_client.table(
+            "pending_approvals"
+        ).execute.return_value.data = mock_pending
 
         with patch("src.mcp.handlers.verify_org_membership") as mock_auth:
             mock_auth.return_value = {"user_id": "user_123"}
@@ -119,6 +120,8 @@ async def test_handle_approve_task_success(mock_service_client, sample_org_id):
 @pytest.mark.asyncio
 async def test_handle_auth_failure(sample_org_id):
     """Test that AuthError is propagated when verify_org_membership fails."""
-    with patch("src.mcp.handlers.verify_org_membership", side_effect=AuthError("Forbidden")):
+    with patch(
+        "src.mcp.handlers.verify_org_membership", side_effect=AuthError("Forbidden")
+    ):
         with pytest.raises(AuthError):
             await handle_get_task(sample_org_id, "task_123", {})

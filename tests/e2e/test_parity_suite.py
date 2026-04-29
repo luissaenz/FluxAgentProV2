@@ -1,6 +1,6 @@
 """tests/e2e/test_parity_suite.py — Phase IV Parity & E2E Validation Suite.
 
-This suite verifies the end-to-end flow from local CLI development to 
+This suite verifies the end-to-end flow from local CLI development to
 production-ready registries, ensuring total architectural parity.
 """
 
@@ -25,9 +25,11 @@ from src.services.integrity import calculate_sha256
 def api_client():
     return TestClient(app)
 
+
 @pytest.fixture
 def cli_runner():
     return CliRunner()
+
 
 def create_test_bundle_zip(name: str = "parity-test", version: str = "1.0.0") -> bytes:
     """Helper to create a valid bundle ZIP for E2E testing."""
@@ -51,10 +53,11 @@ def create_test_bundle_zip(name: str = "parity-test", version: str = "1.0.0") ->
             "hashes": {
                 "skills/test.py": calculate_sha256(skill_code),
                 "agents/tester.json": calculate_sha256(agent_data),
-            }
+            },
         }
         z.writestr("manifest.json", json.dumps(manifest))
     return buf.getvalue()
+
 
 class TestParitySuite:
     """E2E Parity Suite for Phase IV Certification."""
@@ -71,31 +74,42 @@ class TestParitySuite:
             "agents_count": 1,
             "skills_count": 1,
             "flows_count": 0,
-            "error": None
+            "error": None,
         }
 
         import_resp = api_client.post(
             "/api/bundles/import",
             files={"file": ("bundle.zip", zip_bytes, "application/zip")},
-            headers={"X-Org-Id": "test-org"}
+            headers={"X-Org-Id": "test-org"},
         )
         if import_resp.status_code != status.HTTP_201_CREATED:
-            print(f"DEBUG: Import failed with {import_resp.status_code}: {import_resp.json()}")
+            print(
+                f"DEBUG: Import failed with {import_resp.status_code}: {import_resp.json()}"
+            )
         assert import_resp.status_code == status.HTTP_201_CREATED
 
         # 2. Mock Export/Retrieve (Simulated since endpoint might be new)
         # SUPUESTO: El endpoint GET /api/bundles/{id}/details devuelve el código fuente.
-        mock_tenant_client.table("skill_catalog").select.return_value.eq.return_value.execute.return_value.data = [
-            {"name": "test", "code_source": 'class ParityTool:\n    """A test tool."""\n    name="test"'}
+        mock_tenant_client.table(
+            "skill_catalog"
+        ).select.return_value.eq.return_value.execute.return_value.data = [
+            {
+                "name": "test",
+                "code_source": 'class ParityTool:\n    """A test tool."""\n    name="test"',
+            }
         ]
 
-        details_resp = api_client.get("/api/bundles/b-123/details", headers={"X-Org-Id": "test-org"})
+        details_resp = api_client.get(
+            "/api/bundles/b-123/details", headers={"X-Org-Id": "test-org"}
+        )
         assert details_resp.status_code == 200
 
         exported_skills = details_resp.json()["skills"]
         assert len(exported_skills) == 1
         # Verify hash match
-        original_hash = calculate_sha256('class ParityTool:\n    """A test tool."""\n    name="test"'.encode())
+        original_hash = calculate_sha256(
+            'class ParityTool:\n    """A test tool."""\n    name="test"'.encode()
+        )
         exported_hash = calculate_sha256(exported_skills[0]["code"].encode())
         assert original_hash == exported_hash
 
@@ -104,21 +118,27 @@ class TestParitySuite:
         bundle_dir = tmp_path / "my-bundle"
         bundle_dir.mkdir()
         (bundle_dir / "skills").mkdir()
-        (bundle_dir / "manifest.json").write_text(json.dumps({
-            "version": "2.0",
-            "bundle_info": {"name": "hot-reload-test", "version": "1.0.0"}
-        }))
+        (bundle_dir / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "version": "2.0",
+                    "bundle_info": {"name": "hot-reload-test", "version": "1.0.0"},
+                }
+            )
+        )
 
         # Mock both package and publish to verify the cycle
-        with patch("src.cli.commands.dev.package_bundle") as mock_package, \
-             patch("src.cli.commands.dev.publish_bundle") as mock_publish:
-
+        with (
+            patch("src.cli.commands.dev.package_bundle") as mock_package,
+            patch("src.cli.commands.dev.publish_bundle") as mock_publish,
+        ):
             # Setup mock return for package
             dummy_zip = bundle_dir / "test.zip"
             dummy_zip.write_text("dummy")
             mock_package.return_value = dummy_zip
 
             from src.cli.commands.dev import BundleEventHandler
+
             handler = BundleEventHandler(bundle_dir, debounce_seconds=0.1)
 
             # Simulate file change event
@@ -141,6 +161,7 @@ class TestParitySuite:
 
     def test_cross_tenant_isolation(self, api_client, mock_tenant_client):
         """Verifies that bundle imports are strictly isolated by Org-Id."""
+
         # Mock DB response to return empty for Org B even if Org A has data
         def mock_table(name):
             mock_chain = MagicMock()

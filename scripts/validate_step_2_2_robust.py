@@ -8,6 +8,7 @@ from src.db.session import get_service_client
 # Silenciar logs ruidosos
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+
 async def verify_agent_enrichment_robustness():
     load_dotenv()
     db = get_service_client()
@@ -21,16 +22,18 @@ async def verify_agent_enrichment_robustness():
         return
 
     agent_data = agents.data[0]
-    agent_id = agent_data['id']
-    org_id = agent_data['org_id']
-    role = agent_data['role']
+    agent_id = agent_data["id"]
+    org_id = agent_data["org_id"]
+    role = agent_data["role"]
     print(f"✅ Probando con Agente: {role} ({agent_id})")
 
     # 2. Probar el endpoint (que internamente consultará agent_metadata)
     # Si la tabla no existe (como sabemos), el try/except interno debe capturarlo.
     from src.api.routes.agents import get_agent_detail
 
-    print("\n🚀 Llamando a get_agent_detail (Probando Robustez ante tabla inexistente)...")
+    print(
+        "\n🚀 Llamando a get_agent_detail (Probando Robustez ante tabla inexistente)..."
+    )
     try:
         response = await get_agent_detail(agent_id=agent_id, org_id=org_id)
 
@@ -41,16 +44,21 @@ async def verify_agent_enrichment_robustness():
 
         # Validaciones de Robustez
         assert "display_name" in agent_resp, "Falta display_name incluso en fallback"
-        assert agent_resp.get("display_name") is not None, "Display name no debería ser None"
+        assert (
+            agent_resp.get("display_name") is not None
+        ), "Display name no debería ser None"
 
         print("\n✅ VALIDACIÓN DE ROBUSTEZ EXITOSA:")
-        print("El backend manejó correctamente la ausencia de la tabla 'agent_metadata' y aplicó los fallbacks.")
+        print(
+            "El backend manejó correctamente la ausencia de la tabla 'agent_metadata' y aplicó los fallbacks."
+        )
 
     except Exception as e:
         print("\n❌ FALLO DE ROBUSTEZ: El endpoint explotó al no encontrar la tabla.")
         print(f"Error: {e}")
         # Reraise to show traceback
         raise
+
 
 if __name__ == "__main__":
     asyncio.run(verify_agent_enrichment_robustness())

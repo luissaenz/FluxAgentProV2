@@ -20,6 +20,7 @@ from src.api.routes.agents import get_agent_detail
 
 # ── Capa A: Validación de Lógica de Aplicación ───────────────────
 
+
 @pytest.mark.asyncio
 async def test_agent_detail_isolation_logic():
     """
@@ -67,6 +68,7 @@ async def test_agent_detail_isolation_logic():
     # filters = [c[0] for c in mock_db.table.return_value.select.return_value.eq.call_args_list]
     # assert any("org_id" in str(arg) and org_alpha in str(arg) for arg in filters)
 
+
 @pytest.mark.asyncio
 async def test_metadata_enrichement_isolation():
     """
@@ -89,8 +91,12 @@ async def test_metadata_enrichement_isolation():
     mock_db = MagicMock()
 
     # Configurar respuestas secuenciales
-    mock_catalog_chain = make_chain({"id": agent_id, "role": agent_role, "org_id": org_id})
-    mock_metadata_chain = make_chain({"display_name": "Sombra de Alpha", "soul_narrative": "Espionaje"})
+    mock_catalog_chain = make_chain(
+        {"id": agent_id, "role": agent_role, "org_id": org_id}
+    )
+    mock_metadata_chain = make_chain(
+        {"display_name": "Sombra de Alpha", "soul_narrative": "Espionaje"}
+    )
     mock_task_chain = make_chain([])
 
     with patch("src.api.routes.agents.get_tenant_client") as mock_gtc:
@@ -99,9 +105,9 @@ async def test_metadata_enrichement_isolation():
         # Secuencia de tablas llamadas en agents.py
         mock_db.table.side_effect = [
             mock_catalog_chain,  # agent_catalog
-            mock_metadata_chain, # agent_metadata
-            mock_task_chain,     # tasks (recent)
-            mock_task_chain      # tasks (tokens)
+            mock_metadata_chain,  # agent_metadata
+            mock_task_chain,  # tasks (recent)
+            mock_task_chain,  # tasks (tokens)
         ]
 
         result = await get_agent_detail(agent_id=agent_id, org_id=org_id)
@@ -129,12 +135,14 @@ async def test_metadata_enrichement_isolation():
 
 # ── Capa B: Verificación de RLS (Simulada) ──────────────────────
 
+
 def test_rls_policy_structure():
     """
     Verifica que la política de RLS definida en la migración sea coherente
     con el diseño de aislamiento.
     """
     import os
+
     migration_path = os.path.join("supabase", "migrations", "020_agent_metadata.sql")
 
     if not os.path.exists(migration_path):
@@ -150,7 +158,10 @@ def test_rls_policy_structure():
     assert "current_setting('app.org_id', TRUE)" in content
     assert "org_id::text" in content
 
-@pytest.mark.skip(reason="Requiere conexión a DB real con RLS activo para ejecución end-to-end")
+
+@pytest.mark.skip(
+    reason="Requiere conexión a DB real con RLS activo para ejecución end-to-end"
+)
 def test_rls_isolation_db_level():
     """
     Este test debe ejecutarse contra una DB real.

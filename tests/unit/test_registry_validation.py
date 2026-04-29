@@ -14,19 +14,25 @@ from src.flows.registry import FlowRegistry, flow_registry, register_flow
 
 # ── Helpers ─────────────────────────────────────────────────────
 
+
 def _make_registry() -> FlowRegistry:
     """Create a fresh registry for isolated tests."""
     return FlowRegistry()
 
 
-def _register_flow_class(registry: FlowRegistry, name: str,
-                         depends_on: list[str] | None = None,
-                         category: str | None = None) -> None:
+def _register_flow_class(
+    registry: FlowRegistry,
+    name: str,
+    depends_on: list[str] | None = None,
+    category: str | None = None,
+) -> None:
     """Register a minimal flow class in a given registry."""
+
     # We bypass the decorator and write directly to internals
     class DummyFlow(BaseFlow):
         def validate_input(self, input_data: dict) -> bool:
             return True
+
         async def _run_crew(self) -> dict:
             return {}
 
@@ -41,6 +47,7 @@ def _register_flow_class(registry: FlowRegistry, name: str,
 
 
 # ── validate_dependencies tests ─────────────────────────────────
+
 
 class TestValidateDependencies:
     """FlowRegistry.validate_dependencies() behavior."""
@@ -91,6 +98,7 @@ class TestValidateDependencies:
 
 
 # ── detect_cycles tests ─────────────────────────────────────────
+
 
 class TestDetectCycles:
     """FlowRegistry.detect_cycles() behavior."""
@@ -161,6 +169,7 @@ class TestDetectCycles:
 
 # ── run_full_validation tests ───────────────────────────────────
 
+
 class TestRunFullValidation:
     """FlowRegistry.run_full_validation() combined report."""
 
@@ -198,6 +207,7 @@ class TestRunFullValidation:
 
 # ── Integration with register_flow decorator ────────────────────
 
+
 class TestRegisterFlowDecorator:
     """@register_flow decorator with metadata."""
 
@@ -206,10 +216,13 @@ class TestRegisterFlowDecorator:
         FlowRegistry()
         # Use the global decorator but on a fresh registry
 
-        @register_flow("decorated_flow", depends_on=["dep_a", "dep_b"], category="testing")
+        @register_flow(
+            "decorated_flow", depends_on=["dep_a", "dep_b"], category="testing"
+        )
         class DecoratedFlow(BaseFlow):
             def validate_input(self, input_data: dict) -> bool:
                 return True
+
             async def _run_crew(self) -> dict:
                 return {}
 
@@ -223,10 +236,12 @@ class TestRegisterFlowDecorator:
 
     def test_decorator_defaults(self):
         """Decorator defaults to empty depends_on and None category."""
+
         @register_flow("defaults_flow")
         class DefaultsFlow(BaseFlow):
             def validate_input(self, input_data: dict) -> bool:
                 return True
+
             async def _run_crew(self) -> dict:
                 return {}
 
@@ -237,6 +252,3 @@ class TestRegisterFlowDecorator:
         # Cleanup
         flow_registry._flows.pop("defaults_flow", None)
         flow_registry._metadata.pop("defaults_flow", None)
-
-
-

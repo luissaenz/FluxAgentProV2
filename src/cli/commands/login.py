@@ -41,10 +41,14 @@ def login(
                 raise typer.Exit(code=1)
             elif response.status_code == 404:
                 # If endpoint doesn't exist yet or URL is wrong
-                print(f"[red]Error:[/red] Endpoint not found at {api_url}. Is the server running?")
+                print(
+                    f"[red]Error:[/red] Endpoint not found at {api_url}. Is the server running?"
+                )
                 raise typer.Exit(code=1)
             elif response.status_code != 200:
-                print(f"[red]Error:[/red] Server returned status {response.status_code}: {response.text}")
+                print(
+                    f"[red]Error:[/red] Server returned status {response.status_code}: {response.text}"
+                )
                 raise typer.Exit(code=1)
 
             # If successful, save config
@@ -53,11 +57,15 @@ def login(
             config.access_token = token
             config.save()
 
-            print(f"[green]SUCCESS:[/green] Authenticated correctly for Org [bold]{org_id}[/bold].")
+            print(
+                f"[green]SUCCESS:[/green] Authenticated correctly for Org [bold]{org_id}[/bold]."
+            )
             print("Configuration saved to [bold]~/.fap/config.json[/bold]")
 
     except httpx.ConnectError:
-        print(f"[red]Error:[/red] Could not connect to [bold]{api_url}[/bold]. Check your connection and the URL.")
+        print(
+            f"[red]Error:[/red] Could not connect to [bold]{api_url}[/bold]. Check your connection and the URL."
+        )
         raise typer.Exit(code=1)
     except Exception as e:
         print(f"[red]Error during authentication:[/red] {str(e)}")

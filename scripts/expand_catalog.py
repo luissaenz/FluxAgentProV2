@@ -9,10 +9,11 @@ DOCS_DIR = BASE_DIR / "docs"
 DATA_DIR = BASE_DIR / "data"
 SEED_PATH = DATA_DIR / "service_catalog_seed.json"
 
+
 def extract_json_array(text):
     """Extrae el primer array JSON encontrado en el texto."""
     # Busca algo que empiece con [ y termine con ] con contenido JSON
-    match = re.search(r'\[\s*\{.*\}\s*\]', text, re.DOTALL)
+    match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
     if match:
         try:
             return json.loads(match.group())
@@ -20,6 +21,7 @@ def extract_json_array(text):
             print(f"Error decodificando JSON: {e}")
             return []
     return []
+
 
 def infer_base_url(url):
     """Extrae protocolo + host de una URL."""
@@ -29,6 +31,7 @@ def infer_base_url(url):
     if parsed.scheme and parsed.netloc:
         return f"{parsed.scheme}://{parsed.netloc}"
     return ""
+
 
 def transform_tool(raw_tool):
     """Transforma una tool plana del prompt en el formato Nested TIPO C."""
@@ -58,7 +61,9 @@ def transform_tool(raw_tool):
     elif auth_type == "oauth2":
         required_secrets = [f"{provider_id}_token"]
     elif auth_type == "basic_auth":
-        required_secrets = [f"{provider_id}_auth_token"] # Estandarizado para Twilio/etc
+        required_secrets = [
+            f"{provider_id}_auth_token"
+        ]  # Estandarizado para Twilio/etc
 
     # 4. Inferencia de base_url
     exec_info = raw_tool.get("execution", {})
@@ -73,7 +78,7 @@ def transform_tool(raw_tool):
         "auth_type": auth_type,
         "base_url": base_url,
         "required_secrets": required_secrets,
-        "auth_scopes": scopes
+        "auth_scopes": scopes,
     }
 
     # 6. Tool Final
@@ -87,12 +92,13 @@ def transform_tool(raw_tool):
         "execution": {
             "url": exec_url,
             "method": exec_info.get("method", "GET"),
-            "headers": exec_info.get("headers", {})
+            "headers": exec_info.get("headers", {}),
         },
-        "tool_profile": raw_tool.get("tool_profile", {})
+        "tool_profile": raw_tool.get("tool_profile", {}),
     }
 
     return transformed
+
 
 def main():
     print("--- Iniciando expansion del catalogo de servicios ---")
@@ -131,9 +137,7 @@ def main():
         print(f"   OK: Extracted {count} tools.")
 
     # 3. Guardar el resultado final
-    final_output = {
-        "tools": list(all_tools.values())
-    }
+    final_output = {"tools": list(all_tools.values())}
 
     # Ordenar por ID para mantener consistencia
     final_output["tools"].sort(key=lambda x: x["id"])
@@ -144,6 +148,7 @@ def main():
     print("\nProcess finished successfully.")
     print(f"Total tools in catalog: {len(all_tools)}")
     print(f"Saved to: {SEED_PATH}")
+
 
 if __name__ == "__main__":
     main()

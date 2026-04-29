@@ -19,14 +19,16 @@ def main():
     KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
     if not URL or not KEY:
-        print("Error: SUPABASE_URL or SUPABASE_SERVICE_KEY not found in .env", flush=True)
+        print(
+            "Error: SUPABASE_URL or SUPABASE_SERVICE_KEY not found in .env", flush=True
+        )
         sys.exit(1)
 
     headers = {
         "apikey": KEY,
         "Authorization": f"Bearer {KEY}",
         "Content-Type": "application/json",
-        "Prefer": "return=minimal"
+        "Prefer": "return=minimal",
     }
 
     base_rest = f"{URL}/rest/v1"
@@ -36,19 +38,26 @@ def main():
     admin_org_ids = []
     admin_user_ids = []
     try:
-        r = requests.get(f"{base_rest}/org_members?select=*", headers=headers, timeout=10)
+        r = requests.get(
+            f"{base_rest}/org_members?select=*", headers=headers, timeout=10
+        )
         if r.status_code == 200:
             all_members = r.json()
             # Priority: fap_admin, admin, org_owner
             admins = [m for m in all_members if m.get("role") == "fap_admin"]
             if not admins:
-                admins = [m for m in all_members if m.get("role") in ("admin", "org_owner")]
+                admins = [
+                    m for m in all_members if m.get("role") in ("admin", "org_owner")
+                ]
             if not admins and all_members:
                 admins = [all_members[0]]
 
             admin_user_ids = [m["user_id"] for m in admins]
             admin_org_ids = list(set([m["org_id"] for m in admins]))
-            print(f"   Found {len(admin_user_ids)} admins in {len(admin_org_ids)} orgs.", flush=True)
+            print(
+                f"   Found {len(admin_user_ids)} admins in {len(admin_org_ids)} orgs.",
+                flush=True,
+            )
         else:
             print(f"   Could not fetch members: {r.status_code} {r.text}", flush=True)
     except Exception as e:
@@ -102,9 +111,10 @@ def main():
         del_url = f"{base_rest}/organizations?id=not.in.({o_list})"
         requests.delete(del_url, headers=headers, timeout=10)
 
-    print("\n" + "="*50, flush=True)
+    print("\n" + "=" * 50, flush=True)
     print("CLEANUP COMPLETE! (REST Mode)", flush=True)
     print("====================================", flush=True)
+
 
 if __name__ == "__main__":
     main()

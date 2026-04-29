@@ -76,21 +76,33 @@ Este documento detalla la hoja de ruta técnica para alcanzar la paridad absolut
     *   **Mantenibilidad**: El "arquitecto" puede actualizarse independientemente del servidor core.
     *   **Validación Real**: Si el sistema puede manejar su propio flujo arquitectónico como un bundle, puede manejar cualquier cosa.
 
-### Paso 6: Suite de Validación E2E
-**Objetivo:** Certificar la Fase IV como finalizada.
+### Paso 7: Saneamiento y Robustez de Infraestructura (Estabilidad)
+**Objetivo:** Eliminar inconsistencias técnicas y asegurar que las herramientas de CLI sean resilientes.
 
 *   **Acciones:**
-    *   Crear tests que simulen un flujo completo:
-        1.  `fap dev` detecta cambio.
-        2.  `fap-implementor` genera una nueva herramienta.
-        3.  `fap run` ejecuta el agente con la nueva herramienta.
-        4.  Verificar persistencia en Supabase.
-*   **Implicancias:**
-    *   **Confianza**: Garantiza que la arquitectura de la Fase IV es resiliente y está lista para ser escalada.
+    *   **Unificación de Manifiesto (V06):** Centralizar la lógica de esquemas en `src/utils/bundle_utils.py` y actualizar `fap init`, `fap package` y `fap scaffold` para usar exclusivamente el estándar v2.0 (`bundle_info`).
+    *   **Paths Dinámicos (V01):** Refactorizar `package_bundle` para que devuelva la ruta absoluta del archivo generado, eliminando suposiciones de directorios en `fap dev`.
+    *   **Fix Windows Encoding (V07):** Forzar salida ASCII o detectar encoding en terminales Windows para prevenir crashes por emojis en el output de `rich`.
+    *   **Observabilidad de Hashing (V13):** Implementar logs de nivel `INFO` en `BundleManager.create_bundle` que detallen el proceso de cálculo de integridad.
+
+### Paso 8: Integridad Arquitectónica y Multi-Tenancy (Seguridad)
+**Objetivo:** Garantizar que los componentes locales respeten el aislamiento de datos y la resolución de nombres del core.
+
+*   **Acciones:**
+    *   **Aislamiento Obligatorio (V09):** Actualizar las plantillas de generación del `fap-implementor` y la documentación para que todas las skills hereden de `OrgBaseTool` en lugar de `BaseTool`, garantizando acceso al Vault y RLS.
+    *   **Resolución Dual de Tools (V04):** Modificar el `LocalExecutor` para que registre herramientas en el registry transiente usando tanto el nombre del archivo como el nombre de la clase.
+
+### Paso 9: Certificación Técnica Profunda (QA)
+**Objetivo:** Elevar el estándar de calidad de la suite de validación y eliminar ruido en los logs.
+
+*   **Acciones:**
+    *   **Saneamiento de Mocks (V10):** Ajustar los tipos de retorno en `MockLLMManager` para que coincidan estrictamente con las expectativas de Pydantic v2, eliminando warnings de serialización.
+    *   **Certificación Real (V12):** Integrar `pytest.main()` dentro de `scripts/certify_fase4.py` para que la certificación incluya pruebas de ejecución real por defecto.
+    *   **Higiene Final (V08):** Ejecución de limpieza de imports y formateo automatizado en los módulos de utilidades.
 
 ---
 
-## ⏱️ Estimación de Esfuerzo (Horas Totales: 47h)
+## ⏱️ Estimación de Esfuerzo (Horas Totales: 61h)
 
 | Hito | Tiempo | Prioridad |
 |---|---|---|
@@ -100,6 +112,9 @@ Este documento detalla la hoja de ruta técnica para alcanzar la paridad absolut
 | Dogfooding (`ArchitectFlow`) | 10h | Alta |
 | Skill Builder (`fap-implementor`) | 8h | Media |
 | Validación Final & E2E | 8h | Alta |
+| **Saneamiento & Robustez (P7)** | 6h | Alta |
+| **Integridad & Multi-Tenancy (P8)** | 4h | Crítica |
+| **Certificación Profunda (P9)** | 4h | Media |
 
 ---
 
@@ -109,3 +124,5 @@ Este documento detalla la hoja de ruta técnica para alcanzar la paridad absolut
     *   **Mitigación:** Implementar un flag `is_dev` en los bundles para que el sistema local sobreescriba la versión de desarrollo en lugar de crear un historial infinito.
 2.  **Riesgo:** La skill `fap-implementor` genera código que el LLM no puede ejecutar localmente.
     *   **Mitigación:** Incluir un paso de "Pre-validación" en la skill que ejecute el `SecurityGuard` antes de presentar el código al usuario.
+3.  **Riesgo (NUEVO):** La herencia de `OrgBaseTool` podría fallar en entornos sin una sesión de organización activa.
+    *   **Mitigación:** Implementar un `MockOrgContext` en el `LocalExecutor` que inyecte un `org_id` de pruebas por defecto.

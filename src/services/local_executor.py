@@ -5,7 +5,7 @@ import logging
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Generator, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from src.flows.dynamic_flow import DynamicWorkflow
 from src.flows.registry import flow_registry
@@ -13,6 +13,7 @@ from src.services.security_guard import SecurityGuard
 from src.tools.registry import tool_registry
 
 logger = logging.getLogger(__name__)
+
 
 class LocalExecutor:
     """Handles transient registration and mocking for local 'fap run' execution."""
@@ -34,6 +35,7 @@ class LocalExecutor:
         skills_dir = self.bundle_path / "skills"
         if skills_dir.exists():
             from RestrictedPython import safe_builtins
+
             for py_file in skills_dir.glob("*.py"):
                 code = py_file.read_text(encoding="utf-8")
                 # Security validation
@@ -49,20 +51,31 @@ class LocalExecutor:
                     exec(code, {"__builtins__": safe_builtins}, loc)
 
                     for attr in loc.values():
-                        if (isinstance(attr, type) and
-                            "Tool" in attr.__name__ and
-                            not attr.__name__.startswith("Base")):
-
+                        if (
+                            isinstance(attr, type)
+                            and "Tool" in attr.__name__
+                            and not attr.__name__.startswith("Base")
+                        ):
                             # Register as local tool (by filename stem)
                             tool_name = py_file.stem.lower()
-                            tool_registry.register(name=f"{self.org_id}:{tool_name}")(attr)
+                            tool_registry.register(name=f"{self.org_id}:{tool_name}")(
+                                attr
+                            )
 
                             # Also register by class name for AgentFactory resolution
-                            tool_registry.register(name=f"{self.org_id}:{attr.__name__}")(attr)
+                            tool_registry.register(
+                                name=f"{self.org_id}:{attr.__name__}"
+                            )(attr)
 
-                            logger.info("Transiently registered tool: %s (and class: %s)", tool_name, attr.__name__)
+                            logger.info(
+                                "Transiently registered tool: %s (and class: %s)",
+                                tool_name,
+                                attr.__name__,
+                            )
                 except Exception as e:
-                    logger.warning("Failed to register tool from %s: %s", py_file.name, e)
+                    logger.warning(
+                        "Failed to register tool from %s: %s", py_file.name, e
+                    )
 
         # 2. Load Agents (.json)
         agents_dir = self.bundle_path / "agents"
@@ -85,29 +98,21 @@ class LocalExecutor:
     @contextmanager
     def mock_persistence(self) -> Generator[None, None, None]:
         """Intercept DB calls to prevent production side-effects during local run."""
+        from src.utils.context_utils import MockOrgContext
 
-        # Mock for Supabase clients
-        mock_db = MagicMock()
-        mock_db.table.return_value.insert.return_value.execute.return_value = MagicMock(data=[])
-        mock_db.table.return_value.upsert.return_value.execute.return_value = MagicMock(data=[])
-        mock_db.table.return_value.update.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
-        mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data=None)
-
-        # Mocking get_tenant_client and get_service_client
-        # Also mocking execute_with_retry if needed
-
-        with patch("src.db.session.get_tenant_client", return_value=mock_db), \
-             patch("src.db.session.get_service_client", return_value=mock_db), \
-             patch("src.db.session.execute_with_retry", side_effect=lambda x: x):
-
+        with MockOrgContext(org_id=self.org_id):
             # Additional mock for BaseCrew._load_agent_config if we want to use bundle agents
             def mocked_load_agent_config(crew_self):
                 for agent in self.agents:
                     if agent.get("role") == crew_self.role:
                         return agent
-                raise ValueError(f"Agent role '{crew_self.role}' not found in local bundle")
+                raise ValueError(
+                    f"Agent role '{crew_self.role}' not found in local bundle"
+                )
 
-            with patch("src.crews.base_crew.BaseCrew._load_agent_config", autospec=True) as m_load:
+            with patch(
+                "src.crews.base_crew.BaseCrew._load_agent_config", autospec=True
+            ) as m_load:
                 m_load.side_effect = mocked_load_agent_config
                 yield
 

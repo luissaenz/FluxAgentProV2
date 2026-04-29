@@ -17,11 +17,13 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 
 class RunAgentRequest(BaseModel):
     """Request para ejecutar un agente."""
+
     input_data: Dict[str, Any] = {}
 
 
 class RunAgentResponse(BaseModel):
     """Respuesta al ejecutar un agente."""
+
     task_id: str
     status: str
 
@@ -169,14 +171,16 @@ async def run_agent(
 
     # 2. Create initial task record in 'pending' state
     with get_tenant_client(org_id) as db:
-        db.table("tasks").insert({
-            "id": task_id,
-            "org_id": org_id,
-            "flow_type": f"agent:{role}",
-            "status": "pending",
-            "payload": request.input_data,
-            "correlation_id": correlation_id,
-        }).execute()
+        db.table("tasks").insert(
+            {
+                "id": task_id,
+                "org_id": org_id,
+                "flow_type": f"agent:{role}",
+                "status": "pending",
+                "payload": request.input_data,
+                "correlation_id": correlation_id,
+            }
+        ).execute()
 
     # 3. Start execution in background
     async def _execute():
@@ -186,35 +190,35 @@ async def run_agent(
 
             # Mark as running
             with get_tenant_client(org_id) as db:
-                db.table("tasks").update({"status": "running"}).eq("id", task_id).execute()
+                db.table("tasks").update({"status": "running"}).eq(
+                    "id", task_id
+                ).execute()
 
             # Execute
             result = await crew.run_async(
-                task_description="Execute assigned task",
-                inputs=request.input_data
+                task_description="Execute assigned task", inputs=request.input_data
             )
 
             # Update to completed
             with get_tenant_client(org_id) as db:
-                db.table("tasks").update({
-                    "status": "completed",
-                    "result": str(result),
-                    "tokens_used": crew.get_last_tokens_used()
-                }).eq("id", task_id).execute()
+                db.table("tasks").update(
+                    {
+                        "status": "completed",
+                        "result": str(result),
+                        "tokens_used": crew.get_last_tokens_used(),
+                    }
+                ).eq("id", task_id).execute()
 
         except Exception as e:
             import logging
+
             logging.getLogger(__name__).error("Agent execution failed: %s", e)
             # Update to failed
             with get_tenant_client(org_id) as db:
-                db.table("tasks").update({
-                    "status": "failed",
-                    "error": str(e)
-                }).eq("id", task_id).execute()
+                db.table("tasks").update({"status": "failed", "error": str(e)}).eq(
+                    "id", task_id
+                ).execute()
 
     background_tasks.add_task(_execute)
 
-    return RunAgentResponse(
-        task_id=task_id,
-        status="accepted"
-    )
+    return RunAgentResponse(task_id=task_id, status="accepted")

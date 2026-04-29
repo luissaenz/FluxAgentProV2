@@ -16,5 +16,6 @@ def check_activecampaign():
     if not found:
         print("ActiveCampaign not found in seed.")
 
+
 if __name__ == "__main__":
     check_activecampaign()

@@ -47,8 +47,8 @@ def mock_connector():
 # AGENTE 4: Cálculo de opciones de cotización
 # ══════════════════════════════════════════════════════════════════════════
 
-class TestCalcularOpciones:
 
+class TestCalcularOpciones:
     def test_formula_margen_40(self):
         """precio = escandallo / (1 - 0.40) = escandallo / 0.60"""
         opciones = _calcular_opciones(2_956_716)
@@ -79,54 +79,63 @@ class TestCalcularOpciones:
 
     def test_tres_margenes_definidos(self):
         assert set(MARGENES.keys()) == {"basica", "recomendada", "premium"}
-        assert MARGENES["basica"]      == 0.40
+        assert MARGENES["basica"] == 0.40
         assert MARGENES["recomendada"] == 0.45
-        assert MARGENES["premium"]     == 0.50
+        assert MARGENES["premium"] == 0.50
 
 
 # ══════════════════════════════════════════════════════════════════════════
 # AGENTE 1: Registro de evento
 # ══════════════════════════════════════════════════════════════════════════
 
-class TestRegistrarEvento:
 
+class TestRegistrarEvento:
     def test_inyecta_status_nuevo(self, mock_connector):
-        _registrar_evento(mock_connector, {
-            "fecha_evento":   "2026-07-20",
-            "provincia":      "Tucuman",
-            "localidad":      "San Miguel",
-            "tipo_evento":    "corporativo",
-            "pax":            60,
-            "duracion_horas": 4,
-            "tipo_menu":      "estandar",
-        })
+        _registrar_evento(
+            mock_connector,
+            {
+                "fecha_evento": "2026-07-20",
+                "provincia": "Tucuman",
+                "localidad": "San Miguel",
+                "tipo_evento": "corporativo",
+                "pax": 60,
+                "duracion_horas": 4,
+                "tipo_menu": "estandar",
+            },
+        )
         args = mock_connector.write.call_args
         assert args[0][1]["status"] == "nuevo"
 
     def test_genera_evento_id(self, mock_connector):
-        _registrar_evento(mock_connector, {
-            "fecha_evento":   "2026-07-20",
-            "provincia":      "Tucuman",
-            "localidad":      "San Miguel",
-            "tipo_evento":    "corporativo",
-            "pax":            60,
-            "duracion_horas": 4,
-            "tipo_menu":      "estandar",
-        })
+        _registrar_evento(
+            mock_connector,
+            {
+                "fecha_evento": "2026-07-20",
+                "provincia": "Tucuman",
+                "localidad": "San Miguel",
+                "tipo_evento": "corporativo",
+                "pax": 60,
+                "duracion_horas": 4,
+                "tipo_menu": "estandar",
+            },
+        )
         args = mock_connector.write.call_args
         evento_id = args[0][1]["evento_id"]
         assert evento_id.startswith("EVT-")
 
     def test_convierte_pax_a_int(self, mock_connector):
-        _registrar_evento(mock_connector, {
-            "fecha_evento":   "2026-07-20",
-            "provincia":      "Tucuman",
-            "localidad":      "San Miguel",
-            "tipo_evento":    "corporativo",
-            "pax":            "80",  # string — debe convertirse
-            "duracion_horas": "4",
-            "tipo_menu":      "estandar",
-        })
+        _registrar_evento(
+            mock_connector,
+            {
+                "fecha_evento": "2026-07-20",
+                "provincia": "Tucuman",
+                "localidad": "San Miguel",
+                "tipo_evento": "corporativo",
+                "pax": "80",  # string — debe convertirse
+                "duracion_horas": "4",
+                "tipo_menu": "estandar",
+            },
+        )
         args = mock_connector.write.call_args
         assert isinstance(args[0][1]["pax"], int)
         assert args[0][1]["pax"] == 80
@@ -137,45 +146,67 @@ class TestRegistrarEvento:
 # ══════════════════════════════════════════════════════════════════════════
 
 PRECIOS_MOCK = [
-    {"producto_id": "GIN-001",    "precio_ars": 12000},
-    {"producto_id": "WHISKY-001", "precio_ars":  7000},
+    {"producto_id": "GIN-001", "precio_ars": 12000},
+    {"producto_id": "WHISKY-001", "precio_ars": 7000},
 ]
 
 
 class TestCalcularItemsOrden:
-
     @pytest.fixture
     def connector_con_precios(self, mock_connector):
         mock_connector.read.return_value = PRECIOS_MOCK
         return mock_connector
 
     def test_faltante_stock_no_modifica_cantidad(self, connector_con_precios):
-        items = [{"item_id": "GIN-001", "cantidad": 5, "nombre": "Gin", "unidad": "botella"}]
+        items = [
+            {"item_id": "GIN-001", "cantidad": 5, "nombre": "Gin", "unidad": "botella"}
+        ]
         items_orden, total = _calcular_items_orden(
             connector_con_precios, "faltante_stock", items
         )
         assert items_orden[0]["cantidad"] == 5
 
     def test_alerta_climatica_incrementa_hielo_50pct(self, connector_con_precios):
-        items = [{"item_id": "HIELO-001", "cantidad": 10, "nombre": "Hielo", "unidad": "bolsa"}]
+        items = [
+            {
+                "item_id": "HIELO-001",
+                "cantidad": 10,
+                "nombre": "Hielo",
+                "unidad": "bolsa",
+            }
+        ]
         items_orden, _ = _calcular_items_orden(
             connector_con_precios, "alerta_climatica", items
         )
         import math
+
         assert items_orden[0]["cantidad"] == math.ceil(10 * 1.50)
 
     def test_alerta_climatica_incrementa_agua_30pct(self, connector_con_precios):
-        items = [{"item_id": "AGUA-001", "cantidad": 20, "nombre": "Agua", "unidad": "botella"}]
+        items = [
+            {
+                "item_id": "AGUA-001",
+                "cantidad": 20,
+                "nombre": "Agua",
+                "unidad": "botella",
+            }
+        ]
         items_orden, _ = _calcular_items_orden(
             connector_con_precios, "alerta_climatica", items
         )
         import math
+
         assert items_orden[0]["cantidad"] == math.ceil(20 * 1.30)
 
     def test_total_es_suma_de_subtotales(self, connector_con_precios):
         items = [
-            {"item_id": "GIN-001",   "cantidad": 3, "nombre": "Gin",   "unidad": "botella"},
-            {"item_id": "HIELO-001", "cantidad": 5, "nombre": "Hielo", "unidad": "bolsa"},
+            {"item_id": "GIN-001", "cantidad": 3, "nombre": "Gin", "unidad": "botella"},
+            {
+                "item_id": "HIELO-001",
+                "cantidad": 5,
+                "nombre": "Hielo",
+                "unidad": "bolsa",
+            },
         ]
         items_orden, total = _calcular_items_orden(
             connector_con_precios, "faltante_stock", items
@@ -189,16 +220,50 @@ class TestCalcularItemsOrden:
 # ══════════════════════════════════════════════════════════════════════════
 
 BARTENDERS_MOCK = [
-    {"bartender_id": "BAR-001", "nombre": "Juan",    "especialidad": "premium", "es_head_bartender": "TRUE",  "calificacion": 4.8, "disponible": True},
-    {"bartender_id": "BAR-002", "nombre": "Maria",   "especialidad": "clasica", "es_head_bartender": "FALSE", "calificacion": 4.5, "disponible": True},
-    {"bartender_id": "BAR-003", "nombre": "Carlos",  "especialidad": "premium", "es_head_bartender": "FALSE", "calificacion": 4.7, "disponible": True},
-    {"bartender_id": "BAR-004", "nombre": "Ana",     "especialidad": "clasica", "es_head_bartender": "FALSE", "calificacion": 4.3, "disponible": True},
-    {"bartender_id": "BAR-005", "nombre": "Roberto", "especialidad": "premium", "es_head_bartender": "FALSE", "calificacion": 4.9, "disponible": True},
+    {
+        "bartender_id": "BAR-001",
+        "nombre": "Juan",
+        "especialidad": "premium",
+        "es_head_bartender": "TRUE",
+        "calificacion": 4.8,
+        "disponible": True,
+    },
+    {
+        "bartender_id": "BAR-002",
+        "nombre": "Maria",
+        "especialidad": "clasica",
+        "es_head_bartender": "FALSE",
+        "calificacion": 4.5,
+        "disponible": True,
+    },
+    {
+        "bartender_id": "BAR-003",
+        "nombre": "Carlos",
+        "especialidad": "premium",
+        "es_head_bartender": "FALSE",
+        "calificacion": 4.7,
+        "disponible": True,
+    },
+    {
+        "bartender_id": "BAR-004",
+        "nombre": "Ana",
+        "especialidad": "clasica",
+        "es_head_bartender": "FALSE",
+        "calificacion": 4.3,
+        "disponible": True,
+    },
+    {
+        "bartender_id": "BAR-005",
+        "nombre": "Roberto",
+        "especialidad": "premium",
+        "es_head_bartender": "FALSE",
+        "calificacion": 4.9,
+        "disponible": True,
+    },
 ]
 
 
 class TestSeleccionarBartenders:
-
     @pytest.fixture
     def connector_con_bartenders(self, mock_connector):
         mock_connector.read.return_value = BARTENDERS_MOCK
@@ -239,7 +304,10 @@ class TestSeleccionarBartenders:
     def test_genera_hoja_de_ruta(self):
         hoja = _generar_hoja_de_ruta(
             [{"nombre": "Juan", "rol": "head"}],
-            "2026-07-20", 5, "Tucuman", "San Miguel"
+            "2026-07-20",
+            5,
+            "Tucuman",
+            "San Miguel",
         )
         assert "Juan" in hoja
         assert "2026-07-20" in hoja
@@ -250,21 +318,21 @@ class TestSeleccionarBartenders:
 # AGENTE 9: Auditoría — margen crítico
 # ══════════════════════════════════════════════════════════════════════════
 
-class TestAuditoria:
 
+class TestAuditoria:
     def test_margen_critico_umbral_es_10(self):
         assert MARGEN_CRITICO_UMBRAL == 10.0
 
     def test_guarda_auditoria_en_db(self, mock_connector):
         _guardar_auditoria(
             mock_connector,
-            evento_id      = "EVT-001",
-            precio_cobrado = 5_376_757,
-            costo_real     = 4_608_458,
-            margen_pct     = 14.3,
-            mermas         = 250_000,
-            compras_emergencia = 220_000,
-            desvio_climatico = "+7C",
+            evento_id="EVT-001",
+            precio_cobrado=5_376_757,
+            costo_real=4_608_458,
+            margen_pct=14.3,
+            mermas=250_000,
+            compras_emergencia=220_000,
+            desvio_climatico="+7C",
         )
         mock_connector.write.assert_called_once()
         args = mock_connector.write.call_args[0]
@@ -273,9 +341,7 @@ class TestAuditoria:
         assert args[1]["precio_cobrado"] == 5_376_757
 
     def test_auditoria_id_formato(self, mock_connector):
-        _guardar_auditoria(
-            mock_connector, "EVT-001", 1000, 800, 20.0, 0, 0, ""
-        )
+        _guardar_auditoria(mock_connector, "EVT-001", 1000, 800, 20.0, 0, 0, "")
         args = mock_connector.write.call_args[0]
         assert args[1]["auditoria_id"].startswith("AUD-")
 
@@ -284,13 +350,23 @@ class TestAuditoria:
 # AGENTE 11: Monitor de precios
 # ══════════════════════════════════════════════════════════════════════════
 
-class TestMonitorPrecios:
 
+class TestMonitorPrecios:
     @pytest.fixture
     def connector_precios(self, mock_connector):
         mock_connector.read.return_value = [
-            {"producto_id": "GIN-001",    "precio_ars": 12000, "precio_base_referencia": 14000, "es_oferta": False},
-            {"producto_id": "WHISKY-001", "precio_ars":  7000, "precio_base_referencia":  8000, "es_oferta": False},
+            {
+                "producto_id": "GIN-001",
+                "precio_ars": 12000,
+                "precio_base_referencia": 14000,
+                "es_oferta": False,
+            },
+            {
+                "producto_id": "WHISKY-001",
+                "precio_ars": 7000,
+                "precio_base_referencia": 8000,
+                "es_oferta": False,
+            },
         ]
         return mock_connector
 
@@ -310,11 +386,16 @@ class TestMonitorPrecios:
     def test_detecta_oferta_correctamente(self, mock_connector):
         # GIN-001: nuevo=9000, base=14000 → ahorro=35.7% > 15% → es_oferta
         mock_connector.read.return_value = [
-            {"producto_id": "GIN-001", "precio_ars": 12000,
-             "precio_base_referencia": 14000, "es_oferta": False},
+            {
+                "producto_id": "GIN-001",
+                "precio_ars": 12000,
+                "precio_base_referencia": 14000,
+                "es_oferta": False,
+            },
         ]
         # Parchear el mock para que GIN tenga precio muy bajo
         import src.crews.bartenders.cierre_crews as m
+
         original = m.MOCK_PRECIOS_ACTUALIZADOS.copy()
         m.MOCK_PRECIOS_ACTUALIZADOS["GIN-001"] = {"precio_ars": 9000, "fuente": "Test"}
 

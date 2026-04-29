@@ -109,6 +109,7 @@ class BaseCrew:
 
         # Resolve tools from allowed_tools list
         from .factory import AgentFactory
+
         agent = AgentFactory.create_agent(config, self.org_id)
 
         task = Task(
@@ -183,6 +184,7 @@ class BaseCrew:
         config = self._load_agent_config()
 
         from .factory import AgentFactory
+
         agent = AgentFactory.create_agent(config, self.org_id)
 
         task = Task(

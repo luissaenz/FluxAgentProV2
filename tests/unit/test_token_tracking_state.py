@@ -11,7 +11,7 @@ class TestTokenTracking(unittest.TestCase):
             task_id=self.task_id,
             org_id=str(uuid4()),
             flow_type="test_flow",
-            correlation_id=f"test-corr-{self.task_id}"
+            correlation_id=f"test-corr-{self.task_id}",
         )
 
     def test_initial_tokens_zero(self):
@@ -39,19 +39,19 @@ class TestTokenTracking(unittest.TestCase):
 
     def test_estimate_tokens_string(self):
         """estimate_tokens debe calcular ~4 chars por token."""
-        text = "Hola mundo" # 10 chars
+        text = "Hola mundo"  # 10 chars
         # 10 // 4 = 2.
         self.assertEqual(self.state.estimate_tokens(text), 2)
 
-        long_text = "A" * 100 # 100 chars -> 25 tokens
+        long_text = "A" * 100  # 100 chars -> 25 tokens
         self.assertEqual(self.state.estimate_tokens(long_text), 25)
 
     def test_estimate_tokens_dict(self):
         """estimate_tokens debe manejar diccionarios convirtiéndolos a string."""
-        data = {"key": "value"} # str(data) -> length depends on quotes, usually ~16-18
+        data = {"key": "value"}  # str(data) -> length depends on quotes, usually ~16-18
         # str({"key": "value"}) is "{'key': 'value'}" -> 16 chars -> 4 tokens
         self.assertEqual(self.state.estimate_tokens(data), 4)
 
+
 if __name__ == "__main__":
     unittest.main()
-

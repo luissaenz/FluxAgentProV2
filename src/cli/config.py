@@ -13,6 +13,7 @@ CONFIG_FILE = FAP_DIR / "config.json"
 
 class CLIConfig(BaseModel):
     """CLI Configuration Schema."""
+
     api_url: str = Field(default="http://localhost:8000")
     org_id: Optional[str] = None
     access_token: Optional[str] = None
@@ -25,7 +26,7 @@ class CLIConfig(BaseModel):
 
         # Note: In Windows, chmod 600 doesn't have the same effect as Linux.
         # We still set it for POSIX compatibility.
-        if os.name != 'nt':
+        if os.name != "nt":
             try:
                 FAP_DIR.chmod(0o700)
             except Exception:
@@ -34,7 +35,7 @@ class CLIConfig(BaseModel):
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             f.write(self.model_dump_json(indent=2))
 
-        if os.name != 'nt':
+        if os.name != "nt":
             try:
                 CONFIG_FILE.chmod(0o600)
             except Exception:

@@ -15,10 +15,15 @@ from src.db.session import get_service_client
 from src.flows.multi_crew_flow import MultiCrewFlow
 from src.flows.state import FlowStatus
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("manual_test_phase3")
 
-async def mock_crew_side_effect(task_description: str, inputs: Dict[str, Any] = None, expected_output: str = None):
+
+async def mock_crew_side_effect(
+    task_description: str, inputs: Dict[str, Any] = None, expected_output: str = None
+):
     logger.info(f"🎭 Mocking for task: {task_description[:30]}...")
     if "initial analysis" in task_description.lower():
         return '{"requires_crew_b": true, "analysis": "High risk transaction detected"}'
@@ -28,6 +33,7 @@ async def mock_crew_side_effect(task_description: str, inputs: Dict[str, Any] = 
         return '{"summary": "Alternative path review complete"}'
     return "Generic Mock Output"
 
+
 async def run_demonstration():
     org_id = str(uuid4())
     user_id = str(uuid4())
@@ -36,11 +42,9 @@ async def run_demonstration():
 
     # 1. Preparar base de datos (Org)
     svc = get_service_client()
-    svc.table("organizations").upsert({
-        "id": org_id,
-        "name": "Phase 3 Demo Org",
-        "slug": f"demo-org-{org_id[:4]}"
-    }).execute()
+    svc.table("organizations").upsert(
+        {"id": org_id, "name": "Phase 3 Demo Org", "slug": f"demo-org-{org_id[:4]}"}
+    ).execute()
 
     # 2. Mocking de dependencias externas (LLM y Embeddings)
     get_settings()
@@ -51,7 +55,9 @@ async def run_demonstration():
     embed_patcher.start()
 
     # Mock Crews (Orquestación determinista)
-    crew_patcher = patch("src.crews.base_crew.BaseCrew.run_async", side_effect=mock_crew_side_effect)
+    crew_patcher = patch(
+        "src.crews.base_crew.BaseCrew.run_async", side_effect=mock_crew_side_effect
+    )
     crew_patcher.start()
 
     # 3. Ejecutar el flujo
@@ -61,15 +67,15 @@ async def run_demonstration():
     input_data = {
         "monto": 75000,
         "descripcion": "Transferencia internacional urgente",
-        "requires_crew_b": True # Forzamos ruta B
+        "requires_crew_b": True,  # Forzamos ruta B
     }
 
     logger.info("🔥 Iniciando ejecución del Flow Orchestrator...")
     state = await flow.execute(input_data)
 
-    print("\n" + "═"*60)
+    print("\n" + "═" * 60)
     print("📊 RESULTADO FINAL DE LA ORQUESTACIÓN")
-    print("═"*60)
+    print("═" * 60)
     print(f"ID del Flow:    {state.task_id}")
     print(f"Estado Final:   {state.status}")
     print(f"Salida Crew A:  {state.crew_a_output}")
@@ -78,13 +84,16 @@ async def run_demonstration():
 
     if state.status == FlowStatus.AWAITING_APPROVAL:
         print("\n⚠️  EL FLUJO SE HA PAUSADO CORRECTAMENTE PARA APROBACIÓN HUMANA (HITL)")
-        print(f"   Razón: Monto {state.crew_b_output.get('monto')} excede el límite automático.")
+        print(
+            f"   Razón: Monto {state.crew_b_output.get('monto')} excede el límite automático."
+        )
 
-    print("═"*60)
+    print("═" * 60)
 
     # Clean up patches
     embed_patcher.stop()
     crew_patcher.stop()
+
 
 if __name__ == "__main__":
     asyncio.run(run_demonstration())

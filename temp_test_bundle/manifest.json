@@ -1,0 +1,13 @@
+{
+  "version": "2.0",
+  "bundle_info": {
+    "name": "cert-smoke-test",
+    "version": "1.0.0",
+    "author": "TEST-E2E"
+  },
+  "hashes": {
+    "agents/certifier.json": "sha256:6ed1271290289cff984ed5291fcc21e17b993fb48c59ccc236267486fa5c79db",
+    "flows/cert_flow.py": "sha256:0b84e69199ab6c548b2d954355cffd4c3f255462e45d189565f04e04f2dd4658",
+    "skills/smoke_tool.py": "sha256:d448749b63418f499502d687f9c46a911635b0dd8f83faf8a9463df8d5c8e737"
+  }
+}

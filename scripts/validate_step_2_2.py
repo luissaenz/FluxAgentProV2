@@ -18,14 +18,20 @@ async def verify_agent_enrichment():
         return
 
     agent = agents.data[0]
-    agent_id = agent['id']
-    org_id = agent['org_id']
-    role = agent['role']
+    agent_id = agent["id"]
+    org_id = agent["org_id"]
+    role = agent["role"]
     print(f"✅ Agente encontrado: {role} ({agent_id}) para Org {org_id}")
 
     # 2. Verificar si tiene metadata
     print(f"🔍 Buscando metadata para role '{role}'...")
-    meta = db.table("agent_metadata").select("*").eq("org_id", org_id).eq("agent_role", role).execute()
+    meta = (
+        db.table("agent_metadata")
+        .select("*")
+        .eq("org_id", org_id)
+        .eq("agent_role", role)
+        .execute()
+    )
 
     if meta.data:
         print(f"✅ Metadata encontrada: {meta.data[0]['display_name']}")
@@ -53,6 +59,7 @@ async def verify_agent_enrichment():
 
     except Exception as e:
         print(f"❌ ERROR en el endpoint: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(verify_agent_enrichment())

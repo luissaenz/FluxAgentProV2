@@ -14,46 +14,51 @@ import pytest
 
 # Mock apscheduler since it might not be in the test environment
 class MockScheduler:
-    def __init__(self, *args, **kwargs): pass
+    def __init__(self, *args, **kwargs):
+        pass
+
     def scheduled_job(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
 
+
 class MockCronTrigger:
-    def __init__(self, *args, **kwargs): pass
+    def __init__(self, *args, **kwargs):
+        pass
+
 
 mock_apscheduler_asyncio = MagicMock()
 mock_apscheduler_asyncio.AsyncIOScheduler = MockScheduler
 mock_apscheduler_cron = MagicMock()
 mock_apscheduler_cron.CronTrigger = MockCronTrigger
 
-sys.modules['apscheduler'] = MagicMock()
-sys.modules['apscheduler.schedulers'] = MagicMock()
-sys.modules['apscheduler.schedulers.asyncio'] = mock_apscheduler_asyncio
-sys.modules['apscheduler.triggers'] = MagicMock()
-sys.modules['apscheduler.triggers.cron'] = mock_apscheduler_cron
+sys.modules["apscheduler"] = MagicMock()
+sys.modules["apscheduler.schedulers"] = MagicMock()
+sys.modules["apscheduler.schedulers.asyncio"] = mock_apscheduler_asyncio
+sys.modules["apscheduler.triggers"] = MagicMock()
+sys.modules["apscheduler.triggers.cron"] = mock_apscheduler_cron
 
-ORG_ID  = "11111111-1111-1111-1111-111111111111"
+ORG_ID = "11111111-1111-1111-1111-111111111111"
 USER_ID = "test-user"
 
 # ─── Scheduler jobs ────────────────────────────────────────────────────────
 
-class TestSchedulerJobs:
 
+class TestSchedulerJobs:
     @pytest.mark.asyncio
     async def test_check_climate_no_eventos(self):
         """Si no hay eventos en 7 días, el job termina sin disparar flows."""
         from src.scheduler.bartenders_jobs import check_upcoming_events_climate
 
         mock_db = MagicMock()
-        mock_db.table.return_value.select.return_value\
-            .eq.return_value.eq.return_value.execute.return_value\
-            .data = []
+        mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = []
 
-        with patch("src.db.session.get_service_client",
-                   return_value=mock_db), \
-             patch("src.flows.registry.flow_registry") as mock_reg:
+        with (
+            patch("src.db.session.get_service_client", return_value=mock_db),
+            patch("src.flows.registry.flow_registry") as mock_reg,
+        ):
             await check_upcoming_events_climate()
 
         mock_reg.create.assert_not_called()
@@ -64,23 +69,24 @@ class TestSchedulerJobs:
         from src.scheduler.bartenders_jobs import check_upcoming_events_climate
 
         mock_db = MagicMock()
-        mock_db.table.return_value.select.return_value\
-            .eq.return_value.eq.return_value.execute.return_value\
-            .data = [{"evento_id": "EVT-001", "org_id": ORG_ID}]
+        mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = [
+            {"evento_id": "EVT-001", "org_id": ORG_ID}
+        ]
 
         mock_flow = MagicMock()
         mock_flow.execute = AsyncMock()
 
-        with patch("src.db.session.get_service_client",
-                   return_value=mock_db), \
-             patch("src.flows.registry.flow_registry") as mock_reg:
+        with (
+            patch("src.db.session.get_service_client", return_value=mock_db),
+            patch("src.flows.registry.flow_registry") as mock_reg,
+        ):
             mock_reg.create.return_value = mock_flow
             await check_upcoming_events_climate()
 
         mock_reg.create.assert_called_once_with(
             "bartenders_alerta",
-            org_id  = ORG_ID,
-            user_id = "scheduler",
+            org_id=ORG_ID,
+            user_id="scheduler",
         )
         mock_flow.execute.assert_called_once_with({"evento_id": "EVT-001"})
 
@@ -90,14 +96,13 @@ class TestSchedulerJobs:
         from src.scheduler.bartenders_jobs import check_upcoming_events_climate
 
         mock_db = MagicMock()
-        mock_db.table.return_value.select.return_value\
-            .eq.return_value.eq.return_value.execute.return_value\
-            .data = [
-                {"evento_id": "EVT-001", "org_id": ORG_ID},
-                {"evento_id": "EVT-002", "org_id": ORG_ID},
-            ]
+        mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = [
+            {"evento_id": "EVT-001", "org_id": ORG_ID},
+            {"evento_id": "EVT-002", "org_id": ORG_ID},
+        ]
 
         call_count = 0
+
         async def execute_side_effect(input_data):
             nonlocal call_count
             call_count += 1
@@ -107,9 +112,10 @@ class TestSchedulerJobs:
         mock_flow = MagicMock()
         mock_flow.execute = execute_side_effect
 
-        with patch("src.db.session.get_service_client",
-                   return_value=mock_db), \
-             patch("src.flows.registry.flow_registry") as mock_reg:
+        with (
+            patch("src.db.session.get_service_client", return_value=mock_db),
+            patch("src.flows.registry.flow_registry") as mock_reg,
+        ):
             mock_reg.create.return_value = mock_flow
             await check_upcoming_events_climate()
 
@@ -122,12 +128,12 @@ class TestSchedulerJobs:
         from src.scheduler.bartenders_jobs import update_prices_all_orgs
 
         mock_db = MagicMock()
-        mock_db.table.return_value.select.return_value\
-            .execute.return_value.data = []
+        mock_db.table.return_value.select.return_value.execute.return_value.data = []
 
-        with patch("src.db.session.get_service_client",
-                   return_value=mock_db), \
-             patch("src.crews.bartenders.cierre_crews._actualizar_precios") as mock_act:
+        with (
+            patch("src.db.session.get_service_client", return_value=mock_db),
+            patch("src.crews.bartenders.cierre_crews._actualizar_precios") as mock_act,
+        ):
             await update_prices_all_orgs()
 
         mock_act.assert_not_called()

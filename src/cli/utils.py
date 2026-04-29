@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 def save_json(path: Path, data: Any):
-
     """Save data as pretty-printed JSON."""
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)

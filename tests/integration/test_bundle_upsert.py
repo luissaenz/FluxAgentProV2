@@ -98,11 +98,12 @@ class TestBundleUpsert:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
 
@@ -170,11 +171,12 @@ class TestBundleUpsert:
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False
 
-        with patch(
-            "src.services.import_service.get_tenant_client", return_value=cm
-        ), patch(
-            "src.services.import_service.ImportService._check_version_guard",
-            return_value=None,
+        with (
+            patch("src.services.import_service.get_tenant_client", return_value=cm),
+            patch(
+                "src.services.import_service.ImportService._check_version_guard",
+                return_value=None,
+            ),
         ):
             service = ImportService(org_id=org_id)
             service.process_bundle(zip_v1)

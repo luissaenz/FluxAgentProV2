@@ -142,24 +142,27 @@ class ArchitectFlow(BaseFlow):
             name=workflow_def.name,
             version="1.0.0",
             description=workflow_def.description,
-            author="SYSTEM-GENERATED", # Identifica que fue creado por el Architect
+            author="SYSTEM-GENERATED",  # Identifica que fue creado por el Architect
             flows=[safe_flow_type],
             agents=[a.role for a in workflow_def.agents],
-            skills=[]
+            skills=[],
         )
 
         bundle_zip = bm.create_bundle(
             manifest=manifest,
             agents=[a.model_dump() for a in workflow_def.agents],
-            flows=[{
-                "flow_type": safe_flow_type,
-                "is_python": False,
-                "code_source": json.dumps(workflow_def.model_dump())
-            }],
-            skills={}
+            flows=[
+                {
+                    "flow_type": safe_flow_type,
+                    "is_python": False,
+                    "code_source": json.dumps(workflow_def.model_dump()),
+                }
+            ],
+            skills={},
         )
 
         import base64
+
         bundle_b64 = base64.b64encode(bundle_zip).decode("utf-8")
 
         logger.info(
@@ -180,7 +183,6 @@ class ArchitectFlow(BaseFlow):
                 "Para activarlo, impórtelo vía POST /api/bundles/import"
             ),
         }
-
 
     async def _execute_architect_agent(self, description: str) -> Any:
         """Ejecutar el agente Architect que produce la definición."""

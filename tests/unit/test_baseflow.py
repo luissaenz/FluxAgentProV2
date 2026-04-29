@@ -19,6 +19,7 @@ from src.flows.state import BaseFlowState, FlowStatus
 
 # ── concrete test stub ──────────────────────────────────────────
 
+
 class _SuccessFlow(BaseFlow):
     """Stub that always succeeds."""
 
@@ -41,6 +42,7 @@ class _FailingFlow(BaseFlow):
 
 # ── state transitions ──────────────────────────────────────────
 
+
 class TestBaseFlowState:
     def test_start(self, sample_org_id):
         state = BaseFlowState(
@@ -48,7 +50,7 @@ class TestBaseFlowState:
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-            )
+        )
         state.start()
         assert state.status == FlowStatus.RUNNING.value
         assert state.started_at is not None
@@ -59,7 +61,7 @@ class TestBaseFlowState:
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-            )
+        )
         state.start()
         state.complete({"answer": 42})
         assert state.status == FlowStatus.COMPLETED.value
@@ -72,7 +74,7 @@ class TestBaseFlowState:
             task_id=str(uuid4()),
             org_id=sample_org_id,
             flow_type="test",
-            )
+        )
         state.start()
         state.fail("something broke")
         assert state.status == FlowStatus.FAILED.value
@@ -81,11 +83,11 @@ class TestBaseFlowState:
     def test_uuid_validation_rejects_garbage(self):
         with pytest.raises(ValueError, match="Invalid UUID"):
             BaseFlowState(
-            correlation_id="test-corr-id",
-            task_id="not-a-uuid",
+                correlation_id="test-corr-id",
+                task_id="not-a-uuid",
                 org_id=str(uuid4()),
                 flow_type="test",
-                )
+            )
 
     def test_to_snapshot_roundtrip(self, sample_org_id):
         state = BaseFlowState(
@@ -103,6 +105,7 @@ class TestBaseFlowState:
 
 # ── validate_input ──────────────────────────────────────────────
 
+
 class TestValidateInput:
     def test_valid(self, sample_org_id):
         flow = _SuccessFlow(org_id=sample_org_id)
@@ -115,6 +118,7 @@ class TestValidateInput:
 
 # ── execute lifecycle ───────────────────────────────────────────
 
+
 class TestExecuteLifecycle:
     @pytest.mark.asyncio
     async def test_success(self, mock_tenant_client, mock_event_store, sample_org_id):
@@ -126,7 +130,9 @@ class TestExecuteLifecycle:
         assert state.error is None
 
     @pytest.mark.asyncio
-    async def test_failure_marks_state(self, mock_tenant_client, mock_event_store, sample_org_id):
+    async def test_failure_marks_state(
+        self, mock_tenant_client, mock_event_store, sample_org_id
+    ):
         flow = _FailingFlow(org_id=sample_org_id)
 
         with pytest.raises(RuntimeError, match="Crew crashed"):
@@ -142,4 +148,3 @@ class TestExecuteLifecycle:
 
         with pytest.raises(ValueError, match="Input validation failed"):
             await flow.execute({})
-

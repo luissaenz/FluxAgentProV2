@@ -20,9 +20,13 @@ def main():
     print("Test: Executing query on 'organizations'...", flush=True)
     try:
         res = supabase.table("organizations").select("id").limit(1).execute()
-        print(f"Test: Query done in {time.time()-start:.2f}s. Result rows: {len(res.data)}", flush=True)
+        print(
+            f"Test: Query done in {time.time()-start:.2f}s. Result rows: {len(res.data)}",
+            flush=True,
+        )
     except Exception as e:
         print(f"Test: Query failed: {e}", flush=True)
+
 
 if __name__ == "__main__":
     main()

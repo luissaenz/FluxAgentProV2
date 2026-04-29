@@ -72,7 +72,9 @@ class TestCLValidateBundle:
         runner = CliRunner()
         result = runner.invoke(app, ["validate", str(tmp_path)])
 
-        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}. Output: {result.output}"
+        assert (
+            result.exit_code == 0
+        ), f"Expected exit 0, got {result.exit_code}. Output: {result.output}"
 
     def test_validate_malicious_skill_exits_one(self, tmp_path: Path):
         """CLI validate returns exit code 1 for a bundle with malicious skill.
@@ -108,9 +110,9 @@ class TestCLValidateBundle:
             f"Output: {result.output}"
         )
         # Verify the error message mentions the malicious import
-        assert "os" in result.output.lower() or "forbidden" in result.output.lower(), (
-            f"Expected error about 'os' or 'forbidden', got: {result.output}"
-        )
+        assert (
+            "os" in result.output.lower() or "forbidden" in result.output.lower()
+        ), f"Expected error about 'os' or 'forbidden', got: {result.output}"
 
     def test_validate_missing_manifest_exits_one(self, tmp_path: Path):
         """CLI validate returns exit code 1 when manifest.json is missing.
@@ -131,9 +133,9 @@ class TestCLValidateBundle:
             f"Expected exit 1 for missing manifest, got {result.exit_code}. "
             f"Output: {result.output}"
         )
-        assert "manifest" in result.output.lower(), (
-            f"Expected error about manifest, got: {result.output}"
-        )
+        assert (
+            "manifest" in result.output.lower()
+        ), f"Expected error about manifest, got: {result.output}"
 
     def test_validate_hash_mismatch_exits_one(self, tmp_path: Path):
         """CLI validate detects hash mismatches and exits with code 1.
@@ -168,9 +170,9 @@ class TestCLValidateBundle:
             f"Expected exit 1 for hash mismatch, got {result.exit_code}. "
             f"Output: {result.output}"
         )
-        assert "hash" in result.output.lower() or "mismatch" in result.output.lower(), (
-            f"Expected error about hash mismatch, got: {result.output}"
-        )
+        assert (
+            "hash" in result.output.lower() or "mismatch" in result.output.lower()
+        ), f"Expected error about hash mismatch, got: {result.output}"
 
     def test_validate_empty_bundle_exits_zero(self, tmp_path: Path):
         """CLI validate accepts a bundle with no skills (agents only).

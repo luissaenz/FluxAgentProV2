@@ -6,7 +6,6 @@ from src.flows.architect_flow import ArchitectFlow
 
 
 class TestArchitectFlow:
-
     def test_validate_input_rejects_empty(self):
         flow = ArchitectFlow(org_id="org-123")
         assert flow.validate_input({}) is False
@@ -34,12 +33,12 @@ class TestArchitectFlow:
 
         raw = MagicMock()
         raw.raw = (
-            '```json\n'
+            "```json\n"
             '{"name":"T Workflow","description":"Descripcion suficiente aqui",'
             '"flow_type":"t_flow",'
             '"steps":[{"id":"s1","name":"Paso","description":"Descripcion paso","agent_role":"a1"}],'
             '"agents":[{"role":"a1","goal":"Goal text long enough","backstory":"Backstory long enough"}]}'
-            '\n```'
+            "\n```"
         )
 
         result = flow._parse_workflow_definition(raw)
@@ -54,7 +53,7 @@ class TestArchitectFlow:
         mock_execute = mock_svc.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
         mock_execute.side_effect = [
             MagicMock(data={"id": "existing"}),
-            MagicMock(data=None)
+            MagicMock(data=None),
         ]
 
         result = flow._ensure_unique_flow_type("existing_flow")
@@ -67,8 +66,8 @@ class TestArchitectFlow:
         """Si el flow_type es nuevo, se retorna sin cambios."""
         flow = ArchitectFlow(org_id="org-123")
 
-        mock_svc.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
-            MagicMock(data=None)
+        mock_svc.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
+            data=None
         )
 
         result = flow._ensure_unique_flow_type("brand_new_flow")

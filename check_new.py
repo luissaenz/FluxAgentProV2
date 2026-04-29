@@ -9,7 +9,7 @@ def extract_all_json_arrays(text):
         try:
             arr = json.loads(m)
             results.extend(arr)
-        except:
+        except Exception:
             pass
     return results
 
@@ -30,11 +30,13 @@ for i in range(1, 5):
 print(f"Unique tools from ALL prompts: {len(all_prompt_tools)}")
 
 # Get original seed (50 tools from git)
-git_seed = json.load(open("temp_seed.json"))
+with open("temp_seed.json", "r", encoding="utf-8") as f:
+    git_seed = json.load(f)
 git_ids = set(t["id"].lower() for t in git_seed["tools"])
 
 # Current seed
-current = json.load(open("data/service_catalog_seed.json"))
+with open("data/service_catalog_seed.json", "r", encoding="utf-8") as f:
+    current = json.load(f)
 current_ids = set(t["id"].lower() for t in current["tools"])
 
 print(f"Original git seed: {len(git_ids)} tools")

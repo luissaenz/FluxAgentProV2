@@ -208,7 +208,9 @@ class FlowRegistry:
 
     # ── lookup ──────────────────────────────────────────────────
 
-    def get(self, name: str, org_id: str | None = None, strict_mode: bool = True) -> Type:
+    def get(
+        self, name: str, org_id: str | None = None, strict_mode: bool = True
+    ) -> Type:
         """Return the Flow class for *name*.
 
         Order: Scoped Cache (org:name) -> Global Cache (name) -> DB lookup -> raise ValueError.
@@ -270,7 +272,9 @@ class FlowRegistry:
                     from src.services.security_guard import SecurityGuard
 
                     code = result.data["code_source"]
-                    guard = SecurityGuard(is_system=True) # Assume system trust for DB-stored code
+                    guard = SecurityGuard(
+                        is_system=True
+                    )  # Assume system trust for DB-stored code
 
                     try:
                         exec_globals = guard.execute(code)
@@ -278,12 +282,16 @@ class FlowRegistry:
                         # We expect only one BaseFlow subclass or a naming convention
                         flow_class = None
                         for val in exec_globals.values():
-                            if isinstance(val, type) and hasattr(val, "_registered_flow_name"):
+                            if isinstance(val, type) and hasattr(
+                                val, "_registered_flow_name"
+                            ):
                                 flow_class = val
                                 break
 
                         if not flow_class:
-                             raise ValueError(f"No Flow class found in code for '{flow_type}'")
+                            raise ValueError(
+                                f"No Flow class found in code for '{flow_type}'"
+                            )
 
                         # Cache it
                         scoped_key = f"{org_id}:{flow_type}"
@@ -291,7 +299,9 @@ class FlowRegistry:
                         return flow_class
 
                     except Exception as e:
-                        logger.error("Failed to execute Python flow '%s': %s", flow_type, e)
+                        logger.error(
+                            "Failed to execute Python flow '%s': %s", flow_type, e
+                        )
                         return None
 
                 # 2. Dynamic JSON Flow Handling
@@ -314,7 +324,8 @@ class FlowRegistry:
 
                 logger.info(
                     "Successfully loaded flow '%s' from DB for org '%s'",
-                    flow_type, org_id
+                    flow_type,
+                    org_id,
                 )
 
                 return BoundDynamicFlow

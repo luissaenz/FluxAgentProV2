@@ -1,6 +1,15 @@
 """src/cli/main.py — Entry point for FAP-CLI."""
 
+import io
+import sys
+
 import typer
+
+# Analysis Final §2.2: Ensure UTF-8 on Windows for Rich compatibility
+# Mitigation §7: Only apply if TTY to avoid interference with tests/redirection
+if sys.platform == "win32" and sys.stdout.isatty():
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 from src.cli.commands.dev import dev_command
 from src.cli.commands.export import export_agents

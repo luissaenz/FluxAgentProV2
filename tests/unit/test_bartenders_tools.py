@@ -16,50 +16,85 @@ from src.tools.demo.inventario_tool import CalcularStockNecesarioTool, ReservarS
 # ─── Fixtures ──────────────────────────────────────────────────────────────
 
 CONSUMO_PREMIUM = {
-    "tipo_menu":                   "premium",
-    "coctel_por_persona":          6,
-    "ml_espiritoso_por_coctel":    55,
-    "hielo_kg_por_persona":        0.8,
-    "agua_litros_por_persona":     1.0,
-    "garnish_ars_por_persona":     2000,
+    "tipo_menu": "premium",
+    "coctel_por_persona": 6,
+    "ml_espiritoso_por_coctel": 55,
+    "hielo_kg_por_persona": 0.8,
+    "agua_litros_por_persona": 1.0,
+    "garnish_ars_por_persona": 2000,
     "desechables_ars_por_persona": 800,
-    "mix_gin_pct":    50,
+    "mix_gin_pct": 50,
     "mix_whisky_pct": 20,
-    "mix_ron_pct":    15,
-    "mix_vodka_pct":  10,
+    "mix_ron_pct": 15,
+    "mix_vodka_pct": 10,
     "mix_tequila_pct": 5,
 }
 
 CONSUMO_ESTANDAR = {
-    "tipo_menu":                   "estandar",
-    "coctel_por_persona":          5,
-    "ml_espiritoso_por_coctel":    50,
-    "hielo_kg_por_persona":        0.67,
-    "agua_litros_por_persona":     0.75,
-    "garnish_ars_por_persona":     1200,
+    "tipo_menu": "estandar",
+    "coctel_por_persona": 5,
+    "ml_espiritoso_por_coctel": 50,
+    "hielo_kg_por_persona": 0.67,
+    "agua_litros_por_persona": 0.75,
+    "garnish_ars_por_persona": 1200,
     "desechables_ars_por_persona": 600,
-    "mix_gin_pct":    50,
+    "mix_gin_pct": 50,
     "mix_whisky_pct": 20,
-    "mix_ron_pct":    15,
-    "mix_vodka_pct":  10,
+    "mix_ron_pct": 15,
+    "mix_vodka_pct": 10,
     "mix_tequila_pct": 5,
 }
 
 PRECIOS_MOCK = [
-    {"producto_id": "GIN-001",    "categoria": "gin",    "presentacion_ml": 700,  "precio_ars": 12000},
-    {"producto_id": "GIN-002",    "categoria": "gin",    "presentacion_ml": 700,  "precio_ars": 28000},
-    {"producto_id": "WHISKY-001", "categoria": "whisky", "presentacion_ml": 750,  "precio_ars":  7000},
-    {"producto_id": "WHISKY-002", "categoria": "whisky", "presentacion_ml": 750,  "precio_ars": 25000},
-    {"producto_id": "VODKA-001",  "categoria": "vodka",  "presentacion_ml": 700,  "precio_ars":  8000},
-    {"producto_id": "RON-001",    "categoria": "ron",    "presentacion_ml": 750,  "precio_ars": 18000},
-    {"producto_id": "TEQUILA-001","categoria": "tequila","presentacion_ml": 750,  "precio_ars": 22000},
+    {
+        "producto_id": "GIN-001",
+        "categoria": "gin",
+        "presentacion_ml": 700,
+        "precio_ars": 12000,
+    },
+    {
+        "producto_id": "GIN-002",
+        "categoria": "gin",
+        "presentacion_ml": 700,
+        "precio_ars": 28000,
+    },
+    {
+        "producto_id": "WHISKY-001",
+        "categoria": "whisky",
+        "presentacion_ml": 750,
+        "precio_ars": 7000,
+    },
+    {
+        "producto_id": "WHISKY-002",
+        "categoria": "whisky",
+        "presentacion_ml": 750,
+        "precio_ars": 25000,
+    },
+    {
+        "producto_id": "VODKA-001",
+        "categoria": "vodka",
+        "presentacion_ml": 700,
+        "precio_ars": 8000,
+    },
+    {
+        "producto_id": "RON-001",
+        "categoria": "ron",
+        "presentacion_ml": 750,
+        "precio_ars": 18000,
+    },
+    {
+        "producto_id": "TEQUILA-001",
+        "categoria": "tequila",
+        "presentacion_ml": 750,
+        "precio_ars": 22000,
+    },
 ]
 
 EQUIPAMIENTO_MOCK = [
-    {"item_id": "BARRA-001",    "amortizacion_por_evento": 2500, "estado": "activo"},
-    {"item_id": "CRISTAL-001",  "amortizacion_por_evento": 1333, "estado": "activo"},
+    {"item_id": "BARRA-001", "amortizacion_por_evento": 2500, "estado": "activo"},
+    {"item_id": "CRISTAL-001", "amortizacion_por_evento": 1333, "estado": "activo"},
     {"item_id": "HELADERA-001", "amortizacion_por_evento": 1667, "estado": "activo"},
-    {"item_id": "EQUIPOS-001",  "amortizacion_por_evento":  750, "estado": "activo"},
+    {"item_id": "EQUIPOS-001", "amortizacion_por_evento": 750, "estado": "activo"},
 ]
 
 CLIMATICO_ENERO = {"mes": 1, "factor_pct": 20, "razon": "Enero: calor extremo NOA"}
@@ -93,7 +128,9 @@ def mock_connector():
         return []
 
     c.get_config.side_effect = get_config_side_effect
-    c.get_config_one.side_effect = lambda t, f=None: (get_config_side_effect(t, f) or [None])[0]
+    c.get_config_one.side_effect = lambda t, f=None: (
+        get_config_side_effect(t, f) or [None]
+    )[0]
     c.read.side_effect = read_side_effect
     c.read_one.side_effect = lambda t, f=None: (read_side_effect(t, f) or [None])[0]
     return c
@@ -101,8 +138,8 @@ def mock_connector():
 
 # ─── EscandalloTool ────────────────────────────────────────────────────────
 
-class TestEscandalloTool:
 
+class TestEscandalloTool:
     @pytest.fixture
     def tool(self, mock_connector):
         return EscandalloTool(connector=mock_connector)
@@ -113,12 +150,12 @@ class TestEscandalloTool:
         150 PAX con premium menu incluye: productos, equipamiento, 4 bartenders + 1 head, logística.
         """
         result = tool._run(
-            evento_id            = "EVT-2026-001",
-            pax                  = 150,
-            duracion_horas       = 5,
-            tipo_menu            = "premium",
-            provincia            = "Tucuman",
-            factor_climatico_pct = 20,
+            evento_id="EVT-2026-001",
+            pax=150,
+            duracion_horas=5,
+            tipo_menu="premium",
+            provincia="Tucuman",
+            factor_climatico_pct=20,
         )
 
         assert isinstance(result, EscandalloOutput)
@@ -214,15 +251,19 @@ class TestEscandalloTool:
 
     def test_escandallo_final_es_suma_de_componentes(self, tool):
         result = tool._run("EVT-X", 80, 4, "estandar", "Tucuman", 12)
-        esperado = (result.subtotal + result.ajuste_climatico
-                    + result.mermas + result.imprevistos)
+        esperado = (
+            result.subtotal
+            + result.ajuste_climatico
+            + result.mermas
+            + result.imprevistos
+        )
         assert result.escandallo_final == esperado
 
 
 # ─── FactorClimaticoTool ───────────────────────────────────────────────────
 
-class TestFactorClimaticoTool:
 
+class TestFactorClimaticoTool:
     @pytest.fixture
     def tool(self, mock_connector):
         return FactorClimaticoTool(connector=mock_connector)
@@ -247,8 +288,8 @@ class TestFactorClimaticoTool:
 
 # ─── PronosticoRealTool ────────────────────────────────────────────────────
 
-class TestPronosticoRealTool:
 
+class TestPronosticoRealTool:
     @pytest.fixture
     def tool(self, mock_connector):
         return PronosticoRealTool(connector=mock_connector)
@@ -256,9 +297,9 @@ class TestPronosticoRealTool:
     def test_ola_de_calor_activa_alerta_roja(self, tool):
         """EVT-2026-001 tiene mock a 33°C vs histórico enero 26°C → desvío +26.9%."""
         result = tool._run(
-            evento_id    = "EVT-2026-001",
-            provincia    = "Tucuman",
-            fecha_evento = "2026-01-15",
+            evento_id="EVT-2026-001",
+            provincia="Tucuman",
+            fecha_evento="2026-01-15",
         )
         assert result.alerta_roja is True
         assert result.temp_pronosticada == 33.0
@@ -268,9 +309,9 @@ class TestPronosticoRealTool:
     def test_sin_override_no_hay_alerta(self, tool):
         """Evento sin override → pronóstico = histórico → desvío 0%."""
         result = tool._run(
-            evento_id    = "EVT-SIN-OVERRIDE",
-            provincia    = "Tucuman",
-            fecha_evento = "2026-06-10",
+            evento_id="EVT-SIN-OVERRIDE",
+            provincia="Tucuman",
+            fecha_evento="2026-06-10",
         )
         assert result.alerta_roja is False
         assert result.desvio_pct == 0.0
@@ -286,8 +327,8 @@ class TestPronosticoRealTool:
 
 # ─── CalcularStockNecesarioTool ───────────────────────────────────────────
 
-class TestCalcularStockNecesarioTool:
 
+class TestCalcularStockNecesarioTool:
     @pytest.fixture
     def tool(self, mock_connector):
         return CalcularStockNecesarioTool(connector=mock_connector)
@@ -308,17 +349,17 @@ class TestCalcularStockNecesarioTool:
         assert "GIN-001" in item_ids
 
     def test_mayor_pax_mayor_cantidad(self, tool):
-        r50  = tool._run("EVT-X", 50,  "estandar")
+        r50 = tool._run("EVT-X", 50, "estandar")
         r100 = tool._run("EVT-X", 100, "estandar")
-        cant_gin_50  = next(i.cantidad for i in r50.items  if i.item_id == "GIN-001")
+        cant_gin_50 = next(i.cantidad for i in r50.items if i.item_id == "GIN-001")
         cant_gin_100 = next(i.cantidad for i in r100.items if i.item_id == "GIN-001")
         assert cant_gin_100 > cant_gin_50
 
 
 # ─── ReservarStockTool ────────────────────────────────────────────────────
 
-class TestReservarStockTool:
 
+class TestReservarStockTool:
     @pytest.fixture
     def tool(self, mock_connector):
         return ReservarStockTool(connector=mock_connector)
@@ -326,8 +367,18 @@ class TestReservarStockTool:
     def test_reserva_exitosa_todos_los_items(self, tool, mock_connector):
         mock_connector.reserve_stock.return_value = {"ok": True}
         items = [
-            {"item_id": "GIN-001",   "cantidad": 5, "nombre": "Gordon's", "unidad": "botella"},
-            {"item_id": "HIELO-001", "cantidad": 10, "nombre": "Hielo",   "unidad": "bolsa"},
+            {
+                "item_id": "GIN-001",
+                "cantidad": 5,
+                "nombre": "Gordon's",
+                "unidad": "botella",
+            },
+            {
+                "item_id": "HIELO-001",
+                "cantidad": 10,
+                "nombre": "Hielo",
+                "unidad": "bolsa",
+            },
         ]
         result = tool._run("EVT-X", items)
 
@@ -337,7 +388,14 @@ class TestReservarStockTool:
 
     def test_alerta_cuando_falta_stock(self, tool, mock_connector):
         mock_connector.reserve_stock.side_effect = ValueError("Stock insuficiente")
-        items = [{"item_id": "GIN-001", "cantidad": 100, "nombre": "Gin", "unidad": "botella"}]
+        items = [
+            {
+                "item_id": "GIN-001",
+                "cantidad": 100,
+                "nombre": "Gin",
+                "unidad": "botella",
+            }
+        ]
 
         result = tool._run("EVT-X", items)
 
@@ -353,8 +411,13 @@ class TestReservarStockTool:
 
         mock_connector.reserve_stock.side_effect = reserve_side_effect
         items = [
-            {"item_id": "GIN-001",   "cantidad": 3,  "nombre": "Gin",   "unidad": "botella"},
-            {"item_id": "HIELO-001", "cantidad": 20, "nombre": "Hielo", "unidad": "bolsa"},
+            {"item_id": "GIN-001", "cantidad": 3, "nombre": "Gin", "unidad": "botella"},
+            {
+                "item_id": "HIELO-001",
+                "cantidad": 20,
+                "nombre": "Hielo",
+                "unidad": "bolsa",
+            },
         ]
         result = tool._run("EVT-X", items)
 

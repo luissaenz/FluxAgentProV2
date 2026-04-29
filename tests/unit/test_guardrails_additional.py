@@ -86,7 +86,7 @@ class TestMakeApprovalCheckAdditional:
 
         with patch(
             "src.guardrails.base_guardrail.load_org_limits",
-            return_value={"custom_threshold": 100000}
+            return_value={"custom_threshold": 100000},
         ):
             # Below custom threshold
             assert check(80000, "org-123") is False
@@ -115,7 +115,9 @@ class TestLoadOrgLimits:
             }
         )
 
-        with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
+        with patch(
+            "src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm
+        ):
             limits = load_org_limits("org-123")
 
             assert limits == {
@@ -134,7 +136,9 @@ class TestLoadOrgLimits:
             data={"config": {}}
         )
 
-        with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
+        with patch(
+            "src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm
+        ):
             limits = load_org_limits("org-123")
 
             assert limits == {}
@@ -145,7 +149,9 @@ class TestLoadOrgLimits:
         mock_cm.__enter__ = MagicMock(side_effect=Exception("DB error"))
         mock_cm.__exit__ = MagicMock(return_value=False)
 
-        with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
+        with patch(
+            "src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm
+        ):
             limits = load_org_limits("org-123")
 
             assert limits == {}
@@ -161,7 +167,9 @@ class TestLoadOrgLimits:
             data={"config": {"other_key": "value"}}
         )
 
-        with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
+        with patch(
+            "src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm
+        ):
             limits = load_org_limits("org-123")
 
             assert limits == {}
@@ -190,7 +198,9 @@ class TestCheckQuota:
         }
 
         with pytest.raises(QuotaExceededError, match="agotada"):
-            check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=100)
+            check_quota(
+                org_id="org-123", quota_type="tasks_per_month", current_usage=100
+            )
 
     @patch("src.guardrails.base_guardrail.load_org_limits")
     def test_over_quota_raises(self, mock_load_limits):
@@ -201,7 +211,9 @@ class TestCheckQuota:
         }
 
         with pytest.raises(QuotaExceededError, match="agotada"):
-            check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=150)
+            check_quota(
+                org_id="org-123", quota_type="tasks_per_month", current_usage=150
+            )
 
     @patch("src.guardrails.base_guardrail.load_org_limits")
     def test_unlimited_quota(self, mock_load_limits):
@@ -213,7 +225,9 @@ class TestCheckQuota:
         }
 
         # Should not raise even with high usage
-        check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=1000000)
+        check_quota(
+            org_id="org-123", quota_type="tasks_per_month", current_usage=1000000
+        )
 
     @patch("src.guardrails.base_guardrail.load_org_limits")
     def test_missing_quota_key_uses_default(self, mock_load_limits):
@@ -232,7 +246,9 @@ class TestCheckQuota:
         }
 
         with pytest.raises(QuotaExceededError, match="agotada"):
-            check_quota(org_id="org-123", quota_type="tokens_per_month", current_usage=1000000)
+            check_quota(
+                org_id="org-123", quota_type="tokens_per_month", current_usage=1000000
+            )
 
 
 class TestGuardrailComposition:
@@ -277,10 +293,14 @@ class TestGuardrailComposition:
         # High amount but within quota
         assert approval_check(100000, "org-123") is True  # Needs approval
 
-        check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=50)  # Within quota
+        check_quota(
+            org_id="org-123", quota_type="tasks_per_month", current_usage=50
+        )  # Within quota
 
         # High amount AND over quota
         assert approval_check(100000, "org-123") is True
 
         with pytest.raises(QuotaExceededError, match="agotada"):
-            check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=100)
+            check_quota(
+                org_id="org-123", quota_type="tasks_per_month", current_usage=100
+            )

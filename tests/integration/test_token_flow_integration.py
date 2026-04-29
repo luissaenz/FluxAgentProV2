@@ -21,10 +21,10 @@ from src.flows.state import BaseFlowState
 async def test_base_flow_state_token_tracking():
     """Verifica que el estado base maneja correctamente los tokens."""
     state = BaseFlowState(
-            correlation_id="test-corr-id",
-            task_id=str(uuid4()),
+        correlation_id="test-corr-id",
+        task_id=str(uuid4()),
         org_id=str(uuid4()),
-        flow_type="test"
+        flow_type="test",
     )
 
     assert state.tokens_used == 0
@@ -32,8 +32,9 @@ async def test_base_flow_state_token_tracking():
     assert state.tokens_used == 100
 
     # Estimación
-    assert state.estimate_tokens("Hola") == 1 # 4 chars // 4 = 1
-    assert state.estimate_tokens("A" * 40) == 10 # 40 // 4 = 10
+    assert state.estimate_tokens("Hola") == 1  # 4 chars // 4 = 1
+    assert state.estimate_tokens("A" * 40) == 10  # 40 // 4 = 10
+
 
 @pytest.mark.asyncio
 async def test_generic_flow_logic_mocked():
@@ -46,7 +47,9 @@ async def test_generic_flow_logic_mocked():
     # kickoff_async debe ser AsyncMock para poder ser 'awaited'
     mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_result)
 
-    with patch("src.flows.generic_flow.create_generic_crew", return_value=mock_crew_instance):
+    with patch(
+        "src.flows.generic_flow.create_generic_crew", return_value=mock_crew_instance
+    ):
         from src.flows.generic_flow import GenericFlow
 
         flow = GenericFlow(org_id=str(uuid4()))
@@ -54,7 +57,7 @@ async def test_generic_flow_logic_mocked():
             correlation_id="test-corr-id",
             task_id=str(uuid4()),
             org_id=flow.org_id,
-            flow_type="GenericFlow"
+            flow_type="GenericFlow",
         )
         flow.state.input_data = {"text": "hello"}
 

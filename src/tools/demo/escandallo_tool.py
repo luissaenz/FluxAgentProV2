@@ -120,7 +120,6 @@ class EscandalloTool(BaseTool):
         provincia: str,
         factor_climatico_pct: int,
     ) -> EscandalloOutput:
-
         # ── Leer configuraciones ─────────────────────────────────────────
         consumo = self._get_consumo(tipo_menu)
         precios = self._get_precios_indexados()

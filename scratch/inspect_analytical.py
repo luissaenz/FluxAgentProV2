@@ -1,10 +1,9 @@
-
 import asyncio
 import os
 import sys
 
 # Agregar src/ al path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.crews.analytical_crew import AnalyticalCrew
 
@@ -16,6 +15,7 @@ async def check_summary():
     print("QUERY TYPE:", result["query_type"])
     print("SUMMARY:", result["summary"])
     print("METADATA:", result["metadata"])
+
 
 if __name__ == "__main__":
     asyncio.run(check_summary())

@@ -63,8 +63,10 @@ class TestSaveMemory:
     def test_save_memory_returns_memory_record(self, mock_embed, mock_get_client):
         mock_embed.return_value = FIXED_EMBEDDING
         mock_svc = MagicMock()
-        mock_svc.table.return_value.insert.return_value.execute.return_value = MagicMock(
-            data=[{"id": "mem-123", "org_id": "org-123", "content": "test content"}]
+        mock_svc.table.return_value.insert.return_value.execute.return_value = (
+            MagicMock(
+                data=[{"id": "mem-123", "org_id": "org-123", "content": "test content"}]
+            )
         )
         mock_get_client.return_value = mock_svc
 
@@ -86,8 +88,8 @@ class TestSaveMemory:
     def test_save_memory_inserts_embedding_version(self, mock_embed, mock_get_client):
         mock_embed.return_value = FIXED_EMBEDDING
         mock_svc = MagicMock()
-        mock_svc.table.return_value.insert.return_value.execute.return_value = MagicMock(
-            data=[{"id": "mem-1"}]
+        mock_svc.table.return_value.insert.return_value.execute.return_value = (
+            MagicMock(data=[{"id": "mem-1"}])
         )
         mock_get_client.return_value = mock_svc
 
@@ -101,8 +103,8 @@ class TestSaveMemory:
     def test_save_memory_with_ttl_sets_valid_to(self, mock_embed, mock_get_client):
         mock_embed.return_value = FIXED_EMBEDDING
         mock_svc = MagicMock()
-        mock_svc.table.return_value.insert.return_value.execute.return_value = MagicMock(
-            data=[{"id": "mem-1"}]
+        mock_svc.table.return_value.insert.return_value.execute.return_value = (
+            MagicMock(data=[{"id": "mem-1"}])
         )
         mock_get_client.return_value = mock_svc
 
@@ -121,8 +123,8 @@ class TestSaveMemory:
     def test_save_memory_without_ttl_sets_infinity(self, mock_embed, mock_get_client):
         mock_embed.return_value = FIXED_EMBEDDING
         mock_svc = MagicMock()
-        mock_svc.table.return_value.insert.return_value.execute.return_value = MagicMock(
-            data=[{"id": "mem-1"}]
+        mock_svc.table.return_value.insert.return_value.execute.return_value = (
+            MagicMock(data=[{"id": "mem-1"}])
         )
         mock_get_client.return_value = mock_svc
 
@@ -146,8 +148,8 @@ class TestSaveMemory:
     ):
         mock_embed.return_value = FIXED_EMBEDDING
         mock_svc = MagicMock()
-        mock_svc.table.return_value.insert.return_value.execute.return_value = MagicMock(
-            data=[]
+        mock_svc.table.return_value.insert.return_value.execute.return_value = (
+            MagicMock(data=[])
         )
         mock_get_client.return_value = mock_svc
 
@@ -236,11 +238,7 @@ class TestCleanupExpiredMemory:
     def test_cleanup_returns_deleted_count(self, mock_get_client):
         mock_svc = MagicMock()
         (
-            mock_svc.table.return_value
-            .delete.return_value
-            .lt.return_value
-            .eq.return_value
-            .execute.return_value
+            mock_svc.table.return_value.delete.return_value.lt.return_value.eq.return_value.execute.return_value
         ) = MagicMock(data=[{"id": "1"}, {"id": "2"}])
         mock_get_client.return_value = mock_svc
 
@@ -252,11 +250,7 @@ class TestCleanupExpiredMemory:
     def test_cleanup_returns_zero_when_nothing_deleted(self, mock_get_client):
         mock_svc = MagicMock()
         (
-            mock_svc.table.return_value
-            .delete.return_value
-            .lt.return_value
-            .eq.return_value
-            .execute.return_value
+            mock_svc.table.return_value.delete.return_value.lt.return_value.eq.return_value.execute.return_value
         ) = MagicMock(data=[])
         mock_get_client.return_value = mock_svc
 

@@ -32,12 +32,20 @@ def package_bundle(
         # 1. Update Hashes and get manifest (ensures v2.0)
         print("GENERATING hashes and ensuring v2.0 schema...")
         manifest = update_manifest_hashes(path)
+
+        # Display hashes as per Analisis-FINAL MVP requirement
+        hashes = manifest.get("hashes", {})
+        if hashes:
+            print("\n[bold]FILE HASHES:[/bold]")
+            for f_path, f_hash in hashes.items():
+                print(f"  - {f_path}: [dim]{f_hash[:16]}[/dim]")
+            print("")
+
         bundle_info = manifest.get("bundle_info", {})
         bundle_name = bundle_info.get("name", "bundle")
 
         print(f"PACKAGING bundle: [bold]{bundle_name}[/bold]")
         print("[green]OK:[/green] Manifest updated and hashes generated.")
-
 
         # 2. Create ZIP
         # Handle Typer Option default if called programmatically
@@ -61,7 +69,8 @@ def package_bundle(
         print("\nYou can now import this bundle using:")
         print("  [white]POST /api/bundles/import[/white]")
 
-        return zip_filename
+        # Return absolute resolved path as per Analisis-FINAL §2.1
+        return zip_filename.absolute().resolve()
 
     except Exception as e:
         print(f"[red]Error:[/red] Packaging failed: {e}")

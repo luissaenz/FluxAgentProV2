@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 
 # ── App fixture ─────────────────────────────────────────────────
 
+
 @pytest.fixture
 def ticket_app(mock_flow_registry):
     """Build FastAPI app with mocked dependencies for ticket endpoints."""
@@ -31,6 +32,7 @@ def ticket_app(mock_flow_registry):
     # Override the require_org_id dependency to return our test org
     from src.api.middleware import require_org_id
     from src.api.routes.tickets import router as tickets_router
+
     app.dependency_overrides[require_org_id] = lambda: mock_flow_registry["org_id"]
 
     app.include_router(tickets_router)
@@ -69,7 +71,9 @@ class TestTicketExecutionValidation:
         # Setup: mock ticket without flow_type
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -90,7 +94,9 @@ class TestTicketExecutionValidation:
         """POST /tickets/{id}/execute con status in_progress retorna 409."""
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -114,7 +120,9 @@ class TestTicketExecutionValidation:
         """POST /tickets/{id}/execute con status done retorna 409."""
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -146,7 +154,9 @@ class TestTicketExecutionFailure:
         now = dt.now(timezone.utc).isoformat()
 
         # Mock: ticket retrieval for validation
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -158,9 +168,12 @@ class TestTicketExecutionFailure:
             "updated_at": now,
         }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             # Simulate flow execution returning an error
             mock_execute.return_value = {
@@ -184,7 +197,9 @@ class TestTicketExecutionFailure:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -196,9 +211,12 @@ class TestTicketExecutionFailure:
             "updated_at": now,
         }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.return_value = {}  # Empty dict = failure
 
@@ -214,7 +232,9 @@ class TestTicketExecutionFailure:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -226,9 +246,12 @@ class TestTicketExecutionFailure:
             "updated_at": now,
         }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.return_value = None  # None = failure
 
@@ -244,7 +267,9 @@ class TestTicketExecutionFailure:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -256,9 +281,12 @@ class TestTicketExecutionFailure:
             "updated_at": now,
         }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.return_value = {
                 "task_id": str(uuid4()),
@@ -274,8 +302,7 @@ class TestTicketExecutionFailure:
             update_calls = mock_tenant_client.table("tickets").update.call_args_list
             # At least one update should contain "Nota humana previa"
             notes_updated = any(
-                "Nota humana previa" in str(call)
-                for call in update_calls
+                "Nota humana previa" in str(call) for call in update_calls
             )
             assert notes_updated, "Existing notes should be preserved"
 
@@ -287,7 +314,9 @@ class TestTicketExecutionFailure:
         task_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -299,9 +328,12 @@ class TestTicketExecutionFailure:
             "updated_at": now,
         }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.return_value = {
                 "task_id": task_id,
@@ -313,10 +345,7 @@ class TestTicketExecutionFailure:
 
             # Verify task_id was set in the update
             update_calls = mock_tenant_client.table("tickets").update.call_args_list
-            task_linked = any(
-                task_id in str(call)
-                for call in update_calls
-            )
+            task_linked = any(task_id in str(call) for call in update_calls)
             assert task_linked, "task_id should be linked even in blocked state"
 
 
@@ -326,9 +355,7 @@ class TestTicketExecutionFailure:
 class TestTicketExecutionSuccess:
     """Escenario 3: Ejecución exitosa -> ticket done con task_id."""
 
-    def test_ticket_done_on_success(
-        self, client, mock_tenant_client, sample_org_id
-    ):
+    def test_ticket_done_on_success(self, client, mock_tenant_client, sample_org_id):
         """Ticket queda done con task_id correcto tras ejecución exitosa."""
         ticket_id = str(uuid4())
         task_id = str(uuid4())
@@ -346,11 +373,19 @@ class TestTicketExecutionSuccess:
             "created_at": now,
             "updated_at": now,
         }
-        ticket_done = {**ticket_backlog, "status": "done", "task_id": task_id, "resolved_at": now}
+        ticket_done = {
+            **ticket_backlog,
+            "status": "done",
+            "task_id": task_id,
+            "resolved_at": now,
+        }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.return_value = {
                 "task_id": task_id,
@@ -360,12 +395,14 @@ class TestTicketExecutionSuccess:
 
             # Setup sequential response for execute()
             # 1. Validation select, 2. in_progress update, 3. done update, 4. final select
-            mock_execute_call = mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute
+            mock_execute_call = mock_tenant_client.table(
+                "tickets"
+            ).select.return_value.eq.return_value.maybe_single.return_value.execute
             mock_execute_call.side_effect = [
                 MagicMock(data=ticket_backlog),
                 MagicMock(data=[]),
                 MagicMock(data=[]),
-                MagicMock(data=ticket_done)
+                MagicMock(data=ticket_done),
             ]
 
             response = client.post(f"/tickets/{ticket_id}/execute")
@@ -394,11 +431,19 @@ class TestTicketExecutionSuccess:
             "created_at": now,
             "updated_at": now,
         }
-        ticket_done = {**ticket_backlog, "status": "done", "task_id": str(uuid4()), "resolved_at": now}
+        ticket_done = {
+            **ticket_backlog,
+            "status": "done",
+            "task_id": str(uuid4()),
+            "resolved_at": now,
+        }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.return_value = {
                 "task_id": str(uuid4()),
@@ -408,12 +453,14 @@ class TestTicketExecutionSuccess:
 
             # Setup sequential response for execute()
             # 1. Validation select, 2. in_progress update, 3. done update, 4. final select
-            mock_execute_call = mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute
+            mock_execute_call = mock_tenant_client.table(
+                "tickets"
+            ).select.return_value.eq.return_value.maybe_single.return_value.execute
             mock_execute_call.side_effect = [
                 MagicMock(data=ticket_backlog),
                 MagicMock(data=[]),
                 MagicMock(data=[]),
-                MagicMock(data=ticket_done)
+                MagicMock(data=ticket_done),
             ]
 
             client.post(f"/tickets/{ticket_id}/execute")
@@ -436,7 +483,9 @@ class TestInfrastructureErrorHandling:
         ticket_id = str(uuid4())
         now = dt.now(timezone.utc).isoformat()
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "id": ticket_id,
             "org_id": sample_org_id,
             "title": "Test ticket",
@@ -448,9 +497,12 @@ class TestInfrastructureErrorHandling:
             "updated_at": now,
         }
 
-        with patch("src.api.routes.tickets.flow_registry") as mock_registry, \
-             patch("src.api.routes.tickets.execute_flow", new_callable=AsyncMock) as mock_execute:
-
+        with (
+            patch("src.api.routes.tickets.flow_registry") as mock_registry,
+            patch(
+                "src.api.routes.tickets.execute_flow", new_callable=AsyncMock
+            ) as mock_execute,
+        ):
             mock_registry.has.return_value = True
             mock_execute.side_effect = ConnectionError("Database connection lost")
 
@@ -472,7 +524,9 @@ class TestAppendErrorNote:
         from src.api.routes.tickets import _append_error_note
 
         # Mock existing notes
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "notes": "Nota anterior"
         }
 
@@ -492,7 +546,9 @@ class TestAppendErrorNote:
         """Nueva nota se crea cuando no hay notas existentes."""
         from src.api.routes.tickets import _append_error_note
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "notes": ""
         }
 
@@ -502,7 +558,9 @@ class TestAppendErrorNote:
 
         update_call = mock_tenant_client.table("tickets").update
         update_data = update_call.call_args[0][0]
-        assert update_data["notes"] == update_data["notes"]  # Should just be the new note
+        assert (
+            update_data["notes"] == update_data["notes"]
+        )  # Should just be the new note
         assert "First error" in update_data["notes"]
         assert "RuntimeError" in update_data["notes"]
 
@@ -510,7 +568,9 @@ class TestAppendErrorNote:
         """_append_error_note maneja None en error_msg y error_type."""
         from src.api.routes.tickets import _append_error_note
 
-        mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        mock_tenant_client.table(
+            "tickets"
+        ).select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
             "notes": ""
         }
 
