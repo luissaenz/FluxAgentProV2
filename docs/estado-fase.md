@@ -9,7 +9,7 @@
 
 El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el sistema de registries local se comporte exactamente como el de producción. Esto se logra mediante la eliminación de fallbacks accidentales al sistema de archivos local, forzando la carga de herramientas y flujos exclusivamente desde el sistema de bundles y base de datos, asegurando una validación absoluta antes del despliegue.
 
-**Estado Actual:** 🛠️ **FASE IV EN PROGRESO.** Implementado el "Strict Mode" centralizado.
+**Estado Actual:** 🛠️ **FASE IV EN PROGRESO.** Pasos S1 (Modo Estricto) y S2 (CLI Watcher) completados.
 
 ---
 
@@ -23,6 +23,7 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el s
 - **Lazy Loading Persistente:** Registries con búsqueda en 2 niveles (Memoria -> DB) operativos.
 - **Importación Atómica:** RPC `import_bundle_atomic` funcional.
 - **FAP-CLI:** Operativa para empaquetado y validación local.
+- **CLI Watcher (fap dev):** Implementado con monitoreo `watchdog`, debounce de 0.5s y validación AST fail-fast.
 
 ### ⚠️ Parcialmente Implementado
 - *N/A*
@@ -44,6 +45,8 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el s
 | :--- | :--- | :--- |
 | `ToolRegistry` | `get(name, org_id)` | Implementa gatekeeper contra filesystem fallback. |
 | `FlowRegistry` | `get(name, org_id, strict_mode)` | Firma actualizada para simetría con ToolRegistry. |
+| `fap dev` | `dev_command(path, debounce)` | Nuevo comando de hot-reload con watcher. |
+| `fap publish` | `publish_bundle(zip_path, force)` | Ahora soporta sobreescritura de versiones. |
 | `launch.sh` | Banner informativo | Muestra `Strict Mode: true/false` al iniciar. |
 
 ### 🛠️ Patrones de Código en Uso
@@ -68,6 +71,7 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el s
 | **S1** | ✅ | `config.py`, `registry.py`, `launch.sh`, `.env.example` | Implementación de Strict Mode Gate. | Paridad Local-Prod |
 | **T21** | ✅ | `bundles.py`, `import_service.py` | Errores 400/409, logs INFO. | Cierre Fase III |
 | **T20** | ✅ | `BundlesWizardPage.tsx`, `api.ts` | Wizard Drag&Drop. | Dashboard Finalizado |
+| **S2** | ✅ | `dev.py`, `main.py`, `publish.py`, `pyproject.toml` | CLI Watcher con Hot-Reload. | DX Aumentada |
 
 ---
 
@@ -78,6 +82,8 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** es garantizar que el s
 - [x] El banner de inicio muestra correctamente el estado de la paridad.
 - [x] No hay degradación de performance por el chequeo de modo estricto.
 - [x] La firma de los registros es consistente entre Tools y Flows.
+- [x] El CLI sincroniza cambios automáticamente en < 1s al usar `fap dev`.
+- [x] Se bloquean publicaciones de código con errores de sintaxis localmente.
 
 ---
 *Documento generado automáticamente por el Arquitecto de Contexto (Antigravity) siguiendo el protocolo 0_CONTEXTO.md.*

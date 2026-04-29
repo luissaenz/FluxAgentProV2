@@ -11,6 +11,7 @@ from src.cli.config import CLIConfig
 
 def publish_bundle(
     zip_path: Path = typer.Argument(..., help="Path to the .zip bundle to publish"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force overwrite existing bundle version"),
 ):
     """Publish a bundle to the FluxAgentPro server."""
     if not zip_path.exists() or zip_path.suffix.lower() != ".zip":
@@ -33,8 +34,9 @@ def publish_bundle(
         with open(zip_path, "rb") as f:
             files = {"file": (zip_path.name, f, "application/zip")}
             
+            params = {"force": "true" if force else "false"}
             with httpx.Client(base_url=config.api_url, timeout=60.0) as client:
-                response = client.post("/api/bundles/import", headers=headers, files=files)
+                response = client.post("/api/bundles/import", headers=headers, files=files, params=params)
                 
                 if response.status_code == 201:
                     result = response.json()

@@ -2,6 +2,7 @@
 
 import typer
 
+from src.cli.commands.dev import dev_command
 from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
 from src.cli.commands.login import login
@@ -23,6 +24,7 @@ app.command("validate")(validate_bundle)
 app.command("package")(package_bundle)
 app.command("publish")(publish_bundle)
 app.command("run")(run_skill)
+app.command("dev")(dev_command)
 app.command("export-agents")(export_agents)
 
 if __name__ == "__main__":
