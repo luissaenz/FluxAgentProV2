@@ -142,7 +142,7 @@ def mock_connector():
 class TestEscandalloTool:
     @pytest.fixture
     def tool(self, mock_connector):
-        return EscandalloTool(connector=mock_connector)
+        return EscandalloTool(org_id="test_org", connector=mock_connector)
 
     def test_escandallo_boda_150_pax_enero_tucuman_premium(self, tool):
         """
@@ -266,7 +266,7 @@ class TestEscandalloTool:
 class TestFactorClimaticoTool:
     @pytest.fixture
     def tool(self, mock_connector):
-        return FactorClimaticoTool(connector=mock_connector)
+        return FactorClimaticoTool(org_id="test_org", connector=mock_connector)
 
     def test_enero_retorna_factor_20(self, tool):
         result = tool._run(mes=1)
@@ -292,7 +292,7 @@ class TestFactorClimaticoTool:
 class TestPronosticoRealTool:
     @pytest.fixture
     def tool(self, mock_connector):
-        return PronosticoRealTool(connector=mock_connector)
+        return PronosticoRealTool(org_id="test_org", connector=mock_connector)
 
     def test_ola_de_calor_activa_alerta_roja(self, tool):
         """EVT-2026-001 tiene mock a 33°C vs histórico enero 26°C → desvío +26.9%."""
@@ -331,7 +331,7 @@ class TestPronosticoRealTool:
 class TestCalcularStockNecesarioTool:
     @pytest.fixture
     def tool(self, mock_connector):
-        return CalcularStockNecesarioTool(connector=mock_connector)
+        return CalcularStockNecesarioTool(org_id="test_org", connector=mock_connector)
 
     def test_retorna_items_no_vacio(self, tool):
         result = tool._run("EVT-X", 80, "estandar")
@@ -362,7 +362,7 @@ class TestCalcularStockNecesarioTool:
 class TestReservarStockTool:
     @pytest.fixture
     def tool(self, mock_connector):
-        return ReservarStockTool(connector=mock_connector)
+        return ReservarStockTool(org_id="test_org", connector=mock_connector)
 
     def test_reserva_exitosa_todos_los_items(self, tool, mock_connector):
         mock_connector.reserve_stock.return_value = {"ok": True}

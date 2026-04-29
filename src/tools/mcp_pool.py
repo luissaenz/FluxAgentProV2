@@ -147,6 +147,7 @@ class MCPPool:
             # run __enter__ in a thread pool to avoid blocking the event loop.
             try:
                 from crewai_tools import MCPServerAdapter
+
                 from mcp import StdioServerParameters
             except ImportError:
                 raise MCPConnectionError(
