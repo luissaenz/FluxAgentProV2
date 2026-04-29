@@ -8,7 +8,7 @@ import requests
 def main():
     print("Starting final organization cleanup...", flush=True)
     dotenv.load_dotenv()
-    
+
     URL = os.getenv("SUPABASE_URL")
     KEY = os.getenv("SUPABASE_SERVICE_KEY")
     headers = {
@@ -21,14 +21,14 @@ def main():
     # 1. Identify valid admin orgs
     r = requests.get(f"{base_rest}/org_members?select=org_id", headers=headers)
     active_org_ids = list(set([m["org_id"] for m in r.json()]))
-    
+
     if not active_org_ids:
         print("No active organizations with members found. Aborting cleanup to avoid data loss.", flush=True)
         return
 
     # 2. Delete organizations WITHOUT members
     print(f"Preserving {len(active_org_ids)} orgs. Deleting others...", flush=True)
-    
+
     # We do them one by one to be safe and avoid URL length issues
     r_all = requests.get(f"{base_rest}/organizations?select=id", headers=headers)
     for org in r_all.json():

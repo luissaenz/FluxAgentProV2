@@ -36,11 +36,11 @@ def test_process_valid_bundle(manager):
     # Prepare content
     agent_json = json.dumps({"role": "tester", "goal": "test things"})
     skill_py = "def my_skill(): return 42"
-    
+
     # Calculate hashes
     agent_hash = calculate_sha256(agent_json.encode())
     skill_hash = calculate_sha256(skill_py.encode())
-    
+
     manifest = {
         "version": "2.0",
         "bundle_info": {"name": "test-bundle"},
@@ -49,15 +49,15 @@ def test_process_valid_bundle(manager):
             "skills/test_skill.py": skill_hash
         }
     }
-    
+
     zip_bytes = create_test_zip({
         "manifest.json": json.dumps(manifest),
         "agents/tester.json": agent_json,
         "skills/test_skill.py": skill_py
     })
-    
+
     content = manager.process_zip(zip_bytes)
-    
+
     assert content.manifest.bundle_info.name == "test-bundle"
     assert len(content.agents) == 1
     assert content.agents[0]["role"] == "tester"
@@ -70,12 +70,12 @@ def test_hash_mismatch(manager):
             "agents/fake.json": "sha256:" + "a" * 64
         }
     }
-    
+
     zip_bytes = create_test_zip({
         "manifest.json": json.dumps(manifest),
         "agents/fake.json": "{}"
     })
-    
+
     with pytest.raises(BundleError, match="Integrity check failed"):
         manager.process_zip(zip_bytes)
 
@@ -84,7 +84,7 @@ def test_missing_manifest(manager):
     zip_bytes = create_test_zip({
         "agents/none.json": "{}"
     })
-    
+
     with pytest.raises(BundleError, match="Missing 'manifest.json'"):
         manager.process_zip(zip_bytes)
 
@@ -98,11 +98,11 @@ def test_exceed_limits(manager):
         data = json.dumps({"role": f"agent_{i}"})
         manifest_hashes[path] = calculate_sha256(data.encode())
         zip_files[path] = data
-        
+
     zip_files["manifest.json"] = json.dumps({"hashes": manifest_hashes})
-    
+
     zip_bytes = create_test_zip(zip_files)
-    
+
     with pytest.raises(BundleError, match="Exceeded max agents"):
         manager.process_zip(zip_bytes)
 

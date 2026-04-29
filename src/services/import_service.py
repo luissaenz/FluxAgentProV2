@@ -6,6 +6,7 @@ Bridges BundleManager (validation) and Supabase RPC (persistence).
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from packaging.version import InvalidVersion, Version
 
@@ -273,10 +274,8 @@ class ImportService:
 
             return True
 
-    def _register_skills(self, content: any) -> None:
+    def _register_skills(self, content: Any) -> None:
         """Register imported skills in the in-memory ToolRegistry."""
-        import RestrictedPython
-
         from src.flows.registry import flow_registry
         from src.tools.registry import tool_registry
 
@@ -284,90 +283,48 @@ class ImportService:
         tool_registry.invalidate_tenant_cache(self.org_id)
         flow_registry.invalidate_tenant_cache(self.org_id)
 
-        # Analysis Final §88: Trust system bundles
-        is_system = content.manifest.bundle_info and content.manifest.bundle_info.author == "FAP-CORE"
-
-        # We use a safe environment similar to SecurityGuard
-        safe_env = RestrictedPython.safe_builtins.copy()
-        # SUPUESTO: Standard __import__ is needed to resolve allowed imports (pydantic, etc)
-        safe_env["__import__"] = __import__
-
-        # If system, allow access to src
-        if is_system:
-            # Note: RestrictedPython might still block some things, but this helps AST-level
-            pass
-
         for filename, code in content.skills.items():
             skill_name = filename.replace(".py", "").lower()
+            # Analysis Final §89: Use SecurityGuard for execution
             try:
-                # Compile restricted
-                byte_code = RestrictedPython.compile_restricted(
-                    code, filename=filename, mode="exec"
-                )
-
-                # Execute in safe env to extract classes
-                exec_globals = {"__builtins__": safe_env}
-                exec(byte_code, exec_globals)
-
-                # Look for the tool class
-                # We expect at least one class that looks like a Tool
-                for attr_name, attr in exec_globals.items():
-                    if isinstance(attr, type) and not attr_name.startswith("_"):
-                        # If it has docstring or looks like a tool, register it
-                        if "Tool" in attr_name or hasattr(attr, "_is_tool"):
-                            # SUPUESTO: Use tenant prefix to ensure isolation (Analysis R3)
-                            scoped_name = f"{self.org_id}:{skill_name}"
-                            tool_registry.register(name=scoped_name)(attr)
-                            logger.info(
-                                "Registered imported skill in memory for tenant %s: %s",
-                                self.org_id,
-                                skill_name,
-                            )
-                            break
+                exec_globals = self.security_guard.execute(code, filename)
             except Exception as e:
-                logger.warning(
-                    "Failed to register imported skill '%s' in memory: %s",
-                    skill_name,
-                    e,
-                )
+                logger.error("Skill registration failed for %s: %s", filename, e)
+                continue
 
-    def _register_flows(self, content: any) -> None:
+            # Look for the tool class
+            for attr_name, attr in exec_globals.items():
+                if isinstance(attr, type) and not attr_name.startswith("_"):
+                    if "Tool" in attr_name or hasattr(attr, "_is_tool"):
+                        scoped_name = f"{self.org_id}:{skill_name}"
+                        tool_registry.register(name=scoped_name)(attr)
+                        logger.info(
+                            "Registered imported skill in memory for tenant %s: %s",
+                            self.org_id,
+                            skill_name,
+                        )
+                        break
+
+    def _register_flows(self, content: Any) -> None:
         """Register imported Python flows in the in-memory FlowRegistry."""
-        import RestrictedPython
-
         from src.flows.registry import flow_registry
 
-        # Analysis Final §88: Trust system bundles
-        is_system = content.manifest.bundle_info and content.manifest.bundle_info.author == "FAP-CORE"
-
-        # Safe environment
-        safe_env = RestrictedPython.safe_builtins.copy()
-        safe_env["__import__"] = __import__
-
         # Support flows/ in content
-        # Note: BundleContent.flows can contain both JSON and Python flows
         for flow_data in content.flows:
             if not flow_data.get("is_python"):
                 continue
 
             flow_type = flow_data["flow_type"]
             code = flow_data["code_source"]
-            
-            try:
-                # Compile and execute
-                byte_code = RestrictedPython.compile_restricted(
-                    code, filename=f"{flow_type}.py", mode="exec"
-                )
 
-                exec_globals = {"__builtins__": safe_env}
-                exec(byte_code, exec_globals)
+            # Analysis Final §89: Use SecurityGuard for execution
+            try:
+                exec_globals = self.security_guard.execute(code, f"{flow_type}.py")
 
                 # Find the Flow class
                 for attr_name, attr in exec_globals.items():
                     if isinstance(attr, type) and not attr_name.startswith("_"):
-                        # We look for a class that inherits from BaseFlow or similar
-                        # Since we can't easily check isinstance(attr, BaseFlow) without importing it
-                        # we check if it has create_task_record or _run_crew
+                        # Check if it looks like a flow
                         if hasattr(attr, "create_task_record") or hasattr(attr, "_run_crew"):
                             scoped_name = f"{self.org_id}:{flow_type}"
                             flow_registry.register(scoped_name)(attr)

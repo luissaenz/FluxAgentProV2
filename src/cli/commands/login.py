@@ -18,7 +18,7 @@ def login(
     # Interactively ask for missing fields if not provided via flags
     if not api_url:
         api_url = typer.prompt("API URL", default=config.api_url)
-    
+
     if not org_id:
         org_id = typer.prompt("Organization ID", default=config.org_id or "")
 
@@ -32,10 +32,10 @@ def login(
         # Note: We use a simple GET to verify connectivity and token.
         # In this step, we use /api/bundles/security-config as verification.
         headers = {"X-Org-ID": org_id, "Authorization": f"Bearer {token}"}
-        
+
         with httpx.Client(base_url=api_url, timeout=10.0) as client:
             response = client.get("/api/bundles/security-config", headers=headers)
-            
+
             if response.status_code == 401:
                 print("[red]Error:[/red] Invalid token or unauthorized.")
                 raise typer.Exit(code=1)

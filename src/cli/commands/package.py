@@ -34,13 +34,15 @@ def package_bundle(
         manifest = update_manifest_hashes(path)
         bundle_info = manifest.get("bundle_info", {})
         bundle_name = bundle_info.get("name", "bundle")
-        
+
         print(f"PACKAGING bundle: [bold]{bundle_name}[/bold]")
         print("[green]OK:[/green] Manifest updated and hashes generated.")
 
 
         # 2. Create ZIP
-        zip_filename = output if output else Path(f"{bundle_name}.zip")
+        # Handle Typer Option default if called programmatically
+        actual_output = output if isinstance(output, (str, Path)) else None
+        zip_filename = actual_output if actual_output else Path(f"{bundle_name}.zip")
         print(f"ZIP: Creating [bold]{zip_filename}[/bold]...")
 
         with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -58,6 +60,8 @@ def package_bundle(
         )
         print("\nYou can now import this bundle using:")
         print("  [white]POST /api/bundles/import[/white]")
+
+        return zip_filename
 
     except Exception as e:
         print(f"[red]Error:[/red] Packaging failed: {e}")

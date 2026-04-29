@@ -34,7 +34,7 @@ class TestGetSecret:
     def test_get_secret_calls_with_correct_org_id(self, mock_service_client):
         """get_secret() filtra por org_id y name."""
         mock_service_client.table("secrets").select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data={"secret_value": "dummy"})
-        
+
         get_secret("org_xyz", "my_secret")
 
         # Verify the chain was called with correct filters

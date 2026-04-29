@@ -14,14 +14,14 @@ import requests
 def main():
     print("Starting database cleanup (REST mode)...", flush=True)
     dotenv.load_dotenv()
-    
+
     URL = os.getenv("SUPABASE_URL")
     KEY = os.getenv("SUPABASE_SERVICE_KEY")
-    
+
     if not URL or not KEY:
         print("Error: SUPABASE_URL or SUPABASE_SERVICE_KEY not found in .env", flush=True)
         sys.exit(1)
-        
+
     headers = {
         "apikey": KEY,
         "Authorization": f"Bearer {KEY}",
@@ -45,7 +45,7 @@ def main():
                 admins = [m for m in all_members if m.get("role") in ("admin", "org_owner")]
             if not admins and all_members:
                 admins = [all_members[0]]
-            
+
             admin_user_ids = [m["user_id"] for m in admins]
             admin_org_ids = list(set([m["org_id"] for m in admins]))
             print(f"   Found {len(admin_user_ids)} admins in {len(admin_org_ids)} orgs.", flush=True)

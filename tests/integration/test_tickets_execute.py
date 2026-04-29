@@ -363,9 +363,9 @@ class TestTicketExecutionSuccess:
             mock_execute_call = mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute
             mock_execute_call.side_effect = [
                 MagicMock(data=ticket_backlog),
-                MagicMock(data=[]), 
-                MagicMock(data=[]),    
-                MagicMock(data=ticket_done)       
+                MagicMock(data=[]),
+                MagicMock(data=[]),
+                MagicMock(data=ticket_done)
             ]
 
             response = client.post(f"/tickets/{ticket_id}/execute")
@@ -405,15 +405,15 @@ class TestTicketExecutionSuccess:
                 "error": None,
                 "error_type": None,
             }
-            
+
             # Setup sequential response for execute()
             # 1. Validation select, 2. in_progress update, 3. done update, 4. final select
             mock_execute_call = mock_tenant_client.table("tickets").select.return_value.eq.return_value.maybe_single.return_value.execute
             mock_execute_call.side_effect = [
                 MagicMock(data=ticket_backlog),
-                MagicMock(data=[]), 
-                MagicMock(data=[]),    
-                MagicMock(data=ticket_done)       
+                MagicMock(data=[]),
+                MagicMock(data=[]),
+                MagicMock(data=ticket_done)
             ]
 
             client.post(f"/tickets/{ticket_id}/execute")

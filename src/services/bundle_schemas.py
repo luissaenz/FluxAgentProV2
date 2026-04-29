@@ -27,7 +27,8 @@ class BundleManifest(BaseModel):
 
     # Map of relative_path -> sha256_hash
     hashes: Dict[str, str] = Field(
-        ..., description="Map of relative file paths to their SHA256 hashes"
+        default_factory=dict,
+        description="Map of relative file paths to their SHA256 hashes"
     )
 
     @field_validator("hashes")

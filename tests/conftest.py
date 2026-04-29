@@ -53,7 +53,7 @@ def make_mock_client():
         response = MagicMock()
         response.data = data
         chain.execute.return_value = response
-        
+
         # All chaining methods return the same chain by default
         chain.select.return_value = chain
         chain.insert.return_value = chain
@@ -92,7 +92,7 @@ def make_mock_client():
     rpc_chain = MagicMock()
     rpc_chain.execute = MagicMock(return_value=MagicMock(data=None))
     client.rpc = MagicMock(return_value=rpc_chain)
-    
+
     # client.execute_with_retry(query) pattern
     client.execute_with_retry = MagicMock(side_effect=lambda x: x.execute() if hasattr(x, "execute") else x)
 
@@ -105,7 +105,7 @@ def make_mock_client():
 def mock_service_client():
     """Mock for get_service_client() — patches multiple potential import points."""
     client = make_mock_client()
-    
+
     # Patch points where get_service_client is imported and used
     patch_points = [
         "src.db.session.get_service_client",
@@ -116,7 +116,7 @@ def mock_service_client():
         "src.crews.base_crew.get_service_client",
         "src.services.warmup.get_service_client",
     ]
-    
+
     stack = []
     for p in patch_points:
         try:
@@ -125,9 +125,9 @@ def mock_service_client():
             stack.append(pt)
         except (AttributeError, ImportError):
             continue
-            
+
     yield client
-    
+
     for pt in stack:
         pt.stop()
 
@@ -143,7 +143,7 @@ def mock_anon_client():
         "src.db.vault.get_anon_client",
         "src.flows.base_flow.get_anon_client",
     ]
-    
+
     stack = []
     for p in patch_points:
         try:
@@ -152,9 +152,9 @@ def mock_anon_client():
             stack.append(pt)
         except (AttributeError, ImportError):
             continue
-            
+
     yield client
-    
+
     for pt in stack:
         pt.stop()
 
@@ -188,7 +188,7 @@ def mock_tenant_client(mock_service_client):
         "src.api.routes.webhooks.get_tenant_client",
         "src.api.routes.workflows.get_tenant_client",
     ]
-    
+
     stack = []
     for p in patch_points:
         try:
@@ -198,7 +198,7 @@ def mock_tenant_client(mock_service_client):
         except (AttributeError, ImportError):
             continue
     yield mock_db
-    
+
     for pt in stack:
         pt.stop()
 
@@ -216,3 +216,59 @@ def mock_event_store():
         mock_gtc.return_value.__enter__ = MagicMock(return_value=mock_db)
         mock_gtc.return_value.__exit__ = MagicMock(return_value=False)
         yield mock_gtc
+
+
+# ── LLM Mocking ──────────────────────────────────────────────────
+
+class MockLLMManager:
+    """Mock manager for LLM interactions."""
+    def __init__(self):
+        self.responses = []
+        self.last_call = None
+
+    def add_response(self, content: str):
+        self.responses.append(content)
+
+    def __call__(self, *args, **kwargs):
+        self.last_call = {"args": args, "kwargs": kwargs}
+        if self.responses:
+            return self.responses.pop(0)
+        return "Default Mocked LLM Response"
+
+@pytest.fixture
+def mock_llm_manager():
+    return MockLLMManager()
+
+
+# Ensure missing LLM modules don't break test discovery/execution
+for mod_name in ["langchain_openai", "langchain_community", "langchain_community.chat_models"]:
+    if mod_name not in sys.modules:
+        sys.modules[mod_name] = MagicMock()
+
+
+@pytest.fixture(autouse=True)
+def global_llm_mock():
+    """Automatically mock all major LLM provider entry points."""
+    with patch("langchain_openai.ChatOpenAI") as mock_openai, \
+         patch("langchain_community.chat_models.ChatOllama") as mock_ollama, \
+         patch("crewai.Agent") as mock_agent, \
+         patch("crewai.Task") as mock_task, \
+         patch("crewai.Crew") as mock_crew:
+
+        # Setup default mock responses
+        mock_instance = MagicMock()
+        mock_instance.invoke.return_value = MagicMock(content="Mocked LLM Result")
+        mock_openai.return_value = mock_instance
+        mock_ollama.return_value = mock_instance
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff.return_value = MagicMock(raw="Mocked Crew Result")
+        mock_crew.return_value = mock_crew_instance
+
+        yield {
+            "openai": mock_openai,
+            "ollama": mock_ollama,
+            "crew": mock_crew,
+            "agent": mock_agent,
+            "task": mock_task
+        }

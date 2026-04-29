@@ -16,7 +16,7 @@ def test_bundle_rpc_payload_validation():
         "flows": [{"flow_type": "standard", "name": "Standard Flow"}],
         "skills": {"skill1.py": "print('hello')"}
     }
-    
+
     payload = BundleRPCPayload(**valid_payload)
     assert payload.bundle_name == "test-bundle"
     assert len(payload.agents) == 1
@@ -38,7 +38,7 @@ def test_bundle_rpc_result_parsing():
         "flows_count": 1,
         "skills_count": 3
     }
-    
+
     result = BundleRPCResult(**rpc_response)
     assert result.status == "success"
     assert result.bundle_id == "550e8400-e29b-41d4-a716-446655440000"
@@ -53,7 +53,7 @@ def test_bundle_rpc_result_error():
         "bundle_id": "",
         "error": "Duplicate key violation"
     }
-    
+
     result = BundleRPCResult(**error_response)
     assert result.status == "failed"
     assert result.error == "Duplicate key violation"

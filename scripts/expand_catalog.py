@@ -36,18 +36,18 @@ def transform_tool(raw_tool):
     raw_id = raw_tool.get("tool_id") or raw_tool.get("id")
     if not raw_id:
         return None
-    
+
     tool_id = raw_id.lower()
-    
+
     # 2. Extraer Provider Info
     provider_name = raw_tool.get("provider", "Unknown")
     provider_id = provider_name.lower().replace(" ", "_")
-    
+
     # 3. Lógica de Autenticación y Secretos (Hallazgo #5)
     auth = raw_tool.get("auth", {})
     auth_type = auth.get("type", "api_key")
     scopes = auth.get("scopes", [])
-    
+
     required_secrets = []
     if auth_type == "none":
         # Hallazgo #5: Mapear none a api_key con secretos vacíos para integridad
@@ -59,12 +59,12 @@ def transform_tool(raw_tool):
         required_secrets = [f"{provider_id}_token"]
     elif auth_type == "basic_auth":
         required_secrets = [f"{provider_id}_auth_token"] # Estandarizado para Twilio/etc
-    
+
     # 4. Inferencia de base_url
     exec_info = raw_tool.get("execution", {})
     exec_url = exec_info.get("url", "")
     base_url = infer_base_url(exec_url)
-    
+
     # 5. Construcción del objeto Provider (TIPO C)
     provider_obj = {
         "id": provider_id,
@@ -75,7 +75,7 @@ def transform_tool(raw_tool):
         "required_secrets": required_secrets,
         "auth_scopes": scopes
     }
-    
+
     # 6. Tool Final
     transformed = {
         "id": tool_id,
@@ -91,12 +91,12 @@ def transform_tool(raw_tool):
         },
         "tool_profile": raw_tool.get("tool_profile", {})
     }
-    
+
     return transformed
 
 def main():
     print("--- Iniciando expansion del catalogo de servicios ---")
-    
+
     # 1. Cargar el seed existente
     all_tools = {}
     if SEED_PATH.exists():
@@ -108,7 +108,7 @@ def main():
                 print(f"Loaded {len(all_tools)} tools from seed original.")
             except Exception as e:
                 print(f"Warning: Error loading seed: {e}. Starting empty catalog.")
-    
+
     # 2. Procesar Prompts (1 a 5)
     # Orden de precedencia: prompt5 > prompt4 > prompt3 > prompt2 > prompt1 > seed
     for i in range(1, 6):
@@ -116,11 +116,11 @@ def main():
         if not prompt_file.exists():
             print(f"Warning: File {prompt_file.name} not found. Skipping.")
             continue
-            
+
         print(f"File {prompt_file.name} processing...")
         with open(prompt_file, "r", encoding="utf-8") as f:
             content = f.read()
-            
+
         raw_tools = extract_json_array(content)
         count = 0
         for raw_tool in raw_tools:
@@ -134,13 +134,13 @@ def main():
     final_output = {
         "tools": list(all_tools.values())
     }
-    
+
     # Ordenar por ID para mantener consistencia
     final_output["tools"].sort(key=lambda x: x["id"])
-    
+
     with open(SEED_PATH, "w", encoding="utf-8") as f:
         json.dump(final_output, f, indent=2, ensure_ascii=False)
-    
+
     print("\nProcess finished successfully.")
     print(f"Total tools in catalog: {len(all_tools)}")
     print(f"Saved to: {SEED_PATH}")

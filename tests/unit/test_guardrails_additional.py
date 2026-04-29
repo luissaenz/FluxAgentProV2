@@ -31,7 +31,7 @@ class TestMakeApprovalCheckAdditional:
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         # Exactly at threshold → False (no approval needed)
         assert check(50000, "org-123") is False
 
@@ -42,7 +42,7 @@ class TestMakeApprovalCheckAdditional:
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         # One above → True (approval needed)
         assert check(50001, "org-123") is True
 
@@ -53,7 +53,7 @@ class TestMakeApprovalCheckAdditional:
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         assert check(0, "org-123") is False
 
     def test_negative_amount(self):
@@ -63,7 +63,7 @@ class TestMakeApprovalCheckAdditional:
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         assert check(-100, "org-123") is False
 
     def test_very_large_amount(self):
@@ -73,7 +73,7 @@ class TestMakeApprovalCheckAdditional:
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         assert check(1_000_000_000, "org-123") is True
 
     def test_custom_threshold_from_org_config(self):
@@ -83,7 +83,7 @@ class TestMakeApprovalCheckAdditional:
             threshold_key="custom_threshold",
             default_threshold=50000,
         )
-        
+
         with patch(
             "src.guardrails.base_guardrail.load_org_limits",
             return_value={"custom_threshold": 100000}
@@ -103,7 +103,7 @@ class TestLoadOrgLimits:
         mock_cm = MagicMock()
         mock_cm.__enter__ = MagicMock(return_value=mock_db)
         mock_cm.__exit__ = MagicMock(return_value=False)
-        
+
         mock_db.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
             data={
                 "config": {
@@ -114,10 +114,10 @@ class TestLoadOrgLimits:
                 }
             }
         )
-        
+
         with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
             limits = load_org_limits("org-123")
-            
+
             assert limits == {
                 "approval_threshold": 75000,
                 "max_tokens_per_month": 1000000,
@@ -129,14 +129,14 @@ class TestLoadOrgLimits:
         mock_cm = MagicMock()
         mock_cm.__enter__ = MagicMock(return_value=mock_db)
         mock_cm.__exit__ = MagicMock(return_value=False)
-        
+
         mock_db.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
             data={"config": {}}
         )
-        
+
         with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
             limits = load_org_limits("org-123")
-            
+
             assert limits == {}
 
     def test_returns_empty_dict_on_error(self):
@@ -144,10 +144,10 @@ class TestLoadOrgLimits:
         mock_cm = MagicMock()
         mock_cm.__enter__ = MagicMock(side_effect=Exception("DB error"))
         mock_cm.__exit__ = MagicMock(return_value=False)
-        
+
         with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
             limits = load_org_limits("org-123")
-            
+
             assert limits == {}
 
     def test_returns_empty_dict_when_no_limits_key(self):
@@ -156,14 +156,14 @@ class TestLoadOrgLimits:
         mock_cm = MagicMock()
         mock_cm.__enter__ = MagicMock(return_value=mock_db)
         mock_cm.__exit__ = MagicMock(return_value=False)
-        
+
         mock_db.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
             data={"config": {"other_key": "value"}}
         )
-        
+
         with patch("src.guardrails.base_guardrail.get_tenant_client", return_value=mock_cm):
             limits = load_org_limits("org-123")
-            
+
             assert limits == {}
 
 
@@ -177,7 +177,7 @@ class TestCheckQuota:
             "max_tasks_per_month": 100,
             "max_tokens_per_month": 1000000,
         }
-        
+
         # Should not raise
         check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=50)
 
@@ -188,7 +188,7 @@ class TestCheckQuota:
             "max_tasks_per_month": 100,
             "max_tokens_per_month": 1000000,
         }
-        
+
         with pytest.raises(QuotaExceededError, match="agotada"):
             check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=100)
 
@@ -199,7 +199,7 @@ class TestCheckQuota:
             "max_tasks_per_month": 100,
             "max_tokens_per_month": 1000000,
         }
-        
+
         with pytest.raises(QuotaExceededError, match="agotada"):
             check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=150)
 
@@ -211,7 +211,7 @@ class TestCheckQuota:
         mock_load_limits.return_value = {
             "max_tasks_per_month": float("inf"),  # Use inf instead of -1
         }
-        
+
         # Should not raise even with high usage
         check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=1000000)
 
@@ -219,7 +219,7 @@ class TestCheckQuota:
     def test_missing_quota_key_uses_default(self, mock_load_limits):
         """check_quota uses default when quota key is missing."""
         mock_load_limits.return_value = {}  # No limits configured
-        
+
         # Should use default (inf) - should not raise
         check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=50)
 
@@ -230,7 +230,7 @@ class TestCheckQuota:
             "max_tasks_per_month": 100,
             "max_tokens_per_month": 1000000,
         }
-        
+
         with pytest.raises(QuotaExceededError, match="agotada"):
             check_quota(org_id="org-123", quota_type="tokens_per_month", current_usage=1000000)
 
@@ -246,17 +246,17 @@ class TestGuardrailComposition:
             "max_tasks_per_month": 100,
             "max_tokens_per_month": 1000000,
         }
-        
+
         # Create multiple guardrails
         approval_check = make_approval_check(
             amount_field="monto",
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         # Both should pass
         assert approval_check(30000, "org-123") is False
-        
+
         check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=50)
 
     @patch("src.guardrails.base_guardrail.load_org_limits")
@@ -267,20 +267,20 @@ class TestGuardrailComposition:
             "max_tasks_per_month": 100,
             "max_tokens_per_month": 1000000,
         }
-        
+
         approval_check = make_approval_check(
             amount_field="monto",
             threshold_key="approval_threshold",
             default_threshold=50000,
         )
-        
+
         # High amount but within quota
         assert approval_check(100000, "org-123") is True  # Needs approval
-        
+
         check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=50)  # Within quota
-        
+
         # High amount AND over quota
         assert approval_check(100000, "org-123") is True
-        
+
         with pytest.raises(QuotaExceededError, match="agotada"):
             check_quota(org_id="org-123", quota_type="tasks_per_month", current_usage=100)

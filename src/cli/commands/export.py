@@ -65,7 +65,7 @@ def export_agents(
 
         # 5. Create manifest with initial hashes
         manifest = create_base_manifest(f"migration_{org_id[:8]}")
-        
+
         # Recalculate hashes to make it "package-ready"
         manifest["hashes"] = calculate_bundle_hashes(output)
         save_json(output / "manifest.json", manifest)

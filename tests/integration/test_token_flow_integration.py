@@ -26,11 +26,11 @@ async def test_base_flow_state_token_tracking():
         org_id=str(uuid4()),
         flow_type="test"
     )
-    
+
     assert state.tokens_used == 0
     state.update_tokens(100)
     assert state.tokens_used == 100
-    
+
     # Estimación
     assert state.estimate_tokens("Hola") == 1 # 4 chars // 4 = 1
     assert state.estimate_tokens("A" * 40) == 10 # 40 // 4 = 10
@@ -48,7 +48,7 @@ async def test_generic_flow_logic_mocked():
 
     with patch("src.flows.generic_flow.create_generic_crew", return_value=mock_crew_instance):
         from src.flows.generic_flow import GenericFlow
-        
+
         flow = GenericFlow(org_id=str(uuid4()))
         flow.state = BaseFlowState(
             correlation_id="test-corr-id",
@@ -57,8 +57,8 @@ async def test_generic_flow_logic_mocked():
             flow_type="GenericFlow"
         )
         flow.state.input_data = {"text": "hello"}
-        
+
         await flow._run_crew()
-        
+
         # Verificamos que GenericFlow extrajo los tokens del mock_result
         assert flow.state.tokens_used == 250

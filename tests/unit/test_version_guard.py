@@ -28,15 +28,15 @@ class TestVersionGuard:
     def mock_db_version(self, version: str = None):
         """Helper to mock the Supabase response for the latest version."""
         mock_db = MagicMock()
-        
+
         # Result data
         execute_res = MagicMock()
         execute_res.data = [{"version": version}] if version else []
-        
+
         # Chain: table().select().eq().eq().order().limit().execute()
         # We use configure_mock to set up the deep return value
         mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value = execute_res
-        
+
         cm = MagicMock()
         cm.__enter__.return_value = mock_db
         cm.__exit__.return_value = False

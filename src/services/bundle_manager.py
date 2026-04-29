@@ -10,7 +10,7 @@ import io
 import json
 import logging
 import zipfile
-from typing import Optional
+from typing import Dict, List, Optional
 
 from src.config import get_settings
 
@@ -184,18 +184,24 @@ class BundleManager:
     def create_bundle(self, manifest: BundleManifest, agents: List[Dict], flows: List[Dict], skills: Dict[str, str]) -> bytes:
         """Create a valid FAP ZIP bundle in memory.
         
-        Analysis Final §89: Centralize ZIP creation logic.
+        Analysis Final §89: Centralize ZIP creation logic + Auto-hashing.
         """
         buffer = io.BytesIO()
-        
+        all_hashes = {}
+
+        def add_file(z, path, content_bytes):
+            sha = hashlib.sha256(content_bytes).hexdigest()
+            all_hashes[path] = f"sha256:{sha}"
+            z.writestr(path, content_bytes)
+
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as z:
             # 1. Add agents
             for agent in agents:
                 role = agent.get("role", "unknown")
                 path = f"agents/{role}.json"
                 data = json.dumps(agent, indent=2).encode("utf-8")
-                z.writestr(path, data)
-                
+                add_file(z, path, data)
+
             # 2. Add flows
             for flow in flows:
                 flow_type = flow.get("flow_type", "unknown")
@@ -205,15 +211,16 @@ class BundleManager:
                 else:
                     path = f"flows/{flow_type}.json"
                     data = json.dumps(flow, indent=2).encode("utf-8")
-                z.writestr(path, data)
-                
+                add_file(z, path, data)
+
             # 3. Add skills
             for filename, code in skills.items():
                 path = f"skills/{filename}"
-                z.writestr(path, code.encode("utf-8"))
-                
-            # 4. Add manifest
+                add_file(z, path, code.encode("utf-8"))
+
+            # 4. Update manifest with hashes and add it
+            manifest.hashes = all_hashes
             manifest_data = json.dumps(manifest.model_dump(), indent=2).encode("utf-8")
             z.writestr("manifest.json", manifest_data)
-            
+
         return buffer.getvalue()

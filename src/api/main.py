@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
 # ── eager flow registration (import triggers @register_flow) ─────
 import src.flows.generic_flow  # noqa: F401
 import src.flows.test_flows  # noqa: F401

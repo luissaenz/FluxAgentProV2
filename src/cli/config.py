@@ -22,7 +22,7 @@ class CLIConfig(BaseModel):
     def save(self):
         """Save configuration to ~/.fap/config.json with restricted permissions."""
         FAP_DIR.mkdir(parents=True, exist_ok=True)
-        
+
         # Note: In Windows, chmod 600 doesn't have the same effect as Linux.
         # We still set it for POSIX compatibility.
         if os.name != 'nt':

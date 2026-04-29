@@ -8,7 +8,7 @@ from __future__ import annotations
 import ast
 import concurrent.futures
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from RestrictedPython import compile_restricted, safe_builtins
 
@@ -83,7 +83,7 @@ class SecurityGuard:
     """Provides static and dynamic security analysis for Python code."""
 
     def __init__(
-        self, 
+        self,
         timeout_seconds: int = 30,
         allowed_modules: Optional[set[str]] = None,
         forbidden_modules: Optional[set[str]] = None,
@@ -119,16 +119,23 @@ class SecurityGuard:
 
         return True
 
-    def execute(self, source_code: str, filename: str = "dynamic_flow.py") -> Dict[str, Any]:
+    def execute(self, source_code: str, filename: str = "dynamic_code.py") -> Dict[str, Any]:
         """Execute validated code and return globals.
         
         Analysis Final §88: Privileged execution for system bundles.
         """
         # Always validate first
         self.validate_skill(source_code, filename)
-        
-        exec_globals = {"__builtins__": __builtins__ if self.is_system else safe_builtins}
-        
+
+        if self.is_system:
+            exec_globals = {"__builtins__": __builtins__}
+        else:
+            import builtins
+            exec_globals = {"__builtins__": safe_builtins.copy()}
+            exec_globals["__builtins__"]["__import__"] = __import__
+            if hasattr(builtins, "__build_class__"):
+                exec_globals["__builtins__"]["__build_class__"] = builtins.__build_class__
+
         # Execute
         try:
             exec(source_code, exec_globals)
@@ -199,9 +206,17 @@ class SecurityGuard:
 
             # Dry-run execution to catch infinite loops
             # Use safe_builtins + controlled __import__
+            import builtins
             safe_env = safe_builtins.copy()
             safe_env["__import__"] = __import__
-            exec_globals = {"__builtins__": safe_env}
+            if hasattr(builtins, "__build_class__"):
+                safe_env["__build_class__"] = builtins.__build_class__
+
+            exec_globals = {
+                "__builtins__": safe_env,
+                "__metaclass__": type,
+                "__name__": filename
+            }
 
             exec(byte_code, exec_globals)
             return True

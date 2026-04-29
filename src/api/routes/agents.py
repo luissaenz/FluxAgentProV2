@@ -162,7 +162,7 @@ async def run_agent(
     Retorna un task_id para polling.
     """
     org_id = auth["org_id"]
-    
+
     # 1. Generate task_id and correlation_id for persistence
     task_id = str(uuid4())
     correlation_id = f"manual-agent-{role}-{org_id[:8]}-{uuid4().hex[:6]}"
@@ -193,7 +193,7 @@ async def run_agent(
                 task_description="Execute assigned task",
                 inputs=request.input_data
             )
-            
+
             # Update to completed
             with get_tenant_client(org_id) as db:
                 db.table("tasks").update({
@@ -201,7 +201,7 @@ async def run_agent(
                     "result": str(result),
                     "tokens_used": crew.get_last_tokens_used()
                 }).eq("id", task_id).execute()
-                
+
         except Exception as e:
             import logging
             logging.getLogger(__name__).error("Agent execution failed: %s", e)
@@ -213,7 +213,7 @@ async def run_agent(
                 }).eq("id", task_id).execute()
 
     background_tasks.add_task(_execute)
-    
+
     return RunAgentResponse(
         task_id=task_id,
         status="accepted"

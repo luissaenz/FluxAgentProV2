@@ -71,14 +71,14 @@ def run_skill(
 
 
     console.print(f"[cyan]Executing [bold]{file_path.name}[/bold]...[/cyan]\n")
-    
+
     try:
         if not danger_no_sandbox:
             byte_code = compile_restricted(source_code, filename=file_path.name, mode="exec")
             safe_env = safe_builtins.copy()
             # Note: In a real scenario, __import__ would be restricted by SecurityGuard
-            safe_env["__import__"] = __import__ 
-            
+            safe_env["__import__"] = __import__
+
             exec_globals = {
                 "__builtins__": safe_env,
                 "INPUT": inputs,
@@ -114,7 +114,7 @@ def run_agent(
 ):
     """Execute an agent either locally (with --bundle) or remotely."""
     inputs = _load_inputs(input_str, input_file)
-    
+
     if bundle:
         asyncio.run(_run_local_agent(role, bundle, inputs))
     else:
@@ -131,7 +131,7 @@ def run_flow(
 ):
     """Execute a flow either locally (with --bundle) or remotely."""
     inputs = _load_inputs(input_str, input_file)
-    
+
     if bundle:
         asyncio.run(_run_local_flow(flow_type, bundle, inputs))
     else:
@@ -193,7 +193,7 @@ async def _run_remote_agent(role: str, inputs: Dict[str, Any], timeout: int):
         headers = {"X-Org-ID": config.org_id}
         if config.access_token:
             headers["Authorization"] = f"Bearer {config.access_token}"
-        
+
         try:
             response = await client.post(url, json=inputs, headers=headers)
             response.raise_for_status()
@@ -219,7 +219,7 @@ async def _run_remote_flow(flow_type: str, inputs: Dict[str, Any], timeout: int)
         headers = {"X-Org-ID": config.org_id}
         if config.access_token:
             headers["Authorization"] = f"Bearer {config.access_token}"
-        
+
         try:
             response = await client.post(url, json=inputs, headers=headers)
             response.raise_for_status()
@@ -237,14 +237,14 @@ async def _poll_task(client: httpx.AsyncClient, api_url: str, task_id: str, head
     """Poll for task completion with rich spinner."""
     start_time = time.time()
     url = f"{api_url}/api/tasks/{task_id}"
-    
+
     with Live(Spinner("dots", text=f"Executing task {task_id}..."), refresh_per_second=10) as live:
         while time.time() - start_time < timeout:
             resp = await client.get(url, headers=headers)
             resp.raise_for_status()
             data = resp.json()
             status = data.get("status")
-            
+
             if status == "completed":
                 live.update("[green]Task completed![/green]")
                 _display_result(data.get("result"))
@@ -253,9 +253,9 @@ async def _poll_task(client: httpx.AsyncClient, api_url: str, task_id: str, head
                 live.update("[red]Task failed![/red]")
                 console.print(f"[red]Error:[/red] {data.get('error')}")
                 raise typer.Exit(code=1)
-            
+
             await asyncio.sleep(2)
-        
+
         live.update("[yellow]Timeout reached.[/yellow]")
         console.print(f"[yellow]Task {task_id} is still running (timeout={timeout}s).[/yellow]")
 
@@ -263,7 +263,7 @@ def _display_result(result: Any):
     """Format and display the execution result."""
     if result is None:
         return
-    
+
     try:
         if isinstance(result, str):
             # Check if it's a JSON string
@@ -273,7 +273,7 @@ def _display_result(result: Any):
                 formatted = result
         else:
             formatted = json.dumps(result, indent=2)
-            
+
         console.print(Panel(
             formatted,
             title="[green]Result[/green]",

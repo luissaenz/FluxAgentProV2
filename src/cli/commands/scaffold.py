@@ -20,7 +20,7 @@ def scaffold_command(
     Create a new bundle structure (agents, skills, flows, manifest.json).
     """
     bundle_path = target_dir / name
-    
+
     if bundle_path.exists():
         console.print(f"[yellow]Warning:[/yellow] Directory [bold]{bundle_path}[/bold] already exists.")
         if not typer.confirm("Do you want to scaffold inside it?"):

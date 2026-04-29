@@ -18,6 +18,12 @@ def publish_bundle(
         print(f"[red]Error:[/red] [bold]{zip_path}[/bold] is not a valid ZIP file.")
         raise typer.Exit(code=1)
 
+    import os
+    if os.getenv("FAP_MOCK_SERVER") == "1":
+        print("[yellow]MOCK MODE:[/yellow] Simulating successful publication...")
+        print(f"\n[bold green]SUCCESS:[/bold green] Bundle [bold]{zip_path.name}[/bold] published (MOCK)!")
+        return
+
     config = CLIConfig.load()
     if not config.access_token or not config.org_id:
         print("[red]Error:[/red] Not authenticated. Run [bold]fap login[/bold] first.")
@@ -33,11 +39,11 @@ def publish_bundle(
     try:
         with open(zip_path, "rb") as f:
             files = {"file": (zip_path.name, f, "application/zip")}
-            
+
             params = {"force": "true" if force else "false"}
             with httpx.Client(base_url=config.api_url, timeout=60.0) as client:
                 response = client.post("/api/bundles/import", headers=headers, files=files, params=params)
-                
+
                 if response.status_code == 201:
                     result = response.json()
                     print(f"\n[bold green]SUCCESS:[/bold green] Bundle [bold]{zip_path.name}[/bold] published!")

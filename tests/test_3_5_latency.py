@@ -219,11 +219,11 @@ class LatencyValidator:
     def _on_event(self, payload: dict[str, Any]) -> None:
         """Callback al recibir un evento INSERT en domain_events."""
         recv_wall = time.time() * 1000  # epoch ms
-        
+
         # Realtime v2 (supabase-py 2.x) entrega los datos en payload['data']['record'] para INSERTs
         data_root = payload.get("data", {})
         new_data = data_root.get("record", payload.get("new", {}))
-        
+
         if not new_data:
             logger.debug("  [DEBUG] Payload sin datos: %s", payload)
             return
@@ -231,7 +231,7 @@ class LatencyValidator:
         new_data.get("id")
         agg_id = new_data.get("aggregate_id")
         evt_type = new_data.get("event_type")
-        
+
         logger.info(
             "  [REALTIME] Evento detectado: Type=%s, AggID=%s (Esperando=%s)",
             evt_type, agg_id, self.task_id

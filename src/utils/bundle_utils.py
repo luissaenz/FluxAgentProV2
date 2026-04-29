@@ -11,7 +11,7 @@ def get_file_hash(file_path: Path) -> str:
     """Calculate the SHA256 hash of a file using the project's integrity service."""
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
-    
+
     with open(file_path, "rb") as f:
         return calculate_sha256(f.read())
 
@@ -49,7 +49,7 @@ def update_manifest_hashes(bundle_path: Path) -> Dict:
                 "description": "Auto-migrated bundle",
                 "version": "1.0.0"
             }
-    
+
     # Calculate and update hashes
     manifest["hashes"] = calculate_bundle_hashes(bundle_path)
 

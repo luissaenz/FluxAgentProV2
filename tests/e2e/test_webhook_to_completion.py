@@ -19,16 +19,16 @@ from src.api.main import app
 def client():
     """Synchronous TestClient wrapping the FastAPI app."""
     from src.api.middleware import verify_org_membership
-    
+
     # Mock dependency to avoid JWT requirement in E2E tests
     async def mock_verify_org_membership():
         return {"user_id": "test-user", "org_id": "sample-org", "role": "admin"}
-    
+
     app.dependency_overrides[verify_org_membership] = mock_verify_org_membership
-    
+
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
-        
+
     app.dependency_overrides.clear()
 
 

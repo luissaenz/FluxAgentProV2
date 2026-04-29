@@ -30,10 +30,10 @@ from src.flows.base_flow import BaseFlow
 from src.flows.state import BaseFlowState
 from src.utils.llm_parsing import extract_json_from_text, extract_token_usage
 
+from ..services.bundle_manager import BundleManager, BundleManifest
 from .registry import register_flow
 from .workflow_definition import WorkflowDefinition
 from .workflow_guardrails import WorkflowValidationError, validate_workflow
-from ..services.bundle_manager import BundleManager, BundleManifest
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class ArchitectFlow(BaseFlow):
         workflow_def.flow_type = safe_flow_type
 
         # 5. Generate ZIP Bundle (Roadmap T15.4)
-        bm = BundleManager()
+        bm = BundleManager(org_id=self.org_id)
         manifest = BundleManifest(
             name=workflow_def.name,
             version="1.0.0",
@@ -147,7 +147,7 @@ class ArchitectFlow(BaseFlow):
             agents=[a.role for a in workflow_def.agents],
             skills=[]
         )
-        
+
         bundle_zip = bm.create_bundle(
             manifest=manifest,
             agents=[a.model_dump() for a in workflow_def.agents],
@@ -158,7 +158,7 @@ class ArchitectFlow(BaseFlow):
             }],
             skills={}
         )
-        
+
         import base64
         bundle_b64 = base64.b64encode(bundle_zip).decode("utf-8")
 

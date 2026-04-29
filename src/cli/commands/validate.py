@@ -34,7 +34,7 @@ def get_remote_security_config(config: CLIConfig) -> Optional[dict]:
                 print(f"[yellow]⚠️  Could not sync security config (Status {response.status_code}). Using local defaults.[/yellow]")
     except Exception as e:
         print(f"[yellow]⚠️  Offline or connection error: {e}. Using local defaults.[/yellow]")
-    
+
     return None
 
 
@@ -47,7 +47,7 @@ def validate_bundle(
     """Validate a bundle's structure, integrity, and security."""
     config = CLIConfig.load()
     remote_config = None
-    
+
     if sync:
         print("[cyan]Syncing security configuration with server...[/cyan]")
         remote_config = get_remote_security_config(config)

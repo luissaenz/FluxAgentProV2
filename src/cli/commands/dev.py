@@ -12,7 +12,6 @@ from watchdog.observers import Observer
 
 from src.cli.commands.package import package_bundle
 from src.cli.commands.publish import publish_bundle
-from src.cli.utils import load_json
 from src.services.security_guard import SecurityError, SecurityGuard
 
 
@@ -25,29 +24,29 @@ class BundleEventHandler(FileSystemEventHandler):
         self.timer: Optional[threading.Timer] = None
         self.lock = threading.Lock()
         self.guard = SecurityGuard()
-        
+
         # Files to ignore to prevent infinite loops (manifest is updated by package_bundle)
         self.ignored_patterns = {".zip", ".git", "__pycache__", "manifest.json"}
 
     def on_any_event(self, event):
         if event.is_directory:
             return
-        
+
         path = Path(event.src_path)
-        
+
         # Filter by name/extension
         if path.suffix.lower() in self.ignored_patterns or path.name in self.ignored_patterns:
             return
-            
+
         # Also ignore hidden files or files in ignored directories
         if any(part.startswith(".") or part == "__pycache__" for part in path.parts):
             return
-        
+
         # Check if it's within the valid bundle structure
         try:
             rel_path = path.relative_to(self.bundle_path)
             valid_subdirs = {"agents", "flows", "skills", "context"}
-            
+
             # We only trigger on changes inside the valid subdirectories
             if rel_path.parts[0] not in valid_subdirs:
                 return
@@ -64,11 +63,11 @@ class BundleEventHandler(FileSystemEventHandler):
             self.timer.start()
 
     def _do_update(self):
-        # SUPUESTO: Usamos un lock para evitar que múltiples eventos disparen 
+        # SUPUESTO: Usamos un lock para evitar que múltiples eventos disparen
         # publicaciones concurrentes si una subida lenta está en proceso.
         with self.lock:
             print("\n[cyan]Change detected. Syncing...[/cyan]")
-            
+
             try:
                 # 1. Validation AST (Local fail-fast)
                 print("Validating [bold]AST[/bold]...")
@@ -79,36 +78,27 @@ class BundleEventHandler(FileSystemEventHandler):
                             content = f.read()
                         # NOTE: SecurityGuard is used here to catch errors before network overhead
                         self.guard.validate_skill(content, filename=skill_file.name)
-                
-                # 2. Package (Update hashes and create ZIP)
-                # We call package_bundle directly.
-                package_bundle(path=self.bundle_path)
-                
-                # 3. Publish
-                # Get bundle name from manifest to find the resulting zip
-                manifest = load_json(self.bundle_path / "manifest.json")
-                bundle_name = manifest.get("name", "bundle")
-                zip_path = self.bundle_path.parent / f"{bundle_name}.zip"
-                
-                # If the ZIP is not in the parent, check current working directory
-                if not zip_path.exists():
-                    zip_path = Path(f"{bundle_name}.zip")
 
-                if not zip_path.exists():
-                    print(f"[red]Error:[/red] Could not find generated ZIP [bold]{bundle_name}.zip[/bold]")
+                # 2. Package (Update hashes and create ZIP)
+                # We call package_bundle directly and use its return value
+                zip_path = package_bundle(path=self.bundle_path)
+
+                if not zip_path or not zip_path.exists():
+                    print("[red]Error:[/red] Could not find generated ZIP.")
                     return
-                
+
                 # NOTE: Injected force=True as per Analysis Final §79
                 publish_bundle(zip_path=zip_path, force=True)
-                
+
                 print("[bold green]✓ Hot-reload successful![/bold green]")
-                
+
             except SecurityError as e:
                 print(f"[red]STOPPED:[/red] Security validation failed: {e}")
                 print("[yellow]Bundle NOT published. Fix the error to resume sync.[/yellow]")
             except typer.Exit as e:
                 # Typer exit usually means one of the sub-commands printed its own error
-                if e.code != 0:
+                exit_code = getattr(e, "exit_code", 0)
+                if exit_code != 0:
                     print("[red]Sync aborted due to error in sub-command.[/red]")
             except Exception as e:
                 print(f"[red]Error during sync:[/red] {e}")
@@ -142,5 +132,5 @@ def dev_command(
     except KeyboardInterrupt:
         observer.stop()
         print("\n[yellow]Watcher stopped.[/yellow]")
-    
+
     observer.join()

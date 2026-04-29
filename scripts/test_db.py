@@ -15,7 +15,7 @@ def main():
     print("Test: Getting client...", flush=True)
     supabase = get_service_client()
     print(f"Test: Client obtained in {time.time()-start:.2f}s", flush=True)
-    
+
     start = time.time()
     print("Test: Executing query on 'organizations'...", flush=True)
     try:

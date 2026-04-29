@@ -1,15 +1,14 @@
 import asyncio
-import json
 import os
 import sys
-from typing import Dict, List
 
 # Añadir el root al path para poder importar src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.services.bundle_manager import BundleManager, BundleManifest
 from src.services.import_service import ImportService
-from src.db.session import get_service_client
+
+SYSTEM_ORG_ID = "00000000-0000-0000-0000-000000000000"
 
 async def seed_architect_bundle():
     """
@@ -17,7 +16,7 @@ async def seed_architect_bundle():
     Esto permite que el Architect sea 'desacoplado' del core.
     """
     print("🚀 Iniciando seeding de ArchitectFlow como System Bundle...")
-    
+
     # 1. Preparar el código del flujo
     flow_path = "src/flows/architect_flow.py"
     if not os.path.exists(flow_path):
@@ -39,7 +38,7 @@ async def seed_architect_bundle():
     )
 
     # 3. Crear el agente que necesita el architect (definido en architect_flow.py)
-    # Nota: El ArchitectFlow usa un agente internamente, pero aquí definimos 
+    # Nota: El ArchitectFlow usa un agente internamente, pero aquí definimos
     # la metadata para el bundle si fuera necesario.
     architect_agent = {
         "role": "Workflow Architect",
@@ -50,7 +49,7 @@ async def seed_architect_bundle():
     }
 
     # 4. Generar el ZIP usando BundleManager
-    bm = BundleManager()
+    bm = BundleManager(org_id=SYSTEM_ORG_ID)
     bundle_bytes = bm.create_bundle(
         manifest=manifest,
         agents=[architect_agent],
@@ -62,13 +61,8 @@ async def seed_architect_bundle():
         skills={}
     )
 
-    # 5. Importar el bundle
-    # Usamos un org_id de sistema o uno de prueba
-    SYSTEM_ORG_ID = "00000000-0000-0000-0000-000000000000"
-    SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000"
-    
-    import_service = ImportService(SYSTEM_ORG_ID, SYSTEM_USER_ID)
-    
+    import_service = ImportService(SYSTEM_ORG_ID)
+
     print(f"📦 Importando bundle '{manifest.name}' para org '{SYSTEM_ORG_ID}'...")
     try:
         result = await import_service.import_bundle(bundle_bytes)

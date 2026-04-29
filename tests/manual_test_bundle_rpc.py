@@ -19,7 +19,7 @@ logger = logging.getLogger("manual_test_bundle_rpc")
 async def run_rpc_test():
     org_id = str(uuid4())
     logger.info(f"🚀 Iniciando prueba de RPC Atómico (Org: {org_id})")
-    
+
     # 1. Crear organización de prueba
     svc = get_service_client()
     try:
@@ -65,15 +65,15 @@ async def run_rpc_test():
                 "p_org_id": org_id,
                 "p_payload": payload.model_dump()
             }).execute()
-            
+
             result = BundleRPCResult(**response.data)
-            
+
             if result.status == "success":
                 logger.info(f"✅ RPC exitoso! Bundle ID: {result.bundle_id}")
                 logger.info(f"📊 Resumen: Agents={result.agents_count}, Flows={result.flows_count}, Skills={result.skills_count}")
             else:
                 logger.error(f"❌ RPC falló según respuesta: {result.error}")
-                
+
     except Exception as e:
         logger.error(f"❌ Error crítico invocando RPC: {e}")
         logger.info("💡 Asegúrate de que las migraciones 0026 y 0027 estén aplicadas en Supabase.")
@@ -82,7 +82,7 @@ async def run_rpc_test():
     logger.info("🧪 Probando ATOMICIDAD (Forzando error de tipo en agente)...")
     bad_payload = payload.model_dump()
     bad_payload["agents"][0]["max_iter"] = "NOT_AN_INTEGER" # Esto debería fallar el cast en SQL
-    
+
     try:
         with get_tenant_client(org_id) as db:
             db.rpc("import_bundle_atomic", {

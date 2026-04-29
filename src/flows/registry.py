@@ -268,10 +268,10 @@ class FlowRegistry:
                 # 1. Python Flow Handling
                 if result.data.get("is_python"):
                     from src.services.security_guard import SecurityGuard
-                    
+
                     code = result.data["code_source"]
                     guard = SecurityGuard(is_system=True) # Assume system trust for DB-stored code
-                    
+
                     try:
                         exec_globals = guard.execute(code)
                         # Look for the flow class in exec_globals
@@ -281,15 +281,15 @@ class FlowRegistry:
                             if isinstance(val, type) and hasattr(val, "_registered_flow_name"):
                                 flow_class = val
                                 break
-                        
+
                         if not flow_class:
                              raise ValueError(f"No Flow class found in code for '{flow_type}'")
-                             
+
                         # Cache it
                         scoped_key = f"{org_id}:{flow_type}"
                         self._flows[scoped_key] = flow_class
                         return flow_class
-                        
+
                     except Exception as e:
                         logger.error("Failed to execute Python flow '%s': %s", flow_type, e)
                         return None

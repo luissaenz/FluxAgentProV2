@@ -32,17 +32,17 @@ class TestTokenTracking(unittest.TestCase):
         self.assertEqual(self.state.tokens_used, 100)
         # update_tokens doesn't check for negative in logic, but pydantic ge=0 might block it
         # Actually update_tokens just adds to self.tokens_used
-        self.state.update_tokens(-10) 
-        # If it adds -10, it becomes 90. 
+        self.state.update_tokens(-10)
+        # If it adds -10, it becomes 90.
         # Let's check what the developer intended. Usually tokens are positive.
         self.assertEqual(self.state.tokens_used, 90)
 
     def test_estimate_tokens_string(self):
         """estimate_tokens debe calcular ~4 chars por token."""
         text = "Hola mundo" # 10 chars
-        # 10 // 4 = 2. 
+        # 10 // 4 = 2.
         self.assertEqual(self.state.estimate_tokens(text), 2)
-        
+
         long_text = "A" * 100 # 100 chars -> 25 tokens
         self.assertEqual(self.state.estimate_tokens(long_text), 25)
 

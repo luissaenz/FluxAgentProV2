@@ -171,9 +171,6 @@ def verify_integrity(db: Client, expected_tools: int) -> bool:
         print("  OK")
 
     # Check orphans (tools without valid service_id)
-    orphans = (
-        db.rpc("", {})  # Fallback: check via select
-    )
     # Use a direct query approach for orphan check
     all_tools = db.table("service_tools").select("id, service_id").execute()
     all_providers = db.table("service_catalog").select("id").execute()

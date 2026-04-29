@@ -39,7 +39,7 @@ class LocalExecutor:
                 # Security validation
                 self.guard.validate_skill(code, py_file.name)
                 self.skills[py_file.name] = code
-                
+
                 # Transient registration as a tool
                 try:
                     # We use the same pattern as ToolRegistry._load_from_db
@@ -47,19 +47,19 @@ class LocalExecutor:
                     # Note: We don't use compile_restricted here to avoid issues with decorators
                     # since we are in 'fap run' local mode. But we still validate with SecurityGuard.
                     exec(code, {"__builtins__": safe_builtins}, loc)
-                    
+
                     for attr in loc.values():
-                        if (isinstance(attr, type) and 
-                            "Tool" in attr.__name__ and 
+                        if (isinstance(attr, type) and
+                            "Tool" in attr.__name__ and
                             not attr.__name__.startswith("Base")):
-                            
+
                             # Register as local tool (by filename stem)
                             tool_name = py_file.stem.lower()
                             tool_registry.register(name=f"{self.org_id}:{tool_name}")(attr)
-                            
+
                             # Also register by class name for AgentFactory resolution
                             tool_registry.register(name=f"{self.org_id}:{attr.__name__}")(attr)
-                            
+
                             logger.info("Transiently registered tool: %s (and class: %s)", tool_name, attr.__name__)
                 except Exception as e:
                     logger.warning("Failed to register tool from %s: %s", py_file.name, e)
@@ -85,21 +85,21 @@ class LocalExecutor:
     @contextmanager
     def mock_persistence(self) -> Generator[None, None, None]:
         """Intercept DB calls to prevent production side-effects during local run."""
-        
+
         # Mock for Supabase clients
         mock_db = MagicMock()
         mock_db.table.return_value.insert.return_value.execute.return_value = MagicMock(data=[])
         mock_db.table.return_value.upsert.return_value.execute.return_value = MagicMock(data=[])
         mock_db.table.return_value.update.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
         mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data=None)
-        
+
         # Mocking get_tenant_client and get_service_client
         # Also mocking execute_with_retry if needed
-        
+
         with patch("src.db.session.get_tenant_client", return_value=mock_db), \
              patch("src.db.session.get_service_client", return_value=mock_db), \
              patch("src.db.session.execute_with_retry", side_effect=lambda x: x):
-            
+
             # Additional mock for BaseCrew._load_agent_config if we want to use bundle agents
             def mocked_load_agent_config(crew_self):
                 for agent in self.agents:
