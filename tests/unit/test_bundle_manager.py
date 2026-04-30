@@ -148,9 +148,9 @@ def test_zip_size_exceeds_50mb():
     total_size = len(zip_bytes)
 
     # Verify we actually created a ZIP > 50MB
-    assert (
-        total_size > 50 * 1024 * 1024
-    ), f"Test setup error: ZIP size is {total_size}, should exceed 50MB"
+    assert total_size > 50 * 1024 * 1024, (
+        f"Test setup error: ZIP size is {total_size}, should exceed 50MB"
+    )
 
     with pytest.raises(BundleError, match="exceeds limit"):
         manager.process_zip(zip_bytes)

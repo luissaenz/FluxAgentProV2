@@ -14,14 +14,14 @@ def main():
     start = time.time()
     print("Test: Getting client...", flush=True)
     supabase = get_service_client()
-    print(f"Test: Client obtained in {time.time()-start:.2f}s", flush=True)
+    print(f"Test: Client obtained in {time.time() - start:.2f}s", flush=True)
 
     start = time.time()
     print("Test: Executing query on 'organizations'...", flush=True)
     try:
         res = supabase.table("organizations").select("id").limit(1).execute()
         print(
-            f"Test: Query done in {time.time()-start:.2f}s. Result rows: {len(res.data)}",
+            f"Test: Query done in {time.time() - start:.2f}s. Result rows: {len(res.data)}",
             flush=True,
         )
     except Exception as e:

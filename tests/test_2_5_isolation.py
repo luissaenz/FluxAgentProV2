@@ -130,7 +130,9 @@ async def test_metadata_enrichement_isolation():
             if call[0][0] == "org_id" and call[0][1] == org_id:
                 found_org_filter = True
 
-        assert found_org_filter, f"No se encontró el filtro .eq('org_id', '{org_id}') en la consulta de metadata"
+        assert found_org_filter, (
+            f"No se encontró el filtro .eq('org_id', '{org_id}') en la consulta de metadata"
+        )
 
 
 # ── Capa B: Verificación de RLS (Simulada) ──────────────────────

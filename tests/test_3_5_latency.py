@@ -650,9 +650,9 @@ class TestLatencyValidation:
             db_count = await _count_events_in_db(supabase_client, task_id)
             received_count = len(validator.events_received)
 
-            assert (
-                db_count == received_count
-            ), f"Integridad fallida: DB={db_count}, recibidos={received_count}"
+            assert db_count == received_count, (
+                f"Integridad fallida: DB={db_count}, recibidos={received_count}"
+            )
 
         finally:
             await validator.close()

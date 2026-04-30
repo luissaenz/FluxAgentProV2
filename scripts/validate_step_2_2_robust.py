@@ -44,9 +44,9 @@ async def verify_agent_enrichment_robustness():
 
         # Validaciones de Robustez
         assert "display_name" in agent_resp, "Falta display_name incluso en fallback"
-        assert (
-            agent_resp.get("display_name") is not None
-        ), "Display name no debería ser None"
+        assert agent_resp.get("display_name") is not None, (
+            "Display name no debería ser None"
+        )
 
         print("\n✅ VALIDACIÓN DE ROBUSTEZ EXITOSA:")
         print(

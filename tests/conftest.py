@@ -79,8 +79,8 @@ def make_mock_client():
         chain.range.return_value = chain
 
         # Support execute_with_retry pattern from session.py
-        chain.execute_with_retry.side_effect = (
-            lambda x: x.execute() if hasattr(x, "execute") else x
+        chain.execute_with_retry.side_effect = lambda x: (
+            x.execute() if hasattr(x, "execute") else x
         )
 
         return chain
