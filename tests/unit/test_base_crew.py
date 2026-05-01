@@ -142,54 +142,57 @@ class TestAgentLoading:
 class TestToolResolution:
     """BaseCrew._resolve_tools() behavior."""
 
-    @patch("src.crews.base_crew.tool_registry")
+    @patch("src.crews.factory.tool_registry")
     def test_resolves_tools_from_registry(self, mock_registry, sample_org_id):
-        """BaseCrew resolves tool names to instances."""
-        # Mock tool class
+        """BaseCrew resolves tool names to instances via AgentFactory."""
+        from src.crews.factory import AgentFactory
+
         mock_tool_class = MagicMock()
         mock_tool_instance = MagicMock()
         mock_tool_class.return_value = mock_tool_instance
         mock_registry.get.return_value = mock_tool_class
 
-        crew = BaseCrew(org_id=sample_org_id, role="analyst")
-        crew._agent_config = {
-            "allowed_tools": ["db_read", "web_search"],
-        }
-
-        tools = crew._resolve_tools(["db_read", "web_search"])
+        tools = AgentFactory.resolve_tools(["db_read", "web_search"], sample_org_id)
 
         assert len(tools) == 2
-        # SUPUESTO: Ensure org_id is passed to get() for tenant isolation
         mock_registry.get.assert_any_call("db_read", org_id=sample_org_id)
         mock_registry.get.assert_any_call("web_search", org_id=sample_org_id)
         mock_tool_class.assert_called_with(org_id=sample_org_id)
 
-    @patch("src.crews.base_crew.tool_registry")
+    @patch("src.crews.factory.tool_registry")
     def test_skips_unknown_tools(self, mock_registry, sample_org_id):
         """BaseCrew skips tools not in registry."""
+        from src.crews.factory import AgentFactory
+
         mock_registry.get.side_effect = ValueError("Tool not found")
 
-        crew = BaseCrew(org_id=sample_org_id, role="analyst")
-        crew._agent_config = {
-            "allowed_tools": ["unknown_tool", "another_unknown"],
-        }
+        tools = AgentFactory.resolve_tools(
+            ["unknown_tool", "another_unknown"], sample_org_id
+        )
 
-        tools = crew._resolve_tools(["unknown_tool", "another_unknown"])
-
-        # Both tools should be skipped
         assert len(tools) == 0
 
-    @patch("src.crews.base_crew.tool_registry")
+    @patch("src.crews.factory.tool_registry")
     def test_handles_empty_allowed_tools(self, mock_registry, sample_org_id):
         """BaseCrew handles empty allowed_tools list."""
-        crew = BaseCrew(org_id=sample_org_id, role="analyst")
-        crew._agent_config = {
-            "allowed_tools": [],
-        }
+        from src.crews.factory import AgentFactory
 
-        tools = crew._resolve_tools([])
+        tools = AgentFactory.resolve_tools([], sample_org_id)
 
         assert tools == []
+
+    def test_resolve_tools_delegates_to_factory(self, sample_org_id):
+        """BaseCrew._resolve_tools delegates to AgentFactory.resolve_tools."""
+        from src.crews.factory import AgentFactory
+
+        with patch.object(
+            AgentFactory, "resolve_tools", return_value=[MagicMock()]
+        ) as mock_resolve:
+            crew = BaseCrew(org_id=sample_org_id, role="analyst")
+            tools = crew._resolve_tools(["db_read"])
+
+            mock_resolve.assert_called_once_with(["db_read"], sample_org_id)
+            assert len(tools) == 1
 
 
 # ── run() method tests ──────────────────────────────────────────
@@ -230,38 +233,32 @@ class TestRunMethod:
 
         with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             with patch("src.crews.base_crew.get_settings", return_value=mock_settings):
-                with patch("crewai.Agent") as mock_agent_cls:
-                    with patch("crewai.Task") as mock_task_cls:
-                        with patch("crewai.Crew") as mock_crew_cls:
-                            mock_agent = MagicMock()
-                            mock_agent_cls.return_value = mock_agent
+                with patch("src.crews.factory.get_settings", return_value=mock_settings):
+                    with patch("src.crews.factory.AgentFactory.create_agent") as mock_create:
+                        with patch("crewai.Task") as mock_task_cls:
+                            with patch("crewai.Crew") as mock_crew_cls:
+                                mock_agent = MagicMock()
+                                mock_create.return_value = mock_agent
 
-                            mock_task = MagicMock()
-                            mock_task_cls.return_value = mock_task
+                                mock_task = MagicMock()
+                                mock_task_cls.return_value = mock_task
 
-                            mock_crew = MagicMock()
-                            mock_crew_cls.return_value = mock_crew
-                            mock_crew.kickoff.return_value = MagicMock(raw="Result")
+                                mock_crew = MagicMock()
+                                mock_crew_cls.return_value = mock_crew
+                                mock_crew.kickoff.return_value = MagicMock(raw="Result")
 
-                            crew = BaseCrew(org_id=sample_org_id, role="analyst")
-                            crew.run(
-                                task_description="Analyze this data",
-                                inputs={"data": "test"},
-                                expected_output="Detailed analysis",
-                            )
+                                crew = BaseCrew(org_id=sample_org_id, role="analyst")
+                                crew.run(
+                                    task_description="Analyze this data",
+                                    inputs={"data": "test"},
+                                    expected_output="Detailed analysis",
+                                )
 
-                            mock_agent_cls.assert_called_once()
-                            agent_call_kwargs = mock_agent_cls.call_args[1]
-                            assert agent_call_kwargs["role"] == "analyst"
-                            assert agent_call_kwargs["goal"] == "Analyze data"
-                            assert agent_call_kwargs["allow_delegation"] is False
-                            assert agent_call_kwargs["max_iter"] == 5
+                                mock_create.assert_called_once_with(agent_config, sample_org_id)
 
-                            mock_task_cls.assert_called_once()
-
-                            mock_crew.kickoff.assert_called_once_with(
-                                inputs={"data": "test"}
-                            )
+                                mock_crew.kickoff.assert_called_once_with(
+                                    inputs={"data": "test"}
+                                )
 
     def test_run_uses_default_expected_output(self, sample_org_id):
         """BaseCrew.run() uses default expected_output if not provided."""
@@ -321,44 +318,52 @@ class TestRunAsyncMethod:
     @pytest.mark.asyncio
     async def test_run_async_builds_and_executes_crew(self, sample_org_id):
         """BaseCrew.run_async() builds and executes crew asynchronously."""
-        mock_db = MagicMock()
-
-        mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(
-            data={
-                "org_id": sample_org_id,
+        agent_data = {
+            "org_id": sample_org_id,
+            "role": "analyst",
+            "soul_json": {
                 "role": "analyst",
-                "soul_json": {
-                    "role": "analyst",
-                    "goal": "Goal",
-                    "backstory": "Backstory",
-                },
-                "allowed_tools": [],
-                "model": "claude-sonnet-4-20250514",
-                "max_iter": 5,
-                "is_active": True,
-            }
-        )
+                "goal": "Goal",
+                "backstory": "Backstory",
+            },
+            "allowed_tools": [],
+            "model": "claude-sonnet-4-20250514",
+            "max_iter": 5,
+            "is_active": True,
+        }
+
+        mock_db = MagicMock()
+        mock_result = MagicMock()
+        mock_result.data = agent_data
+        mock_db.table.return_value.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = mock_result
 
         mock_settings = MagicMock()
 
         with patch("src.crews.base_crew.get_service_client", return_value=mock_db):
             with patch("src.crews.base_crew.get_settings", return_value=mock_settings):
-                with patch("crewai.Agent"):
-                    with patch("crewai.Task"):
-                        with patch("crewai.Crew") as mock_crew_cls:
-                            mock_crew = MagicMock()
-                            mock_crew_cls.return_value = mock_crew
-                            mock_crew.kickoff_async = AsyncMock(
-                                return_value=MagicMock(raw="Async Result")
-                            )
+                with patch("src.crews.factory.get_settings", return_value=mock_settings):
+                    with patch(
+                        "src.crews.factory.AgentFactory.create_agent_async"
+                    ) as mock_create:
+                        with patch("crewai.Task"):
+                            with patch("crewai.Crew") as mock_crew_cls:
+                                mock_agent = MagicMock()
+                                mock_create.return_value = mock_agent
 
-                            crew = BaseCrew(org_id=sample_org_id, role="analyst")
-                            await crew.run_async(
-                                task_description="Async analysis",
-                                inputs={"data": "test"},
-                            )
+                                mock_crew = MagicMock()
+                                mock_crew_cls.return_value = mock_crew
+                                mock_crew.kickoff_async = AsyncMock(
+                                    return_value=MagicMock(raw="Async Result")
+                                )
 
-                            mock_crew.kickoff_async.assert_called_once()
+                                crew = BaseCrew(org_id=sample_org_id, role="analyst")
+                                await crew.run_async(
+                                    task_description="Async analysis",
+                                    inputs={"data": "test"},
+                                )
+
+                                assert mock_create.called
+                                mock_crew.kickoff_async.assert_called_once()
 
 
 # ── kickoff_async() alias tests ─────────────────────────────────

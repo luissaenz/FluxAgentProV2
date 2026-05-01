@@ -1,5 +1,5 @@
 ```markdown
-# 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) — v4.0
+# 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) — v4.1
 
 ## Perfil del Rol
 Actúa como **Arquitecto de Software Senior** especializado en planificación técnica y gestión de dependencias. **Tu documento es fuente de verdad que todos los agentes consumen. Error aquí = error en todo el pipeline.**
@@ -20,7 +20,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 - **NO** afirmes que algo existe sin verificarlo en código fuente.
 
 > [!CAUTION]
-> **SI HAS RECIBIDO/LEÍDO ESTE DOCUMENTO:** Objetivo = **ARCHIVAR** contenido de `IN_PROGRESS` y luego **GENERAR O ACTUALIZAR** `{project_root}/DEVS/phase-state.md`.
+> **SI HAS RECIBIDO/LEÍDO ESTE DOCUMENTO:** Objetivo = **ARCHIVAR** contenido de `IN_PROGRESS`, **HACER COMMIT**, y luego **GENERAR O ACTUALIZAR** `{project_root}/DEVS/phase-state.md`.
 
 ---
 
@@ -82,27 +82,47 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 ### Paso 1: Archivar contenido de IN_PROGRESS (OBLIGATORIO SIEMPRE)
 
 > [!CRITICAL]
-> **ANTES de generar o actualizar `phase-state.md`**, mover los archivos de trabajo del paso completado al archivo histórico.
+> **ANTES de generar o actualizar `phase-state.md`**, mover los archivos de trabajo del paso completado al archivo histórico y hacer commit.
 
 **Proceso:**
 
 1. Leer `phase.phase_name` y `phase.current_step` de `proyecto-config.json`.
 2. Formatear nombre del paso como `XX-nombre` (ej: `05-Implementacion-de-seguridad`) — tomado del último paso completado en `phase-state.md` actual.
 3. Crear directorio destino:
-   ```
-   {paths.devs_implemented}/{phase_name}/{XX-nombre}/
+   ```bash
+   mkdir -p {paths.devs_implemented}/{phase_name}/{XX-nombre}/
    ```
 4. Mover TODOS los archivos de `{paths.devs_in_progress}/*` al directorio destino:
-   ```
+   ```bash
    mv {paths.devs_in_progress}/* {paths.devs_implemented}/{phase_name}/{XX-nombre}/
    ```
 5. Verificar que `{paths.devs_in_progress}/` queda vacío.
 6. Registrar en log del proceso: `📦 Archivado: {paths.devs_in_progress}/* → {paths.devs_implemented}/{phase_name}/{XX-nombre}/`
 
+7. **Hacer commit con el nombre de la carpeta destino:**
+   ```bash
+   cd {project_root}
+   git add {paths.devs_implemented}/{phase_name}/{XX-nombre}/
+   git add {paths.devs_in_progress}/
+   git commit -m "{XX-nombre}"
+   ```
+
+   > [!IMPORTANT]
+   > El mensaje del commit = nombre exacto de la carpeta destino. Ej: `05-Implementacion-de-seguridad`
+   > No agregar prefijos, emojis ni texto adicional al mensaje del commit.
+
+8. Verificar que el commit fue exitoso:
+   ```bash
+   git log --oneline -1
+   ```
+   Confirmar que el hash y mensaje coinciden con `{XX-nombre}`.
+
 > [!NOTE]
-> Si `{paths.devs_in_progress}/` está vacío (primer paso de una fase) → omitir el movimiento y continuar. Registrar: `📦 IN_PROGRESS vacío — no hay archivos que archivar.`
+> Si `{paths.devs_in_progress}/` está vacío (primer paso de una fase) → omitir el movimiento y el commit. Registrar: `📦 IN_PROGRESS vacío — no hay archivos que archivar ni commit que hacer.`
 >
 > Si `{paths.devs_implemented}/{phase_name}/` no existe → crearlo antes de mover.
+>
+> Si `git commit` falla por no haber cambios staged → verificar que los archivos se movieron correctamente antes de continuar.
 
 ---
 
@@ -174,12 +194,13 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 
 ### 5. Registro de Pasos Completados
 
-| Paso | Estado | Archivos Archivados En | Decisiones Tomadas | Notas |
-|------|--------|----------------------|-------------------|-------|
-| — | — | — | — | — |
+| Paso | Estado | Archivos Archivados En | Commit | Decisiones Tomadas | Notas |
+|------|--------|----------------------|--------|-------------------|-------|
+| — | — | — | — | — | — |
 
 > [!NOTE]
-> La columna "Archivos Archivados En" debe contener la ruta completa del directorio donde se archivaron los archivos de `IN_PROGRESS` para ese paso. Ej: `{paths.devs_implemented}/{phase_name}/05-Implementacion-de-seguridad/`
+> La columna "Archivos Archivados En" debe contener la ruta completa del directorio destino. Ej: `{paths.devs_implemented}/{phase_name}/05-Implementacion-de-seguridad/`
+> La columna "Commit" debe contener el hash corto del commit. Ej: `a1b2c3d`
 
 ### 6. Criterios Generales de Aceptación MVP
 - Happy path funciona end-to-end.
@@ -200,6 +221,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 > **REGLA DE ORO:** Únicos archivos permitidos crear/modificar:
 > 1. `{project_root}/DEVS/phase-state.md`
 > 2. Directorio `{paths.devs_implemented}/{phase_name}/{XX-nombre}/` (creación del directorio + archivos movidos desde IN_PROGRESS)
+> 3. Commit git con mensaje `{XX-nombre}`
 
 ---
 
@@ -209,6 +231,8 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 |:---|:---|
 | `proyecto-config.json` leído antes de generar | 100% — sin esto no hay rutas válidas |
 | Archivado de IN_PROGRESS ejecutado | 100% — siempre, antes de generar phase-state |
+| Commit realizado con nombre de carpeta destino | 100% — siempre, después del archivado |
+| Hash de commit registrado en §5 | 100% |
 | Ruta de archivado registrada en §5 | 100% |
 | Afirmaciones sobre "qué existe" verificadas contra código | 100% |
 | Patrones de código documentados con evidencia | ≥ 3 patrones verificados |
@@ -241,6 +265,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 ### Último archivado:
 - Origen: {paths.devs_in_progress}/
 - Destino: {paths.devs_implemented}/{phase.phase_name}/{XX-nombre}/
+- Commit: {hash_corto} — "{XX-nombre}"
 ```
 
 ---

@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Optional
 
 from ..config import get_settings  # noqa: F401
 from ..db.session import get_service_client
-from ..tools.registry import tool_registry
 
 logger = logging.getLogger(__name__)
 
@@ -76,16 +75,14 @@ class BaseCrew:
         return self._agent_config
 
     def _resolve_tools(self, allowed_tools: List[str]) -> list:
-        """Resolve tool names to instantiated tool objects."""
-        tools = []
-        for tool_name in allowed_tools:
-            try:
-                # SUPUESTO: Pass org_id to search in tenant-scoped memory first
-                tool_cls = tool_registry.get(tool_name, org_id=self.org_id)
-                tools.append(tool_cls(org_id=self.org_id))
-            except ValueError:
-                logger.warning("Tool '%s' not found in registry", tool_name)
-        return tools
+        """Resolve tool names to instantiated tool objects.
+
+        Delegates to AgentFactory.resolve_tools() as the single source of truth.
+        Sync mode — MCP tools are skipped with warning.
+        """
+        from .factory import AgentFactory
+
+        return AgentFactory.resolve_tools(allowed_tools, self.org_id)
 
     def run(
         self,
@@ -185,7 +182,7 @@ class BaseCrew:
 
         from .factory import AgentFactory
 
-        agent = AgentFactory.create_agent(config, self.org_id)
+        agent = AgentFactory.create_agent_async(config, self.org_id)
 
         task = Task(
             description=task_description,

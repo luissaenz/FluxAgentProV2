@@ -297,3 +297,56 @@ def global_llm_mock():
             "agent": mock_agent,
             "task": mock_task,
         }
+
+
+@pytest.fixture
+def mock_mcp_pool():
+    """Mock MCPPool.get_tools() to return simulated MCP tools without real infrastructure."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    mock_tools = []
+    for tool_name in ["list_files", "read_file", "write_file"]:
+        mock_tool = MagicMock()
+        mock_tool.name = tool_name
+        mock_tools.append(mock_tool)
+
+    mock_pool = MagicMock()
+    mock_pool.get_tools = AsyncMock(return_value=mock_tools)
+    return mock_pool
+
+
+@pytest.fixture
+def mock_service_connector():
+    """Mock ServiceConnectorTool._run() for testing without real HTTP calls."""
+    from unittest.mock import MagicMock
+
+    mock_tool = MagicMock()
+    mock_tool._run = MagicMock(
+        return_value='{"status": "success", "data": "mocked_response"}'
+    )
+    return mock_tool
+
+
+@pytest.fixture
+def sample_agent_config():
+    """Sample agent configuration for tests."""
+    return {
+        "soul_json": {
+            "role": "test_agent",
+            "goal": "Test agent goal that is long enough",
+            "backstory": "Test agent backstory that is long enough",
+        },
+        "allowed_tools": [],
+        "max_iter": 3,
+    }
+
+
+@pytest.fixture
+def mock_llm_response():
+    """Mock LLM response for ArchitectFlow tests."""
+    import json
+
+    def make_response(workflow_json: dict):
+        return json.dumps(workflow_json)
+
+    return make_response

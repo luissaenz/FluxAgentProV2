@@ -225,6 +225,7 @@ SCHEMA EXACTO A SEGUIR ( WorkflowDefinition ):
   "name": "string, min 3 caracteres, nombre descriptivo del workflow",
   "description": "string, min 10 caracteres, explicación detallada",
   "flow_type": "string, snake_case, minúsculas, min 3 caracteres, único globalmente",
+  "category": "string, categoría del workflow (ej: 'business', 'data', 'automation')",
   "steps": [
     {{
       "id": "string, identificador único del paso (ej: 'step_1')",
@@ -232,7 +233,8 @@ SCHEMA EXACTO A SEGUIR ( WorkflowDefinition ):
       "description": "string, min 10 caracteres, qué hace este paso",
       "agent_role": "string, debe coincidir exactamente con un role en agents[]",
       "depends_on": [array de strings o null, ids de pasos anteriores de los que depende],
-      "requires_approval": boolean, false por defecto
+      "requires_approval": boolean, false por defecto,
+      "approval_threshold": "string, expresión booleana opcional (ej: 'monto > 5000')"
     }}
   ],
   "agents": [
@@ -254,6 +256,38 @@ SCHEMA EXACTO A SEGUIR ( WorkflowDefinition ):
   ]
 }}
 
+HERRAMIENTAS DISPONIBLES Y CÓMO USARLAS:
+
+1. HERRAMIENTAS MCP (Model Context Protocol):
+   Formato: "mcp:nombre_servidor:nombre_herramienta"
+   Ejemplos:
+   - "mcp:filesystem:read_file" — Leer archivos del servidor MCP local
+   - "mcp:filesystem:write_file" — Escribir archivos
+   - "mcp:github:search_repositories" — Buscar repositorios en GitHub
+   - "mcp:github:create_issue" — Crear un issue
+   Usa MCP para herramientas locales o externas estandarizadas que se ejecutan via stdio/SSE.
+
+2. INTEGRACIONES HTTP (Service Connector):
+   Formato: Usa "service_connector" en allowed_tools y especifica tool_id en los steps.
+   La herramienta service_connector es una tool genérica que ejecuta cualquier integración
+   del Service Catalog leyendo su definición de la tabla service_tools.
+   Ejemplo de uso en steps: el agente llama service_connector con tool_id="stripe.create_customer"
+   y input_data={{"amount": 1000, "currency": "usd"}}.
+
+   IMPORTANTE: Para usar service_connector:
+   - Agrega "service_connector" en allowed_tools del agente
+   - El tool_id debe existir en service_tools (ej: "stripe.create_customer", "sendgrid.send_email")
+   - Si no conoces el ID exacto, usa un placeholder como "service.pending_config" y el usuario lo configurará
+
+3. HERRAMIENTAS REGULARES DEL REGISTRY:
+   Nombres directos como: "ddg_search", "browser", "file_read", "http_request", etc.
+   Estas son tools registradas en el sistema y disponibles directamente.
+
+GUÍA DE SELECCIÓN:
+- Usa MCP cuando: La herramienta es un servidor MCP externo/local (GitHub, Filesystem, APIs externas via stdio)
+- Usa service_connector cuando: Necesitas ejecutar integraciones HTTP del Service Catalog (Stripe, SendGrid, CRMs)
+- Usa tools regulares cuando: La tool ya existe en el registry del sistema
+
 REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
 1. 'flow_type' debe ser snake_case (solo minúsculas, números y guiones bajos)
 2. Todo 'agent_role' en 'steps' DEBE existir exactamente en 'agents[].role'
@@ -262,6 +296,8 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
 5. El campo 'model' DEBE ser uno de los valores permitidos listados arriba
 6. NO agregues campos extra que no estén en el schema
 7. Responde SOLO con el objeto JSON, sin markdown, sin backticks, sin texto explicativo
+8. Para allowed_tools: puedes mezclar tools regulares, MCP (formato mcp:server:tool), y "service_connector" en el mismo array
+9. Si usas service_connector, incluye en las rules del agente una nota sobre qué tool_id se usará
 """,
             expected_output="Un objeto JSON puro que cumpla exactamente con el schema de WorkflowDefinition.",
             agent=architect,

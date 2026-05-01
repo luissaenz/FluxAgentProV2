@@ -1,8 +1,8 @@
 # FluxAgentPro-v2 Project Instructions
 
 ## Communication Style
+- At session start, load the `caveman` skill with the skill tool using name "caveman".
 - ALWAYS use **caveman mode** in **full** intensity level.
-- Refer to `caveman` skill for rules.
 - Maintain technical accuracy while stripping all fluff.
 - No revert to normal mode unless explicitly requested.
 

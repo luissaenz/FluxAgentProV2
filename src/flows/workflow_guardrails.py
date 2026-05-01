@@ -29,6 +29,15 @@ DANGEROUS_TOOLS = {
     "send_raw_sql",
 }
 
+SAFE_BUILTIN_TOOLS = {
+    "service_connector",
+    "ddg_search",
+    "browser",
+    "file_read",
+    "file_write",
+    "http_request",
+}
+
 
 class WorkflowValidationError(Exception):
     """Workflow inválido — no se persiste."""

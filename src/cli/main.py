@@ -19,7 +19,10 @@ from src.cli.commands.package import package_bundle
 from src.cli.commands.publish import publish_bundle
 from src.cli.commands.run import app as run_app
 from src.cli.commands.scaffold import scaffold_command
+from src.cli.commands.test_scenarios import test_scenarios
 from src.cli.commands.validate import validate_bundle
+from src.cli.commands.validate_architect import validate_architect_output
+from src.cli.commands.validate_tools import validate_tools_command
 
 app = typer.Typer(
     help="FluxAgentPro-v2 CLI — Manage agents, flows, and skills via Bundles.",
@@ -37,6 +40,9 @@ app.add_typer(run_app, name="run")
 app.command("scaffold")(scaffold_command)
 app.command("dev")(dev_command)
 app.command("export-agents")(export_agents)
+app.command("validate-tools")(validate_tools_command)
+app.command("validate-architect-output")(validate_architect_output)
+app.command("test-scenarios")(test_scenarios)
 
 if __name__ == "__main__":
     app()

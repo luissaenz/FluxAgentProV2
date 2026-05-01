@@ -1,46 +1,75 @@
-# Estado de Fase: Infraestructura de Paridad (FAP-Implementor) — v27
+# Estado de Fase: Generación Avanzada de Agentes (FAP-Context) — v29
 
-> 📅 **Fecha:** 2026-04-29
-> 📝 **Estado:** COMPLETADO (Fase IV - Paridad Local-Producción)
+> 📅 **Fecha:** 2026-04-30
+> 📝 **Estado:** EN PROGRESO (Fase V - details4agents) — Análisis Paso 3 completado, código en desarrollo
+> 📦 **Último Archivado:** `DEVS/IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/`
 
 ---
 
 ## 1. Resumen de Fase
 
-El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el sistema de registries local se comportara exactamente como el de producción. Se han eliminado los fallbacks accidentales y se han proporcionado herramientas de CLI que permitan probar Agentes y Flujos localmente con las mismas restricciones de seguridad y persistencia que en el entorno real. Adicionalmente, se saneó la infraestructura resolviendo problemas de rutas relativas, encoding en Windows, y mejorando la observabilidad del ciclo de empaquetado y la suite de pruebas.
+El objetivo de la **Fase V: details4agents** es habilitar la generación de agentes con integraciones (Tipo C), soporte MCP (Stdio/SSE) y workflows multi-agente dinámicos. El flujo Architect ahora reconoce y puede generar workflows que incluyan herramientas MCP (formato `mcp:server:tool`) e integraciones HTTP (`service_connector`).
 
-**Estado Actual:** ✅ **FASE IV COMPLETADA.** Todos los pasos (S1-S9) han sido implementados, validados y certificados con éxito. El repositorio está libre de warnings y la higiene global está automatizada.
+**Estado Actual:** 🔄 **PASO 2 COMPLETADO, PASO 3 EN DESARROLLO.** Infraestructura de herramientas (MCP bridging en `AgentFactory`) y prompt del Architect (convenciones MCP+service_connector) implementados en código. Análisis del Paso 3 (Suite de los 6 Escenarios) completado y archivado. Archivos de código del Paso 3 existen pero están sin commitear.
 
 ---
 
 ## 2. Estado Actual del Proyecto
 
 ### ✅ Implementado y Funcional (Verificado en Código)
-- **Suite de Validación E2E (Paso 6):** Implementación de `tests/e2e/test_parity_suite.py` cubriendo el ciclo de vida completo (`scaffold` -> `package` -> `publish` -> `run`) con aislamiento de tenants.
-- **Auto-Hashing en `BundleManager`:** Automatización del cálculo SHA256 durante `create_bundle`, garantizando la integridad de los manifiestos.
-- **Herramienta de Certificación:** `scripts/certify_fase4.py` validando pipeline completo e integrando validaciones reales (`pytest`).
-- **Dogfooding ArchitectFlow (Paso 5):** Migración del Architect de componente estático a **System Bundle** dinámico.
-- **Soporte de Flujos Python (.py):** `BundleManager` y `FlowRegistry` operando bajo un esquema persistido y seguro (`RestrictedPython`).
-- **FAP-Implementor (Paso 4):** Skill inteligente para la generación de bundles seguros y alineados con el esquema v2.0.
-- **CLI Utilities:** 
-  - Scaffolding (`fap scaffold`)
-  - Runner de componentes granulares (`fap run agent/flow/skill`)
-  - Watcher hot-reload (`fap dev`)
-- **Saneamiento DX y CLI (Paso 7/8/9):** 
-  - Resolución unificada a rutas absolutas.
-  - Fix de encoding `UTF-8` predictivo para terminales Windows (`scripts/sanitize_codebase.py`).
-  - Script autómata de higiene `scripts/sanitize_codebase.py` utilizando `ruff`.
-  - Refactoring global hacia `OrgBaseTool`.
-- **Aislamiento Multi-Tenant y Tests (Paso 8/9):** 
-  - `MockLLMManager` evolucionado para soportar respuestas JSON compatibles con Pydantic v2.
-  - Resolución dual de herramientas (nombre de archivo + nombre de clase).
-  - Eliminación global de `DeprecationWarnings` en la suite local.
+
+**Infraestructura de Fase IV (heredado):**
+- **Suite de Validación E2E:** `tests/e2e/test_parity_suite.py` cubriendo ciclo `scaffold` -> `package` -> `publish` -> `run`.
+- **Auto-Hashing en `BundleManager`:** Cálculo SHA256 durante `create_bundle`.
+- **Dogfooding ArchitectFlow:** El Architect genera bundles válidos siendo él mismo un System Bundle.
+- **Soporte de Flujos Python (.py):** `BundleManager` y `FlowRegistry` con `RestrictedPython`.
+- **CLI Utilities:** `fap scaffold`, `fap run agent/flow/skill`, `fap dev` (watcher).
+
+**Paso 1 — Infraestructura de Herramientas (Implementado en Código):**
+- **`AgentFactory.resolve_tools()` con MCP:** `src/crews/factory.py:28-78` — detecta prefijo `mcp:`, llama `_resolve_mcp_tool` solo en `async_mode`.
+- **`AgentFactory._resolve_mcp_tool()`:** `src/crews/factory.py:81-133` — integración con `MCPPool`, circuit breaker, lazy import de crewai-tools.
+- **`AgentFactory.create_agent_async()`:** `src/crews/factory.py:162-183` — modo async con soporte MCP completo.
+- **`BaseCrew.run_async()`:** `src/crews/base_crew.py:169-205` — usa `create_agent_async` para ejecución no bloqueante.
+
+**Paso 2 — Upgrade del Cerebro (Implementado en Código):**
+- **Prompt Expandido del Architect:** `src/flows/architect_flow.py:259-301` — incluye:
+  - Sección HERRAMIENTAS MCP con formato `mcp:server:tool` y 4 ejemplos.
+  - Sección INTEGRACIONES HTTP con `service_connector` y ejemplo de uso.
+  - Guía de selección MCP vs service_connector.
+  - Reglas críticas actualizadas (9 reglas).
+- **Schema `WorkflowDefinition`:** `src/flows/workflow_definition.py:57-123` — soporta `allowed_tools: list[str]`, `category`, `approval_threshold`, validación de snake_case, referencias cross-agent, detección de ciclos.
+- **`SAFE_BUILTIN_TOOLS`:** `src/flows/workflow_guardrails.py:32-39` — whitelist incluyendo `service_connector`.
+- **CLI `fap validate-architect-output`:** `src/cli/commands/validate_architect.py:1-330` — valida contra schema estructural, MCP servers activos, integraciones activas, tools del registry.
+- **CLI `fap test-scenarios`:** `src/cli/commands/test_scenarios.py:1-588` — ejecuta 6 escenarios, valida outputs, genera reporte.
+
+**Paso 3 — Suite de los 6 Escenarios (Análisis Completado, Código en Desarrollo):**
+- **Análisis de Paso 3:** Archivado en `DEVS/IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/` — 4 agentes analizaron (kilo, mm, qwen, atg) + análisis final + validación.
+- **Tests E2E de Escenarios (EXISTEN, sin commitear):**
+  - `tests/e2e/test_scenario_1_greeter.py` — Agente Simple "Greeter".
+  - `tests/e2e/test_scenario_2_integration.py` — Agente "Slack Notifier" con `service_connector`.
+  - `tests/e2e/test_scenario_3_mcp.py` — Agente "File Manager" con servidor MCP local.
+  - `tests/e2e/test_scenario_4_hybrid.py` — Agente Híbrido (MCP + Integración).
+  - `tests/e2e/test_scenario_5_multi_agent.py` — Flujo Investigador → Escritor → Corrector.
+  - `tests/e2e/test_scenario_6_full_stack.py` — Flujo Full Stack con todas las capacidades.
+- **CLI `fap validate-tools`:** `src/cli/commands/validate_tools.py` — EXISTE, sin commitear.
+- **Test E2E CLI Scenarios:** `tests/e2e/test_cli_test_scenarios.py` — EXISTE, sin commitear.
+- **Test Unitario Validate Architect:** `tests/unit/test_validate_architect.py` — EXISTE, sin commitear.
+- **Test Unitario Factory:** `tests/unit/test_factory.py` — EXISTE, sin commitear.
 
 ### ⚠️ Parcialmente Implementado / Deuda Técnica
-- **ID-004:** Pruebas unitarias de las "Tools" antiguas fallando debido al nuevo aislamiento multi-tenant. Si bien no bloquean la validación E2E (Fase IV exitosa), las tools individuales como `EscandalloTool` exigen ser actualizadas con el parámetro `org_id`.
+- **ID-001:** `SAFE_BUILTIN_TOOLS` definido pero no se usa activamente en la lógica de `validate_workflow()` — es referencial.
+- **ID-002:** La herramienta `fap validate-architect-output` no tiene tests unitarios propios (sugerido para futuro).
+- **ID-003:** Typo en mensaje de error: `"service_connectorreferenciado"` sin espacio — no bloquea funcionalidad.
+- **ID-004:** Código de Pasos 1-3 existe en working tree pero NO está commiteado a git (ver `git status`). Los archivos de código están modificados/untracked.
 
-### ❌ No Existe Aún (Siguiente Fase)
-- **Fase V: Agentes Autónomos v2.0:** Orquestación de crews dinámicas, memoria persistente, y herramientas reactivas avanzadas.
+### ⚠️ Discrepancias Plan vs Código
+- 📝 **CORRECCIÓN:** `phase.current_step` en `proyecto-config.json` es `null` aunque el código de Pasos 1-2 ya está implementado. Se recomienda actualizar a `"02-Upgrade-del-Cerebro"`.
+- 📝 **CORRECCIÓN:** El plan original (estado-fase.md v28) decía que Paso 2 tenía tests pasando 248/248. No se pudo verificar en esta ejecución (timeout >120s). Lint pasa 100% (`ruff check src/ tests/`).
+- 📝 **CORRECCIÓN:** Los directorios `DEVS/IMPLEMENTED/` y `DEVS/IN_PROGRESS/` aparecen como untracked en git. Las fases anteriores archivaron en disco pero no commitearon a git.
+
+### ❌ No Existe Aún (Roadmap de Fase V)
+- **Paso 3:** Completar implementación de los 6 escenarios de validación y commitear código.
+- **Paso 4:** Documentación y cierre de Fase V.
 
 ---
 
@@ -54,53 +83,98 @@ El objetivo de la **Fase IV: Infraestructura de Paridad** era garantizar que el 
 | `fap run flow` | `flow_type, --bundle, --input, --timeout` | ✅ Funcional |
 | `fap scaffold` | `name, --dir` | ✅ Funcional |
 | `fap package` | `bundle_path, --output` | ✅ Funcional |
+| `fap validate-architect-output` | `json_path, --org-id <uuid>` | ✅ Nuevo (Paso 2) |
+| `fap test-scenarios` | `--org-id <uuid>` | ✅ Nuevo (Paso 3) |
+| `fap validate-tools` | `--org-id <uuid>` | ✅ Nuevo (Paso 3) |
 
 ### 📊 Esquemas de Base de Datos
-- **`bundle_imports`**: Tracking de hashes e integridad por bundle.
-- **`workflow_templates`**: Soporta `code_source` e `is_python` para flujos dinámicos.
+- **`workflow_templates`**: `definition` JSONB, `flow_type` UNIQUE, RLS via `tenant_isolation`.
+- **`agent_catalog`**: `allowed_tools` TEXT[], soporta cualquier string incluyendo `mcp:server:tool`.
+- **`org_mcp_servers`**: `command`, `args` JSONB, `secret_name`, `is_active` boolean.
+- **`service_catalog`**: Catálogo global de integraciones HTTP.
+- **`service_tools`**: Definiciones de herramientas por servicio, vinculadas a `service_catalog`.
+- **`org_service_integrations`**: Integraciones activas por org (`status: active`).
 
 ### 🛠️ Patrones de Código en Uso
-- **Mock-Driven Testing (JSON Validated):** El framework de tests se vale de un `MockLLMManager` que detecta dinámicamente si la llamada requiere una estructura JSON (ej: Pydantic schemas) devolviendo mocks válidos o un simple string. 
-- **Filterwarnings:** La limpieza de la salida estándar se hace vía configuración central en `pyproject.toml`.
-- **System Bundle Trust:** Los bundles con `author: FAP-CORE` activan `is_system=True` en `SecurityGuard` permitiendo sentencias como `async/await`.
-- **Certificación Real & Higiene Automática:** El SDLC asume uso constante de `scripts/sanitize_codebase.py` para asegurar que el repositorio pasa linting siempre, y `scripts/certify_fase4.py` validando paridad de punta a punta.
-- **Restricción de Secretos en Bundles:** Uso exclusivo del proxy `self._get_secret()` en `OrgBaseTool`.
+- **Prompt Engineering Pattern:** El `Task.description` en `_execute_architect_agent` usa f-string con variables (`{allowed_models}`) interpoladas.
+- **Blocklist de Herramientas Peligrosas:** `DANGEROUS_TOOLS` en `workflow_guardrails.py` — blocklist para `validate_workflow()`.
+- **Whitelist de Tools Seguras:** `SAFE_BUILTIN_TOOLS` — referencia para tools que no requieren validación activa.
+- **CLI Command Pattern:** Estructura de `validate.py` replicada en `validate_architect.py` — mismo patrón de imports relativos.
+- **Service Connector Pattern:** `ServiceConnectorTool` ejecuta HTTP con `httpx`, resuelve secretos del Vault, audita en `domain_events`.
+- **MCP Pool Pattern:** `MCPPool.get_tools()` usa circuit breaker y retry con `tenacity`.
 
 ---
 
 ## 4. Decisiones de Arquitectura Tomadas
 
-- **Aprobación QA Aislada (Paso 9):** Se determinó aislar la rotura en tests unitarios antiguos (asociados a base features) como deuda técnica (`docs/sugest.md`) en lugar de considerarlos un bloqueo para la Fase IV, debido a que el componente central validado (Framework de Bundles y Paridad Local-Producción) es completamente funcional y certificable a nivel E2E.
-- **Hibridación de Seguridad:** Se mantiene el escaneo de AST para TODOS los bundles, pero se permite ejecución privilegiada solo a componentes de sistema.
-- **Supresión Selectiva de Warnings:** Configuración estricta en `pyproject.toml` para ignorar warnings incontrolables (ej: internals de LangChain y Pydantic core) que ensucian los logs.
-- **Sanitización OS-Agnostic:** Los scripts DX asumen ejecución en consolas `tty` falsas (Windows CI) por lo que evitan estrictamente caracteres unicode decorativos por defecto, optando por `ascii` donde es crítico para prevenir crash.
+**Heredadas de Fase IV:**
+- **Modo Estricto Global:** Registry en modo estricto, sin fallbacks accidentales.
+- **System Bundle Trust:** Bundles con `author: FAP-CORE` activan `is_system=True` en `SecurityGuard`.
+- **Aislamiento Multi-Tenant:** `OrgBaseTool` con proxy `self._get_secret()` para secretos.
+
+**Nuevas en Paso 2:**
+- **Schema sin cambios:** `WorkflowDefinition.allowed_tools: list[str]` ya soporta `mcp:server:tool` y `service_connector` sin modificación — el plan decía lo contrario pero el código real lo permite.
+- **Prompt expansion en lugar de refactor:** Solo se modifica el string del prompt, sin cambios en firmas o flujo de ejecución.
+- **Validación post-generación (opcional):** La herramienta DX valida contra `org_mcp_servers` antes de bundle — warning no blocking.
+
+**Nuevas en Paso 3 (Análisis):**
+- **Arquitectura de Tests E2E:** Cada escenario tiene su propio archivo de test (`test_scenario_N_name.py`) + un CLI runner unificado (`test_scenarios.py`).
+- **Validación de Tools:** Nuevo comando `fap validate-tools` para verificar disponibilidad de tools en registry antes de ejecutar escenarios.
+- **Pipeline de Análisis Multi-Agente:** 4 agentes (kilo, mm, qwen, atg) analizan cada paso + síntesis final + validación — replicable para futuros pasos.
 
 ---
 
 ## 5. Registro de Pasos Completados
 
-| Paso | Estado | Archivos Modificados | Decisiones Tomadas | Notas |
+| Paso | Estado | Archivos Archivados En | Decisiones Tomadas | Notas |
 | :--- | :--- | :--- | :--- | :--- |
-| **S1** | ✅ | `config.py`, `registry.py` | Modo Estricto Global. | Paridad Activa |
-| **S2** | ✅ | `dev.py`, `main.py` | CLI Watcher con watchdog. | Hot-Reload |
-| **S3** | ✅ | `run.py`, `main.py` | CLI Runner con subcomandos. | Funcional |
-| **S4** | ✅ | `scaffold.py`, `bundle_utils.py` | Generación segura v2.0. | Implementor OK |
-| **S5** | ✅ | `architect_flow.py`, `security_guard.py` | Dogfooding & Python Flows. | System Bundle |
-| **S6** | ✅ | `test_parity_suite.py`, `certify_fase4.py` | Suite E2E & Certificación. | Completado Inicial |
-| **S7** | ✅ | `package.py`, `dev.py`, `main.py` | Saneamiento rutas/encoding. | Paridad Absoluta |
-| **S8** | ✅ | `local_executor.py`, `analytical.py`, `migrate_basetool.py` | Multi-tenancy Mock, Resolución Dual y `OrgBaseTool`. | Seguridad y DX |
-| **S9** | ✅ | `certify_fase4.py`, `sanitize_codebase.py`, `conftest.py`, `pyproject.toml` | **QA Activo, Mocking JSON, Filterwarnings.** | **FASE CERRADA** |
+| **Fase IV (S1-S9)** | ✅ | `IMPLEMENTED/parity/` | Paridad local-producción | Completada |
+| **Paso 1** | ✅ | `IMPLEMENTED/details4agents/01-mejora-infraestructura-herramientas/` | MCP bridging en `AgentFactory`, `create_agent_async`, `run_async` | Implementado en código (uncommitted) |
+| **Paso 2** | ✅ | `IMPLEMENTED/details4agents/02-Upgrade-del-Cerebro/` | Prompt expandido MCP+service_connector, `fap validate-architect-output`, `SAFE_BUILTIN_TOOLS` | Implementado en código (uncommitted) |
+| **Paso 3** | 🔄 | `IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/` | Análisis multi-agente completado, código de tests E2E escritos | Commit: `4f61392` |
 
 ---
 
-## 6. Criterios Generales de Aceptación MVP (Fase IV)
+## 6. Criterios Generales de Aceptación MVP (Fase V)
 
-- [x] El CLI permite generar estructuras de bundles válidas (`fap scaffold`).
-- [x] Los bundles incluyen hashes de integridad verificables (Auto-computed).
-- [x] El CLI permite ejecutar agentes/flujos locales usando el flag `--bundle`.
-- [x] **Dogfooding:** El ArchitectFlow genera bundles válidos y es en sí mismo un bundle.
-- [x] La suite de tests de integración para validación de bundles pasa al 100%.
-- [x] QA: La consola está libre de warnings y la higiene global de formateo está garantizada vía CI scripts.
+**Del Paso 2:**
+- [x] El prompt del Architect incluye `category` y `approval_threshold` en el schema JSON.
+- [x] El prompt explica formato `mcp:server:tool` con ≥2 ejemplos.
+- [x] El prompt explica `service_connector` con ≥1 ejemplo.
+- [x] El prompt incluye guía de selección MCP vs service_connector.
+- [x] `workflow_guardrails` tiene explicititud de `service_connector` como tool válida (`SAFE_BUILTIN_TOOLS`).
+- [x] `fap validate-architect-output` existe y valida referencias contra registry.
+- [x] Lint pasa al 100% (`ruff check src/ tests/`).
+- [ ] Tests unitarios pasan — verificación pendiente (timeout >120s en esta ejecución).
+
+**Para Paso 3:**
+- [ ] `fap test-scenarios` ejecuta los 6 escenarios sin errores.
+- [ ] Escenario 1: Agente "Greeter" genera y ejecuta workflow simple.
+- [ ] Escenario 2: Agente "Slack Notifier" usa `service_connector` correctamente.
+- [ ] Escenario 3: Agente "File Manager" usa servidor MCP local correctamente.
+- [ ] Escenario 4: Agente Híbrido combina MCP + Integración.
+- [ ] Escenario 5: Flujo Multi-Agente (Investigador → Escritor → Corrector) con paso de contexto.
+- [ ] Escenario 6: Flujo Full Stack con todas las capacidades.
+- [ ] Código de Paso 3 commiteado a git.
+
+**Para Paso 4:**
+- [ ] Documentación de cierre de Fase V.
 
 ---
-*Documento actualizado por el Arquitecto de Contexto (Antigravity) siguiendo el protocolo 0_CONTEXTO.md.*
+
+## 📦 Ultimo Archivado
+
+- **Origen:** `DEVS/IN_PROGRESS/`
+- **Destino:** `DEVS/IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/`
+- **Archivos movidos:**
+  - `analisis-FINAL.md`
+  - `analisis-kilo.md`
+  - `analisis-mm.md`
+  - `analisis-qwen.md`
+  - `validacion.md`
+- **Commit:** `4f61392` — "03-Suite-de-los-6-Escenarios"
+
+---
+
+*Documento actualizado por el Arquitecto de Contexto (Antigravity) siguiendo el protocolo 6_CONTEXTO.md v4.1.*
+*Fase V - details4agents - Análisis Paso 3 completado, código en working tree pendiente de commit.*
