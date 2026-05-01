@@ -16,6 +16,7 @@ from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
 from src.cli.commands.login import login
 from src.cli.commands.package import package_bundle
+from src.cli.commands.phase_close import phase_close
 from src.cli.commands.publish import publish_bundle
 from src.cli.commands.run import app as run_app
 from src.cli.commands.scaffold import scaffold_command
@@ -43,6 +44,7 @@ app.command("export-agents")(export_agents)
 app.command("validate-tools")(validate_tools_command)
 app.command("validate-architect-output")(validate_architect_output)
 app.command("test-scenarios")(test_scenarios)
+app.command("phase-close")(phase_close)
 
 if __name__ == "__main__":
     app()

@@ -1,3 +1,4 @@
+
 ```markdown
 # 🛡️ PROCESO DE VALIDACIÓN (VALIDADOR) — v3.1
 

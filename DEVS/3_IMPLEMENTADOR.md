@@ -1,3 +1,4 @@
+
 ```markdown
 # 🛠️ PROCESO DE IMPLEMENTACIÓN (IMPLEMENTADOR) — v3.1
 

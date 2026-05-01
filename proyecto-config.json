@@ -113,7 +113,7 @@
   },
   "phase": {
     "phase_name": "details4agents",
-    "current_step": null
+    "current_step": "04-Documentacion-y-Cierre"
   },
   "pipeline": {
     "phase_state_exists": true,

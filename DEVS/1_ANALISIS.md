@@ -1,3 +1,4 @@
+
 ```markdown
 # 🧠 PROCESO DE ANÁLISIS TÉCNICO (ANALISTA) v5 — UNIFICADO
 

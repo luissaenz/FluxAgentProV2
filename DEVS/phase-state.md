@@ -2,6 +2,7 @@
 
 > **Generado:** 2026-04-30
 > **Fuente de verdad:** Código en `src/`, migraciones en `supabase/migrations/`, `pyproject.toml`
+> **Nota:** `estado-fase.md` es la fuente canonica de estado para Fase V.
 > **Consumidores:** Analista, Unificador, Implementador, Validador
 
 ---

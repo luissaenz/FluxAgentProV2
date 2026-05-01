@@ -67,6 +67,7 @@ def _validate_mcp_tool(
 
     try:
         from crewai_tools import MCPServerAdapter
+
         from mcp import StdioServerParameters
     except ImportError:
         return False, "crewai-tools not installed. Run: pip install fluxagentpro-v2[crew]"

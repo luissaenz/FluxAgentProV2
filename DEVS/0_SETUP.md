@@ -1,4 +1,3 @@
-
 ```markdown
 # 🔧 PROCESO DE SETUP DE PROYECTO (SETUP) — v2.0
 

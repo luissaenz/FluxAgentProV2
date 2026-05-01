@@ -1,3 +1,4 @@
+
 ```markdown
 # 🔧 PROCESO DE CORRECCIÓN (CORRECTOR) — v3.1
 

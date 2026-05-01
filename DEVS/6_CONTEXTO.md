@@ -1,3 +1,4 @@
+
 ```markdown
 # 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) — v4.1
 
@@ -102,9 +103,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 7. **Hacer commit con el nombre de la carpeta destino:**
    ```bash
    cd {project_root}
-   git add {paths.devs_implemented}/{phase_name}/{XX-nombre}/
-   git add {paths.devs_in_progress}/
-   git commit -m "{XX-nombre}"
+   git commit -a -m "{phase_name | XX-nombre}"
    ```
 
    > [!IMPORTANT]

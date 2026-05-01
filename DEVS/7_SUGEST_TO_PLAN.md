@@ -1,3 +1,4 @@
+
 ```markdown
 # 📋 PROCESO DE SUGERENCIAS A PLAN (SUGEST_TO_PLAN) — v1.0
 
