@@ -22,6 +22,7 @@ from src.cli.commands.publish import publish_bundle
 from src.cli.commands.run import app as run_app
 from src.cli.commands.scaffold import scaffold_command
 from src.cli.commands.test_scenarios import test_scenarios
+from src.cli.commands.test_step import test_step
 from src.cli.commands.validate import validate_bundle
 from src.cli.commands.validate_architect import validate_architect_output
 from src.cli.commands.validate_tools import validate_tools_command
@@ -47,6 +48,7 @@ app.command("validate-architect-output")(validate_architect_output)
 app.command("test-scenarios")(test_scenarios)
 app.command("phase-close")(phase_close)
 app.command("baseline-check")(baseline_check)
+app.command("test-step")(test_step)
 
 if __name__ == "__main__":
     app()

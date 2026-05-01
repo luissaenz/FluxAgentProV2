@@ -186,10 +186,10 @@ Input para §0 (Verificación) y todo el análisis. Algo que el plan omite → v
 
 ## 💾 Estructura de Salida
 
-**Destino:** `{paths.devs_in_progress}/analisis-[AGENTE].md`
+**Destino:** `{paths.devs_in_progress}/analisis-[PASO]-[AGENTE].md`
 
 > [!IMPORTANT]
-> **REGLA DE ORO:** Único archivo permitido modificar = `{paths.devs_in_progress}/analisis-[AGENTE].md`
+> **REGLA DE ORO:** Único archivo permitido modificar = `{paths.devs_in_progress}/analisis-[PASO]-[AGENTE].md`
 
 ---
 
