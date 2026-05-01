@@ -17,6 +17,7 @@ from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
 from src.cli.commands.login import login
 from src.cli.commands.package import package_bundle
+from src.cli.commands.perf_check import perf_check
 from src.cli.commands.phase_close import phase_close
 from src.cli.commands.publish import publish_bundle
 from src.cli.commands.run import app as run_app
@@ -53,6 +54,7 @@ app.command("baseline-check")(baseline_check)
 app.command("test-step")(test_step)
 app.command("security-audit")(security_audit)
 app.command("stress-bench")(stress_bench)
+app.command("perf-check")(perf_check)
 
 if __name__ == "__main__":
     app()

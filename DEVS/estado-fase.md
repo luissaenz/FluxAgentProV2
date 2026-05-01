@@ -1,9 +1,9 @@
 # Estado de Fase: Certificación Técnica Profunda (QA) — testing
 
 > **Fecha:** 2026-05-01
-> **Estado:** ✅ COMPLETADO (testing) — 6/8 pasos completados
-> **Último Archivado:** `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/`
-> **Commit:** `534481f` — `testing / 05-Tests-de-Seguridad`
+> **Estado:** ✅ COMPLETADO (testing) — 7/8 pasos completados
+> **Último Archivado:** `DEVS/IMPLEMENTED/testing/06-Performance-Observabilidad/`
+> **Commit:** `a07dfea` — `testing / 06-Performance-Observabilidad`
 
 ---
 
@@ -19,7 +19,7 @@
 - ✅ **Paso 3: E2E — Flujos Completos con Mocks.** 4 tests: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover 3 niveles (E3.3). DX `fap test-step 3`.
 - ✅ **Paso 4:** Tests de Estrés y Robustez
 - ✅ **Paso 5:** Tests de Seguridad — 14 tests nuevos (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix seguridad en `run.py` + `local_executor.py` (`_create_safe_builtins()`).
-- ⬜ **Paso 6:** Performance & Observabilidad
+- ✅ **Paso 6: Performance & Observabilidad.** 4 benchmarks (P6.1-P6.4): resolve_tools 50 tools <100ms, WorkflowDefinition 10x5 <50ms, sanitize_output 1MB <500ms, _is_circuit_open <1ms. 9 tests. DX `fap perf-check` con flags --baseline/--compare/--json/--verbose/--no-warmup.
 - ⬜ **Paso 7:** Documentación y Cierre
 
 **Dependencias:** Paso 0 → Todos. Pasos 1→7 secuenciales con superposición posible.
@@ -32,7 +32,7 @@
 - `paths.backend:` `src/` (16 módulos: api, cli, connectors, crews, db, events, flows, guardrails, mcp, scheduler, scripts, services, state, tools, utils)
 - `paths.migrations:` `supabase/migrations/` (30 archivos SQL: 001-025)
 - `paths.tests:` `tests/` (unit, integration, e2e)
-- `paths.cli:` `src/cli/` (15 comandos fap: +security-audit)
+- `paths.cli:` `src/cli/` (16 comandos fap: +security-audit, +perf-check)
 - `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado)
 - `paths.devs_implemented:` `DEVS/IMPLEMENTED/`
 
@@ -64,16 +64,19 @@
 | **StressBench CLI** | `src/cli/commands/stress_bench.py` | ✅ | DX `fap stress-bench`. Genera fixtures masivos + ejecuta suite stress con métricas. 280 loc. |
 | **Sanitizer (optimizado)** | `src/mcp/sanitizer.py` | ✅ | `SECRET_PATTERNS` pre-compilados con `re.compile`. Performance 7x en strings grandes. |
 | **Stress Suite** | `tests/stress/` | ✅ | 14 tests: concurrency (S4.1-S4.3), edge cases (S4.4-S4.7). Conftest con MCPPool reset + flow_registry save/restore. |
+| **PerfCheck CLI** | `src/cli/commands/perf_check.py` | ✅ | DX `fap perf-check`. Ejecuta benchmarks P6.1-P6.4, verifica thresholds, reporte JSON. Flags: --baseline, --compare, --json, --verbose, --no-warmup. 253 loc. |
+| **Performance Benchmarks** | `tests/stress/test_performance.py` | ✅ | 9 tests (4 clases): P6.1 resolve_tools 50 tools, P6.2 WorkflowDefinition 10x5, P6.3 sanitize 1MB, P6.4 circuit breaker overhead. Fixtures autouse limpian estado. |
 
 ### Tests (Verificado contra código)
 
 | Suite | Cantidad | Estado |
 |---|---|---|
-| **Total** | 503 tests | `pytest --collect-only` |
+| **Total** | 512 tests | `pytest --collect-only` |
 | **Unitarios** | 317 | 317/317 pass |
 | **Integración** | 102 | 102/102 pass |
 | **E2E** | 60 | 60/60 pass |
 | **Stress** | 14 | 14/14 pass (S4.1-S4.7) |
+| **Performance** | 9 | 9/9 pass (P6.1-P6.4, nuevo en Paso 6) |
 | **SecurityGuard** | 29 | 29/29 pass (SE5.1-SE5.18, nuevo en Paso 5) |
 | **Escape** | 2 | 2/2 pass (SE5.17-SE5.18) |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
@@ -155,6 +158,19 @@
 21. **Cobertura SE5.x:** 14 tests nuevos: 7 imports prohibidos (SE5.1-7), 3 calls prohibidos (SE5.8-10), 2 async (SE5.11-12), 2 escape (SE5.17-18). SE5.13-16 ya existian de Pasos 0-1.
 22. **Patrón `guard._create_safe_builtins()` como `safe_env` estándar:** Unifica creación de builtins seguros en todos los puntos de ejecución (validate, execute, local_executor, fap run).
 
+### De Fase VI — testing / Paso 6
+23. **DX `fap perf-check`:** Comando único que ejecuta benchmarks P6.1-P6.4, verifica thresholds, genera `reports/perf_report.json`. Flags: `--baseline` (guarda baseline), `--compare` (detecta regresiones >20%), `--json` (output machine-readable), `--verbose` (muestra raw output), `--no-warmup` (salta 3 warmup iterations).
+24. **`time.perf_counter_ns()` para P6.4:** Precisión nanosegundo para circuit breaker overhead <1ms. `time.perf_counter()` suficiente para thresholds holgados (100ms/50ms/500ms).
+25. **Sin `pytest-benchmark`:** No agregado a dev deps. Benchmarks usan `time.perf_counter()` + assertions manuales.
+26. **Warmup obligatorio:** 1 iteración descartada en tests pytest. CLI `fap perf-check` implementa 3 iteraciones warmup para precisión.
+27. **P6.2 sin `input_data`:** Schema real de `WorkflowDefinition` (name/description/flow_type/steps/agents/category). Corrección del FINAL aplicada.
+28. **P6.4 mide `_is_circuit_open()` directo:** Pre-carga `_adapters[key]` con MagicMock para evitar conexión real. O(1) dict lookup + float comparison.
+18. **DX `fap security-audit`:** Comando único con 5 categorías (imports/calls/async/regresion/escape). Filtro `-c` por categoría. Output `--json` para CI.
+19. **`fap test-step 5`:** Mapeo a `test_security_guard.py` + `test_security_guard_escape.py`.
+20. **Fix `safe_builtins` en `run.py` y `local_executor.py`:** Reemplazo de `RestrictedPython.safe_builtins` por `guard._create_safe_builtins()` con `__import__` restringido + ALLOWED_MODULES. Cierra 2 vectores de ejecución que inyectaban `__import__` sin restricción.
+21. **Cobertura SE5.x:** 14 tests nuevos: 7 imports prohibidos (SE5.1-7), 3 calls prohibidos (SE5.8-10), 2 async (SE5.11-12), 2 escape (SE5.17-18). SE5.13-16 ya existian de Pasos 0-1.
+22. **Patrón `guard._create_safe_builtins()` como `safe_env` estándar:** Unifica creación de builtins seguros en todos los puntos de ejecución (validate, execute, local_executor, fap run).
+
 ### Correcciones al Plan
 - `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
 - `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
@@ -175,7 +191,7 @@
 | 3 — E2E Flujos Completos con Mocks | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/03-E2E-Flujos-Completos-con-Mocks/` | `7a750ca` | 4 tests E2E (Degraded MCP, HITL, 3-step Handover). DX `fap test-step 3`. | 4/4 pass. Lint 0. Validación: ✅ |
 | 4 — Tests de Estrés y Robustez | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/` | `af6b16f` | 14 tests stress (S4.1-S4.7). DX `fap stress-bench`. `re.compile` en sanitizer. pytest-timeout. | 14/14 pass. Lint 0. 6 análisis + validación archivados. Validación: ✅ |
 | 5 — Tests de Seguridad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/` | `534481f` | 14 tests (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix `safe_builtins` en `run.py` + `local_executor.py`. `fap test-step 5`. | 14/14 pass. Lint 0. 6 análises + 1 validación archivados. Validación: ✅ |
-| 6 | 🔲 PENDIENTE | — | — | — | — |
+| 6 — Performance & Observabilidad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/06-Performance-Observabilidad/` | `a07dfea` | 4 benchmarks (P6.1-P6.4). DX `fap perf-check` con --baseline/--compare/--json/--verbose/--no-warmup. Reports JSON en `reports/`. Fixtures autouse en conftest para aislamiento. Correcciones FINAL aplicadas (sin input_data, _is_circuit_open directo). | 9/9 pass. Lint 0. Validación: ✅. |
 | 7 — Documentación y Cierre | 🔲 PENDIENTE | — | — | TESTING.md, Makefile, cobertura >75%, `fap phase-close` | — |
 
 ---
@@ -190,9 +206,10 @@
 - [x] **Herramientas DX:** `fap baseline-check`, `fap test-step {1,2,3}`, `fap stress-bench` ✅
 - [x] **Código ejecuta sin errores:** Lint 0, 489 tests collected ✅
 - [x] **Paso 4:** 14/14 tests stress ✅. `fap stress-bench` funcional ✅. `re.compile` SECRET_PATTERNS ✅. `pytest-timeout>=1.5.0` instalado ✅
-- [x] **Paso 5:** 14/14 tests seguridad (SE5.1-SE5.12 + SE5.17-SE5.18) ✅. `fap security-audit` funcional ✅. `fap test-step 5` funcional ✅. Fix `safe_builtins` en `run.py` + `local_executor.py` ✅. 503 tests totales ✅. Lint 0 ✅
-- [ ] **Pasos 6–7:** pendientes
+- [x] **Paso 5:** 14/14 tests seguridad (SE5.1-SE5.12 + SE5.17-SE5.18) ✅. `fap security-audit` funcional ✅. `fap test-step 5` funcional ✅. Fix `safe_builtins` en `run.py` + `local_executor.py` ✅. 512 tests totales ✅. Lint 0 ✅
+- [x] **Paso 6:** 9/9 tests performance (P6.1-P6.4) ✅. `fap perf-check` funcional ✅. `fap perf-check --baseline` genera baseline ✅. `fap perf-check --compare` detecta regresiones ✅. Correcciones del FINAL aplicadas (sin input_data, _is_circuit_open directo) ✅. Benchmarks usan mocks puros + son independientes ✅. Lint 0 ✅
+- [ ] **Paso 7:** pendiente
 
-**Progreso Fase VI: 75% (6/8 pasos). Próximo: Paso 6 — Performance & Observabilidad.**
+**Progreso Fase VI: 87.5% (7/8 pasos). Próximo: Paso 7 — Documentación y Cierre.**
 
 **Criterios fuera de alcance MVP:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.

@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-05-01T22:14:06.271197+00:00",
+  "suite": {
+    "passed": true,
+    "total_tests": 9,
+    "passed_tests": 9,
+    "failed_tests": 0,
+    "total_elapsed_seconds": 10.607
+  },
+  "benchmarks": [
+    {
+      "test": "test_resolve_tools_50_under_100ms",
+      "passed": true,
+      "elapsed_seconds": 5.5e-05,
+      "threshold_seconds": 0.1
+    },
+    {
+      "test": "test_resolve_tools_50_returns_all_tools",
+      "passed": true,
+      "elapsed_seconds": null,
+      "threshold_seconds": 0.1
+    },
+    {
+      "test": "test_workflow_definition_10x5_under_50ms",
+      "passed": true,
+      "elapsed_seconds": 8.4e-05,
+      "threshold_seconds": 0.05
+    },
+    {
+      "test": "test_workflow_definition_10x5_validates_correctly",
+      "passed": true,
+      "elapsed_seconds": null,
+      "threshold_seconds": 0.05
+    },
+    {
+      "test": "test_sanitize_1mb_under_500ms",
+      "passed": true,
+      "elapsed_seconds": 0.010703,
+      "threshold_seconds": 0.5
+    },
+    {
+      "test": "test_sanitize_1mb_redacts_secrets",
+      "passed": true,
+      "elapsed_seconds": null,
+      "threshold_seconds": 0.5
+    },
+    {
+      "test": "test_is_circuit_open_closed_under_1ms",
+      "passed": true,
+      "elapsed_seconds": 2e-06,
+      "threshold_seconds": 0.001
+    },
+    {
+      "test": "test_is_circuit_open_open_under_1ms",
+      "passed": true,
+      "elapsed_seconds": 2e-06,
+      "threshold_seconds": 0.001
+    },
+    {
+      "test": "test_is_circuit_open_both_states_independent",
+      "passed": true,
+      "elapsed_seconds": null,
+      "threshold_seconds": 0.001
+    }
+  ]
+}
