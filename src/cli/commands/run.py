@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 import typer
-from RestrictedPython import compile_restricted, safe_builtins
+from RestrictedPython import compile_restricted
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -88,9 +88,7 @@ def run_skill(
             byte_code = compile_restricted(
                 source_code, filename=file_path.name, mode="exec"
             )
-            safe_env = safe_builtins.copy()
-            # Note: In a real scenario, __import__ would be restricted by SecurityGuard
-            safe_env["__import__"] = __import__
+            safe_env = guard._create_safe_builtins()
 
             exec_globals = {"__builtins__": safe_env, "INPUT": inputs, "result": None}
             exec(byte_code, exec_globals)

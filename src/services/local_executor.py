@@ -34,8 +34,6 @@ class LocalExecutor:
         # 1. Load Skills (.py) as Tools
         skills_dir = self.bundle_path / "skills"
         if skills_dir.exists():
-            from RestrictedPython import safe_builtins
-
             for py_file in skills_dir.glob("*.py"):
                 code = py_file.read_text(encoding="utf-8")
                 # Security validation
@@ -48,7 +46,8 @@ class LocalExecutor:
                     loc: Dict[str, Any] = {}
                     # Note: We don't use compile_restricted here to avoid issues with decorators
                     # since we are in 'fap run' local mode. But we still validate with SecurityGuard.
-                    exec(code, {"__builtins__": safe_builtins}, loc)
+                    safe_env = self.guard._create_safe_builtins()
+                    exec(code, {"__builtins__": safe_env}, loc)
 
                     for attr in loc.values():
                         if (

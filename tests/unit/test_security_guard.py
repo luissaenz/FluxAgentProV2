@@ -95,6 +95,89 @@ def test_bypass_attempt(guard):
         guard.validate_skill(malicious_code)
 
 
+# ── SE5.1-SE5.7: Forbidden imports ──────────────────────────────────
+
+
+def test_se5_1_import_subprocess(guard):
+    code = "import subprocess"
+    with pytest.raises(SecurityError, match="Forbidden import 'subprocess'"):
+        guard.validate_skill(code)
+
+
+def test_se5_2_import_shutil(guard):
+    code = "import shutil"
+    with pytest.raises(SecurityError, match="Forbidden import 'shutil'"):
+        guard.validate_skill(code)
+
+
+def test_se5_3_import_ctypes(guard):
+    code = "import ctypes"
+    with pytest.raises(SecurityError, match="Forbidden import 'ctypes'"):
+        guard.validate_skill(code)
+
+
+def test_se5_4_import_socket(guard):
+    code = "import socket"
+    with pytest.raises(SecurityError, match="Forbidden import 'socket'"):
+        guard.validate_skill(code)
+
+
+def test_se5_5_import_gc(guard):
+    code = "import gc"
+    with pytest.raises(SecurityError, match="Forbidden import 'gc'"):
+        guard.validate_skill(code)
+
+
+def test_se5_6_import_inspect(guard):
+    code = "import inspect"
+    with pytest.raises(SecurityError, match="Forbidden import 'inspect'"):
+        guard.validate_skill(code)
+
+
+def test_se5_7_import_requests(guard):
+    code = "import requests"
+    with pytest.raises(SecurityError, match="Forbidden import 'requests'"):
+        guard.validate_skill(code)
+
+
+# ── SE5.8-SE5.10: Forbidden function calls ──────────────────────────
+
+
+def test_se5_8_forbidden_import_call(guard):
+    code = "__import__('os')"
+    with pytest.raises(SecurityError, match="Forbidden function call '__import__'"):
+        guard.validate_skill(code)
+
+
+def test_se5_9_forbidden_compile(guard):
+    code = "compile('1+1', '', 'eval')"
+    with pytest.raises(SecurityError, match="Forbidden function call 'compile'"):
+        guard.validate_skill(code)
+
+
+def test_se5_10_forbidden_exec(guard):
+    code = "exec('x=1')"
+    with pytest.raises(SecurityError, match="Forbidden function call 'exec'"):
+        guard.validate_skill(code)
+
+
+# ── SE5.11-SE5.12: Async handling ──────────────────────────────────
+
+
+def test_se5_11_async_non_system_blocked():
+    guard_non_system = SecurityGuard(is_system=False)
+    code = "async def f():\n    pass"
+    with pytest.raises((SecurityError, SyntaxError)):
+        guard_non_system.validate_skill(code)
+
+
+def test_se5_12_async_system_allowed():
+    guard_system = SecurityGuard(is_system=True)
+    code = "async def f():\n    pass"
+    result = guard_system.validate_skill(code)
+    assert result is True
+
+
 # ── SE5.13-SE5.16: Diagnóstico vulnerabilidad __import__ ──────────────
 
 

@@ -35,6 +35,10 @@ STEP_TEST_FILES: dict[int, list[str]] = {
     3: [
         "tests/e2e/test_production_flows.py",
     ],
+    5: [
+        "tests/unit/test_security_guard.py",
+        "tests/unit/test_security_guard_escape.py",
+    ],
 }
 
 # ── Paso → archivos para cobertura ──────────────────────────────

@@ -1,9 +1,9 @@
 # Estado de Fase: Certificación Técnica Profunda (QA) — testing
 
 > **Fecha:** 2026-05-01
-> **Estado:** 🔄 EN PROGRESO (testing) — 5/8 pasos completados
-> **Último Archivado:** `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/`
-> **Commit:** `af6b16f` — `testing / 04-Tests-de-Estres-y-Robustez`
+> **Estado:** ✅ COMPLETADO (testing) — 6/8 pasos completados
+> **Último Archivado:** `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/`
+> **Commit:** `534481f` — `testing / 05-Tests-de-Seguridad`
 
 ---
 
@@ -18,7 +18,7 @@
 - ✅ **Paso 2: Tests de Integración.** MCP resilience (3 tests), DynamicWorkflow handover (3 tests), fix parser `>=`/`<=`/`==` en approval rules (3 tests condicionales). DX `fap test-step 2`.
 - ✅ **Paso 3: E2E — Flujos Completos con Mocks.** 4 tests: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover 3 niveles (E3.3). DX `fap test-step 3`.
 - ✅ **Paso 4:** Tests de Estrés y Robustez
-- ⬜ **Paso 5:** Tests de Seguridad
+- ✅ **Paso 5:** Tests de Seguridad — 14 tests nuevos (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix seguridad en `run.py` + `local_executor.py` (`_create_safe_builtins()`).
 - ⬜ **Paso 6:** Performance & Observabilidad
 - ⬜ **Paso 7:** Documentación y Cierre
 
@@ -32,7 +32,7 @@
 - `paths.backend:` `src/` (16 módulos: api, cli, connectors, crews, db, events, flows, guardrails, mcp, scheduler, scripts, services, state, tools, utils)
 - `paths.migrations:` `supabase/migrations/` (30 archivos SQL: 001-025)
 - `paths.tests:` `tests/` (unit, integration, e2e)
-- `paths.cli:` `src/cli/` (14 comandos fap)
+- `paths.cli:` `src/cli/` (15 comandos fap: +security-audit)
 - `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado)
 - `paths.devs_implemented:` `DEVS/IMPLEMENTED/`
 
@@ -55,7 +55,8 @@
 | **DynamicWorkflow** | `src/flows/dynamic_flow.py` | ✅ | Ejecución multi-paso. Operadores `>=`/`<=`/`==` fixeados en Paso 2. |
 | **ToolRegistry** | `src/tools/registry.py` | ✅ | API `list_tools()`, `get()`, `register()`, `clear()`, `invalidate_tenant_cache()`. |
 | **SecurityGuard** | `src/services/security_guard.py` | ✅ | AST scan + RestrictedPython + restricted `__import__` con ALLOWED_MODULES. Doble vector protegido (execute + _verify_compilation). |
-| **CLI (fap)** | `src/cli/main.py` | ✅ | 14 comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check. |
+| **SecurityAudit CLI** | `src/cli/commands/security_audit.py` | ✅ | DX `fap security-audit`. 5 categorias: imports, calls, async, regresion, escape. Filtro + JSON output. 185 loc. |
+| **CLI (fap)** | `src/cli/main.py` | ✅ | 15 comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check, test-step, **security-audit**, stress-bench. |
 | **EventStore** | `src/events/store.py` | ✅ | Append síncrono + asíncrono de eventos de dominio. |
 | **BundleManager** | `src/services/bundle_manager.py` | ✅ | Carga remota + validación + atomicidad. |
 | **BaseCrew** | `src/crews/base_crew.py` | ✅ | Resolución de tools con MCP. |
@@ -68,12 +69,13 @@
 
 | Suite | Cantidad | Estado |
 |---|---|---|
-| **Total** | 489 tests | `pytest --collect-only` |
-| **Unitarios** | 303 | 303/303 pass |
+| **Total** | 503 tests | `pytest --collect-only` |
+| **Unitarios** | 317 | 317/317 pass |
 | **Integración** | 102 | 102/102 pass |
 | **E2E** | 60 | 60/60 pass |
-| **Stress** | 14 | 14/14 pass (S4.1-S4.7, nuevo en Paso 4) |
-| **SecurityGuard** | 15 | 15/15 pass |
+| **Stress** | 14 | 14/14 pass (S4.1-S4.7) |
+| **SecurityGuard** | 29 | 29/29 pass (SE5.1-SE5.18, nuevo en Paso 5) |
+| **Escape** | 2 | 2/2 pass (SE5.17-SE5.18) |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
 ### Discrepancias Conocidas Plan vs Código
@@ -146,12 +148,20 @@
 16. **DX `fap stress-bench`:** Comando único que genera fixtures masivos + ejecuta suite + reporta métricas (tiempo, breakdown). Reemplaza creación manual + `pytest` directo.
 17. **`pytest-timeout` como dev dep:** Evita que tests de estrés cuelguen el CI. Tiempo límite por test vía decorador `@pytest.mark.timeout`.
 
+### De Fase VI — testing / Paso 5
+18. **DX `fap security-audit`:** Comando único con 5 categorías (imports/calls/async/regresion/escape). Filtro `-c` por categoría. Output `--json` para CI.
+19. **`fap test-step 5`:** Mapeo a `test_security_guard.py` + `test_security_guard_escape.py`.
+20. **Fix `safe_builtins` en `run.py` y `local_executor.py`:** Reemplazo de `RestrictedPython.safe_builtins` por `guard._create_safe_builtins()` con `__import__` restringido + ALLOWED_MODULES. Cierra 2 vectores de ejecución que inyectaban `__import__` sin restricción.
+21. **Cobertura SE5.x:** 14 tests nuevos: 7 imports prohibidos (SE5.1-7), 3 calls prohibidos (SE5.8-10), 2 async (SE5.11-12), 2 escape (SE5.17-18). SE5.13-16 ya existian de Pasos 0-1.
+22. **Patrón `guard._create_safe_builtins()` como `safe_env` estándar:** Unifica creación de builtins seguros en todos los puntos de ejecución (validate, execute, local_executor, fap run).
+
 ### Correcciones al Plan
 - `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
 - `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
 - Plan dice "warning in log" → código usa `logger.error` (E3.1)
 - Plan asume `resume()` reanuda steps → `_on_approved()` marca COMPLETED
 - `phase-state.md` línea 20 describe Paso 4 como "Hardening de API Pública" pero plan.md define "Tests de Estrés y Robustez". Desincronización documentada en análisis Paso 4.
+- Plan.md §5.1 lista SE5.1-SE5.10 como "expandir test_security_guard.py" y SE5.17-SE5.18 como archivo nuevo. Implementación sigue el plan al 100%.
 
 ---
 
@@ -164,7 +174,8 @@
 | 2 — Tests de Integración | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/02-Tests-de-Integracion/` | `b5d23af` | Fix parser `>=`/`<=`/`==`. 3 resilience + 3 handover + 3 condicional. DX `fap test-step 2`. | Fix approval operators. Lint I001 corregido. Validación: ✅ |
 | 3 — E2E Flujos Completos con Mocks | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/03-E2E-Flujos-Completos-con-Mocks/` | `7a750ca` | 4 tests E2E (Degraded MCP, HITL, 3-step Handover). DX `fap test-step 3`. | 4/4 pass. Lint 0. Validación: ✅ |
 | 4 — Tests de Estrés y Robustez | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/` | `af6b16f` | 14 tests stress (S4.1-S4.7). DX `fap stress-bench`. `re.compile` en sanitizer. pytest-timeout. | 14/14 pass. Lint 0. 6 análisis + validación archivados. Validación: ✅ |
-| 5–6 | 🔲 PENDIENTE | — | — | — | — |
+| 5 — Tests de Seguridad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/` | `534481f` | 14 tests (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix `safe_builtins` en `run.py` + `local_executor.py`. `fap test-step 5`. | 14/14 pass. Lint 0. 6 análises + 1 validación archivados. Validación: ✅ |
+| 6 | 🔲 PENDIENTE | — | — | — | — |
 | 7 — Documentación y Cierre | 🔲 PENDIENTE | — | — | TESTING.md, Makefile, cobertura >75%, `fap phase-close` | — |
 
 ---
@@ -179,8 +190,9 @@
 - [x] **Herramientas DX:** `fap baseline-check`, `fap test-step {1,2,3}`, `fap stress-bench` ✅
 - [x] **Código ejecuta sin errores:** Lint 0, 489 tests collected ✅
 - [x] **Paso 4:** 14/14 tests stress ✅. `fap stress-bench` funcional ✅. `re.compile` SECRET_PATTERNS ✅. `pytest-timeout>=1.5.0` instalado ✅
-- [ ] **Pasos 5–7:** pendientes
+- [x] **Paso 5:** 14/14 tests seguridad (SE5.1-SE5.12 + SE5.17-SE5.18) ✅. `fap security-audit` funcional ✅. `fap test-step 5` funcional ✅. Fix `safe_builtins` en `run.py` + `local_executor.py` ✅. 503 tests totales ✅. Lint 0 ✅
+- [ ] **Pasos 6–7:** pendientes
 
-**Progreso Fase VI: 62.5% (5/8 pasos). Próximo: Paso 5 — Tests de Seguridad.**
+**Progreso Fase VI: 75% (6/8 pasos). Próximo: Paso 6 — Performance & Observabilidad.**
 
 **Criterios fuera de alcance MVP:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.
