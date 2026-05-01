@@ -2,7 +2,7 @@
   "meta": {
     "project_name": "FluxAgentPro-v2",
     "project_root": "D:\\Develop\\Personal\\FluxAgentPro-v2",
-    "setup_date": "2026-04-30",
+    "setup_date": "2026-05-01",
     "setup_version": "2.0"
   },
   "stack": {
@@ -28,12 +28,13 @@
     "services": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\services",
     "tests": "D:\\Develop\\Personal\\FluxAgentPro-v2\\tests",
     "tests_unit": "D:\\Develop\\Personal\\FluxAgentPro-v2\\tests\\unit",
-    "tests_integration": null,
+    "tests_integration": "D:\\Develop\\Personal\\FluxAgentPro-v2\\tests\\integration",
+    "tests_e2e": "D:\\Develop\\Personal\\FluxAgentPro-v2\\tests\\e2e",
     "config": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\config.py",
     "devs": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS",
     "devs_plan": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\plan.md",
-    "devs_phase_state": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\estado-fase.md",
-    "devs_sugest": null,
+    "devs_phase_state": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\phase-state.md",
+    "devs_sugest": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\7_SUGEST_TO_PLAN.md",
     "devs_in_progress": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\IN_PROGRESS",
     "devs_implemented": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\IMPLEMENTED",
     "scripts": "D:\\Develop\\Personal\\FluxAgentPro-v2\\scripts",
@@ -43,16 +44,16 @@
     "registry_flows": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\flows\\registry.py",
     "scheduler": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\scheduler",
     "docker_compose": null,
-    "env_example": null
+    "env_example": "D:\\Develop\\Personal\\FluxAgentPro-v2\\.env.example"
   },
   "commands": {
     "dev": "uv sync --all-extras",
     "build": null,
     "test": "pytest tests/",
     "test_unit": "pytest tests/unit/",
-    "test_integration": null,
+    "test_integration": "pytest tests/integration/",
     "lint": "ruff check src/ tests/",
-    "lint_fix": null,
+    "lint_fix": "ruff check --fix src/ tests/",
     "migrate": "manual (SQL Editor en Supabase Studio)",
     "seed": null,
     "install": "uv sync"
@@ -112,8 +113,8 @@
     ]
   },
   "phase": {
-    "phase_name": "details4agents",
-    "current_step": "04-Documentacion-y-Cierre"
+    "phase_name": "testing",
+    "current_step": null
   },
   "pipeline": {
     "phase_state_exists": true,

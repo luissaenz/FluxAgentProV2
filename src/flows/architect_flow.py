@@ -296,7 +296,7 @@ REGLAS CRÍTICAS - EL JSON DEBE CUMPLIRLAS ESTRICTAMENTE:
 5. El campo 'model' DEBE ser uno de los valores permitidos listados arriba
 6. NO agregues campos extra que no estén en el schema
 7. Responde SOLO con el objeto JSON, sin markdown, sin backticks, sin texto explicativo
-8. Para allowed_tools: puedes mezclar tools regulares, MCP (formato mcp:server:tool), y "service_connector" en el mismo array
+8. PRINCIPIO DE PARSIMONIA: NO asignes ninguna herramienta en 'allowed_tools' a menos que sea estrictamente necesaria para cumplir el objetivo. Si el agente solo debe hablar, saludar o razonar, el array DEBE estar vacío [].
 9. Si usas service_connector, incluye en las rules del agente una nota sobre qué tool_id se usará
 """,
             expected_output="Un objeto JSON puro que cumpla exactamente con el schema de WorkflowDefinition.",

@@ -100,21 +100,23 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 5. Verificar que `{paths.devs_in_progress}/` queda vacío.
 6. Registrar en log del proceso: `📦 Archivado: {paths.devs_in_progress}/* → {paths.devs_implemented}/{phase_name}/{XX-nombre}/`
 
-7. **Hacer commit con el nombre de la carpeta destino:**
+7. **Hacer UN ÚNICO commit con todo lo archivado:**
    ```bash
    cd {project_root}
-   git commit -a -m "{phase_name | XX-nombre}"
+   git add {paths.devs_in_progress} {paths.devs_implemented}/{phase_name}/{XX-nombre}/
+   git commit -m "{phase_name} / {XX-nombre}"
    ```
 
    > [!IMPORTANT]
-   > El mensaje del commit = nombre exacto de la carpeta destino. Ej: `05-Implementacion-de-seguridad`
+   > **ÚNICO COMMIT PERMITIDO.** No hacer commits adicionales en este proceso.
+   > El mensaje del commit = `{phase_name} / {XX-nombre}`. Ej: `details4agents / 04-Documentacion-y-Cierre`
    > No agregar prefijos, emojis ni texto adicional al mensaje del commit.
 
 8. Verificar que el commit fue exitoso:
    ```bash
    git log --oneline -1
    ```
-   Confirmar que el hash y mensaje coinciden con `{XX-nombre}`.
+   Confirmar que el hash y mensaje coinciden con `{phase_name} / {XX-nombre}`.
 
 > [!NOTE]
 > Si `{paths.devs_in_progress}/` está vacío (primer paso de una fase) → omitir el movimiento y el commit. Registrar: `📦 IN_PROGRESS vacío — no hay archivos que archivar ni commit que hacer.`
@@ -220,7 +222,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 > **REGLA DE ORO:** Únicos archivos permitidos crear/modificar:
 > 1. `{project_root}/DEVS/phase-state.md`
 > 2. Directorio `{paths.devs_implemented}/{phase_name}/{XX-nombre}/` (creación del directorio + archivos movidos desde IN_PROGRESS)
-> 3. Commit git con mensaje `{XX-nombre}`
+> 3. Un único commit git con mensaje `{phase_name} / {XX-nombre}`
 
 ---
 
@@ -230,7 +232,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 |:---|:---|
 | `proyecto-config.json` leído antes de generar | 100% — sin esto no hay rutas válidas |
 | Archivado de IN_PROGRESS ejecutado | 100% — siempre, antes de generar phase-state |
-| Commit realizado con nombre de carpeta destino | 100% — siempre, después del archivado |
+| Único commit realizado con formato `{phase_name} / {XX-nombre}` | 100% — siempre, después del archivado |
 | Hash de commit registrado en §5 | 100% |
 | Ruta de archivado registrada en §5 | 100% |
 | Afirmaciones sobre "qué existe" verificadas contra código | 100% |
@@ -264,7 +266,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 ### Último archivado:
 - Origen: {paths.devs_in_progress}/
 - Destino: {paths.devs_implemented}/{phase.phase_name}/{XX-nombre}/
-- Commit: {hash_corto} — "{XX-nombre}"
+- Commit: {hash_corto} — "{phase_name} / {XX-nombre}"
 ```
 
 ---
