@@ -148,13 +148,13 @@ Usuario (NL description)
 | Gap | Descripción | Impacto |
 |---|---|---|
 | G1 | `_check_approval_rule` no soporta `>=`, `<=`, `==` | Escenarios HITL con этих operadores no funcionan. Documentado como limitación. |
-| G2 | No hay comando `fap` para actualizar estado-fase.md | Cierre de fase requiere edición manual. |
+| G2 | No hay comando `fap` para actualizar phase-state.md | Cierre de fase requiere edición manual. |
 
 ### DX & Tooling (OBLIGATORIO)
 
 ```
 ### Herramienta: fap phase-close
-- **Qué automatiza:** Cierre de fase automático — actualiza phase-state.md y estado-fase.md con summary de la fase, marca pasos como completados, y genera reporte de certificación.
+- **Qué automatiza:** Cierre de fase automático — actualiza phase-state.md y phase-state.md con summary de la fase, marca pasos como completados, y genera reporte de certificación.
 - **Tipo:** CLI command (Typer)
 - **Ubicación:** `src/cli/commands/phase_close.py` (registrado en `src/cli/main.py`)
 - **Cómo se usa:**
@@ -200,7 +200,7 @@ Usuario (NL description)
 |---|---|---|---|---|---|
 | 0 | **DX & Tooling:** Crear `fap phase-close` CLI | FULLSTACK/DX | Baja | 2h | Ninguna |
 | 1 | Actualizar `DEVS/phase-state.md` con nuevos contratos técnicos | DATA | Baja | 0.5h | Ninguna |
-| 2 | Actualizar `DEVS/estado-fase.md` con resumen de fase | FULLSTACK | Baja | 0.5h | Tarea 1 |
+| 2 | Actualizar `DEVS/phase-state.md` con resumen de fase | FULLSTACK | Baja | 0.5h | Tarea 1 |
 | 3 | Documentar limitaciones descubiertas (_check_approval_rule) | CODE | Baja | 0.25h | Ninguna |
 | 4 | Ejecutar `fap phase-close --phase details4agents` | DX | Baja | 0.25h | Tareas 0-3 |
 | **TOTAL** | | | | **3.5h** | |

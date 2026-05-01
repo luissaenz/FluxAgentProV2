@@ -7,7 +7,7 @@ Actúa como **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especiali
 Desarrollamos **FluxAgentPro-v2**. Disponible:
 - **`proyecto-config.json`** (raíz) — fuente de verdad de rutas y convenciones
 - **Plan general:** D:\Develop\Personal\FluxAgentPro-v2\DEVS\plan.md
-- **Contexto de fase:** D:\Develop\Personal\FluxAgentPro-v2\DEVS\estado-fase.md
+- **Contexto de fase:** D:\Develop\Personal\FluxAgentPro-v2\DEVS\phase-state.md
 - **Código fuente:** D:\Develop\Personal\FluxAgentPro-v2\src (fuente de verdad)
 - **Migraciones:** D:\Develop\Personal\FluxAgentPro-v2\supabase\migrations (schema real de DB)
 
@@ -26,7 +26,7 @@ Desarrollamos **FluxAgentPro-v2**. Disponible:
 - NO preguntes qué hacer. Lee plan, phase-state y paso asignado. Luego EJECUTA.
 - NO analices TODO el sistema. Solo el paso específico — pero SÍ TODO el paso (sub-pasos incluidos).
 - NO modifiques ningún archivo que no sea el de salida.
-- NO repitas info que ya esté en D:\Develop\Personal\FluxAgentPro-v2\DEVS\estado-fase.md. Referenciala.
+- NO repitas info que ya esté en D:\Develop\Personal\FluxAgentPro-v2\DEVS\phase-state.md. Referenciala.
 - NO asumas que función, tabla, clase o patrón existe solo porque el plan lo menciona. VERIFICAR contra código.
 
 ## 🔭 EXPLORACIÓN INICIAL DEL CODEBASE
@@ -115,7 +115,7 @@ Desarrollamos **FluxAgentPro-v2**. Disponible:
 - ✅ Si algo no está definido → señalado como ambigüedad
 - ✅ Si el plan contradice el código → el código gana
 - ✅ Nivel CTO exigente en rigor y profundidad
-- ✅ Coherente con estado-fase.md — no perder decisiones ya tomadas
+- ✅ Coherente con phase-state.md — no perder decisiones ya tomadas
 - ✅ TODO el paso, incluyendo sub-pasos
 - ✅ Etapas secuenciales — data → code → backend → fullstack+DX, sin saltar
 - ✅ ≥ 1 herramienta DX propuesta — siempre, sin excepción

@@ -41,7 +41,7 @@
 | 25 | Table `service_catalog` | Migración 024 | ✅ | `supabase/migrations/024_service_catalog.sql` |
 | 26 | `crewai` como dependencia opcional | pyproject.toml `[crew]` | ✅ | `proyecto-config.json:109-111` |
 | 27 | Código Pasos 1-3 commiteado | git status clean | ✅ | `git log --oneline -1` → `c9f8eff` |
-| 28 | `estado-fase.md` existe y referencia Pasos 1-4 | Documento v29 | ✅ | `DEVS/estado-fase.md` |
+| 28 | `phase-state.md` existe y referencia Pasos 1-4 | Documento v29 | ✅ | `DEVS/phase-state.md` |
 | 29 | `phase-state.md` referencia contratos técnicos | Documento base | ✅ | `DEVS/phase-state.md` |
 | 30 | Phase `details4agents` en `proyecto-config.json` | phase.phase_name | ✅ | `proyecto-config.json:115` |
 
@@ -50,10 +50,10 @@
 | # | Discrepancia | Evidencia | Resolución Propuesta |
 |---|---|---|---|
 | D1 | `phase.current_step` en `proyecto-config.json` es `null` | `proyecto-config.json:116` | Actualizar a `"04-Documentacion-y-Cierre"` |
-| D2 | `estado-fase.md:63-64` afirma "Código de Pasos 1-3 existe en working tree pero NO está commiteado" pero `git status` está limpio y `git log` muestra `c9f8eff` | `DEVS/estado-fase.md:63`, `git status` | Corregir afirmación en actualización del documento. El código SÍ está commiteado. |
-| D3 | Paso 3 en `estado-fase.md:135` marca estado 🔄 (en progreso) pero el código está commiteado bajo `IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/` | `DEVS/estado-fase.md:135`, `DEVS/IMPLEMENTED/details4agents/` | Actualizar estado de Paso 3 a ✅ Completado si cumple criterios de aceptación |
-| D4 | Criterios de aceptación del Paso 3 en `estado-fase.md:150-158` no tienen checkmarks (todos `[ ]`) | `DEVS/estado-fase.md:151-158` | Verificar y actualizar criterios cumplidos. Archivos de tests existen en disco. |
-| D5 | `estado-fase.md` y `phase-state.md` tienen información parcialmente redundante de contratos técnicos | Ambos documentos | Consolidar contratos en `estado-fase.md` como fuente canónica de esta fase; `phase-state.md` referencia base. |
+| D2 | `phase-state.md:63-64` afirma "Código de Pasos 1-3 existe en working tree pero NO está commiteado" pero `git status` está limpio y `git log` muestra `c9f8eff` | `DEVS/phase-state.md:63`, `git status` | Corregir afirmación en actualización del documento. El código SÍ está commiteado. |
+| D3 | Paso 3 en `phase-state.md:135` marca estado 🔄 (en progreso) pero el código está commiteado bajo `IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/` | `DEVS/phase-state.md:135`, `DEVS/IMPLEMENTED/details4agents/` | Actualizar estado de Paso 3 a ✅ Completado si cumple criterios de aceptación |
+| D4 | Criterios de aceptación del Paso 3 en `phase-state.md:150-158` no tienen checkmarks (todos `[ ]`) | `DEVS/phase-state.md:151-158` | Verificar y actualizar criterios cumplidos. Archivos de tests existen en disco. |
+| D5 | `phase-state.md` y `phase-state.md` tienen información parcialmente redundante de contratos técnicos | Ambos documentos | Consolidar contratos en `phase-state.md` como fuente canónica de esta fase; `phase-state.md` referencia base. |
 | D6 | No existe `DEVS/IMPLEMENTED/details4agents/04-Documentacion-y-Cierre/` (obvio — es este paso) | `DEVS/IMPLEMENTED/details4agents/` solo tiene 01, 02, 03 | Crear después de completar el análisis y la certificación. |
 
 ---
@@ -88,9 +88,9 @@ El Paso 4 no introduce nuevas tablas. Se documenta el schema existente relevante
 
 ## 2️⃣ Análisis de Código (ETAPA 2)
 
-### Contratos técnicos pendientes de documentar en `estado-fase.md`
+### Contratos técnicos pendientes de documentar en `phase-state.md`
 
-La tarea principal del Paso 4 es actualizar `DEVS/estado-fase.md` §3 "Contratos Técnicos Vigentes" con los contratos introducidos en Pasos 1-3. Los siguientes contratos YA existen en código pero deben documentarse:
+La tarea principal del Paso 4 es actualizar `DEVS/phase-state.md` §3 "Contratos Técnicos Vigentes" con los contratos introducidos en Pasos 1-3. Los siguientes contratos YA existen en código pero deben documentarse:
 
 #### A. Patrón MCP Tool Resolution (Paso 1)
 
@@ -208,7 +208,7 @@ Usuario → CLI (fap scaffold/package/publish) → ArchitectFlow → WorkflowDef
 - **Qué automatiza:** Ejecuta checklist de certificación de fase completa.
   Verifica: lint (ruff check), tests (pytest), cobertura de escenarios,
   integridad de archivos esperados (analisis, validacion, tests), estado
-  de git (commits pendientes), contratos documentados en estado-fase.md.
+  de git (commits pendientes), contratos documentados en phase-state.md.
   Genera reporte de certificación en formato markdown.
 
 - **Tipo:** CLI command
@@ -258,8 +258,8 @@ Usuario → CLI (fap scaffold/package/publish) → ArchitectFlow → WorkflowDef
 ✅ [DX]       fap validate-architect-output existe y valida JSON contra schema + MCP servers
 ✅ [DX]       fap test-scenarios existe y ejecuta 6 escenarios con reporte
 ⬜ [DX]       fap cert-phase propuesto — pendiente de aprobación e implementación
-⬜ [DOC]      estado-fase.md actualizado con contratos de Pasos 1-3
-⬜ [DOC]      Discrepancias D1-D6 resueltas en estado-fase.md
+⬜ [DOC]      phase-state.md actualizado con contratos de Pasos 1-3
+⬜ [DOC]      Discrepancias D1-D6 resueltas en phase-state.md
 ⬜ [DOC]      proyecto-config.json phase.current_step actualizado
 ⬜ [CERT]     Certificación de Fase V ejecutada (fap cert-phase o manual)
 ⬜ [CERT]     Lint pasa 100% (ruff check src/ tests/)
@@ -273,12 +273,12 @@ Usuario → CLI (fap scaffold/package/publish) → ArchitectFlow → WorkflowDef
 
 | Riesgo | Severidad | Causa | Mitigación |
 |---|---|---|---|
-| R1: Paso 3 incompleto bloquea certificación | **Alta** | `estado-fase.md` marca Paso 3 como 🔄. Si los 6 escenarios no pasan tests, Paso 4 no puede cerrar la fase. | Ejecutar `pytest tests/e2e/test_scenario_*.py -v` ANTES de actualizar estado-fase.md. Si fallan → devolver a Paso 3. |
+| R1: Paso 3 incompleto bloquea certificación | **Alta** | `phase-state.md` marca Paso 3 como 🔄. Si los 6 escenarios no pasan tests, Paso 4 no puede cerrar la fase. | Ejecutar `pytest tests/e2e/test_scenario_*.py -v` ANTES de actualizar phase-state.md. Si fallan → devolver a Paso 3. |
 | R2: `crewai` no instalado rompe tests | **Media** | Dependencia opcional en `[crew]`. Tests usan `importorskip` pero `fap test-scenarios` podría fallar si crewai no está. | Verificar instalación con `pip list | grep crewai` antes de certificación. Documentar como pre-requisito. |
-| R3: Estados inconsistentes entre `estado-fase.md` y `phase-state.md` | **Media** | Dos documentos mantienen info de fase parcialmente redundante. `estado-fase.md` v29 fue actualizado manualmente por Antigravity; `phase-state.md` es base generada. | Consolidar en `estado-fase.md` como fuente canónica de Fase V. Agregar nota en `phase-state.md`: «Ver `estado-fase.md` para detalles de Fase V». |
+| R3: Estados inconsistentes entre `phase-state.md` y `phase-state.md` | **Media** | Dos documentos mantienen info de fase parcialmente redundante. `phase-state.md` v29 fue actualizado manualmente por Antigravity; `phase-state.md` es base generada. | Consolidar en `phase-state.md` como fuente canónica de Fase V. Agregar nota en `phase-state.md`: «Ver `phase-state.md` para detalles de Fase V». |
 | R4: `fap test-scenarios` usa mock LLM, no LLM real | **Media** | Los escenarios validan estructura (schema, bundle, import) pero no calidad de generación con LLM real. Un cambio en model behavior podría romper compatibilidad. | Documentar que los escenarios validan contrato estructural. Validación con LLM real es paso manual adicional. |
 | R5: Regresión por cambios no relacionados | **Baja** | Merges de otras ramas durante Fase V podrían introducir conflictos con contratos documentados. | Ejecutar full test suite antes de certificación final. |
-| R6: Documentación desactualizada en futuras fases | **Baja** | Contratos documentados en `estado-fase.md` pueden volverse obsoletos en Fase VI+. | Incluir en `estado-fase.md` fecha de última actualización y referencia a la fase que generó cada contrato. |
+| R6: Documentación desactualizada en futuras fases | **Baja** | Contratos documentados en `phase-state.md` pueden volverse obsoletos en Fase VI+. | Incluir en `phase-state.md` fecha de última actualización y referencia a la fase que generó cada contrato. |
 
 ---
 
@@ -291,7 +291,7 @@ Usuario → CLI (fap scaffold/package/publish) → ArchitectFlow → WorkflowDef
 | 2 | Ejecutar `ruff check src/ tests/` y corregir errores | CODE | Baja | 0.5h | Ninguna |
 | 3 | Ejecutar `pytest tests/unit/ -v` y verificar 100% pass | CODE | Media | 1h | Tarea 2 |
 | 4 | Ejecutar `pytest tests/e2e/test_scenario_*.py -v` y verificar 6/6 pass | FULLSTACK | Alta | 2h | Tarea 3 |
-| 5 | Actualizar `estado-fase.md` §3 con contratos técnicos de Pasos 1-3 | DOC | Media | 1.5h | Tareas 1-4 |
+| 5 | Actualizar `phase-state.md` §3 con contratos técnicos de Pasos 1-3 | DOC | Media | 1.5h | Tareas 1-4 |
 | 6 | Actualizar `proyecto-config.json` `phase.current_step` | DOC | Baja | 0.1h | Tarea 1 |
 | 7 | Ejecutar `fap cert-phase --phase details4agents --strict` | DX | Media | 0.5h | Tareas 0, 5, 6 |
 | 8 | Mover `analisis-ds.md` + certificación a `IMPLEMENTED/details4agents/04-Documentacion-y-Cierre/` | DOC | Baja | 0.2h | Tarea 7 |
@@ -306,7 +306,7 @@ Usuario → CLI (fap scaffold/package/publish) → ArchitectFlow → WorkflowDef
 - **Agregar tests unitarios para `fap validate-architect-output`:** Herramienta existe sin tests automáticos (ID-002 en validacion Paso 2)
 - **Corregir typo en `validate_architect.py:108`** (`"service_connectorreferenciado"` sin espacio)
 - **Soporte para operadores `>=`, `<=`, `==` en `DynamicWorkflow._check_approval_rule()`:** Actualmente solo `>` y `<`
-- **Consolidar `estado-fase.md` y `phase-state.md`:** Evaluar unificar en un solo documento canónico para futuras fases
+- **Consolidar `phase-state.md` y `phase-state.md`:** Evaluar unificar en un solo documento canónico para futuras fases
 
 ---
 
@@ -315,7 +315,7 @@ Usuario → CLI (fap scaffold/package/publish) → ArchitectFlow → WorkflowDef
 - ✅ Análisis accionable y específico — tareas atómicas con tiempos estimados
 - ✅ Todo verificado contra código — 30 elementos en §0 con archivo:línea
 - ✅ Discrepancias detectadas y resueltas — 6 discrepancias (D1-D6)
-- ✅ Plan contradice código → código gana (D1, D2 documentan estado real vs estado-fase.md)
+- ✅ Plan contradice código → código gana (D1, D2 documentan estado real vs phase-state.md)
 - ✅ Coherente con phase-state.md — no duplica información ya existente
 - ✅ Todo el paso cubierto — sub-pasos 1 y 2 del plan incluidos
 - ✅ Etapas secuenciales — data → code → backend → fullstack+DX

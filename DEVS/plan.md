@@ -47,7 +47,7 @@ Este plan detalla los cambios necesarios para habilitar la generación de agente
 6.  **Escenario 6 (Full Stack)**: Flujo complejo con todas las capacidades anteriores.
 
 ### Paso 4: Documentación y Cierre
-1.  Actualizar `DEVS/estado-fase.md` con los nuevos "Contratos Técnicos".
+1.  Actualizar `DEVS/phase-state.md` con los nuevos "Contratos Técnicos".
 2.  Realizar la certificación de la Fase V.
 
 ---

@@ -23,19 +23,19 @@
 | # | Discrepancia | Detectó | Verificada contra código | Resolución |
 |---|---|---|---|---|
 | 1 | `phase.current_step` en `proyecto-config.json` es `null` | ds, qwen, kilo | ✅ `proyecto-config.json:116` | Actualizar a `"04-Documentacion-y-Cierre"` |
-| 2 | `estado-fase.md:63` dice código sin commitlear pero git está limpio | ds | ✅ `git log --oneline` → `c9f8eff` | Corregir afirmación — código SÍ commiteado |
-| 3 | Paso 3 marcado 🔄 en `estado-fase.md:135` pero commiteado | ds | ✅ `DEVS/IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/` | Actualizar a ✅ Completado |
-| 4 | Criterios aceptación Paso 3 sin checkmarks `[ ]` | ds | ✅ `estado-fase.md:150-158` | Verificar y marcar completados |
-| 5 | `estado-fase.md` y `phase-state.md` parcialmente redundantes | ds | ⚠️ Ambos documentos | Consolidar en `estado-fase.md` como fuente canónica de Fase V |
+| 2 | `phase-state.md:63` dice código sin commitlear pero git está limpio | ds | ✅ `git log --oneline` → `c9f8eff` | Corregir afirmación — código SÍ commiteado |
+| 3 | Paso 3 marcado 🔄 en `phase-state.md:135` pero commiteado | ds | ✅ `DEVS/IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/` | Actualizar a ✅ Completado |
+| 4 | Criterios aceptación Paso 3 sin checkmarks `[ ]` | ds | ✅ `phase-state.md:150-158` | Verificar y marcar completados |
+| 5 | `phase-state.md` y `phase-state.md` parcialmente redundantes | ds | ⚠️ Ambos documentos | Consolidar en `phase-state.md` como fuente canónica de Fase V |
 | 6 | `_check_approval_rule` solo soporta `>` y `<`, no `>=`, `<=` | qwen | ✅ `src/flows/dynamic_flow.py:128-159` | Documentar como limitación conocida. Escenarios usan `>` y `<`. No bloquear. |
 
 ---
 
 ## 1️⃣ Resumen Ejecutivo
 
-- **Objetivo:** Cerrar Fase V (`details4agents`) con documentación actualizada, resolución de discrepancias en `estado-fase.md`, y certificación de implementación.
+- **Objetivo:** Cerrar Fase V (`details4agents`) con documentación actualizada, resolución de discrepancias en `phase-state.md`, y certificación de implementación.
 - **Correcciones críticas detectadas:**
-  - `estado-fase.md` incorrectamente marca código como uncommitted cuando git está limpio (commit `c9f8eff`).
+  - `phase-state.md` incorrectamente marca código como uncommitted cuando git está limpio (commit `c9f8eff`).
   - Paso 3 aparece como 🔄 pero análisis y código están archivados y commiteados.
   - `phase.current_step` null debe actualizarse a `"04-Documentacion-y-Cierre"`.
 - **Decisión DX:** Tres propuestas (`fap cert-phase` de ds, `fap phase-close` de qwen, `fap generate-contratos` de kilo) se fusionan en **`fap phase-close --certify`** que incluye certificación + cierre + generación de contratos.
@@ -49,7 +49,7 @@
 1. Implementador ejecuta `fap phase-close --phase details4agents --certify`
 2. Herramienta ejecuta lint + tests unitarios + tests E2E escenarios
 3. Herramienta detecta discrepancias (D1-D6) y las resuelve automáticamente
-4. Herramienta actualiza `estado-fase.md` con contratos de Fase V
+4. Herramienta actualiza `phase-state.md` con contratos de Fase V
 5. Herramienta marca Paso 3 como ✅, actualiza `phase.current_step`
 6. Herramienta genera reporte de certificación (PASS/FAIL)
 7. Implementador revisa reporte y hace commit final
@@ -69,7 +69,7 @@
 | Ruta | Tipo | Descripción |
 |------|------|-------------|
 | `src/cli/commands/phase_close.py` | Creación | Comando `fap phase-close` con flag `--certify` para ejecutar validación completa |
-| `DEVS/estado-fase.md` | Modificación | Actualizar contratos técnicos, marcar Paso 3 ✅, corregir D2-D4 |
+| `DEVS/phase-state.md` | Modificación | Actualizar contratos técnicos, marcar Paso 3 ✅, corregir D2-D4 |
 | `proyecto-config.json` | Modificación | Actualizar `phase.current_step` a `"04-Documentacion-y-Cierre"` |
 
 #### Interfaces clave
@@ -92,7 +92,7 @@ def phase_close(
 ### Herramienta: fap phase-close
 
 - **Qué automatiza:** Cierre de fase completo — ejecuta lint + tests + certificación,
-  resuelve discrepancias D1-D6 automáticamente, actualiza estado-fase.md y phase-state.md,
+  resuelve discrepancias D1-D6 automáticamente, actualiza phase-state.md y phase-state.md,
   genera contratos técnicos desde código fuente, marca pasos como completados.
 
 - **Tipo:** CLI command (Typer)
@@ -119,7 +119,7 @@ def phase_close(
 
 2. **Resolución automática de D1-D6:** Las discrepancias de documentación son editables por script. No requieren intervención manual si el tool puede parsear y modificar markdown.
 
-3. **⚠️ Corrección al plan:** `estado-fase.md:63` dice "código sin commitlear" pero `git log` muestra commit `c9f8eff`. Se implementa lo que dice git — código commiteado.
+3. **⚠️ Corrección al plan:** `phase-state.md:63` dice "código sin commitlear" pero `git log` muestra commit `c9f8eff`. Se implementa lo que dice git — código commiteado.
 
 4. **⚠️ Corrección al plan:** Paso 3 marcado 🔄 pero archivos existen en `IMPLEMENTED/details4agents/03-Suite-de-los-6-Escenarios/`. Se actualiza a ✅.
 
@@ -145,7 +145,7 @@ def phase_close(
 
 **Funcionales:**
 - [ ] `fap phase-close --phase details4agents --certify` ejecuta sin errores
-- [ ] `estado-fase.md` actualizado con contratos de Fase V (secciones §2, §3, §4, §5)
+- [ ] `phase-state.md` actualizado con contratos de Fase V (secciones §2, §3, §4, §5)
 - [ ] `proyecto-config.json phase.current_step` actualizado a `"04-Documentacion-y-Cierre"`
 - [ ] Discrepancias D1-D6 resueltas en documentación
 - [ ] Reporte de certificación generado en output (PASS/FAIL)
@@ -164,7 +164,7 @@ def phase_close(
 |---|---|---|---|---|
 | 0 | **DX & Tooling:** Implementar `fap phase-close --certify` | Media | 3h | Ninguna |
 | 1 | Resolver D1 (actualizar `phase.current_step`) | Baja | 0.1h | Ninguna |
-| 2 | Resolver D2-D4 (corregir estado-fase.md) | Baja | 0.5h | Ninguna |
+| 2 | Resolver D2-D4 (corregir phase-state.md) | Baja | 0.5h | Ninguna |
 | 3 | Resolver D5 (consolidar `phase-state.md` reference en estado-fase) | Baja | 0.2h | Ninguna |
 | 4 | Resolver D6 (documentar limitación `_check_approval_rule`) | Baja | 0.1h | Ninguna |
 | 5 | Ejecutar `ruff check src/ tests/` y corregir errores | Baja | 0.5h | Ninguna |
@@ -183,8 +183,8 @@ def phase_close(
 | Riesgo | Severidad | Causa | Mitigación |
 |---|---|---|---|
 | Timeout en tests unitarios bloquea certificación | Media | Tests >120s en ejecución actual | Tool detecta timeout, warn pero continúa si lint pasa |
-| Discrepancias markdown no parseables por script | Baja | Formato inesperado en estado-fase.md | Fallback a edición manual con reporte de errores |
-| `phase-state.md` y `estado-fase.md` diverge en futuro | Media | Dos docs con info parcialmente redundante | Consolidar en `estado-fase.md` como fuente canónica |
+| Discrepancias markdown no parseables por script | Baja | Formato inesperado en phase-state.md | Fallback a edición manual con reporte de errores |
+| `phase-state.md` y `phase-state.md` diverge en futuro | Media | Dos docs con info parcialmente redundante | Consolidar en `phase-state.md` como fuente canónica |
 | Commit automático de documentación | Baja | `fap phase-close` hace git commit | Confirmar antes de commit con `--dry-run` flag |
 
 ---

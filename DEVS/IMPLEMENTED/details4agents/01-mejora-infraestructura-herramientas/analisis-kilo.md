@@ -7,7 +7,7 @@ Actúa como **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especiali
 Desarrollamos **"FluxAgentPro-v2"**. Disponible:
 - **`proyecto-config.json`** (raíz) — fuente de verdad de rutas y convenciones (NOTA: archivo no encontrado en raíz, asumiendo rutas estándar basadas en estructura del proyecto)
 - **Plan general:** `{project_root}/DEVS/plan.md`
-- **Contexto de fase:** `{project_root}/DEVS/estado-fase.md`
+- **Contexto de fase:** `{project_root}/DEVS/phase-state.md`
 - **Código fuente:** `src` (fuente de verdad)
 - **Migraciones:** `supabase/migrations` (schema real de DB)
 
@@ -36,7 +36,7 @@ Solo 2 parámetros:
 - **NO** preguntes qué hacer. Lee plan, phase-state y paso asignado. Luego EJECUTA.
 - **NO** analices TODO el sistema. Solo el paso específico — pero SÍ TODO el paso (sub-pasos incluidos).
 - **NO** modifiques ningún archivo que no sea el de salida.
-- **NO** repitas info que ya esté en `{project_root}/DEVS/estado-fase.md`. Referenciala.
+- **NO** repitas info que ya esté en `{project_root}/DEVS/phase-state.md`. Referenciala.
 - **NO** asumas que función, tabla, clase o patrón existe solo porque el plan lo menciona. VERIFICAR contra código.
 
 ---

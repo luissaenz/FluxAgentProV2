@@ -7,13 +7,13 @@ Actúa como **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especiali
 Desarrollamos **"FluxAgentPro-v2"**. Disponible:
 - **`proyecto-config.json`** (raíz) — fuente de verdad de rutas y convenciones
 - **Plan general:** `D:\Develop\Personal\FluxAgentPro-v2\DEVS\plan.md`
-- **Contexto de fase:** `D:\Develop\Personal\FluxAgentPro-v2\DEVS\estado-fase.md`
+- **Contexto de fase:** `D:\Develop\Personal\FluxAgentPro-v2\DEVS\phase-state.md`
 - **Código fuente:** `D:\Develop\Personal\FluxAgentPro-v2\src` (fuente de verdad)
 - **Migraciones:** `D:\Develop\Personal\FluxAgentPro-v2\supabase\migrations` (schema real de DB)
 
 ## Entradas Obligatorias
 - **[AGENTE]** → kilo
-- **[PASO]** → paso 4 (Documentación y Cierre: Actualizar estado-fase.md con nuevos Contratos Técnicos y certificar Fase V)
+- **[PASO]** → paso 4 (Documentación y Cierre: Actualizar phase-state.md con nuevos Contratos Técnicos y certificar Fase V)
 
 ---
 
@@ -21,8 +21,8 @@ Desarrollamos **"FluxAgentPro-v2"**. Disponible:
 
 | # | Elemento | Verificación | Estado | Evidencia |
 |---|----------|--------------|--------|-----------|
-| 1 | DEVS/estado-fase.md existe | ls DEVS/ | ✅ | DEVS/estado-fase.md (180 líneas) |
-| 2 | Sección Contratos Técnicos existe | grep "Contratos Técnicos" | ✅ | estado-fase.md:76 |
+| 1 | DEVS/phase-state.md existe | ls DEVS/ | ✅ | DEVS/phase-state.md (180 líneas) |
+| 2 | Sección Contratos Técnicos existe | grep "Contratos Técnicos" | ✅ | phase-state.md:76 |
 | 3 | fap test-scenarios implementado | grep en src/cli/main.py | ✅ | main.py:45 app.command("test-scenarios") |
 | 4 | fap validate-tools implementado | grep en src/cli/main.py | ✅ | main.py:43 app.command("validate-tools") |
 | 5 | Tests E2E de escenarios existen | ls tests/e2e/ | ✅ | test_scenario_1_greeter.py, test_scenario_2_integration.py, etc. |
@@ -32,7 +32,7 @@ Desarrollamos **"FluxAgentPro-v2"**. Disponible:
 | 9 | proyecto-config.json actualizado | cat proyecto-config.json | ✅ | phase.current_step: null (pendiente actualizar) |
 | 10 | Archivos de Paso 3 archivados | ls DEVS/IMPLEMENTED/ | ✅ | details4agents/03-Suite-de-los-6-Escenarios/ |
 | 11 | No hay cambios pendientes en git | git status --porcelain | ✅ | Working tree clean (archivos archivados) |
-| 12 | Criterios de aceptación de Paso 3 marcados | grep "\[ \]" estado-fase.md | ✅ | Todos marcados como [ ] pendientes |
+| 12 | Criterios de aceptación de Paso 3 marcados | grep "\[ \]" phase-state.md | ✅ | Todos marcados como [ ] pendientes |
 
 **Discrepancias encontradas:**
 
@@ -63,7 +63,7 @@ Paso 4 es puramente documental, sin cambios en schema de DB.
 Paso 4 no introduce nuevo código, solo actualiza documentación.
 
 - ✅ **Funciones/clases nuevas:** Ninguna.
-- ✅ **Patrones:** Se mantiene patrón de documentación en estado-fase.md.
+- ✅ **Patrones:** Se mantiene patrón de documentación en phase-state.md.
 - ✅ **Modularidad:** Documentación centralizada en un archivo.
 - ✅ **Calidad:** Documentación técnica clara y verificable.
 - ✅ **Imports y dependencias:** Sin cambios.
@@ -72,7 +72,7 @@ Paso 4 no introduce nuevo código, solo actualiza documentación.
 
 **Referencias a patrones existentes:** Patrón de "Contratos Técnicos" heredado de fases anteriores.
 
-**Decisiones sobre ubicación:** Actualización en DEVS/estado-fase.md, ubicación estándar.
+**Decisiones sobre ubicación:** Actualización en DEVS/phase-state.md, ubicación estándar.
 
 ---
 
@@ -104,13 +104,13 @@ Flujo completo: La documentación asegura coherencia entre código implementado 
 - ✅ **Gaps:** Ninguno identificado en verificación.
 
 ### Herramienta Propuesta: CLI para Generación Automática de Contratos Técnicos
-- **Qué automatiza:** Extracción automática de endpoints, CLI commands, schemas y patrones desde código fuente para actualizar "Contratos Técnicos" en estado-fase.md.
+- **Qué automatiza:** Extracción automática de endpoints, CLI commands, schemas y patrones desde código fuente para actualizar "Contratos Técnicos" en phase-state.md.
 - **Tipo:** script / CLI / generador
-- **Cómo se usa:** `fap generate-contratos --output DEVS/estado-fase.md --section "Contratos Técnicos"`
+- **Cómo se usa:** `fap generate-contratos --output DEVS/phase-state.md --section "Contratos Técnicos"`
 - **Impacto para el usuario final:** Elimina tarea manual de mantener documentación técnica sincronizada con código (actualmente ~30-60 min por fase).
 - **Prioridad:** Tarea 0 — implementar antes que el resto del paso
 
-Incluir: Flujo end-to-end en diagrama (descripción): Código fuente → Análisis estático → Extracción de contratos → Update estado-fase.md.
+Incluir: Flujo end-to-end en diagrama (descripción): Código fuente → Análisis estático → Extracción de contratos → Update phase-state.md.
 
 Validación: Herramienta ejecuta sin errores y genera contratos precisos verificados contra grep en código.
 
@@ -123,7 +123,7 @@ Puntos críticos: Asegurar que la herramienta detecte cambios en endpoints, CLI,
 - ✅ [DATA] Sin cambios en schema DB
 - ✅ [CODE] Sin nuevo código implementado
 - ✅ [BACKEND] Sin nuevos endpoints o middleware
-- ✅ [FULLSTACK] estado-fase.md actualizado con contratos de Fase V
+- ✅ [FULLSTACK] phase-state.md actualizado con contratos de Fase V
 - ✅ [DX] Herramienta de generación de contratos implementada y funcional
 
 ---
@@ -148,7 +148,7 @@ Puntos críticos: Asegurar que la herramienta detecte cambios en endpoints, CLI,
 | # | Tarea | Etapa(s) | Complejidad | Tiempo Est. | Dependencias |
 |---|---|---|---|---|---|
 | 0 | **DX & Tooling**: Implementar `fap generate-contratos` para extracción automática | FULLSTACK/DX | Media | 2h | Ninguna |
-| 1 | Actualizar sección "Contratos Técnicos" en estado-fase.md con elementos de Paso 3 | FULLSTACK | Baja | 1h | Tarea 0 |
+| 1 | Actualizar sección "Contratos Técnicos" en phase-state.md con elementos de Paso 3 | FULLSTACK | Baja | 1h | Tarea 0 |
 | 2 | Marcar criterios de aceptación de Fase V como completados | FULLSTACK | Baja | 30min | Tarea 1 |
 | 3 | Actualizar estado de fase a "COMPLETADA" | FULLSTACK | Baja | 15min | Tarea 2 |
 | 4 | Ejecutar herramienta DX para validar contratos generados | FULLSTACK | Baja | 30min | Tarea 0 |

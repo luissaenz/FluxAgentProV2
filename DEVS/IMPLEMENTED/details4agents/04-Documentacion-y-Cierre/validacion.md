@@ -11,11 +11,11 @@
 | # | Corrección del FINAL | ¿Aplicada? | Evidencia |
 |---|---|---|---|
 | D1 | `phase.current_step` en `proyecto-config.json` es `null` → actualizar a `"04-Documentacion-y-Cierre"` | ✅ | `proyecto-config.json:116` — `"current_step": "04-Documentacion-y-Cierre"` |
-| D2 | `estado-fase.md:63` dice código sin commitlear pero git está limpio | ✅ | `estado-fase.md:63` — marcado "RESUELTO: Código commiteado"; commit `c9f8eff` en git log |
-| D3 | Paso 3 marcado 🔄 en `estado-fase.md:135` pero commiteado | ✅ | `estado-fase.md:135` — `✅` + "commiteados"; commit `4f61392` |
-| D4 | Criterios aceptación Paso 3 sin checkmarks `[ ]` | ✅ | `estado-fase.md:152-160` — todos `[x]` |
-| D5 | `estado-fase.md` y `phase-state.md` parcialmente redundantes | ✅ | `phase-state.md:5` — `"Nota: estado-fase.md es la fuente canonica de estado para Fase V."` |
-| D6 | `_check_approval_rule` solo soporta `>` y `<`, no `>=`, `<=` | ✅ | `estado-fase.md:64` — `"ID-005 (D6): ... Limitación conocida."` ; `phase_close.py:210-218` resuelve documentando |
+| D2 | `phase-state.md:63` dice código sin commitlear pero git está limpio | ✅ | `phase-state.md:63` — marcado "RESUELTO: Código commiteado"; commit `c9f8eff` en git log |
+| D3 | Paso 3 marcado 🔄 en `phase-state.md:135` pero commiteado | ✅ | `phase-state.md:135` — `✅` + "commiteados"; commit `4f61392` |
+| D4 | Criterios aceptación Paso 3 sin checkmarks `[ ]` | ✅ | `phase-state.md:152-160` — todos `[x]` |
+| D5 | `phase-state.md` y `phase-state.md` parcialmente redundantes | ✅ | `phase-state.md:5` — `"Nota: phase-state.md es la fuente canonica de estado para Fase V."` |
+| D6 | `_check_approval_rule` solo soporta `>` y `<`, no `>=`, `<=` | ✅ | `phase-state.md:64` — `"ID-005 (D6): ... Limitación conocida."` ; `phase_close.py:210-218` resuelve documentando |
 
 ## Fase 0.5: Verificación de DX & Tooling
 | # | Verificación | Estado | Evidencia |
@@ -45,7 +45,7 @@
 | # | Criterio | Estado | Evidencia |
 |---|---|---|---|
 | 11 | `fap phase-close --phase details4agents --certify` ejecuta sin errores | ✅ | `--help` muestra interfaz correcta (5 opts); `--dry-run` lista cambios planeados; código con try/except robusto; imports válidos verificados |
-| 12 | `estado-fase.md` actualizado con contratos de Fase V (§2, §3, §4, §5) | ✅ | `estado-fase.md:17-180` — §2 Estado, §3 Contratos Técnicos, §4 Decisiones Arquitectura, §5 Registro Pasos |
+| 12 | `phase-state.md` actualizado con contratos de Fase V (§2, §3, §4, §5) | ✅ | `phase-state.md:17-180` — §2 Estado, §3 Contratos Técnicos, §4 Decisiones Arquitectura, §5 Registro Pasos |
 | 13 | `proyecto-config.json phase.current_step` actualizado a `"04-Documentacion-y-Cierre"` | ✅ | `proyecto-config.json:116` |
 | 14 | Discrepancias D1-D6 resueltas en documentación | ✅ | Ver Fase 0 — 6/6 ✅ con evidencia archivo:línea |
 | 15 | Reporte de certificación generado en output (PASS/FAIL) | ✅ | `phase_close.py:221-308` — `generate_report_md()` produce markdown con PASS/FAIL, timestamp, discrepancias, archivos actualizados |
@@ -82,18 +82,18 @@ MVP aprobado sin issues críticos. Las 6 correcciones del FINAL (D1-D6) están a
 *Ninguno.*
 
 ### 🟡 Importantes
-- **ID-001:** `estado-fase.md` contiene texto stale post-cierre: (a) líneas 67-69 muestran corrigenda antigua sobre `phase.current_step null` ya resuelta; (b) sección "No Existe Aún" (líneas 71-73) lista Pasos 3 y 4 como pendientes contradiciendo header "TODOS LOS PASOS COMPLETADOS"; (c) Pasos 1 y 2 (líneas 133-134) aún dicen "(uncommitted)" cuando commits `5ca8dfc` y `97420b9` ya los commitean; (d) línea 149 dice "Tests unitarios pasan — verificación pendiente" aunque 263/263 pasan. El resolve_d2_d4() no cubrió estas secciones porque las funciones `str.replace()` apuntaban a strings que ya no existían con ese formato exacto.
-  → Recomendación: Limpiar secciones stale en `estado-fase.md` para coherencia post-cierre.
+- **ID-001:** `phase-state.md` contiene texto stale post-cierre: (a) líneas 67-69 muestran corrigenda antigua sobre `phase.current_step null` ya resuelta; (b) sección "No Existe Aún" (líneas 71-73) lista Pasos 3 y 4 como pendientes contradiciendo header "TODOS LOS PASOS COMPLETADOS"; (c) Pasos 1 y 2 (líneas 133-134) aún dicen "(uncommitted)" cuando commits `5ca8dfc` y `97420b9` ya los commitean; (d) línea 149 dice "Tests unitarios pasan — verificación pendiente" aunque 263/263 pasan. El resolve_d2_d4() no cubrió estas secciones porque las funciones `str.replace()` apuntaban a strings que ya no existían con ese formato exacto.
+  → Recomendación: Limpiar secciones stale en `phase-state.md` para coherencia post-cierre.
 
-- **ID-002:** `phase-state.md` tabla de pasos planificados (líneas 21-22) muestra Pasos 3 y 4 como "⬜ Pendiente". Aunque D5 establece `estado-fase.md` como fuente canónica, la discrepancia puede confundir a futuros consumidores (analista, implementador) que lean `phase-state.md` primero.
-  → Recomendación: Sincronizar tabla de pasos en `phase-state.md` con `estado-fase.md`.
+- **ID-002:** `phase-state.md` tabla de pasos planificados (líneas 21-22) muestra Pasos 3 y 4 como "⬜ Pendiente". Aunque D5 establece `phase-state.md` como fuente canónica, la discrepancia puede confundir a futuros consumidores (analista, implementador) que lean `phase-state.md` primero.
+  → Recomendación: Sincronizar tabla de pasos en `phase-state.md` con `phase-state.md`.
 
 ### 🔵 Mejoras
 - **ID-003:** `resolve_d*()` en `phase_close.py` no verifican si D1-D6 ya fueron aplicadas antes de re-ejecutar. Si los strings originales ya no existen (ej: ya se reemplazaron), las funciones `str.replace()` son no-ops silenciosas pero el reporte las marcaría "resueltas" incorrectamente.
   → Sugerencia: Agregar verificación de estado previo (ej: leer valor actual y comparar con objetivo) antes de cada `resolve_d*()`.
 
-- **ID-004:** `estado-fase.md` muestra versión "v29" — podría incrementarse a "v30" para reflejar cambios finales del Paso 4.
-  → Sugerencia: Bump version en header de `estado-fase.md`.
+- **ID-004:** `phase-state.md` muestra versión "v29" — podría incrementarse a "v30" para reflejar cambios finales del Paso 4.
+  → Sugerencia: Bump version en header de `phase-state.md`.
 
 - **ID-005:** `phase-state.md` fecha de generación sin timestamp ("2026-04-30") — incluir hora exacta mejoraría trazabilidad de actualizaciones.
   → Sugerencia: Agregar timestamp UTC en formato ISO 8601 a la línea de generación.
