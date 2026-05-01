@@ -27,6 +27,11 @@ STEP_TEST_FILES: dict[int, list[str]] = {
         "tests/unit/test_approval_operators.py",
         "tests/unit/test_sanitizer.py",
     ],
+    2: [
+        "tests/integration/test_mcp_resilience.py",
+        "tests/integration/test_handover_real.py",
+        "tests/unit/test_approval_operators.py",
+    ],
 }
 
 # ── Paso → archivos para cobertura ──────────────────────────────
@@ -37,6 +42,10 @@ STEP_COVERAGE_FILES: dict[int, list[str]] = {
         "src/tools/service_connector.py",
         "src/flows/dynamic_flow.py",
         "src/mcp/sanitizer.py",
+    ],
+    2: [
+        "src/tools/mcp_pool.py",
+        "src/flows/dynamic_flow.py",
     ],
 }
 

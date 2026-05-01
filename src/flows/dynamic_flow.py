@@ -129,33 +129,59 @@ class DynamicWorkflow(BaseFlow):
         """
         Evaluar condition de una approval_rule.
 
-        Solo soporta operadores básicos: >, <, >=, <=
-        condition es un string como "monto > 50000"
+        Soporta operadores compuestos: >=, <=, ==, >, <
+        condition es un string como "monto >= 50000"
+
+        IMPORTANTE: Operadores compuestos (>=, <=, ==) se evalúan primero
+        para evitar que ">=" haga match falso con ">" dando ValueError silencioso.
         """
         condition = rule.get("condition", "")
-        try:
-            if ">" in condition:
-                _, threshold = condition.split(">", 1)
-                threshold = float(threshold.strip())
-                for v in results.values():
-                    if isinstance(v, dict) and "result" in v:
-                        try:
-                            if float(str(v["result"])) > threshold:
-                                return True
-                        except (ValueError, TypeError):
-                            continue
-            elif "<" in condition:
-                _, threshold = condition.split("<", 1)
-                threshold = float(threshold.strip())
-                for v in results.values():
-                    if isinstance(v, dict) and "result" in v:
-                        try:
-                            if float(str(v["result"])) < threshold:
-                                return True
-                        except (ValueError, TypeError):
-                            continue
-        except (ValueError, TypeError):
+        if not condition:
+            return False
+
+        # ── Resolver operador y valor ──────────────────────
+        # Orden crítico: >= antes que >, <= antes que <, == antes que =
+        operators = [
+            (">=", lambda a, b: a >= b),
+            ("<=", lambda a, b: a <= b),
+            ("==", lambda a, b: a == b),
+            (">", lambda a, b: a > b),
+            ("<", lambda a, b: a < b),
+        ]
+
+        op_found = None
+        threshold = None
+
+        for op_str, op_fn in operators:
+            # Buscar el operador como substring (sin partir por separadores ya
+            # que operadores como '>=' contienen '>')
+            idx = condition.find(op_str)
+            if idx == -1:
+                continue
+
+            # Extraer la parte derecha del operador y convertir a float
+            after_op = condition[idx + len(op_str):]
+            try:
+                threshold = float(after_op.strip())
+                op_found = op_fn
+                break
+            except (ValueError, TypeError):
+                continue
+
+        if op_found is None or threshold is None:
             logger.warning("No se pudo evaluar approval_rule: %s", rule)
+            return False
+
+        # ── Evaluar cada resultado ────────────────────────
+        for v in results.values():
+            if isinstance(v, dict) and "result" in v:
+                try:
+                    value = float(str(v["result"]))
+                    if op_found(value, threshold):
+                        return True
+                except (ValueError, TypeError):
+                    continue
+
         return False
 
 

@@ -70,3 +70,75 @@ def test_approval_multiple_results_one_matches():
     }
 
     assert flow._check_approval_rule(rule, results) is True
+
+
+# ── I4.1: '>=' operador con valor igual al threshold → True ─────
+
+
+def test_approval_gte_equal_true():
+    """I4.1: '>=' con valor igual al threshold evalúa True."""
+    flow = _make_flow()
+    rule = {"condition": "monto >= 50000", "description": "Alto o igual"}
+    results = _make_results("50000")
+
+    assert flow._check_approval_rule(rule, results) is True
+
+
+# ── I4.2: '<=' operador con valor igual al threshold → True ──────
+
+
+def test_approval_lte_equal_true():
+    """I4.2: '<=' con valor igual al threshold evalúa True."""
+    flow = _make_flow()
+    rule = {"condition": "monto <= 1000", "description": "Bajo o igual"}
+    results = _make_results("1000")
+
+    assert flow._check_approval_rule(rule, results) is True
+
+
+# ── I4.3: '==' operador con valor exacto → True ──────────────────
+
+
+def test_approval_equal_true():
+    """I4.3: '==' con valor exacto evalúa True."""
+    flow = _make_flow()
+    rule = {"condition": "monto == 50000", "description": "Exacto"}
+    results = _make_results("50000")
+
+    assert flow._check_approval_rule(rule, results) is True
+
+
+# ── Regresión: '>=' con valor menor → False ─────────────────────
+
+
+def test_approval_gte_below_false():
+    """'>= con valor menor al threshold evalúa False (no regresión)."""
+    flow = _make_flow()
+    rule = {"condition": "monto >= 50000", "description": "Alto"}
+    results = _make_results("30000")
+
+    assert flow._check_approval_rule(rule, results) is False
+
+
+# ── Regresión: '<=' con valor mayor → False ─────────────────────
+
+
+def test_approval_lte_above_false():
+    """'<=' con valor mayor al threshold evalúa False (no regresión)."""
+    flow = _make_flow()
+    rule = {"condition": "monto <= 1000", "description": "Bajo"}
+    results = _make_results("2000")
+
+    assert flow._check_approval_rule(rule, results) is False
+
+
+# ── Regresión: '==' con valor distinto → False ──────────────────
+
+
+def test_approval_equal_mismatch_false():
+    """'==' con valor diferente evalúa False (no regresión)."""
+    flow = _make_flow()
+    rule = {"condition": "monto == 50000", "description": "Exacto"}
+    results = _make_results("99999")
+
+    assert flow._check_approval_rule(rule, results) is False
