@@ -1,6 +1,5 @@
-
 ```markdown
-# 🧠 PROCESO DE ANÁLISIS TÉCNICO (ANALISTA) v5 — UNIFICADO
+# 🧠 PROCESO DE ANÁLISIS TÉCNICO (ANALISTA) v5.1 — UNIFICADO
 
 ## Perfil del Rol
 Actúa como **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especialista en Diseño de Producto. **Análisis basado en código fuente real. Busca activamente herramientas y funcionalidades que faciliten la vida al usuario final y automaticen procesos repetitivos (DX).**
@@ -294,13 +293,16 @@ Lista binaria (sí/no) verificable:
 
 ### 7️⃣ Plan de Implementación
 
-| # | Tarea | Etapa(s) | Complejidad | Tiempo Est. | Dependencias |
-|---|---|---|---|---|---|
-| 0 | **DX & Tooling**: [herramienta propuesta] | FULLSTACK/DX | Media | Xh | Ninguna |
-| 1 | Crear tabla X | DATA | Media | 1h | Tarea 0 |
-| 2 | Implementar función Y | CODE | Alta | 3h | Tarea 1 |
-| 3 | Crear endpoint Z | BACKEND | Media | 2h | Tarea 2 |
-| 4 | Validar flujo end-to-end | FULLSTACK | Baja | 1h | Tareas 1-3 |
+> [!IMPORTANT]
+> Cada tarea DEBE incluir su criterio de verificación inline (`→ verificar: [check concreto]`). No basta con el tiempo estimado — el implementador debe saber exactamente cómo confirmar que la tarea está completa antes de pasar a la siguiente.
+
+| # | Tarea | Etapa(s) | Complejidad | Tiempo Est. | Dependencias | Verificación |
+|---|---|---|---|---|---|---|
+| 0 | **DX & Tooling**: [herramienta propuesta] | FULLSTACK/DX | Media | Xh | Ninguna | → verificar: [herramienta ejecuta sin errores con `{comando}`] |
+| 1 | Crear tabla X | DATA | Media | 1h | Tarea 0 | → verificar: [migración corre sin errores y tabla existe en DB] |
+| 2 | Implementar función Y | CODE | Alta | 3h | Tarea 1 | → verificar: [función importable y firma coincide con §2] |
+| 3 | Crear endpoint Z | BACKEND | Media | 2h | Tarea 2 | → verificar: [endpoint responde 200 al happy path con `{commands.test_unit}`] |
+| 4 | Validar flujo end-to-end | FULLSTACK | Baja | 1h | Tareas 1-3 | → verificar: [criterios §5 [FULLSTACK] y [DX] pasan todos] |
 
 > [!IMPORTANT]
 > **Tarea 0 siempre = DX & Tooling.** El implementador DEBE ejecutarla primero y usar la herramienta resultante para el resto del paso.
@@ -329,6 +331,7 @@ Lista binaria (sí/no) verificable:
 - ✅ **TODO el paso**, incluyendo sub-pasos
 - ✅ **Etapas secuenciales** — data → code → backend → fullstack+DX, sin saltar
 - ✅ **≥ 1 herramienta DX propuesta** — siempre, sin excepción
+- ✅ **Cada tarea con verificación inline** — el implementador no debe inferir cómo saber que terminó
 
 ---
 
@@ -344,6 +347,7 @@ Lista binaria (sí/no) verificable:
 | Criterios de aceptación | ≥ 1 por sub-paso, verificables |
 | Riesgos identificados | ≥ 3 (técnico, integración, futuro) |
 | Tareas en el plan | ≥ 4, atómicas, ordenadas |
+| Verificación inline por tarea (§7) | 100% — toda tarea tiene su `→ verificar:` |
 | Suposiciones no verificadas | ≤ 2, cada una marcada ⚠️ |
 | Propuesta DX / Tooling | ≥ 1 herramienta concreta con descripción de impacto para usuario final |
 | Estimación de tiempo | Sí, por tarea y total |

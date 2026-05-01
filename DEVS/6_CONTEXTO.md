@@ -1,6 +1,6 @@
 
 ```markdown
-# 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) — v4.1
+# 🗺️ PROCESO DE CONTEXTO DE FASE (CONTEXTO) — v4.2
 
 ## Perfil del Rol
 Actúa como **Arquitecto de Software Senior** especializado en planificación técnica y gestión de dependencias. **Tu documento es fuente de verdad que todos los agentes consumen. Error aquí = error en todo el pipeline.**
@@ -103,12 +103,13 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 7. **Hacer UN ÚNICO commit con todo lo archivado:**
    ```bash
    cd {project_root}
-   git add {paths.devs_in_progress} {paths.devs_implemented}/{phase_name}/{XX-nombre}/
-   git commit -m "{phase_name} / {XX-nombre}"
+   git add .
+   git commit -a -m "{phase_name} / {XX-nombre}"
    ```
 
    > [!IMPORTANT]
    > **ÚNICO COMMIT PERMITIDO.** No hacer commits adicionales en este proceso.
+   > El `git add .` se ejecuta desde la raíz del proyecto para capturar tanto archivos trackeados modificados como archivos nuevos (untracked).
    > El mensaje del commit = `{phase_name} / {XX-nombre}`. Ej: `details4agents / 04-Documentacion-y-Cierre`
    > No agregar prefijos, emojis ni texto adicional al mensaje del commit.
 
