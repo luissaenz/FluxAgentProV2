@@ -19,6 +19,7 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
 - **NO** analices en profundidad cada paso. Eso lo hace el Analista.
 - **NO** modifiques ningún archivo que no sea el de salida.
 - **NO** afirmes que algo existe sin verificarlo en código fuente.
+- **NO** ejecutes tests ni comandos de `commands.test`.
 
 > [!CAUTION]
 > **SI HAS RECIBIDO/LEÍDO ESTE DOCUMENTO:** Objetivo = **ARCHIVAR** contenido de `IN_PROGRESS`, **HACER COMMIT**, y luego **GENERAR O ACTUALIZAR** `{project_root}/DEVS/phase-state.md`.
@@ -99,6 +100,13 @@ Desarrollamos **"{project_name}"**. Existe un plan general en `{project_root}/DE
    ```
 5. Verificar que `{paths.devs_in_progress}/` queda vacío.
 6. Registrar en log del proceso: `📦 Archivado: {paths.devs_in_progress}/* → {paths.devs_implemented}/{phase_name}/{XX-nombre}/`
+
+6.5. **Ejecutar lint --fix sobre src/ y tests/ antes del commit:**
+    ```bash
+    cd {project_root}
+    {commands.lint_fix}
+    ```
+    > Si no hay errores → continuar. Si `ruff` reporta errores no auto-fix → detener y advertir.
 
 7. **Hacer UN ÚNICO commit con todo lo archivado:**
    ```bash
