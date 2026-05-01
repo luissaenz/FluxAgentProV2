@@ -93,3 +93,34 @@ def test_bypass_attempt(guard):
     malicious_code = "__builtins__['open']('/tmp/secret')"
     with pytest.raises(SecurityError):
         guard.validate_skill(malicious_code)
+
+
+# ── SE5.13-SE5.16: Diagnóstico vulnerabilidad __import__ ──────────────
+
+
+def test_se5_13_execute_blocks_forbidden_import(guard):
+    """execute() debe bloquear import os (full pipeline: AST + runtime)."""
+    code = "import os\ndef f(): os.system('ls')"
+    with pytest.raises(SecurityError, match="Forbidden import"):
+        guard.execute(code)
+
+
+def test_se5_14_execute_blocks_builtins_bypass(guard):
+    """execute() debe bloquear acceso a builtins inseguros."""
+    code = "def f():\n    b = __builtins__\n    return b['open']"
+    with pytest.raises(SecurityError):
+        guard.execute(code)
+
+
+def test_se5_15_verify_compilation_blocks_injected_import(guard):
+    """validate_skill debe bloquear codigo que pasa AST pero usa __import__ en runtime."""
+    code = "def f():\n    imp = __builtins__['__import__']\n    return imp('os')"
+    with pytest.raises(SecurityError):
+        guard.validate_skill(code)
+
+
+def test_se5_16_execute_blocks_indirect_import_bypass(guard):
+    """execute() debe bloquear bypass indirecto: x = __builtins__; x['__import__']('os')."""
+    code = "def f():\n    x = __builtins__\n    return x['__import__']('os')"
+    with pytest.raises(SecurityError):
+        guard.execute(code)

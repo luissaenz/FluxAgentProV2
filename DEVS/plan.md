@@ -18,7 +18,7 @@
 | P0.1 | Importabilidad de todos los módulos `src/` | `pytest --co` | 0 errores de import |
 | P0.2 | Suite existente completa | `pytest tests/` | 100% pass (0 failures, 0 errors) |
 | P0.3 | Lint estricto | `ruff check src/ tests/` | 0 errores |
-| P0.4 | Auditoría de tool_registry real | Script que lea `tool_registry.list_all()` | Reporte de tools disponibles |
+| P0.4 | Auditoría de tool_registry real | Script que lea `tool_registry.list_tools()` | Reporte de tools disponibles |
 | P0.5 | Verificar fixtures `conftest.py` | `pytest --fixtures` | `sample_org_id`, `mock_service_client`, `mock_tenant_client`, `global_llm_mock`, `mock_mcp_pool` disponibles |
 
 **Gate:** Si P0.1-P0.3 no pasan → NO continuar. Corregir regresiones primero.
@@ -80,7 +80,7 @@
 | U3.3 | Condición vacía → False | `""` | False, sin excepción |
 | U3.4 | Múltiples resultados, uno cumple | `"total > 100"` con `{"a": {"result": "50"}, "b": {"result": "200"}}` | True |
 
-**Nota:** `>=`, `<=`, `==` NO están implementados en `dynamic_flow.py:128-159`. No se testean aquí. Ver Paso 2 para feature request.
+**Nota:** `>=`, `<=`, `==` se rompen silenciosamente en `dynamic_flow.py:128-159` (ver Bug Detallado en §2.3). No se testean aquí. Ver Paso 2 para feature request.
 
 #### 1.4 Sanitizer edge cases — `tests/unit/test_sanitizer.py` (nuevo)
 

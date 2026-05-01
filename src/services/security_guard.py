@@ -123,6 +123,41 @@ class SecurityGuard:
 
         return True
 
+    def _create_safe_builtins(self) -> Dict[str, Any]:
+        """Create safe builtins dict with restricted __import__.
+
+        Replaces real __import__ with a restricted version that only allows
+        modules in self.allowed_modules. Prevents bypass of AST scanner at runtime.
+        """
+        safe = safe_builtins.copy()
+        import builtins
+
+        allowed = self.allowed_modules
+        forbidden = self.forbidden_modules
+
+        def _restricted_import(
+            name: str,
+            globals: Optional[Dict[str, Any]] = None,
+            locals: Optional[Dict[str, Any]] = None,
+            fromlist: Any = None,
+            level: int = 0,
+        ) -> Any:
+            root = name.split(".")[0]
+            if root in forbidden:
+                raise SecurityError(
+                    f"Forbidden import '{name}' blocked by restricted __import__"
+                )
+            if root not in allowed:
+                raise SecurityError(
+                    f"Module '{root}' not in allowlist for restricted __import__"
+                )
+            return builtins.__import__(name, globals, locals, fromlist, level)
+
+        safe["__import__"] = _restricted_import
+        if hasattr(builtins, "__build_class__"):
+            safe["__build_class__"] = builtins.__build_class__
+        return safe
+
     def execute(
         self, source_code: str, filename: str = "dynamic_code.py"
     ) -> Dict[str, Any]:
@@ -130,22 +165,13 @@ class SecurityGuard:
 
         Analysis Final §88: Privileged execution for system bundles.
         """
-        # Always validate first
         self.validate_skill(source_code, filename)
 
         if self.is_system:
             exec_globals = {"__builtins__": __builtins__}
         else:
-            import builtins
+            exec_globals = {"__builtins__": self._create_safe_builtins()}
 
-            exec_globals = {"__builtins__": safe_builtins.copy()}
-            exec_globals["__builtins__"]["__import__"] = __import__
-            if hasattr(builtins, "__build_class__"):
-                exec_globals["__builtins__"]["__build_class__"] = (
-                    builtins.__build_class__
-                )
-
-        # Execute
         try:
             exec(source_code, exec_globals)
             return exec_globals
@@ -213,15 +239,7 @@ class SecurityGuard:
                     f"RestrictedPython compilation failed for {filename}"
                 )
 
-            # Dry-run execution to catch infinite loops
-            # Use safe_builtins + controlled __import__
-            import builtins
-
-            safe_env = safe_builtins.copy()
-            safe_env["__import__"] = __import__
-            if hasattr(builtins, "__build_class__"):
-                safe_env["__build_class__"] = builtins.__build_class__
-
+            safe_env = self._create_safe_builtins()
             exec_globals = {
                 "__builtins__": safe_env,
                 "__metaclass__": type,
