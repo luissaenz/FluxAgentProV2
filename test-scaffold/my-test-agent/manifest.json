@@ -1,0 +1,10 @@
+{
+  "version": "2.0",
+  "bundle_info": {
+    "name": "my-test-agent",
+    "description": "Bundle for my-test-agent",
+    "version": "1.0.0",
+    "author": "Unknown"
+  },
+  "hashes": {}
+}

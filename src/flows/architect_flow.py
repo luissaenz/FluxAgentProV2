@@ -81,6 +81,9 @@ class ArchitectFlow(BaseFlow):
 
         from ..events.store import EventStore
 
+        if correlation_id is None:
+            correlation_id = str(uuid4())
+
         task_id = str(uuid4())
 
         with get_tenant_client(self.org_id, self.user_id) as db:

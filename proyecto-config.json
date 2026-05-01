@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "project_name": "FluxAgentPro-v2",
+    "project_root": "D:\\Develop\\Personal\\FluxAgentPro-v2",
+    "setup_date": "2026-04-30",
+    "setup_version": "2.0"
+  },
+  "stack": {
+    "language_backend": "Python (>=3.12,<3.14)",
+    "language_frontend": "TypeScript",
+    "framework_backend": "FastAPI (>=0.115.0)",
+    "framework_frontend": "Next.js",
+    "database": "Supabase (PostgreSQL)",
+    "orm_or_query_builder": "Supabase client (direct queries + RPC)",
+    "auth_library": "PyJWT (>=2.0.0)",
+    "package_manager_backend": "uv",
+    "package_manager_frontend": "npm",
+    "runtime_version": "python >=3.12, <3.14"
+  },
+  "paths": {
+    "root": "D:\\Develop\\Personal\\FluxAgentPro-v2",
+    "backend": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src",
+    "frontend": "D:\\Develop\\Personal\\FluxAgentPro-v2\\dashboard",
+    "api_routes": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\api\\routes",
+    "migrations": "D:\\Develop\\Personal\\FluxAgentPro-v2\\supabase\\migrations",
+    "models": null,
+    "schemas": null,
+    "services": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\services",
+    "tests": "D:\\Develop\\Personal\\FluxAgentPro-v2\\tests",
+    "tests_unit": "D:\\Develop\\Personal\\FluxAgentPro-v2\\tests\\unit",
+    "tests_integration": null,
+    "config": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\config.py",
+    "devs": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS",
+    "devs_plan": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\plan.md",
+    "devs_phase_state": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\estado-fase.md",
+    "devs_sugest": null,
+    "devs_in_progress": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\IN_PROGRESS",
+    "devs_implemented": "D:\\Develop\\Personal\\FluxAgentPro-v2\\DEVS\\IMPLEMENTED",
+    "scripts": "D:\\Develop\\Personal\\FluxAgentPro-v2\\scripts",
+    "cli": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\cli",
+    "middleware": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\api\\middleware.py",
+    "registry_tools": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\tools\\registry.py",
+    "registry_flows": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\flows\\registry.py",
+    "scheduler": "D:\\Develop\\Personal\\FluxAgentPro-v2\\src\\scheduler",
+    "docker_compose": null,
+    "env_example": null
+  },
+  "commands": {
+    "dev": "uv sync --all-extras",
+    "build": null,
+    "test": "pytest tests/",
+    "test_unit": "pytest tests/unit/",
+    "test_integration": null,
+    "lint": "ruff check src/ tests/",
+    "lint_fix": null,
+    "migrate": "manual (SQL Editor en Supabase Studio)",
+    "seed": null,
+    "install": "uv sync"
+  },
+  "conventions": {
+    "naming_backend": "snake_case (funciones/variables), PascalCase (clases)",
+    "naming_frontend": "camelCase",
+    "naming_files": "snake_case",
+    "naming_db_tables": "snake_case",
+    "import_style": "absolute (src.xxx.xxx)",
+    "model_definition_pattern": "Pydantic BaseModel + dataclasses",
+    "route_definition_pattern": "FastAPI APIRouter decorators",
+    "auth_pattern": "Middleware (src/api/middleware.py) + JWT validation",
+    "rls_pattern": "Supabase RLS policies per table (tenant isolation via org_id)",
+    "test_file_naming": "test_*.py",
+    "step_folder_format": "XX-name (ej: 05-Implementacion-de-seguridad)"
+  },
+  "patterns": {
+    "endpoint_example": "src/api/routes/agents.py — @router.get/post/put decorators",
+    "model_example": "src/flows/workflow_definition.py — Pydantic BaseModel con validators",
+    "migration_example": "supabase/migrations/004_agent_catalog.sql — CREATE TABLE + RLS + indexes",
+    "auth_middleware_example": "src/api/middleware.py — verify_jwt + org isolation",
+    "rls_example": "supabase/migrations/004_agent_catalog.sql — POLICY tenant_isolation"
+  },
+  "dependencies": {
+    "direct": [
+      "fastapi>=0.115.0",
+      "uvicorn[standard]>=0.32.0",
+      "pydantic>=2.10.0",
+      "pydantic-settings>=2.6.0",
+      "supabase>=2.10.0",
+      "anthropic>=0.40.0",
+      "openai>=1.58.0",
+      "PyJWT>=2.0.0",
+      "python-dotenv>=1.0.0",
+      "httpx>=0.28.0",
+      "structlog>=24.4.0",
+      "apscheduler>=3.10.0",
+      "python-dateutil>=2.9.0",
+      "mcp>=1.0.0,<2.0.0",
+      "sse-starlette>=0.21.0",
+      "RestrictedPython>=7.0",
+      "typer>=0.12.0",
+      "packaging>=24.0",
+      "watchdog>=4.0.0"
+    ],
+    "dev": [
+      "pytest>=8.3.0",
+      "pytest-asyncio>=0.24.0",
+      "pytest-mock>=3.14.0",
+      "pytest-cov>=6.0.0",
+      "ruff>=0.8.0"
+    ],
+    "optional": [
+      "crewai>=0.100.0",
+      "crewai-tools>=0.20.0"
+    ]
+  },
+  "phase": {
+    "phase_name": "details4agents",
+    "current_step": null
+  },
+  "pipeline": {
+    "phase_state_exists": true,
+    "in_progress_dir_exists": true,
+    "implemented_dir_exists": true,
+    "analisis_final_exists": false,
+    "validacion_exists": false
+  }
+}
