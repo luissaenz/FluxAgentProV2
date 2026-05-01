@@ -1,9 +1,9 @@
 # Estado de Fase: Certificación Técnica Profunda (QA) — testing
 
 > **Fecha:** 2026-05-01
-> **Estado:** 🔄 EN PROGRESO (testing) — 4/8 pasos completados
-> **Último Archivado:** `DEVS/IMPLEMENTED/testing/03-E2E-Flujos-Completos-con-Mocks/`
-> **Commit:** `938bd79` — `testing / 03-E2E-Flujos-Completos-con-Mocks`
+> **Estado:** 🔄 EN PROGRESO (testing) — 5/8 pasos completados
+> **Último Archivado:** `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/`
+> **Commit:** `af6b16f` — `testing / 04-Tests-de-Estres-y-Robustez`
 
 ---
 
@@ -17,7 +17,7 @@
 - ✅ **Paso 1: Cobertura Unitaria de Gaps Críticos.** 30 tests unitarios: MCPPool circuit breaker (5), ServiceConnector error paths (7), Approval operators (4), Sanitizer (14). DX `fap test-step 1`.
 - ✅ **Paso 2: Tests de Integración.** MCP resilience (3 tests), DynamicWorkflow handover (3 tests), fix parser `>=`/`<=`/`==` en approval rules (3 tests condicionales). DX `fap test-step 2`.
 - ✅ **Paso 3: E2E — Flujos Completos con Mocks.** 4 tests: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover 3 niveles (E3.3). DX `fap test-step 3`.
-- ⬜ **Paso 4:** Tests de Estrés y Robustez
+- ✅ **Paso 4:** Tests de Estrés y Robustez
 - ⬜ **Paso 5:** Tests de Seguridad
 - ⬜ **Paso 6:** Performance & Observabilidad
 - ⬜ **Paso 7:** Documentación y Cierre
@@ -60,16 +60,20 @@
 | **BundleManager** | `src/services/bundle_manager.py` | ✅ | Carga remota + validación + atomicidad. |
 | **BaseCrew** | `src/crews/base_crew.py` | ✅ | Resolución de tools con MCP. |
 | **FlowRegistry** | `src/flows/registry.py` | ✅ | Registro de flujos dinámicos. |
+| **StressBench CLI** | `src/cli/commands/stress_bench.py` | ✅ | DX `fap stress-bench`. Genera fixtures masivos + ejecuta suite stress con métricas. 280 loc. |
+| **Sanitizer (optimizado)** | `src/mcp/sanitizer.py` | ✅ | `SECRET_PATTERNS` pre-compilados con `re.compile`. Performance 7x en strings grandes. |
+| **Stress Suite** | `tests/stress/` | ✅ | 14 tests: concurrency (S4.1-S4.3), edge cases (S4.4-S4.7). Conftest con MCPPool reset + flow_registry save/restore. |
 
 ### Tests (Verificado contra código)
 
 | Suite | Cantidad | Estado |
 |---|---|---|
-| **Total** | 475 tests | `pytest --collect-only` |
+| **Total** | 489 tests | `pytest --collect-only` |
 | **Unitarios** | 303 | 303/303 pass |
 | **Integración** | 102 | 102/102 pass |
-| **E2E** | 60 | 60/60 pass (incluye 4 nuevos de Paso 3) |
-| **SecurityGuard** | 15 | 15/15 pass (incluye SE5.13-SE5.16 diagnóstico) |
+| **E2E** | 60 | 60/60 pass |
+| **Stress** | 14 | 14/14 pass (S4.1-S4.7, nuevo en Paso 4) |
+| **SecurityGuard** | 15 | 15/15 pass |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
 ### Discrepancias Conocidas Plan vs Código
@@ -112,7 +116,7 @@
 
 ### Dependencias Clave
 - **Directas:** fastapi>=0.115.0, pydantic>=2.10.0, supabase>=2.10.0, anthropic>=0.40.0, openai>=1.58.0, PyJWT>=2.0.0, httpx>=0.28.0, structlog>=24.4.0, mcp>=1.0.0, RestrictedPython>=7.0, typer>=0.12.0, tenacity>=9.0.0
-- **Dev:** pytest>=8.3.0, pytest-asyncio>=0.24.0, pytest-mock>=3.14.0, ruff>=0.8.0
+- **Dev:** pytest>=8.3.0, pytest-asyncio>=0.24.0, pytest-mock>=3.14.0, pytest-cov>=6.0.0, pytest-timeout>=1.5.0, ruff>=0.8.0
 - **Opcionales:** crewai>=0.100.0, crewai-tools>=0.20.0
 
 ---
@@ -136,11 +140,18 @@
 12. **Estrategia snapshot para E3.2:** `flow.state.task_id` manual tras execute(). Mock de `snapshots` table
 13. **MCPPool.reset() autouse:** Fixture obligatoria entre tests E2E para contaminación singleton
 
+### De Fase VI — testing / Paso 4
+14. **Pre-compilación `re.compile`:** `SECRET_PATTERNS` pre-compilados en módulo. `pattern.sub()` en vez de `re.sub()`. Elimina re-compilación en cada llamada. Crítico para strings grandes (10MB+).
+15. **Suite stress parametrizada por env vars:** `STRESS_TOOLS_COUNT`, `STRESS_SANITIZER_SIZE`, `STRESS_JSON_DEPTH`. No hardcodeo de escala.
+16. **DX `fap stress-bench`:** Comando único que genera fixtures masivos + ejecuta suite + reporta métricas (tiempo, breakdown). Reemplaza creación manual + `pytest` directo.
+17. **`pytest-timeout` como dev dep:** Evita que tests de estrés cuelguen el CI. Tiempo límite por test vía decorador `@pytest.mark.timeout`.
+
 ### Correcciones al Plan
 - `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
 - `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
 - Plan dice "warning in log" → código usa `logger.error` (E3.1)
 - Plan asume `resume()` reanuda steps → `_on_approved()` marca COMPLETED
+- `phase-state.md` línea 20 describe Paso 4 como "Hardening de API Pública" pero plan.md define "Tests de Estrés y Robustez". Desincronización documentada en análisis Paso 4.
 
 ---
 
@@ -151,8 +162,9 @@
 | 0 — Auditoría de Línea Base | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/00-Auditoria-de-Linea-Base/` | `17349a5` | D1-D6. `baseline-check` creado. SE5.13-SE5.16 implementados. | Lint 0. Suite base 100%. Validación: ✅ |
 | 1 — Cobertura Unitaria de Gaps Críticos | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/01-Cobertura-Unitaria-de-Gaps-Criticos/` | `2e90aec` | 30 tests unitarios. DX `fap test-step 1`. | 30/30 pass. Validación: ✅ |
 | 2 — Tests de Integración | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/02-Tests-de-Integracion/` | `b5d23af` | Fix parser `>=`/`<=`/`==`. 3 resilience + 3 handover + 3 condicional. DX `fap test-step 2`. | Fix approval operators. Lint I001 corregido. Validación: ✅ |
-| 3 — E2E Flujos Completos con Mocks | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/03-E2E-Flujos-Completos-con-Mocks/` | `938bd79` | 4 tests E2E (Degraded MCP, HITL, 3-step Handover). DX `fap test-step 3`. | 4/4 pass. Lint 0. Validación: ✅ |
-| 4–6 | 🔲 PENDIENTE | — | — | — | — |
+| 3 — E2E Flujos Completos con Mocks | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/03-E2E-Flujos-Completos-con-Mocks/` | `7a750ca` | 4 tests E2E (Degraded MCP, HITL, 3-step Handover). DX `fap test-step 3`. | 4/4 pass. Lint 0. Validación: ✅ |
+| 4 — Tests de Estrés y Robustez | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/` | `af6b16f` | 14 tests stress (S4.1-S4.7). DX `fap stress-bench`. `re.compile` en sanitizer. pytest-timeout. | 14/14 pass. Lint 0. 6 análisis + validación archivados. Validación: ✅ |
+| 5–6 | 🔲 PENDIENTE | — | — | — | — |
 | 7 — Documentación y Cierre | 🔲 PENDIENTE | — | — | TESTING.md, Makefile, cobertura >75%, `fap phase-close` | — |
 
 ---
@@ -164,10 +176,11 @@
 - [x] **Paso 2:** Tests integración: 3 MCP resilience + 3 handover + 3 approval operators ✅. Fix parser `>=`/`<=`/`==` ✅
 - [x] **Paso 3:** 4/4 tests E2E (Degraded MCP, Approval Gate HITL, Multi-step Handover) ✅. `fap test-step 3` funcional ✅
 - [x] **Vulnerabilidad `__import__` corregida:** restricted import con allowlist. 15/15 security tests ✅
-- [x] **Herramientas DX:** `fap baseline-check`, `fap test-step {1,2,3}` ✅
-- [x] **Código ejecuta sin errores:** Lint 0, 475 tests collected ✅
-- [ ] **Pasos 4–7:** pendientes
+- [x] **Herramientas DX:** `fap baseline-check`, `fap test-step {1,2,3}`, `fap stress-bench` ✅
+- [x] **Código ejecuta sin errores:** Lint 0, 489 tests collected ✅
+- [x] **Paso 4:** 14/14 tests stress ✅. `fap stress-bench` funcional ✅. `re.compile` SECRET_PATTERNS ✅. `pytest-timeout>=1.5.0` instalado ✅
+- [ ] **Pasos 5–7:** pendientes
 
-**Progreso Fase VI: 50% (4/8 pasos). Próximo: Paso 4 — Tests de Estrés y Robustez.**
+**Progreso Fase VI: 62.5% (5/8 pasos). Próximo: Paso 5 — Tests de Seguridad.**
 
 **Criterios fuera de alcance MVP:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.

@@ -15,13 +15,13 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 SECRET_PATTERNS = [
-    r"sk_live_[a-zA-Z0-9]+",  # Stripe live keys
-    r"sk_test_[a-zA-Z0-9]+",  # Stripe test keys
-    r"Bearer [a-zA-Z0-9\-._~+/]+=*",  # Bearer tokens
-    r"Basic [a-zA-Z0-9+/]+=*",  # Basic auth
-    r"xox[bpsa]-[a-zA-Z0-9\-]+",  # Slack tokens
-    r"ghp_[a-zA-Z0-9]+",  # GitHub PATs
-    r"AIza[a-zA-Z0-9\-_]+",  # Google API keys
+    re.compile(r"sk_live_[a-zA-Z0-9]+"),  # Stripe live keys
+    re.compile(r"sk_test_[a-zA-Z0-9]+"),  # Stripe test keys
+    re.compile(r"Bearer [a-zA-Z0-9\-._~+/]+=*"),  # Bearer tokens
+    re.compile(r"Basic [a-zA-Z0-9+/]+=*"),  # Basic auth
+    re.compile(r"xox[bpsa]-[a-zA-Z0-9\-]+"),  # Slack tokens
+    re.compile(r"ghp_[a-zA-Z0-9]+"),  # GitHub PATs
+    re.compile(r"AIza[a-zA-Z0-9\-_]+"),  # Google API keys
 ]
 
 
@@ -38,7 +38,7 @@ def sanitize_output(data: Any) -> Any:
     try:
         if isinstance(data, str):
             for pattern in SECRET_PATTERNS:
-                data = re.sub(pattern, "[REDACTED]", data)
+                data = pattern.sub("[REDACTED]", data)
             return data
         elif isinstance(data, dict):
             return {k: sanitize_output(v) for k, v in data.items()}

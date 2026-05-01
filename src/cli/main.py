@@ -21,6 +21,7 @@ from src.cli.commands.phase_close import phase_close
 from src.cli.commands.publish import publish_bundle
 from src.cli.commands.run import app as run_app
 from src.cli.commands.scaffold import scaffold_command
+from src.cli.commands.stress_bench import stress_bench
 from src.cli.commands.test_scenarios import test_scenarios
 from src.cli.commands.test_step import test_step
 from src.cli.commands.validate import validate_bundle
@@ -49,6 +50,7 @@ app.command("test-scenarios")(test_scenarios)
 app.command("phase-close")(phase_close)
 app.command("baseline-check")(baseline_check)
 app.command("test-step")(test_step)
+app.command("stress-bench")(stress_bench)
 
 if __name__ == "__main__":
     app()
