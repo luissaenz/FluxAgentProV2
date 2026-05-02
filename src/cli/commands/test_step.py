@@ -35,10 +35,18 @@ STEP_TEST_FILES: dict[int, list[str]] = {
     3: [
         "tests/e2e/test_production_flows.py",
     ],
+    4: [
+        "tests/stress/test_concurrency.py",
+        "tests/stress/test_edge_cases.py",
+    ],
     5: [
         "tests/unit/test_security_guard.py",
         "tests/unit/test_security_guard_escape.py",
     ],
+    6: [
+        "tests/stress/test_performance.py",
+    ],
+    7: [],
 }
 
 # ── Paso → archivos para cobertura ──────────────────────────────
@@ -58,6 +66,16 @@ STEP_COVERAGE_FILES: dict[int, list[str]] = {
         "src/flows/dynamic_flow.py",
         "src/crews/factory.py",
         "src/flows/state.py",
+    ],
+    4: [
+        "src/flows/dynamic_flow.py",
+        "src/tools/mcp_pool.py",
+        "src/services/security_guard.py",
+    ],
+    6: [
+        "src/flows/dynamic_flow.py",
+        "src/tools/mcp_pool.py",
+        "src/services/bundle_manager.py",
     ],
 }
 
@@ -122,6 +140,35 @@ def test_step(
     test_files = STEP_TEST_FILES[step]
     coverage_files = STEP_COVERAGE_FILES.get(step, [])
     thresholds = STEP_COVERAGE_THRESHOLDS.get(step, {})
+
+    # Paso 7 = documentacion (lint + docs check)
+    if step == 7:
+        print(f"\n[bold cyan]fap test-step {step}[/bold cyan]")
+        print("[dim]Paso 7: Documentacion y Cierre — verificando documentacion[/dim]\n")
+        docs: list[Path] = [
+            project_root / "TESTING.md",
+            project_root / "CHANGELOG.md",
+            project_root / "README.md",
+            project_root / "DEVS" / "phase-state.md",
+        ]
+        missing_docs = [d for d in docs if not d.exists()]
+        if missing_docs:
+            print("[red]Error:[/red] Faltan archivos de documentacion:")
+            for d in missing_docs:
+                print(f"  - {d.name}")
+            raise typer.Exit(code=1)
+        print("[green][OK] Documentacion completa[/green]")
+        # Ejecutar lint como validacion final
+        lint_cmd = ["uv", "run", "ruff", "check", "src/", "tests/"]
+        lint_result = subprocess.run(lint_cmd, cwd=str(project_root), capture_output=True, text=True)
+        if lint_result.returncode == 0:
+            print("[green][OK] Lint: 0 errores[/green]")
+        else:
+            print("[red][FAIL] Lint tiene errores[/red]")
+            print(lint_result.stdout + lint_result.stderr)
+            raise typer.Exit(code=lint_result.returncode)
+        print("\n[bold green]Paso 7 PASSED — documentacion OK, lint OK[/bold green]")
+        raise typer.Exit(code=0)
 
     # Verificar archivos existen
     missing = [f for f in test_files if not (project_root / f).exists()]

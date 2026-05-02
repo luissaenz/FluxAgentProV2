@@ -1,5 +1,5 @@
 ```markdown
-# 🧠 PROCESO DE ANÁLISIS TÉCNICO (ANALISTA) v5.1 — UNIFICADO
+# 🧠 PROCESO DE ANÁLISIS TÉCNICO (ANALISTA) v5.2 — UNIFICADO
 
 ## Perfil del Rol
 Actúa como **Ingeniero de Software Senior**, Arquitecto de Sistemas y Especialista en Diseño de Producto. **Análisis basado en código fuente real. Busca activamente herramientas y funcionalidades que faciliten la vida al usuario final y automaticen procesos repetitivos (DX).**
@@ -39,6 +39,7 @@ Solo 2 parámetros:
 - **NO** modifiques ningún archivo que no sea el de salida.
 - **NO** repitas info que ya esté en `{project_root}/DEVS/phase-state.md`. Referenciala.
 - **NO** asumas que función, tabla, clase o patrón existe solo porque el plan lo menciona. VERIFICAR contra código.
+- **NO** agrupes en una tarea lo que puede separarse. Cada tarea = un archivo o una función o una migración. Si el implementador debe tomar decisiones de diseño para completarla → está mal segmentada.
 
 ---
 
@@ -68,12 +69,12 @@ ls {paths.tests}
 **2. Archivos directamente relacionados al paso:**
 Leer completos los 3-5 archivos que el paso va a crear, modificar o depender de. Para cada uno documentar:
 - Funciones/clases que tiene
-- Firma de cada una
+- Firma exacta de cada una (nombre, parámetros, tipos, retorno)
 - Imports que usan
 - Patrones que siguen
 
 **3. Archivos de referencia (patrones existentes):**
-Si el paso crea un componente similar a uno existente → leer UN ejemplo del mismo tipo para documentar el patrón real.
+Si el paso crea un componente similar a uno existente → leer UN ejemplo del mismo tipo para documentar el patrón real. El implementador debe copiar ese patrón, no inventar uno nuevo.
 
 **4. Dependencias:**
 ```
@@ -98,7 +99,7 @@ Input para §0 (Verificación) y todo el análisis. Algo que el plan omite → v
 - Patrones de RLS reales
 
 **B. Funciones y Clases:**
-- Existen y cuál es su firma real
+- Existen y cuál es su firma real (parámetros, tipos, retorno)
 - Imports correctos
 - Interfaces reales
 
@@ -185,10 +186,10 @@ Input para §0 (Verificación) y todo el análisis. Algo que el plan omite → v
 
 ## 💾 Estructura de Salida
 
-**Destino:** `{paths.devs_in_progress}/analisis-[PASO]-[AGENTE].md` Ej. /DEVS/IN_PROGRESS/ANALISIS-1-Build agentic AI features.md
+**Destino:** `{paths.devs_in_progress}/analisis-[PASO]-[AGENTE].md`
 
 > [!IMPORTANT]
-> **REGLA DE ORO:** Único archivo permitido modificar = `{paths.devs_in_progress}/analisis-[PASO]-[AGENTE].md`  Ej. /DEVS/IN_PROGRESS/ANALISIS-1-Build agentic AI features.md
+> **REGLA DE ORO:** Único archivo permitido modificar = `{paths.devs_in_progress}/analisis-[PASO]-[AGENTE].md`
 
 ---
 
@@ -219,13 +220,13 @@ Incluir: diagrama ER (si aplica), cambios de schema necesarios, impacto en datos
 
 ### 2️⃣ Análisis de Código (ETAPA 2)
 
-- ✅ Funciones/clases nuevas: firmas, responsabilidades
+- ✅ Funciones/clases nuevas: firmas completas (nombre, parámetros con tipos, retorno)
 - ✅ Patrones: se siguen los existentes o se introducen nuevos
 - ✅ Modularidad: cohesión, acoplamiento, reutilización
 - ✅ Calidad: complejidad ciclomática, mantenibilidad
-- ✅ Imports y dependencias
+- ✅ Imports exactos: módulo, nombre de clase/función, alias si aplica
 
-Incluir: componentes nuevos con interfaces detalladas, referencias a patrones existentes, decisiones sobre ubicación.
+Incluir: para cada componente nuevo → firma completa + ejemplo de uso + referencia al archivo existente que define el patrón a seguir.
 
 ---
 
@@ -293,16 +294,21 @@ Lista binaria (sí/no) verificable:
 
 ### 7️⃣ Plan de Implementación
 
-> [!IMPORTANT]
-> Cada tarea DEBE incluir su criterio de verificación inline (`→ verificar: [check concreto]`). No basta con el tiempo estimado — el implementador debe saber exactamente cómo confirmar que la tarea está completa antes de pasar a la siguiente.
+> [!CRITICAL]
+> **Reglas de segmentación atómica — OBLIGATORIAS:**
+> 1. **Una tarea = un artefacto**: un archivo, una función, una migración, un endpoint. Si la tarea toca dos artefactos → dividirla.
+> 2. **Interfaz completa en la tarea**: cada tarea debe incluir la firma exacta (nombre, parámetros con tipos, retorno) del artefacto a crear o modificar. El implementador no infiere ni decide ningún detalle de la interfaz.
+> 3. **Patrón de referencia explícito**: si el artefacto sigue un patrón existente → indicar el archivo concreto a copiar. Nunca decir "seguir el patrón del proyecto" sin especificar cuál.
+> 4. **Verificación inline**: cada tarea tiene su `→ verificar:` con el comando o check concreto que confirma que está completa antes de pasar a la siguiente.
+> 5. **Test de atomicidad**: si el implementador puede completar la tarea sin tomar ninguna decisión de diseño → está bien segmentada. Si debe decidir algo → falta especificación, agregar detalle.
 
-| # | Tarea | Etapa(s) | Complejidad | Tiempo Est. | Dependencias | Verificación |
-|---|---|---|---|---|---|---|
-| 0 | **DX & Tooling**: [herramienta propuesta] | FULLSTACK/DX | Media | Xh | Ninguna | → verificar: [herramienta ejecuta sin errores con `{comando}`] |
-| 1 | Crear tabla X | DATA | Media | 1h | Tarea 0 | → verificar: [migración corre sin errores y tabla existe en DB] |
-| 2 | Implementar función Y | CODE | Alta | 3h | Tarea 1 | → verificar: [función importable y firma coincide con §2] |
-| 3 | Crear endpoint Z | BACKEND | Media | 2h | Tarea 2 | → verificar: [endpoint responde 200 al happy path con `{commands.test_unit}`] |
-| 4 | Validar flujo end-to-end | FULLSTACK | Baja | 1h | Tareas 1-3 | → verificar: [criterios §5 [FULLSTACK] y [DX] pasan todos] |
+| # | Tarea | Artefacto | Interfaz exacta | Patrón a seguir | Etapa | Complejidad | Tiempo Est. | Dependencias | Verificación |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | **DX & Tooling**: [nombre herramienta] | `{paths.scripts}/[nombre].py` | `def run(args): ...` | — | DX | Media | Xh | Ninguna | → verificar: `python {paths.scripts}/[nombre].py --help` ejecuta sin errores |
+| 1 | Crear migración tabla X | `{paths.migrations}/00N_create_x.sql` | columnas: `id uuid`, `name text`, `created_at timestamptz` | `{paths.migrations}/001_create_y.sql` | DATA | Baja | 0.5h | Tarea 0 | → verificar: `{commands.migrate}` sin errores + tabla existe en DB |
+| 2 | Implementar función Y | `{paths.backend}/services/y.py` | `def create_y(user_id: UUID, name: str) -> Y` | `{paths.backend}/services/z.py :: create_z()` | CODE | Media | 1h | Tarea 1 | → verificar: importable desde `{paths.backend}/services/y.py` sin error |
+| 3 | Crear endpoint POST /y | `{paths.api_routes}/y.py` | input: `CreateYRequest`, output: `YResponse`, status: 201 | `{paths.api_routes}/z.py :: router.post("/z")` | BACKEND | Media | 1h | Tarea 2 | → verificar: `{commands.test_unit} -k test_create_y` pasa |
+| 4 | Validar flujo end-to-end | — | — | — | FULLSTACK | Baja | 0.5h | Tareas 1-3 | → verificar: criterios §5 [FULLSTACK] y [DX] pasan todos |
 
 > [!IMPORTANT]
 > **Tarea 0 siempre = DX & Tooling.** El implementador DEBE ejecutarla primero y usar la herramienta resultante para el resto del paso.
@@ -331,7 +337,8 @@ Lista binaria (sí/no) verificable:
 - ✅ **TODO el paso**, incluyendo sub-pasos
 - ✅ **Etapas secuenciales** — data → code → backend → fullstack+DX, sin saltar
 - ✅ **≥ 1 herramienta DX propuesta** — siempre, sin excepción
-- ✅ **Cada tarea con verificación inline** — el implementador no debe inferir cómo saber que terminó
+- ✅ **Tareas atómicas**: una tarea = un artefacto = interfaz completa = patrón explícito = verificación inline
+- ✅ **El implementador no decide nada**: si debe inferir cualquier detalle de diseño → la tarea está incompleta
 
 ---
 
@@ -346,8 +353,10 @@ Lista binaria (sí/no) verificable:
 | Etapas cubiertas | 4 etapas (data, code, backend, fullstack+DX) |
 | Criterios de aceptación | ≥ 1 por sub-paso, verificables |
 | Riesgos identificados | ≥ 3 (técnico, integración, futuro) |
-| Tareas en el plan | ≥ 4, atómicas, ordenadas |
-| Verificación inline por tarea (§7) | 100% — toda tarea tiene su `→ verificar:` |
+| Tareas atómicas (1 artefacto por tarea) | 100% |
+| Interfaz exacta por tarea | 100% — sin inferencias posibles |
+| Patrón de referencia explícito por tarea | 100% — archivo concreto, no "seguir el estilo" |
+| Verificación inline por tarea | 100% — comando o check concreto |
 | Suposiciones no verificadas | ≤ 2, cada una marcada ⚠️ |
 | Propuesta DX / Tooling | ≥ 1 herramienta concreta con descripción de impacto para usuario final |
 | Estimación de tiempo | Sí, por tarea y total |

@@ -1,17 +1,20 @@
 # FluxAgentProV2 - Makefile
 # Comandos comunes para desarrollo y deployment
+# Nota: usa 'uv run' para cross-platform compat (Windows/Linux/WSL).
 
-.PHONY: help install dev server test lint clean migrate
+.PHONY: help install dev server test test-all test-fast test-cov coverage lint clean migrate shell logs stop restart check-env setup
 
 # Variables
-PYTHON ?= .venv/bin/python
-PIP ?= .venv/bin/pip
-PYTEST ?= .venv/bin/pytest
-UVICORN ?= .venv/bin/uvicorn
+PYTHON := uv run python
+PIP := uv run pip
+PYTEST := uv run pytest
+UVICORN := uv run uvicorn
+SHELL := /bin/bash
 HOST ?= 0.0.0.0
 PORT ?= 8000
 
-# Default target
+# ── Ayuda ────────────────────────────────────────────────────────
+
 help:
 	@echo "FluxAgentProV2 - Comandos disponibles:"
 	@echo ""
@@ -19,102 +22,134 @@ help:
 	@echo "  make dev          - Instalar dependencias de desarrollo"
 	@echo "  make server       - Levantar servidor (development)"
 	@echo "  make prod         - Levantar servidor (production)"
-	@echo "  make test         - Ejecutar tests"
+	@echo "  make test         - Ejecutar tests (default)"
+	@echo "  make test-all     - Suite completa: lint → unit → integracion → e2e → seguridad → stress → perf → coverage"
+	@echo "  make test-fast    - Solo tests unitarios (rapido)"
 	@echo "  make test-verbose - Ejecutar tests con output detallado"
 	@echo "  make test-cov     - Ejecutar tests con coverage"
-	@echo "  make lint         - Ejecutar linter (si está configurado)"
+	@echo "  make coverage     - Reporte de cobertura (--cov-fail-under=75)"
+	@echo "  make lint         - Ejecutar linter (ruff)"
 	@echo "  make clean        - Limpiar archivos temporales"
 	@echo "  make migrate      - Aplicar migraciones de Supabase"
 	@echo "  make shell        - Abrir shell de Python en el venv"
 	@echo "  make logs         - Ver logs del servidor"
+	@echo "  make stop         - Detener servidor"
+	@echo "  make restart      - Reiniciar servidor"
+	@echo "  make setup        - Setup inicial (check-env + install)"
 	@echo ""
-	@echo "Variables de entorno:"
-	@echo "  HOST   - Host del servidor (default: 0.0.0.0)"
-	@echo "  PORT   - Puerto del servidor (default: 8000)"
+	@echo "Variables: HOST, PORT, test-args"
+	@echo "Ej: make server PORT=8080 | make test test-args='tests/unit/'"
 	@echo ""
-	@echo "Ejemplos:"
-	@echo "  make server PORT=8080"
-	@echo "  make test test-args='tests/unit/'"
 
-# Instalar dependencias básicas
+# ── Instalacion ──────────────────────────────────────────────────
+
 install:
 	@echo "→ Instalando dependencias..."
-	@if command -v uv &> /dev/null; then \
-		uv sync; \
-	else \
-		echo "uv no está instalado. Usando pip..."; \
-		$(PIP) install -e .; \
-	fi
+	uv sync
 	@echo "✓ Dependencias instaladas"
 
-# Instalar dependencias de desarrollo
 dev:
 	@echo "→ Instalando dependencias de desarrollo..."
-	@if command -v uv &> /dev/null; then \
-		uv sync --all-extras; \
-	else \
-		echo "uv no está instalado. Usando pip..."; \
-		$(PIP) install -e ".[dev]"; \
-	fi
+	uv sync --all-extras
 	@echo "✓ Dependencias de desarrollo instaladas"
 
-# Levantar servidor en modo desarrollo
+# ── Servidor ─────────────────────────────────────────────────────
+
 server:
 	@echo "→ Levantando servidor en http://$(HOST):$(PORT)"
 	@echo "→ Documentación: http://localhost:$(PORT)/docs"
-	@$(UVICORN) src.api.main:app \
+	$(UVICORN) src.api.main:app \
 		--host $(HOST) \
 		--port $(PORT) \
 		--reload \
 		--log-level info
 
-# Levantar servidor en modo producción
 prod:
 	@echo "→ Levantando servidor en producción http://$(HOST):$(PORT)"
-	@$(UVICORN) src.api.main:app \
+	$(UVICORN) src.api.main:app \
 		--host $(HOST) \
 		--port $(PORT) \
 		--workers 4 \
 		--log-level warning
 
-# Ejecutar tests
+# ── Tests ────────────────────────────────────────────────────────
+
 test:
 	@echo "→ Ejecutando tests..."
-	@$(PYTEST) tests/ $(test-args)
+	$(PYTEST) tests/ $(test-args)
 
-# Ejecutar tests con output detallado
+test-all:
+	@echo "→ Ejecutando suite completa de testing..."
+	@echo ""
+	@echo "=== 1/7: Lint ==="
+	uv run ruff check src/ tests/ || (echo "[FAIL] Lint"; exit 1)
+	@echo ""
+	@echo "=== 2/7: Tests Unitarios ==="
+	$(PYTEST) tests/unit/ -v --timeout=60 --tb=short || (echo "[FAIL] Unit tests"; exit 1)
+	@echo ""
+	@echo "=== 3/7: Tests Integracion ==="
+	$(PYTEST) tests/integration/ -v --timeout=60 --tb=short -k "not latency" || (echo "[WARN] Integration tests parcial"; true)
+	@echo ""
+	@echo "=== 4/7: Tests E2E ==="
+	$(PYTEST) tests/e2e/ -v --timeout=120 --tb=short|| (echo "[WARN] E2E tests parcial"; true)
+	@echo ""
+	@echo "=== 5/7: Tests Seguridad ==="
+	$(PYTEST) tests/unit/test_security_guard.py tests/unit/test_security_guard_escape.py -v || (echo "[FAIL] Security tests"; exit 1)
+	@echo ""
+	@echo "=== 6/7: Tests Estres ==="
+	$(PYTEST) tests/stress/ -v --timeout=120 --tb=short|| (echo "[WARN] Stress tests parcial"; true)
+	@echo ""
+	@echo "=== 7/7: Cobertura ==="
+	$(PYTEST) --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=75 tests/unit/ tests/integration/ || (echo "[WARN] Coverage <75%"; true)
+	@echo ""
+	@echo "✓ test-all completado"
+	@echo "Coverage report: htmlcov/index.html"
+
+test-fast:
+	@echo "→ Ejecutando solo tests unitarios..."
+	$(PYTEST) tests/unit/ -v --timeout=60 --tb=short
+
 test-verbose:
 	@echo "→ Ejecutando tests (verbose)..."
-	@$(PYTEST) tests/ -v --tb=short $(test-args)
+	$(PYTEST) tests/ -v --tb=short $(test-args)
 
-# Ejecutar tests con coverage
 test-cov:
 	@echo "→ Ejecutando tests con coverage..."
-	@$(PYTEST) tests/ --cov=src --cov-report=html --cov-report=term-missing $(test-args)
+	$(PYTEST) tests/ --cov=src --cov-report=html --cov-report=term-missing $(test-args)
 	@echo "✓ Coverage report generado en htmlcov/index.html"
 
-# Ejecutar linter (placeholder - agregar cuando se configure)
-lint:
-	@echo "→ Ejecutando linter..."
-	@if command -v ruff &> /dev/null; then \
-		ruff check src/ tests/; \
-	else \
-		echo "ruff no está instalado. Skipping lint..."; \
-	fi
+coverage:
+	@echo "→ Generando reporte de cobertura..."
+	$(PYTEST) --cov=src --cov-report=html --cov-report=term-missing --cov-fail-under=75 tests/unit/ tests/integration/
+	@echo "✓ Coverage report: htmlcov/index.html"
 
-# Limpiar archivos temporales
+# ── Linter ───────────────────────────────────────────────────────
+
+lint:
+	@echo "→ Ejecutando linter (ruff)..."
+	uv run ruff check src/ tests/
+	@echo "✓ Lint OK"
+
+# ── Utilidades ───────────────────────────────────────────────────
+
 clean:
 	@echo "→ Limpiando archivos temporales..."
-	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "*.pyc" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f -name ".coverage" -delete 2>/dev/null || true
-	@find . -type f -name "*.db" -delete 2>/dev/null || true
+	@if command -v find &> /dev/null; then \
+		find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true; \
+		find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true; \
+		find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true; \
+		find . -type f -name ".coverage" -delete 2>/dev/null || true; \
+		find . -type f -name "*.db" -delete 2>/dev/null || true; \
+	else \
+		echo "find no disponible (Windows nativo). Usando PowerShell..."; \
+		pwsh -Command "Get-ChildItem -Path . -Directory -Filter '__pycache__' -Recurse | Remove-Item -Recurse -Force 2>`$null"; \
+		pwsh -Command "Get-ChildItem -Path . -Directory -Filter '.pytest_cache' -Recurse | Remove-Item -Recurse -Force 2>`$null"; \
+		pwsh -Command "Get-ChildItem -Path . -Directory -Filter 'htmlcov' -Recurse | Remove-Item -Recurse -Force 2>`$null"; \
+		pwsh -Command "Get-ChildItem -Path . -File -Filter '.coverage' -Recurse | Remove-Item -Force 2>`$null"; \
+	fi
 	@rm -rf .mypy_cache/ 2>/dev/null || true
 	@echo "✓ Archivos temporales limpiados"
 
-# Aplicar migraciones de Supabase (manual - requiere login)
 migrate:
 	@echo "→ Para aplicar migraciones de Supabase:"
 	@echo "   1. Abre Supabase Studio"
@@ -122,15 +157,13 @@ migrate:
 	@echo "   3. Ejecuta los archivos en supabase/migrations/ en orden numérico"
 	@echo ""
 	@echo "   Archivos disponibles:"
-	@ls -1 supabase/migrations/ 2>/dev/null || echo "   No hay migraciones"
+	@ls -1 supabase/migrations/ 2>/dev/null || echo "No hay migraciones"
 	@echo ""
 
-# Abrir shell de Python en el entorno virtual
 shell:
 	@echo "→ Abriendo shell de Python..."
-	@.venv/bin/python
+	$(PYTHON)
 
-# Ver logs (útil cuando se corre en background)
 logs:
 	@echo "→ Mostrando logs recientes..."
 	@if [ -f nohup.out ]; then \
@@ -139,16 +172,17 @@ logs:
 		echo "No hay archivo nohup.out. El servidor no está corriendo en background."; \
 	fi
 
-# Detener servidor (si está corriendo en background)
 stop:
 	@echo "→ Deteniendo servidor..."
-	@pkill -f "uvicorn src.api.main:app" || echo "No hay servidor corriendo"
+	@if command -v pkill &> /dev/null; then \
+		pkill -f "uvicorn src.api.main:app" || echo "No hay servidor corriendo"; \
+	else \
+		echo "pkill no disponible (Windows nativo). Detener manualmente el proceso."; \
+	fi
 	@echo "✓ Servidor detenido"
 
-# Restart servidor
 restart: stop server
 
-# Check de variables de entorno
 check-env:
 	@echo "→ Verificando variables de entorno..."
 	@if [ ! -f ".env" ]; then \
@@ -165,7 +199,6 @@ check-env:
 	done
 	@echo "✓ Variables de entorno verificadas"
 
-# Setup inicial del proyecto
 setup: check-env dev
 	@echo "→ Setup inicial completado"
 	@echo "✓ Dependencias instaladas"

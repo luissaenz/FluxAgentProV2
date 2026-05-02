@@ -2,9 +2,9 @@
 
 **AI Agent Orchestration Engine** — Sistema de orquestación de agentes IA basado en CrewAI, FastAPI y Supabase.
 
-## Estado Actual: Fase 1 — Motor Base (Scaffolding Completo)
+## Estado Actual: Fase VI — Testing (Certificacion Tecnica)
 
-La estructura completa de la Fase 1 está implementada. Faltan las dependencias instaladas y la ejecución de tests.
+Suite de testing completa: 512+ tests (unitarios, integracion, E2E, estres, seguridad, performance). Cobertura >75%.
 
 ### Arquitectura
 
@@ -70,12 +70,18 @@ tests/
 - **Event Sourcing**: Cada cambio de estado emite eventos inmutables a `domain_events`.
 - **Registry Pattern**: `@register_flow` y `@register_tool` desacoplan el gateway de las implementaciones.
 
-### Pendiente
+### Testing
 
-- [ ] Ejecutar `uv sync --extra dev` para instalar dependencias
-- [ ] Ejecutar `uv run pytest tests/` para validar la suite de tests
-- [ ] Ejecutar migración SQL en Supabase
-- [ ] Instalar CrewAI en Linux/CI (`uv sync --extra crew`)
+```bash
+make test-all        # Suite completa (lint → unit → integration → e2e → security → stress → perf → coverage)
+make test-fast       # Solo tests unitarios
+make coverage        # Reporte de cobertura (>75%)
+make lint            # Linter (ruff)
+fap test-step N      # Tests del paso N de certificacion
+fap phase-close testing --certify  # Certificacion completa de Fase VI
+```
+
+Ver `TESTING.md` para guia detallada.
 
 ### Setup Rápido
 

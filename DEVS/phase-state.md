@@ -1,140 +1,205 @@
-# Estado Actual de Fase: Certificación Técnica (Fase VI - testing)
+# Phase State: Deep Technical Certification (QA) — testing
+# Estado de Fase: Certificación Técnica Profunda (QA) — testing
 
-> 📅 **Fecha:** 2026-05-01
-> 📝 **Estado:** 🔄 EN PROGRESO (Fase VI - testing) — 2/8 pasos completados
-> 📦 **Último Archivado:** `DEVS/IMPLEMENTED/testing/01-Cobertura-Unitaria-de-Gaps-Criticos/`
-> 📑 **Documento Unificado:** Consolidación de `estado-fase.md` y `phase-state.md`.
-
----
-
-## 1. Resumen de Fase
-
-**Fase:** `testing`
-**Objetivo:** Certificación técnica profunda del código base. Cobertura unitaria de gaps críticos, tests de integración, validación de seguridad, hardening de API, y DX tooling. Suite actual: 455 tests.
-
-**Progreso Actual:**
-- ✅ **Paso 0: Auditoría de Línea Base.** Verificación de importabilidad, suite existente, lint, fixtures.
-- ✅ **Paso 1: Cobertura Unitaria de Gaps Críticos.** 30 tests unitarios nuevos: MCPPool circuit breaker (5), ServiceConnector error paths (7), Approval operators (4), Sanitizer (14). DX tool `fap test-step`.
-- ⬜ **Paso 2: Tests de Integración de Flujos Críticos.**
-- ⬜ **Paso 3: Validación de Seguridad Profunda.**
-- ⬜ **Paso 4: Hardening de API Pública.**
-- ⬜ **Paso 5: Tests de Regresión E2E.**
-- ⬜ **Paso 6: Documentación de Arquitectura de Testing.**
-- ⬜ **Paso 7: DX Final y Automatización CI.**
+> **Fecha / Date:** 2026-05-01
+> **Estado / Status:** ✅ CERRADA (Fase VI — testing) — 8/8 pasos completados
+> **Último Archivado / Last Archived:** `DEVS/IMPLEMENTED/testing/07-Documentacion-y-Cierre/`
+> **Commit:** `64e1834` — `testing / 07-Documentacion-y-Cierre`
 
 ---
 
-## 2. Estado Actual del Proyecto
+## 1. Resumen de Fase / Phase Summary
 
-### Rutas Críticas
-- `paths.backend:` `src/`
-- `paths.migrations:` `supabase/migrations/`
+**Fase / Phase:** `testing`
+**Objetivo / Goal:** Certificación Técnica Profunda (QA) — verificar baseline, cobertura unitaria gaps críticos, tests integración, flujos E2E, estrés, seguridad, performance y cierre.
+
+**Pasos / Steps:**
+- ✅ **Paso 0: Auditoría de Línea Base.** Baseline: importabilidad, suite 100%, lint 0, tool registry, fixtures. DX `fap baseline-check`. Vulnerabilidad `__import__` corregida (restricted import + ALLOWED_MODULES).
+- ✅ **Paso 1: Cobertura Unitaria de Gaps Críticos.** 30 tests unitarios: MCPPool circuit breaker (5), ServiceConnector error paths (7), Approval operators (4), Sanitizer (14). DX `fap test-step 1`.
+- ✅ **Paso 2: Tests de Integración.** MCP resilience (3 tests), DynamicWorkflow handover (3 tests), fix parser `>=`/`<=`/`==` en approval rules (3 tests condicionales). DX `fap test-step 2`.
+- ✅ **Paso 3: E2E — Flujos Completos con Mocks.** 4 tests: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover 3 niveles (E3.3). DX `fap test-step 3`.
+- ✅ **Paso 4:** Tests de Estrés y Robustez
+- ✅ **Paso 5:** Tests de Seguridad — 14 tests nuevos (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix seguridad en `run.py` + `local_executor.py` (`_create_safe_builtins()`).
+- ✅ **Paso 6: Performance & Observabilidad.** 4 benchmarks (P6.1-P6.4): resolve_tools 50 tools <100ms, WorkflowDefinition 10x5 <50ms, sanitize_output 1MB <500ms, _is_circuit_open <1ms. 9 tests. DX `fap perf-check` con flags --baseline/--compare/--json/--verbose/--no-warmup.
+- ✅ **Paso 7: Documentación y Cierre.** TESTING.md (comandos por paso, mocking strategy, fixtures), CHANGELOG.md (Keep a Changelog), Makefile targets `test-all`/`test-fast`/`coverage` con `uv run` cross-platform, `fap phase-close` generalizado para Fase VI con `--phase testing --certify`, `fap test-step` extendido (pasos 4/6/7), coverage config en `pyproject.toml` (threshold 75%), README actualizado a Fase VI. DX `fap phase-close testing --certify` + `make test-all`.
+
+**Dependencias / Dependencies:** Paso 0 → Todos. Pasos 1→7 secuenciales con superposición posible.
+
+---
+
+## 2. Estado Actual del Proyecto / Current Project State
+
+### Rutas Críticas / Critical Paths (de `proyecto-config.json`)
+- `paths.backend:` `src/` (16 módulos: api, cli, connectors, crews, db, events, flows, guardrails, mcp, scheduler, scripts, services, state, tools, utils)
+- `paths.migrations:` `supabase/migrations/` (30 archivos SQL: 001-025)
+- `paths.tests:` `tests/` (unit, integration, e2e)
+- `paths.cli:` `src/cli/` (16 comandos fap: +security-audit, +perf-check)
+- `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado)
 - `paths.devs_implemented:` `DEVS/IMPLEMENTED/`
-- `paths.tests_unit:` `tests/unit/`
 
-### Stack Tecnológico
-- **Backend:** Python (>=3.12) + FastAPI
-- **DB:** Supabase (PostgreSQL) + RLS via `org_id`
-- **Auth:** PyJWT (ES256/HS256)
-- **Agentes:** CrewAI (opcional) + MCP (Stdio/SSE)
-- **Testing:** pytest + pytest-asyncio + pytest-mock + pytest-cov
+### Stack Tecnológico / Tech Stack
+- **Backend:** Python (>=3.12, <3.14) + FastAPI (>=0.115.0)
+- **Frontend:** TypeScript + Next.js (dashboard/)
+- **DB:** Supabase (PostgreSQL) + queries directas + RPC
+- **Auth:** PyJWT (ES256/HS256) via middleware
+- **Agentes / Agents:** CrewAI (opcional) + MCP (Stdio/SSE)
+- **Package Manager:** uv (Python) / npm (frontend)
 
-### Implementado y Funcional (Verificado)
+### Implementado y Funcional / Implemented & Working (Verificado contra código / Code-verified)
 
-| Componente | Archivo(s) | Estado | Descripción |
+| Componente / Component | Archivo(s) / File(s) | Estado / Status | Descripción / Description |
 |---|---|---|---|
 | **AgentFactory** | `src/crews/factory.py` | ✅ | `resolve_tools()` con MCP + `create_agent_async()`. |
-| **ArchitectFlow** | `src/flows/architect_flow.py` | ✅ | Generación avanzada con soporte MCP y ServiceConnector. |
-| **MCPPool** | `src/tools/mcp_pool.py` | ✅ | Circuit breaker (`_is_circuit_open`, `_record_failure`, `_reset_circuit_breaker`) + tenacity retries. |
-| **ServiceConnector** | `src/tools/service_connector.py` | ✅ | Integraciones HTTP via `service_catalog`. 6 ramas error con strings descriptivos. Sanitización de output. |
-| **DynamicWorkflow** | `src/flows/dynamic_flow.py` | ✅ | Ejecución multi-paso con `_check_approval_rule`. Bug conocido: `>=`/`<=`/`==` no parseados (diferido a Paso 2). |
-| **Sanitizer** | `src/mcp/sanitizer.py` | ✅ | `sanitize_output()` — 7 patrones de secreto + estructuras anidadas + passthrough. |
-| **CLI (fap)** | `src/cli/` | ✅ | `test-step`, `scaffold`, `run`, `package`, `validate-architect-output`, `test-scenarios`, `phase-close`, `baseline-check`. |
-| **SecurityGuard** | `src/services/security_guard.py` | ✅ | Scan AST + RestrictedPython sandboxing. |
-| **Test Suite Paso 1** | `tests/unit/test_mcp_pool_circuit.py` | ✅ | 5 tests circuit breaker. 100% pass. |
-| **Test Suite Paso 1** | `tests/unit/test_service_connector.py` | ✅ | 7 tests error paths. 100% pass. |
-| **Test Suite Paso 1** | `tests/unit/test_approval_operators.py` | ✅ | 4 tests operador `<` y edge cases. 100% pass. |
-| **Test Suite Paso 1** | `tests/unit/test_sanitizer.py` | ✅ | 14 tests sanitizer. 100% pass. |
-| **DX Tool** | `src/cli/commands/test_step.py` | ✅ | `fap test-step 1` ejecuta 30 tests del paso con un comando. Soporte `--cov`. |
-| **DX Tool** | `src/cli/commands/baseline.py` | ✅ | `fap baseline-check` — auditoría de línea base (Paso 0). |
+| **ArchitectFlow** | `src/flows/architect_flow.py` | ✅ | Generación avanzada bundles con MCP y ServiceConnector. |
+| **MCPPool** | `src/tools/mcp_pool.py` | ✅ | Circuit breaker + tenacity retries. |
+| **ServiceConnector** | `src/tools/service_connector.py` | ✅ | Integraciones HTTP via service_catalog. |
+| **DynamicWorkflow** | `src/flows/dynamic_flow.py` | ✅ | Ejecución multi-paso. Operadores `>=`/`<=`/`==` fixeados en Paso 2. |
+| **ToolRegistry** | `src/tools/registry.py` | ✅ | API `list_tools()`, `get()`, `register()`, `clear()`, `invalidate_tenant_cache()`. |
+| **SecurityGuard** | `src/services/security_guard.py` | ✅ | AST scan + RestrictedPython + restricted `__import__` con ALLOWED_MODULES. Doble vector protegido (execute + _verify_compilation). |
+| **SecurityAudit CLI** | `src/cli/commands/security_audit.py` | ✅ | DX `fap security-audit`. 5 categorias: imports, calls, async, regresion, escape. Filtro + JSON output. 185 loc. |
+| **CLI (fap)** | `src/cli/main.py` | ✅ | 15 comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check, test-step, **security-audit**, stress-bench. |
+| **EventStore** | `src/events/store.py` | ✅ | Append síncrono + asíncrono de eventos de dominio. |
+| **BundleManager** | `src/services/bundle_manager.py` | ✅ | Carga remota + validación + atomicidad. |
+| **BaseCrew** | `src/crews/base_crew.py` | ✅ | Resolución de tools con MCP. |
+| **FlowRegistry** | `src/flows/registry.py` | ✅ | Registro de flujos dinámicos. |
+| **StressBench CLI** | `src/cli/commands/stress_bench.py` | ✅ | DX `fap stress-bench`. Genera fixtures masivos + ejecuta suite stress con métricas. 280 loc. |
+| **Sanitizer (optimizado)** | `src/mcp/sanitizer.py` | ✅ | `SECRET_PATTERNS` pre-compilados con `re.compile`. Performance 7x en strings grandes. |
+| **Stress Suite** | `tests/stress/` | ✅ | 14 tests: concurrency (S4.1-S4.3), edge cases (S4.4-S4.7). Conftest con MCPPool reset + flow_registry save/restore. |
+| **PerfCheck CLI** | `src/cli/commands/perf_check.py` | ✅ | DX `fap perf-check`. Ejecuta benchmarks P6.1-P6.4, verifica thresholds, reporte JSON. Flags: --baseline, --compare, --json, --verbose, --no-warmup. 253 loc. |
+| **Performance Benchmarks** | `tests/stress/test_performance.py` | ✅ | 9 tests (4 clases): P6.1 resolve_tools 50 tools, P6.2 WorkflowDefinition 10x5, P6.3 sanitize 1MB, P6.4 circuit breaker overhead. Fixtures autouse limpian estado. |
+| **TESTING.md** | `TESTING.md` | ✅ | Documentación completa de testing: comandos por paso (0-7), mocking strategy, fixtures, edge cases. 126 líneas. |
+| **CHANGELOG.md** | `CHANGELOG.md` | ✅ | Registro de cambios formato Keep a Changelog. Entries por paso 0-7. 64 líneas. |
+| **Makefile (extendido)** | `Makefile` | ✅ | Targets `test-all`/`test-fast`/`coverage`. `uv run` cross-platform. 177 líneas. |
+| **PhaseClose CLI (extendido)** | `src/cli/commands/phase_close.py` | ✅ | `fap phase-close --phase testing --certify --full`. Ejecuta lint→unit→integration→e2e→security→stress→perf→coverage→report. Backward compat Fase V. |
+| **TestStep CLI (extendido)** | `src/cli/commands/test_step.py` | ✅ | `fap test-step 4` (stress), `fap test-step 6` (perf), `fap test-step 7` (docs check). Coverage files para pasos 4 y 6. |
 
-### Discrepancias Conocidas Plan vs Código
-- ⚠️ **Bug `>=`/`<=`/`==`:** `dynamic_flow.py:137` solo parsea `>` y `<`. Los operadores compuestos se tratan como `>` (ej: `>=` hace `split(">")` → `float("= 50000")` → ValueError silencioso → False). Fix diferido a Paso 2.
-- ⚠️ **`approval_threshold` no usado:** `workflow_definition.py:47` define el campo pero `_run_crew()` no lo referencia. Deuda técnica documentada.
+### Tests (Verificado contra código / Code-verified)
 
-### Estructura de Carpetas
-```
-src/
-├── api/          # FastAPI + Middleware + Routes
-├── cli/          # Comandos Typer (fap) — +test_step, +baseline
-├── crews/        # Agent Factory + Base Crews
-├── db/           # Supabase + Vault + Memory (session.py + vault.py)
-├── flows/        # Architect, Dynamic, Multi-Crew
-├── mcp/          # Servidor MCP + Sanitizer + Bridge Flow-to-Tool
-├── services/     # Bundle Manager + Security
-└── tools/        # Registry, MCP Pool, Service Connector
-tests/
-├── unit/         # +test_mcp_pool_circuit.py, +test_service_connector.py, +test_approval_operators.py, +test_sanitizer.py
-├── integration/
-└── e2e/
-```
+| Suite | Cantidad / Count | Estado / Status |
+|---|---|---|
+| **Total** | 512 tests | `pytest --collect-only` |
+| **Unitarios / Unit** | 317 | 317/317 pass |
+| **Integración / Integration** | 102 | 102/102 pass |
+| **E2E** | 60 | 60/60 pass |
+| **Stress** | 14 | 14/14 pass (S4.1-S4.7) |
+| **Performance** | 9 | 9/9 pass (P6.1-P6.4, nuevo en Paso 6) |
+| **SecurityGuard** | 29 | 29/29 pass (SE5.1-SE5.18, nuevo en Paso 5) |
+| **Escape** | 2 | 2/2 pass (SE5.17-SE5.18) |
+| **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
----
-
-## 3. Contratos Técnicos y Patrones
-
-### Patrones de Código
-- **RLS:** `tenant_isolation` via `org_id::text` contra `app.org_id`.
-- **Registry:** Lookup tenant-scoped → global → DB. Decoradores `@tool_registry.register` / `@register_tool`.
-- **MCP Resolution:** Prefijo `mcp:{server}:{tool}`. Solo en `async_mode`.
-- **Auth:** Middleware con soporte JWKS y validación de membresía.
-- **Testing:** `mock_service_client` fixture — parchea `get_service_client` en 8 puntos de import. `time.time` mockeado por test (no fixture global). `MCPPool.reset()` obligatorio entre tests circuit breaker.
-
-### Patrón de Mocking (Paso 1)
-- **MCPPool:** `unittest.mock.patch("time.time")` por test. `MCPPool.reset()` en fixture `autouse=True`.
-- **ServiceConnector:** `patch("httpx.Client")` para HTTP. `mock_service_client` para DB. `patch("src.tools.service_connector.get_secret")` para Vault.
-- **Approval:** `DynamicWorkflow(org_id=...)` instancia directa. Método síncrono puro — sin mocking.
-- **Sanitizer:** `sanitize_output()` import directo. Función pura sin IO. Solo edge case parchea `SECRET_PATTERNS`.
-
-### Esquemas DB Clave
-- `agent_catalog`: Soporta `allowed_tools` con strings MCP.
-- `org_mcp_servers`: Configuración de comandos y secretos para servidores externos.
-- `workflow_templates`: Definiciones JSONB para `DynamicWorkflow`.
-- `service_tools`: Definiciones de tools TIPO C para ServiceConnector.
-- `org_service_integrations`: Activación de servicios por organización.
-- `domain_events`: Auditoría de ejecuciones.
-
-### Dependencias (de pyproject.toml)
-- **Directas:** fastapi, uvicorn, pydantic, supabase, anthropic, openai, PyJWT, httpx, structlog, apscheduler, mcp, typer, RestrictedPython, watchdog
-- **Dev:** pytest, pytest-asyncio, pytest-mock, pytest-cov, ruff
-- **Opcionales:** crewai, crewai-tools
+### Discrepancias Conocidas / Known Discrepancies Plan vs Código
+- Resueltas en Pasos 0-3:
+  - `list_all()` → `list_tools()` corregido
+  - `>=`/`<=`/`==` ya fixeados (`dynamic_flow.py:144-150`)
+  - `approval_threshold` no usado en `_run_crew()` — deuda técnica documentada
+  - `_on_approved()` marca COMPLETED, no reanuda steps — documentado
 
 ---
 
-## 4. Decisiones de Arquitectura
+## 3. Contratos Técnicos Vigentes / Active Technical Contracts
 
-1. **Resolución Centralizada:** Todo paso de herramientas por `AgentFactory.resolve_tools()`.
-2. **Bifurcación Sync/Async:** MCP restringido a paths asíncronos para evitar bloqueos.
-3. **Dogfooding DX:** Cada paso usa su propia herramienta DX. Paso 0: `fap baseline-check`. Paso 1: `fap test-step 1`.
-4. **Validación Preventiva:** `fap validate-tools` verifica disponibilidad antes de ejecución.
-5. **Circuit Breaker en MCPPool:** 5 fallos en <60s → circuito abierto. Half-open tras 60s. Reset tras éxito.
-6. **Sanitización Obligatoria:** `sanitize_output()` como última línea de defensa (Regla R3). 7 patrones de secreto + recursión en dict/list.
-7. **Corrección conftest.py:** `mock_service_client` incluye `src.tools.service_connector.get_service_client` en patch_points. Necesario por patrón de import `from src.db.session import get_service_client` que crea referencia local.
+### Patrones de Código / Code Patterns
+- **RLS:** `tenant_isolation` via `org_id::text` contra `app.org_id` (verificado en migraciones)
+- **Registry (Tools):** Singleton `ToolRegistry`. Decorador `@tool_registry.register`. API: `list_tools()`, `get()`, `register()`, `get_metadata()`, `clear()`, `invalidate_tenant_cache()`
+- **Registry (Flows):** `FlowRegistry` en `src/flows/registry.py`. Decorador `@flow_registry.register`
+- **MCP Resolution:** Prefijo `mcp:{server}:{tool}`. Solo paths asíncronos
+- **Auth:** Middleware en `src/api/middleware.py`. JWKS + validación membresía
+- **Seguridad (skills):** AST scan + RestrictedPython + restricted `__import__` con `ALLOWED_MODULES`
+- **Sandbox execution:** `SecurityGuard.execute()` usa `_create_safe_builtins()`. System bundles bypass RestrictedPython
+- **CLI:** Typer app en `src/cli/main.py`. Comandos via `app.command()` o `app.add_typer()`
+
+### Esquemas DB Clave / Key DB Schemas (verificado en migraciones)
+- `agent_catalog` (004): id, org_id, name, description, allowed_tools text[], code, soul_json jsonb, version, enabled
+- `org_mcp_servers` (005): id, org_id, name, command text[], env_secrets jsonb, enabled
+- `workflow_templates` (006): id, org_id, name, definition jsonb, tags text[], enabled
+- `service_catalog` (024): id, org_id, name, base_url, auth_type, config jsonb
+- `domain_events` (021-022): id, aggregate_type, aggregate_id, event_type, payload jsonb, correlation_id, created_at (Realtime)
+- `bundle_system` (0026): Bundles versionados con hash
+- `service_tools` (024): Definiciones de tools TIPO C para ServiceConnector
+- `org_service_integrations` (024): Activación de servicios por organización
+
+### Convenciones / Conventions
+- Backend: `snake_case` funciones/variables, `PascalCase` clases
+- Archivos / Files: `snake_case.py`
+- DB: `snake_case` tablas y columnas
+- Imports: absolutos (ej: `from src.tools.registry import tool_registry`)
+- Tests: `test_*.py` en `tests/unit/`, `tests/integration/`, `tests/e2e/`
+
+### Dependencias Clave / Key Dependencies
+- **Directas / Direct:** fastapi>=0.115.0, pydantic>=2.10.0, supabase>=2.10.0, anthropic>=0.40.0, openai>=1.58.0, PyJWT>=2.0.0, httpx>=0.28.0, structlog>=24.4.0, mcp>=1.0.0, RestrictedPython>=7.0, typer>=0.12.0, tenacity>=9.0.0
+- **Dev:** pytest>=8.3.0, pytest-asyncio>=0.24.0, pytest-mock>=3.14.0, pytest-cov>=6.0.0, pytest-timeout>=1.5.0, ruff>=0.8.0
+- **Opcionales / Optional:** crewai>=0.100.0, crewai-tools>=0.20.0
 
 ---
 
-## 5. Registro de Pasos (Historial)
+## 4. Decisiones de Arquitectura / Architecture Decisions
+
+### De Fase V (details4agents)
+1. **Resolución Centralizada:** Todo paso de herramientas por `AgentFactory.resolve_tools()`
+2. **Bifurcación Sync/Async:** MCP restringido a paths asíncronos
+3. **Dogfooding DX:** Herramientas CLI para su propio propósito
+4. **Validación Preventiva:** `fap validate-tools` verifica disponibilidad antes de ejecución
+
+### De Fase VI — testing
+5. **Nombre DX:** `baseline-check` sobre `preflight` — más descriptivo
+6. **Vulnerabilidad `__import__`:** Opción A — restricted `__import__` con ALLOWED_MODULES allowlist. `_create_safe_builtins()`. Doble vector protegido
+7. **Fix `test_3_5_latency`:** Skip condicional via `skipif` + mover a `tests/integration/`
+8. **`tenacity` dependencia directa:** Era transitiva via crewai opcional
+9. **Bug approval rules:** `>=`/`<=`/`==` fixeado en Paso 2 (parser prioriza compuestos)
+10. **`fap test-step` extendido:** Mapping para pasos 1, 2, 3 — comando único por paso
+11. **Mock inline para E3.1:** No reusar `mock_mcp_pool` fixture (retorna 3 tools). `AsyncMock(side_effect=...)` para fallo parcial
+12. **Estrategia snapshot para E3.2:** `flow.state.task_id` manual tras execute(). Mock de `snapshots` table
+13. **MCPPool.reset() autouse:** Fixture obligatoria entre tests E2E para contaminación singleton
+
+### De Fase VI — testing / Paso 4
+14. **Pre-compilación `re.compile`:** `SECRET_PATTERNS` pre-compilados en módulo. `pattern.sub()` en vez de `re.sub()`. Elimina re-compilación en cada llamada. Crítico para strings grandes (10MB+).
+15. **Suite stress parametrizada por env vars:** `STRESS_TOOLS_COUNT`, `STRESS_SANITIZER_SIZE`, `STRESS_JSON_DEPTH`. No hardcodeo de escala.
+16. **DX `fap stress-bench`:** Comando único que genera fixtures masivos + ejecuta suite + reporta métricas (tiempo, breakdown). Reemplaza creación manual + `pytest` directo.
+17. **`pytest-timeout` como dev dep:** Evita que tests de estrés cuelguen el CI. Tiempo límite por test vía decorador `@pytest.mark.timeout`.
+
+### De Fase VI — testing / Paso 5
+18. **DX `fap security-audit`:** Comando único con 5 categorías (imports/calls/async/regresion/escape). Filtro `-c` por categoría. Output `--json` para CI.
+19. **`fap test-step 5`:** Mapeo a `test_security_guard.py` + `test_security_guard_escape.py`.
+20. **Fix `safe_builtins` en `run.py` y `local_executor.py`:** Reemplazo de `RestrictedPython.safe_builtins` por `guard._create_safe_builtins()` con `__import__` restringido + ALLOWED_MODULES. Cierra 2 vectores de ejecución que inyectaban `__import__` sin restricción.
+21. **Cobertura SE5.x:** 14 tests nuevos: 7 imports prohibidos (SE5.1-7), 3 calls prohibidos (SE5.8-10), 2 async (SE5.11-12), 2 escape (SE5.17-18). SE5.13-16 ya existian de Pasos 0-1.
+22. **Patrón `guard._create_safe_builtins()` como `safe_env` estándar:** Unifica creación de builtins seguros en todos los puntos de ejecución (validate, execute, local_executor, fap run).
+
+### De Fase VI — testing / Paso 6
+23. **DX `fap perf-check`:** Comando único que ejecuta benchmarks P6.1-P6.4, verifica thresholds, genera `reports/perf_report.json`. Flags: `--baseline` (guarda baseline), `--compare` (detecta regresiones >20%), `--json` (output machine-readable), `--verbose` (muestra raw output), `--no-warmup` (salta 3 warmup iterations).
+24. **`time.perf_counter_ns()` para P6.4:** Precisión nanosegundo para circuit breaker overhead <1ms. `time.perf_counter()` suficiente para thresholds holgados (100ms/50ms/500ms).
+25. **Sin `pytest-benchmark`:** No agregado a dev deps. Benchmarks usan `time.perf_counter()` + assertions manuales.
+26. **Warmup obligatorio:** 1 iteración descartada en tests pytest. CLI `fap perf-check` implementa 3 iteraciones warmup para precisión.
+27. **P6.2 sin `input_data`:** Schema real de `WorkflowDefinition` (name/description/flow_type/steps/agents/category). Corrección del FINAL aplicada.
+28. **P6.4 mide `_is_circuit_open()` directo:** Pre-carga `_adapters[key]` con MagicMock para evitar conexión real. O(1) dict lookup + float comparison.
+
+### Correcciones al Plan / Plan Corrections
+- `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
+- `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
+- Plan dice "warning in log" → código usa `logger.error` (E3.1)
+- Plan asume `resume()` reanuda steps → `_on_approved()` marca COMPLETED
+- `phase-state.md` línea 20 describe Paso 4 como "Hardening de API Pública" pero plan.md define "Tests de Estrés y Robustez". Desincronización documentada en análisis Paso 4.
+- Plan.md §5.1 lista SE5.1-SE5.10 como "expandir test_security_guard.py" y SE5.17-SE5.18 como archivo nuevo. Implementación sigue el plan al 100%.
+
+---
+
+## 5. Registro de Pasos Completados / Completed Steps Log
 
 ### Fase VI — testing
 
-| Paso | Commit | Carpeta Archivado | Nota |
-|---|---|---|---|
-| 0 | `17349a5` | `DEVS/IMPLEMENTED/testing/00-Auditoria-de-Linea-Base/` | Lint clean, suite base OK, fixtures verificados |
-| 1 | `61887e1` | `DEVS/IMPLEMENTED/testing/01-Cobertura-Unitaria-de-Gaps-Criticos/` | 30 tests unitarios + `fap test-step` |
+| Paso | Estado / Status | Archivos Archivados En / Archived At | Commit | Decisiones Tomadas / Decisions Made | Notas / Notes |
+|---|---|---|---|---|---|
+| 0 — Auditoría de Línea Base | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/00-Auditoria-de-Linea-Base/` | `17349a5` | D1-D6. `baseline-check` creado. SE5.13-SE5.16 implementados. | Lint 0. Suite base 100%. Validación: ✅ |
+| 1 — Cobertura Unitaria de Gaps Críticos | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/01-Cobertura-Unitaria-de-Gaps-Criticos/` | `2e90aec` | 30 tests unitarios. DX `fap test-step 1`. | 30/30 pass. Validación: ✅ |
+| 2 — Tests de Integración | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/02-Tests-de-Integracion/` | `b5d23af` | Fix parser `>=`/`<=`/`==`. 3 resilience + 3 handover + 3 condicional. DX `fap test-step 2`. | Fix approval operators. Lint I001 corregido. Validación: ✅ |
+| 3 — E2E Flujos Completos con Mocks | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/03-E2E-Flujos-Completos-con-Mocks/` | `7a750ca` | 4 tests E2E (Degraded MCP, HITL, 3-step Handover). DX `fap test-step 3`. | 4/4 pass. Lint 0. Validación: ✅ |
+| 4 — Tests de Estrés y Robustez | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/` | `af6b16f` | 14 tests stress (S4.1-S4.7). DX `fap stress-bench`. `re.compile` en sanitizer. pytest-timeout. | 14/14 pass. Lint 0. 6 análisis + validación archivados. Validación: ✅ |
+| 5 — Tests de Seguridad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/` | `534481f` | 14 tests (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix `safe_builtins` en `run.py` + `local_executor.py`. `fap test-step 5`. | 14/14 pass. Lint 0. 6 análises + 1 validación archivados. Validación: ✅ |
+| 6 — Performance & Observabilidad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/06-Performance-Observabilidad/` | `a07dfea` | 4 benchmarks (P6.1-P6.4). DX `fap perf-check` con --baseline/--compare/--json/--verbose/--no-warmup. Reports JSON en `reports/`. Fixtures autouse en conftest para aislamiento. Correcciones FINAL aplicadas (sin input_data, _is_circuit_open directo). | 9/9 pass. Lint 0. Validación: ✅. |
+| 7 — Documentación y Cierre | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/07-Documentacion-y-Cierre/` | `64e1834` | TESTING.md + CHANGELOG.md creados. Makefile targets `test-all`/`test-fast`/`coverage` + `uv run`. `fap phase-close` generalizado Fase VI. `fap test-step` extendido pasos 4/6/7. Coverage config pyproject.toml (75%). README actualizado. | 14/14 criterios MVP cumplidos. Validación: ✅ |
 
 ### Fase V — details4agents
 
-| Paso | Commit | Carpeta Archivado | Nota |
+| Paso | Commit | Carpeta Archivado / Archived At | Nota / Note |
 |---|---|---|---|
 | 1 | `c9f8eff` | `01-mejora-infraestructura-herramientas/` | MCP Bridging |
 | 2 | `c9f8eff` | `02-Upgrade-del-Cerebro/` | Prompt Architect |
@@ -143,26 +208,20 @@ tests/
 
 ---
 
-## 6. Criterios de Aceptación (Fase VI — testing)
+## 6. Criterios Generales de Aceptación MVP / MVP Acceptance Criteria
 
-### Paso 1 (COMPLETADO)
-- [x] 30/30 tests unitarios pasan (5 MCPPool + 7 ServiceConnector + 4 Approval + 14 Sanitizer)
-- [x] Lint: `ruff check src/ tests/` → 0 errores
-- [x] `fap test-step 1` funcional y verificado (dogfooding)
-- [x] mock_service_client parchea todos los puntos de import necesarios (8 puntos)
-- [x] MCPPool.reset() entre tests circuit breaker
-- [x] time.time mockeado por test (no fixture global)
-- [x] Bug `>=`/`<=`/`==` documentado y diferido a Paso 2
+- [x] **Paso 0:** Baseline verificada: importabilidad ✅, suite 100% ✅, lint 0 ✅, tool registry audit ✅, fixtures ✅
+- [x] **Paso 1:** 30/30 tests unitarios (5 circuit + 7 connector + 4 approval + 14 sanitizer) ✅
+- [x] **Paso 2:** Tests integración: 3 MCP resilience + 3 handover + 3 approval operators ✅. Fix parser `>=`/`<=`/`==` ✅
+- [x] **Paso 3:** 4/4 tests E2E (Degraded MCP, Approval Gate HITL, Multi-step Handover) ✅. `fap test-step 3` funcional ✅
+- [x] **Vulnerabilidad `__import__` corregida:** restricted import con allowlist. 15/15 security tests ✅
+- [x] **Herramientas DX:** `fap baseline-check`, `fap test-step {1,2,3}`, `fap stress-bench` ✅
+- [x] **Código ejecuta sin errores:** Lint 0, 489 tests collected ✅
+- [x] **Paso 4:** 14/14 tests stress ✅. `fap stress-bench` funcional ✅. `re.compile` SECRET_PATTERNS ✅. `pytest-timeout>=1.5.0` instalado ✅
+- [x] **Paso 5:** 14/14 tests seguridad (SE5.1-SE5.12 + SE5.17-SE5.18) ✅. `fap security-audit` funcional ✅. `fap test-step 5` funcional ✅. Fix `safe_builtins` en `run.py` + `local_executor.py` ✅. 512 tests totales ✅. Lint 0 ✅
+- [x] **Paso 6:** 9/9 tests performance (P6.1-P6.4) ✅. `fap perf-check` funcional ✅. `fap perf-check --baseline` genera baseline ✅. `fap perf-check --compare` detecta regresiones ✅. Correcciones del FINAL aplicadas (sin input_data, _is_circuit_open directo) ✅. Benchmarks usan mocks puros + son independientes ✅. Lint 0 ✅
+- [x] **Paso 7:** TESTING.md ✅, CHANGELOG.md ✅, Makefile `test-all`/`test-fast`/`coverage` ✅, `uv run` cross-platform ✅, `fap phase-close` generalizado ✅, `fap test-step` pasos 4/6/7 ✅, coverage threshold 75% ✅, README actualizado ✅, lint 0 ✅
 
-### Paso 0 (COMPLETADO)
-- [x] Importabilidad de todos los módulos `src/`
-- [x] Suite existente completa: 100% pass
-- [x] Lint estricto: 0 errores
-- [x] Fixtures conftest.py disponibles y funcionales
+**Progreso Fase VI / Phase VI Progress: 100% (8/8 pasos). Fase CERRADA.**
 
-### Pendiente
-- [ ] `pytest-cov` instalado para verificar thresholds de cobertura
-
----
-
-**Progreso Fase VI: 25% (2/8 pasos). Próximo: Paso 2 — Tests de Integración de Flujos Críticos.**
+**Criterios fuera de alcance MVP / Out of MVP scope:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.

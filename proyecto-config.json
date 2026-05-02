@@ -114,13 +114,16 @@
   },
   "phase": {
     "phase_name": "testing",
-    "current_step": null
+    "current_step": "07-Documentacion-y-Cierre",
+    "phase_completed": true,
+    "steps_completed": 8,
+    "steps_total": 8
   },
   "pipeline": {
     "phase_state_exists": true,
     "in_progress_dir_exists": true,
     "implemented_dir_exists": true,
-    "analisis_final_exists": false,
+    "analisis_final_exists": true,
     "validacion_exists": false
   }
 }
