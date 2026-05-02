@@ -1,361 +1,217 @@
-# Plan de Certificación: Agentes Grado Producción (v3.1 — Corregido)
+# Plan de Implementación — Fix Post-Certificación Fase VI (testing)
 
-> **Reemplaza:** plan v3.0 (errores aritméticos, asunciones sobre suite corregidas, bug de seguridad ampliado).
-> **Foco real:** Solo gaps genuinos. Zero duplicación. Tests de código propio, no de dependencias externas.
-> **Suite actual:** 425 tests (unit + integration + e2e + sueltos). `conftest.py` con mocks globales de Supabase, LLM, CrewAI.
-> **Auditoría de duplicación:** Cada test propuesto verificado contra tests existentes antes de incluir.
-
----
-
-## Fase Única: Certificación Técnica Profunda (QA)
-
-### Paso 0: Auditoría de Línea Base (Pre-flight)
-
-**Objetivo:** Verificar que todo compila, importa y suite actual pasa limpio.
-
-| # | Prueba | Herramienta | Criterio de Éxito |
-|---|---|---|---|
-| P0.1 | Importabilidad de todos los módulos `src/` | `pytest --co` | 0 errores de import |
-| P0.2 | Suite existente completa | `pytest tests/` | 100% pass (0 failures, 0 errors) |
-| P0.3 | Lint estricto | `ruff check src/ tests/` | 0 errores |
-| P0.4 | Auditoría de tool_registry real | Script que lea `tool_registry.list_tools()` | Reporte de tools disponibles |
-| P0.5 | Verificar fixtures `conftest.py` | `pytest --fixtures` | `sample_org_id`, `mock_service_client`, `mock_tenant_client`, `global_llm_mock`, `mock_mcp_pool` disponibles |
-
-**Gate:** Si P0.1-P0.3 no pasan → NO continuar. Corregir regresiones primero.
-
-**⚠️ BUG CONOCIDO:** `test_3_5_latency.py::TestLatencyValidation::test_full_latency_validation` FALLA actualmente. Corregir antes de continuar (añadir `@pytest.mark.skip` si es test de integración real que requiere DB).
-
-**⚠️ VULNERABILIDAD CRÍTICA CONFIRMADA:** `security_guard.py` inyecta `__import__` en sandbox non-system (línea 142 y 221). AST scanner no detecta acceso indirecto vía `__builtins__["__import__"]`. Tests SE5.13-SE5.16 son diagnóstico obligatorio. Si confirman exploit → fix antes de merge.
-
-**Notas:**
-- P0.4 (mypy) eliminado: no hay `pyproject.toml` configurado para mypy.
-- P0.6 (migraciones SQL) eliminado: Supabase no tiene "DB temporal" local sin `supabase-cli`. Fuera de scope.
-- No hay `Makefile`. Se usa `pytest` directo. `make test-all` se crea en Paso 7.
-- `test_3_5_latency.py` está en `tests/` raíz, no en subdirectorio. Considerar mover a `tests/integration/` o `tests/stress/`.
+> **Versión:** v3.2
+> **Fecha:** 2026-05-01
+> **Origen:** análisis-FINAL.md — discrepancias consolidadas
+> **Fase:** testing (CERRADA — 8/8 pasos completados)
+> **Tipo:** Hotfix post-certificación
 
 ---
 
-### Paso 1: Cobertura Unitaria de Gaps Críticos
+## Contexto
 
-**Objetivo:** Tests unitarios para código sin cobertura. Solo lo que no existe ya.
+La Fase VI testing está 100% completada (512 tests, lint 0, 8/8 pasos archivados). El análisis unificado (`analisis-FINAL.md`) detectó **8 discrepancias**, de las cuales **5 requieren acción correctiva** antes de considerar la fase verdaderamente cerrada.
 
-#### 1.1 Circuit Breaker de MCPPool — `tests/unit/test_mcp_pool_circuit.py`
+---
 
-**Justificación:** `mcp_pool.py` tiene `_record_failure`, `_is_circuit_open`, `_reset_circuit_breaker` sin test directo. `test_mcp_exceptions.py` solo testa excepciones MCP del protocolo, no el circuit breaker.
+## Paso 0: Fix Seguridad Crítico — `registry.py` bypass
+
+**Objetivo:** Cerrar vector de seguridad en `_load_from_db()` que usa `safe_builtins` vanilla sin restricted `__import__`.
+
+### Tarea 0.1: Parchear `src/tools/registry.py`
+
+**Archivo:** `src/tools/registry.py`
+**Líneas:** 156-163
+
+**Cambio:**
+
+```python
+# ANTES (vulnerable):
+from RestrictedPython import safe_builtins
+
+loc: Dict[str, Any] = {}
+exec(byte_code, {"__builtins__": safe_builtins}, loc)
+
+# DESPUÉS (seguro):
+safe_env = self.guard._create_safe_builtins()
+
+loc: Dict[str, Any] = {}
+exec(byte_code, {"__builtins__": safe_env}, loc)
+```
+
+**Patrón a seguir:** `src/services/local_executor.py:49` — `safe_env = self.guard._create_safe_builtins()`
+
+**Verificación:**
+- Skill cargada desde DB con `import os` → debe lanzar `SecurityError`
+- Tests SE5.13-SE5.16 siguen pasando
+- `fap validate-tools` no rompe
+
+### Tarea 0.2: Agregar test de regresión
+
+**Archivo nuevo:** `tests/unit/test_registry_security.py`
 
 | # | Prueba | Qué verifica | Criterio |
 |---|---|---|---|
-| U1.1 | `_is_circuit_open` = False con 0-4 fallos | Circuito cerrado | False |
-| U1.2 | `_is_circuit_open` = True con >=5 fallos y <60s | Circuito abierto | True |
-| U1.3 | `_is_circuit_open` = False tras 60s (half-open) | Mock de `time.time()` para evitar espera real | False tras avance simulado |
-| U1.4 | `get_tools` lanza `MCPConnectionError` con circuito abierto | Sin intentar conexión | `MCPConnectionError` con mensaje "Circuit breaker abierto" |
-| U1.5 | `get_tools` éxito tras half-open → `_reset_circuit_breaker` | Reset tras éxito | `failures == 0` |
+| R0.1 | `_load_from_db()` con `import os` en código | Restricted import bloquea | `SecurityError` con "not in allowlist" |
+| R0.2 | `_load_from_db()` con `import json` (allowlist) | Módulo permitido pasa | Sin excepción, tool registrada |
+| R0.3 | `_load_from_db()` con `__builtins__["__import__"]` | Bypass indirecto bloqueado | `SecurityError` |
 
-**Estrategia de mocking:** `unittest.mock.patch` sobre `time.time` para controlar temporización sin esperas reales. `MCPPool.reset()` entre tests para limpiar singleton.
+**Estrategia de mocking:** `SecurityGuard` real (no mock). Usar `mock_service_client` fixture para DB. Código fuente inyectado como string.
 
-#### 1.2 ServiceConnector error paths — `tests/unit/test_service_connector.py`
-
-**Justificación:** Archivo no existe. `service_connector.py:_run` tiene 7 ramas de error sin test. `conftest.py` ya tiene `mock_service_client` y `mock_service_connector` fixtures.
-
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| U2.1 | `_run` con tool_id inexistente | `service_tools` sin match | Mensaje con "no encontrada" |
-| U2.2 | `_run` con servicio inactivo | `org_service_integrations.status != "active"` | Mensaje con "no está activo" |
-| U2.3 | `_run` con VaultError | `get_secret` lanza excepción | `str(VaultError)` en output |
-| U2.4 | `_run` con HTTP 401 | `httpx.HTTPStatusError(401)` | `"Error HTTP: 401"` |
-| U2.5 | `_run` con HTTP 500 | `httpx.HTTPStatusError(500)` | `"Error HTTP: 500"` |
-| U2.6 | `_run` con `httpx.ConnectError` | Servicio inalcanzable | `"Error HTTP: "` + mensaje |
-| U2.7 | `_run` con respuesta no-JSON | Body texto plano | Output truncado 500 chars, sin crash |
-
-**Estrategia de mocking:** `mock_service_client` fixture para DB. `patch("httpx.Client")` para HTTP. `patch("src.tools.service_connector.get_secret")` para Vault.
-
-#### 1.3 Approval operators faltantes — `tests/unit/test_approval_operators.py`
-
-**Justificación:** `test_dynamic_flow.py` ya cubre `>` (true/false), condición inválida, resultado no numérico. **Faltan:** `<` standalone, condición vacía, múltiples resultados. Estos son 3 tests, no 8.
-
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| U3.1 | `<` con valor menor → True | `"monto < 1000"` con `"500"` | True |
-| U3.2 | `<` con valor mayor → False | `"monto < 1000"` con `"5000"` | False |
-| U3.3 | Condición vacía → False | `""` | False, sin excepción |
-| U3.4 | Múltiples resultados, uno cumple | `"total > 100"` con `{"a": {"result": "50"}, "b": {"result": "200"}}` | True |
-
-**Nota:** `>=`, `<=`, `==` se rompen silenciosamente en `dynamic_flow.py:128-159` (ver Bug Detallado en §2.3). No se testean aquí. Ver Paso 2 para feature request.
-
-#### 1.4 Sanitizer edge cases — `tests/unit/test_sanitizer.py` (nuevo)
-
-**Justificación:** `mcp/sanitizer.py` no tiene tests. 50 líneas de código sin cobertura. `SECRET_PATTERNS` tiene 7 patrones: `sk_live_`, `sk_test_`, `Bearer`, `Basic`, `xox[bpsa]-` (Slack), `ghp_` (GitHub), `AIza` (Google).
-
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| U4.1 | String con `sk_live_` key → redactado | Patrón Stripe live | `[REDACTED]` en output |
-| U4.2 | String con `sk_test_` key → redactado | Patrón Stripe test | `[REDACTED]` en output |
-| U4.3 | String con `Bearer token` → redactado | Patrón Bearer | `[REDACTED]` |
-| U4.4 | String con `Basic auth` → redactado | patrón Basic auth | `[REDACTED]` |
-| U4.5 | String con `ghp_` token → redactado | GitHub PAT | `[REDACTED]` |
-| U4.6 | String con `AIza` key → redactado | Google API key | `[REDACTED]` |
-| U4.7 | String con `xoxb-` Slack token → redactado | Slack token | `[REDACTED]` |
-| U4.8 | Dict anidado con secreto → redactado recursivo | `{"auth": "sk_live_abc"}` | Secreto redactado, estructura preservada |
-| U4.9 | Lista con secreto → redactado | `["normal", "sk_test_xyz"]` | Segundo elemento redactado |
-| U4.10 | Input no-string/no-dict/no-list → passthrough | `42`, `None`, `True` | Valor original sin cambio |
-| U4.11 | String sin secretos → sin cambio | `"hello world"` | Output == input |
-
-**Gate:** 100% pass Paso 1. Cobertura `mcp_pool.py` >80%, `service_connector.py` >70%, `sanitizer.py` 100%.
+**Gate:** 3/3 pass. Lint 0.
 
 ---
 
-### Paso 2: Integración — Resiliencia y Feature Gaps
+## Paso 1: Fix Lint I001
 
-**Objetivo:** Probar caminos de fallo con mocks precisos. Implementar operadores faltantes si se deciden.
+**Objetivo:** Eliminar 3 errores de import sorting.
 
-#### 2.1 MCP Resilience — `tests/integration/test_mcp_resilience.py`
+### Tarea 1.1: Ejecutar auto-fix
 
-**Justificación:** Tests de integración real del circuit breaker con `MCPPool.get_tools()`, no unitarios aislados.
+```bash
+ruff check --fix src/ tests/
+```
 
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| I2.1 | 5 fallos consecutivos → circuito abierto → 6º intento falla inmediato | Circuit breaker se activa y bloquea | `MCPConnectionError` en 6º sin intentar conexión |
-| I2.2 | Circuito abierto → avance time 60s → half-open permite 1 intento → éxito → reset | Ciclo completo open→half-open→close | `failures == 0` tras éxito |
-| I2.3 | Circuito abierto → avance time 60s → half-open permite 1 intento → fallo → open de nuevo | Half-open con fallo re-abre | `failures >= 5` tras fallo |
+**Archivos afectados (confirmados):**
+- `src/cli/commands/validate_tools.py:69`
+- `src/mcp/server.py:7`
+- `src/tools/mcp_pool.py:149`
 
-**Estrategia de mocking:** `patch("src.tools.mcp_pool.get_service_client")` para simular config de servidor. `patch("crewai_tools.MCPServerAdapter")` para simular conexión. `patch("time.time")` para control de temporización.
+**Verificación:**
+```bash
+ruff check src/ tests/
+```
+Debe retornar 0 errores.
 
-#### 2.2 DynamicWorkflow handover — `tests/integration/test_handover_real.py`
-
-**Justificación:** `test_dynamic_flow.py` ya cubre ejecución secuencial, persistencia, eventos, skip sin agent_role, approval trigger. **Falta:** contexto entre steps (previous_results), 0 steps, fallo en step intermedio.
-
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| I3.1 | Step 2 recibe `previous_results` con output de step 1 | Contexto pasado correctamente | `previous_results["step_1"]` contiene resultado real |
-| I3.2 | Template con 0 steps → no crashea | Edge case | Retorna `{}`, sin excepción |
-| I3.3 | Step 2 falla (crew lanza excepción) → step 1 resultado preservado | Fallo parcial no pierde contexto | `results["step_1"]` presente, excepción propagada o capturada |
-
-**Estrategia de mocking:** `mock_service_client`, `mock_tenant_client`, `mock_event_store` fixtures. `BaseCrew` mockeado vía `global_llm_mock` fixture.
-
-#### 2.3 Feature: operadores `>=`, `<=`, `==` en approval rules
-
-**BUG DETECTADO:** `_check_approval_rule` usa `" > " in condition` y `" < " in condition`. Si condition es `"monto >= 50000"`, `">"` está presente → parsea como `>` con threshold `= 50000` → `float("= 50000")` lanza `ValueError` → retorna `False` silenciosamente. No es que "no estén implementados", es que **se rompen silenciosamente**.
-
-**Decisión requerida antes de escribir tests:**
-- ¿Se implementan `>=`, `<=`, `==` en `_check_approval_rule`?
-- Si SÍ → implementar primero (fix parser para priorizar `>=` sobre `>`), luego agregar 3 tests en `test_dynamic_flow.py`.
-- Si NO → marcar como bug conocido y agregar test de regresión.
-
-**Conditional tests (solo si se implementan):**
-
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| I4.1 | `>=` con valor igual → True | `"monto >= 50000"` con `50000` | True |
-| I4.2 | `<=` con valor igual → True | `"monto <= 1000"` con `1000` | True |
-| I4.3 | `==` con valor exacto → True | `"monto == 50000"` con `50000` | True |
-
-**Nota sobre `Step.approval_threshold`:** El campo existe en `StepDefinition` (`workflow_definition.py:47`) pero **no se usa** en `DynamicWorkflow._run_crew()`. El workflow usa `approval_rules[].condition` (string). Si se quiere usar `approval_threshold`, hay que modificar `_run_crew()`. Fuera de scope de testing puro.
-
-**Gate:** 100% pass Paso 2. Circuit breaker validado con mock de `time.time()` (espera real de 60s es inviable en CI).
+**Gate:** `ruff check src/ tests/` → 0 errores.
 
 ---
 
-### Paso 3: E2E — Flujos Completos con Mocks
+## Paso 2: Fix `test_3_5_latency.py`
 
-**Objetivo:** 3 flujos E2E ejerciendo combinaciones no cubiertas por los 6 escenarios existentes. **Todo mockeado** — sin LLM real, sin DB real, sin MCP real.
+**Objetivo:** Evitar que test de integración real bloquee CI/local.
 
-**Archivo nuevo:** `tests/e2e/test_production_flows.py`
+### Tarea 2.1: Añadir `@pytest.mark.skipif`
 
-**Estrategia de mocking:** `conftest.py` ya tiene `global_llm_mock` (mockea `crewai.Agent`, `crewai.Task`, `crewai.Crew`, `ChatOpenAI`, `ChatOllama`). `mock_service_client` para DB. `mock_mcp_pool` para MCP.
+**Archivo:** `tests/integration/test_3_5_latency.py`
+**Ubicación:** Antes de la clase `TestLatencyValidation` o función `test_full_latency_validation`
 
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| E3.1 | **"Degraded MCP"** — `resolve_tools` con 2 tools MCP: pool retorna 1, otra falla | Workflow usa tools disponibles, loguea fallo | Lista de tools contiene 1, warning en log, sin crash |
-| E3.2 | **"Approval Gate HITL"** — Flujo con approval rule → `request_approval` → `resume()` → completa | Ciclo HITL completo | Estado: PENDING → AWAITING_APPROVAL → COMPLETED |
-| E3.3 | **"Multi-step handover"** — 3 steps, cada uno consume output del anterior | Contexto preservado 3 niveles | `previous_results` contiene step_1 y step_2 en step_3 |
+```python
+@pytest.mark.skipif(
+    not os.getenv("SUPABASE_URL") or not os.getenv("SUPABASE_ANON_KEY"),
+    reason="Requiere Supabase Realtime + DB real — plan.md P0 bug conocido"
+)
+```
 
-**Gate:** 100% pass Paso 3. Cada flujo <5s (todo mockeado).
+**Verificación:**
+```bash
+pytest tests/integration/test_3_5_latency.py -v
+```
+Debe mostrar `SKIPPED` (no `FAILED`).
 
----
-
-### Paso 4: Estrés y Condiciones de Borde (Solo código propio)
-
-**Objetivo:** Condiciones extremas en código controlado. **No tests de dependencias externas** (CrewAI max_iter, LLM rate limits).
-
-#### 4.1 Concurrencia — `tests/stress/test_concurrency.py`
-
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| S4.1 | `resolve_tools` con 500 tools (todas mock registry) | Resolución masiva | <2s, sin memory leak visible |
-| S4.2 | 50 `DynamicWorkflow` en `asyncio.gather` (todos mockeados) | Concurrencia de flows | 0 deadlocks, todos completan |
-| S4.3 | `MCPPool.reset()` llamado 100 veces consecutivas | Singleton reset repetido | Sin error, singleton limpio |
-
-**Eliminados del plan original:**
-- S4.3 original (`BaseCrew max_iter=1000`): test de CrewAI, no código propio.
-- S4.4 original (`WorkflowDefinition` 100 steps): ya cubierto por validación Pydantic, no es stress test.
-
-#### 4.2 Edge cases — `tests/stress/test_edge_cases.py`
-
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| S4.4 | `WorkflowDefinition` con `flow_type` duplicado en registry | `DynamicWorkflow.register` con mismo flow_type 2 veces | Segundo registro sobrescribe sin error ni warning — comportamiento documentado, no bug |
-| S4.5 | `sanitize_output` con string de 10MB | Sanitización de output masivo | Completado en <5s, sin OOM |
-| S4.6 | `org_id` vacío en `resolve_tools` | Tool resolution con org_id="" | Sin crash, comportamiento definido |
-| S4.7 | `input_data` con JSON 20 niveles de profundidad | Datos anidados extremos en workflow | Sin stack overflow, sin timeout |
-
-**Eliminados del plan original:**
-- S4.5 original (1000 bundles): depende de DB real, lento, no aporta valor sobre test unitario de bundle_manager.
-- S4.6 original (100 reconexiones MCPPool): requiere mock de `MCPServerAdapter` complejo, bajo ROI.
-- S4.8 original (hash mismatch): ya cubierto por `test_bundle_manager.py`.
-- S4.9 original (org_id malformado): cubierto por S4.6.
-
-**Gate:** 100% pass Paso 4. Sin degradación de memoria >50MB.
+**Gate:** Test aparece como `SKIPPED`, no `FAILED`.
 
 ---
 
-### Paso 5: Seguridad — Hardening
+## Paso 3: Alinear nombres de pasos en TESTING.md
 
-**Objetivo:** Tests que no existen ya. `test_security_guard.py` ya cubre: `os`, `sys`, `urllib`, `eval`, `open`, dunder, timeout, bypass builtins.
+**Objetivo:** Corregir desincronización entre nombres en TESTING.md y plan.md.
 
-#### 5.1 Imports faltantes en test existente — expandir `tests/unit/test_security_guard.py`
+### Tarea 3.1: Corregir nombres de pasos
 
-Tests que **no existen** y son relevantes (agregar al archivo existente):
+**Archivo:** `TESTING.md`
 
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| SE5.1 | `import subprocess` → bloqueado | FORBIDDEN_MODULES | `SecurityError` con "Forbidden import 'subprocess'" |
-| SE5.2 | `import shutil` → bloqueado | FORBIDDEN_MODULES | `SecurityError` |
-| SE5.3 | `import ctypes` → bloqueado | FORBIDDEN_MODULES | `SecurityError` |
-| SE5.4 | `import socket` → bloqueado | FORBIDDEN_MODULES | `SecurityError` |
-| SE5.5 | `import gc` → bloqueado | FORBIDDEN_MODULES | `SecurityError` |
-| SE5.6 | `import inspect` → bloqueado | FORBIDDEN_MODULES | `SecurityError` |
-| SE5.7 | `import requests` → bloqueado | FORBIDDEN_MODULES | `SecurityError` |
-| SE5.8 | `__import__("os")` → bloqueado | FORBIDDEN_CALLS | `SecurityError` con "Forbidden function call '__import__'" |
-| SE5.9 | `compile("1+1", "", "eval")` → bloqueado | FORBIDDEN_CALLS | `SecurityError` |
-| SE5.10 | `exec("x=1")` → bloqueado | FORBIDDEN_CALLS | `SecurityError` |
+| Línea | Antes (incorrecto) | Después (correcto — plan.md) |
+|---|---|---|
+| 66 | `### Paso 3: Validacion de Seguridad Profunda` | `### Paso 3: E2E — Flujos Completos con Mocks` |
+| 72 | `### Paso 4: Hardening de API Publica` | `### Paso 4: Estrés y Condiciones de Borde` |
+| 78 | `### Paso 5: Tests de Regresion E2E` | `### Paso 5: Seguridad — Hardening` |
 
-#### 5.2 Async en system vs non-system — `tests/unit/test_security_guard.py` (expandir)
+**Verificación:** Nombres coinciden con `plan.md` secciones Paso 3, Paso 4, Paso 5.
 
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| SE5.11 | `async def` en `is_system=False` → bloqueado | RestrictedPython no soporta async | `SecurityError` en compilación |
-| SE5.12 | `async def` en `is_system=True` → permitido | System bundles bypass RestrictedPython | `validate_skill` retorna True |
-
-#### 5.3 SecurityGap crítico: `execute()` Y `_verify_compilation()` inyectan `__import__`
-
-**VULNERABILIDAD IDENTIFICADA — DOS vectores:**
-
-1. `security_guard.py:142`: `exec_globals["__builtins__"]["__import__"] = __import__` — inyecta `__import__` en sandbox de non-system bundles.
-2. `security_guard.py:221`: `safe_env["__import__"] = __import__` — inyecta `__import__` en `_verify_compilation()` para RestrictedPython.
-
-Ambos paths permiten `import os` dentro de código ejecutado. El AST scanner (`_scan_ast`) bloquea `import os` directo, pero si el código malicioso se ejecuta DESPUÉS del scan (lo cual ocurre en `execute()` y `_verify_compilation()`), tiene acceso a `__import__`.
-
-**CRÍTICO:** `FORBIDDEN_CALLS = {"eval", "exec", "compile", "open", "__import__"}`. El AST scan detecta `__import__("os")` como call → bloquea. PERO `exec_globals["__builtins__"]["__import__"]` inyecta la referencia DESPUÉS del scan. Código como `x = __builtins__; x["__import__"]("os")` no sería detectado por el AST scanner (no es una `ast.Call` directa sobre `__import__`).
-
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| SE5.13 | `execute()` con código que hace `import os` → ¿se ejecuta? | Verificar si inyección de `__import__` permite imports prohibidos | **Debe fallar** (SecurityError). Si pasa → bug crítico |
-| SE5.14 | `execute()` con `__builtins__["open"]` → ¿se ejecuta? | Verificar bypass de builtins | **Debe fallar**. Si pasa → bug crítico |
-| SE5.15 | `_verify_compilation()` con código que usa `__import__` inyectado → ¿se ejecuta? | Verificar segundo vector (línea 221) | **Debe fallar** (SecurityError). Si pasa → bug crítico |
-| SE5.16 | Código sin `import` directo pero con `x = __builtins__; x["__import__"]("os")` → ¿se bloquea? | Bypass indirecto de AST scanner | **Debe fallar** (SecurityError). Si pasa → bug crítico |
-
-**⚠️ ACCIÓN REQUERIDA:** Si SE5.13, SE5.15 o SE5.16 pasan (código malicioso se ejecuta), **FIJAR `security_guard.py` ANTES de continuar**. El fix sería: no inyectar `__import__` en builtins, o usar un `__import__` restringido que solo permita módulos en `ALLOWED_MODULES`.
-
-#### 5.4 Escape attempts — `tests/unit/test_security_guard_escape.py`
-
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| SE5.17 | `import importlib; importlib.import_module("os")` | Bypass vía importlib dinámico | `SecurityError` (importlib está en FORBIDDEN_MODULES) |
-| SE5.18 | Payload hex-encoded `import os` | `\x69\x6d\x70\x6f\x72\x74\x20\x6f\x73` | `SecurityError` en RestrictedPython sandbox |
-
-**Eliminados del plan original:**
-- SE5.12 original (getattr indirecto): ya cubierto por test dunder existente.
-- SE5.15 original (open en sandbox): ya cubierto por `test_forbidden_open`.
-- SE5.16 original (monkey-patch builtins): ya cubierto por `test_bypass_attempt`.
-- SE5.17 original (while True timeout): ya cubierto por `test_timeout_infinite_loop`.
-- SE5.18 original (importlib): cubierto por SE5.15 aquí.
-- SE5.19 original (hex payload): cubierto por SE5.16 aquí.
-- SE5.20 original (clase dinámica): RestrictedPython ya lo bloquea, test redundante.
-
-**Gate:** 100% pass Paso 5. SE5.13, SE5.15, SE5.16 son diagnósticos críticos. Si revelan vulnerabilidad → fix `security_guard.py` antes de merge.
+**Gate:** TESTING.md alineado con plan.md.
 
 ---
 
-### Paso 6: Performance & Observabilidad
+## Paso 4: Mover `baseline.py` a `src/cli/commands/`
 
-**Objetivo:** Métricas de rendimiento en código propio. Sin LLM real.
+**Objetivo:** Consistencia estructural con resto de comandos CLI.
 
-| # | Prueba | Descripción | Criterio |
-|---|---|---|---|
-| P6.1 | Latencia de `resolve_tools` con 50 tools (mock registry) | Benchmark con `time.perf_counter` | <100ms |
-| P6.2 | Latencia de `WorkflowDefinition` validación con 10 steps, 5 agents | Pydantic validation benchmark | <50ms |
-| P6.3 | `sanitize_output` con string 1MB | Performance de sanitizer | <500ms |
-| P6.4 | `MCPPool.get_tools` con circuito cerrado vs abierto | Overhead de circuit breaker check | <1ms para check |
+### Tarea 4.1: Mover archivo
 
-**Eliminados del plan original:**
-- P6.3 original (token tracking accuracy): requiere LLM real para verificar tokens. Fuera de scope.
-- P6.4 original (log structure validation): vago, no hay criterio medible.
-- P6.5 original (event emission no bloquea): requiere mock de event store lento, bajo ROI.
+```bash
+mv src/cli/baseline.py src/cli/commands/baseline_check.py
+```
 
-**Gate:** P6.1-P6.4 bajo thresholds.
+### Tarea 4.2: Actualizar import en `src/cli/main.py`
+
+**Archivo:** `src/cli/main.py`
+**Línea:** ~53
+
+```python
+# ANTES:
+from src.cli.baseline import run as baseline_check
+
+# DESPUÉS:
+from src.cli.commands.baseline_check import run as baseline_check
+```
+
+### Tarea 4.3: Verificar registro del comando
+
+Confirmar que `app.command("baseline-check")` sigue funcionando tras el move.
+
+**Verificación:**
+```bash
+uv run python -m src.cli.main baseline-check --help
+```
+
+**Gate:** Comando funciona desde nueva ubicación.
 
 ---
 
-### Paso 7: Documentación y Cierre
+## Criterios de Aceptación MVP
 
-| # | Tarea | Descripción | Criterio |
-|---|---|---|---|
-| D7.1 | `TESTING.md` en raíz | Documentar cómo correr cada paso | Comando exacto por paso, estrategia de mocking |
-| D7.2 | `Makefile` en raíz | Targets: `test`, `test-fast`, `test-all`, `lint`, `coverage` | `make test-all` corre Pasos 0-6 en orden |
-| D7.3 | Reporte de cobertura final | `pytest --cov=src --cov-report=html` | Cobertura global >75% |
-| D7.4 | `fap phase-close` | Cierre automatizado de fase | Archivado en `DEVS/IMPLEMENTED/certificacion/` |
-| D7.5 | CHANGELOG | Registrar mejoras | Entry por cada paso |
+```
+✅ [SECURITY] registry.py usa _create_safe_builtins() — vector cerrado
+✅ [SECURITY] 3 tests de regresión en test_registry_security.py — 3/3 pass
+✅ [LINT] ruff check src/ tests/ → 0 errores
+✅ [TEST] test_3_5_latency.py → SKIPPED (no FAILED)
+✅ [DOCS] TESTING.md nombres de pasos alineados con plan.md
+✅ [STRUCTURE] baseline.py movido a src/cli/commands/baseline_check.py
+```
 
 ---
 
-## Criterios de Aceptación Final
+## Plan de Implementación
 
-- [ ] Paso 0: 100% pass. Baseline establecida.
-- [ ] Paso 1: +25 tests unitarios (5 circuit + 7 connector + 4 approval + 9 sanitizer). Gaps críticos cubiertos.
-- [ ] Paso 2: +6 tests integración (3 MCP resilience + 3 handover). (+3 condicionales si se implementan operadores). **DECISIÓN:** Fix parser `>=`, `<=`, `==` antes de tests condicionales.
-- [ ] Paso 3: +3 tests E2E. Flujos mockeados, deterministas.
-- [ ] Paso 4: +7 tests estrés/borde. Solo código propio.
-- [ ] Paso 5: +18 tests seguridad (10 imports + 2 async + 4 execute/compilation gap + 2 escape). **PRIORIDAD:** SE5.13-SE5.16 primero. Si pasan → bug crítico → fix `security_guard.py` antes de continuar.
-- [ ] Paso 6: +4 benchmarks. Sin LLM real.
-- [ ] Paso 7: Docs, Makefile, cobertura >75%, changelog.
+| # | Tarea | Complejidad | Tiempo Est. | Dependencias |
+|---|---|---|---|---|
+| 0 | **Fix seguridad CRÍTICO:** Parchear `registry.py._load_from_db()` + 3 tests regresión | Media | 0.5h | Ninguna |
+| 1 | Ejecutar `ruff check --fix src/ tests/` | Baja | 0.05h | Ninguna |
+| 2 | Añadir `@pytest.mark.skipif` a `test_3_5_latency.py` | Baja | 0.05h | Ninguna |
+| 3 | Alinear nombres de pasos en TESTING.md | Baja | 0.1h | Ninguna |
+| 4 | Mover `baseline.py` a `src/cli/commands/` + actualizar import | Baja | 0.15h | Ninguna |
+| **TOTAL** | | | **0.85h** | |
 
-**Total proyectado:** ~63 tests nuevos sobre los 425 existentes = **~488 tests total**.
+---
+
+## Riesgos y Mitigaciones
+
+| Riesgo | Severidad | Causa | Mitigación |
+|---|---|---|---|
+| `registry.py` fix rompe carga de skills existentes | Media | Skills DB pueden depender de módulos no en allowlist | Verificar con `fap validate-tools` post-fix. Si falla, expandir `ALLOWED_MODULES` |
+| Mover `baseline.py` rompe import en main.py | Baja | Import path cambia | Tarea 4.2 actualiza import. Verificar con `--help` |
+| `skipif` en latency test oculta fallo real | Baja | Si Supabase está disponible, test debería correr | `skipif` solo activa cuando vars de entorno ausentes |
 
 ---
 
 ## Protocolo de Ejecución
 
-1. **Paso 0 primero.** Sin excepción. Si algo falla → corregir antes de continuar.
-2. **Paso 5 (SE5.13-SE5.16) antes de Paso 1.** Vulnerabilidad `__import__` confirmada teóricamente. Tests diagnóstico primero. Si confirman exploit → **FIX `security_guard.py` ANTES de cualquier otro paso**.
-3. **Pasos 1-7 en orden** (tras Paso 5 diagnóstico). Cada paso es gate para el siguiente.
-4. **Todo mockeado.** Sin LLM real, sin DB real, sin MCP real. Usar fixtures de `conftest.py`.
-5. **Circuit breaker:** usar `patch("time.time")`, NO esperar 60s reales.
-6. **E2E deterministas:** WorkflowDefinitions hardcodeadas. NUNCA ArchitectFlow en tests automatizados.
-7. **`make test-all`** ejecuta todo en orden y reporta breakdown por paso.
-8. **DECISIÓN Paso 2:** Implementar `>=`, `<=`, `==` en `_check_approval_rule` o marcar como won't-fix. Parser actual rompe silenciosamente con estos operadores.
-
-### Fix requerido para vulnerabilidad `__import__` (si SE5.13-SE5.16 confirman exploit):
-
-**Opción A (recomendada):** No inyectar `__import__` en builtins. Usar allowlist de módulos en `execute()` y `_verify_compilation()`. Crear `__import__` restringido que solo permita módulos en `ALLOWED_MODULES`.
-
-**Opción B:** Mantener inyección pero mejorar AST scanner para detectar acceso indirecto vía `__builtins__` (subscript + call pattern). Más complejo, menos seguro.
-
-**Opción C:** Eliminar `_verify_compilation()` dry-run. Solo compilar con RestrictedPython, no ejecutar. Elimina vector línea 221. Vector línea 142 (`execute()`)仍需 fix.
+1. **Paso 0 primero.** Es crítico de seguridad. Sin excepción.
+2. **Pasos 1-4 en cualquier orden.** Son independientes entre sí.
+3. **Verificar con `make test-all`** tras completar todos los pasos.
+4. **Archivar en** `DEVS/IMPLEMENTED/testing/08-Fix-Post-Certificacion/`
 
 ---
 
-## Resumen de Cambios vs v3.0
-
-| Cambio | Razón |
-|---|---|
-| Suite actual: 55 → 427 tests | Conteo real de `pytest --co` |
-| Test failing conocido: `test_3_5_latency` | Bloquea Paso 0, necesita fix |
-| ServiceConnector: 8 → 7 ramas de error | Conteo real del código |
-| Sanitizer: 7 → 11 tests | Los 7 patrones de `SECRET_PATTERNS` aparecen en tests individuales |
-| Paso 1: 19 → 25 tests | Corrección aritmética + sanitizer expandido |
-| `>=`, `<=`, `==` no son "no implementados" sino "se rompen silenciosamente" | `_check_approval_rule` parsea `>=` como `>` + `=`, ValueError silencioso |
-| Vulnerabilidad `__import__` afecta AMBOS paths: `execute()` y `_verify_compilation()` | Línea 142 Y línea 221 inyectan `__import__` |
-| SE5.13-14 → SE5.13-16 (3 tests diagnóstico) | Añadido test de `_verify_compilation()` bypass y bypass indirecto de AST |
-| SE5.15-16 → SE5.17-18 | Renumerados tras insertar SE5.15-16 |
-| S4.4: registry duplicado "sobrescribe" | Verificado en `flow_registry._flows` (dict simple) |
-| Total: ~55 → ~63 tests nuevos | Corrección aritmética |
+**Idioma de respuesta:** Español 🇪🇸
