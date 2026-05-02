@@ -89,7 +89,7 @@ test-all:
 	$(PYTEST) tests/unit/ -v --timeout=60 --tb=short || (echo "[FAIL] Unit tests"; exit 1)
 	@echo ""
 	@echo "=== 3/7: Tests Integracion ==="
-	$(PYTEST) tests/integration/ -v --timeout=60 --tb=short -k "not latency" || (echo "[WARN] Integration tests parcial"; true)
+	$(PYTEST) tests/integration/ -v --timeout=60 --tb=short || (echo "[WARN] Integration tests parcial"; true)
 	@echo ""
 	@echo "=== 4/7: Tests E2E ==="
 	$(PYTEST) tests/e2e/ -v --timeout=120 --tb=short|| (echo "[WARN] E2E tests parcial"; true)

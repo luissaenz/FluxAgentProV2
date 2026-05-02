@@ -42,10 +42,10 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
-# Skip condicional: si no hay SUPABASE_URL, saltar todos los tests
+# Skip condicional: si falta SUPABASE_URL o SUPABASE_SERVICE_KEY, saltar todos los tests
 pytestmark = pytest.mark.skipif(
-    not SUPABASE_URL,
-    reason="Requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env",
+    not SUPABASE_URL or not SUPABASE_SERVICE_KEY,
+    reason="Requiere Supabase Realtime + DB real — requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env",
 )
 
 # Umbrales de aceptacion (ajustados para entorno de test/local)

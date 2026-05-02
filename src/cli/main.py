@@ -12,6 +12,7 @@ if sys.platform == "win32" and sys.stdout.isatty():
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 from src.cli.baseline import baseline_check
+from src.cli.commands.check_env import check_env
 from src.cli.commands.dev import dev_command
 from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
@@ -51,6 +52,7 @@ app.command("validate-tools")(validate_tools_command)
 app.command("validate-architect-output")(validate_architect_output)
 app.command("test-scenarios")(test_scenarios)
 app.command("phase-close")(phase_close)
+app.command("check-env")(check_env)
 app.command("baseline-check")(baseline_check)
 app.command("test-step")(test_step)
 app.command("security-audit")(security_audit)
