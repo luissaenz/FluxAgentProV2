@@ -1,4 +1,4 @@
-"""src/cli/baseline.py — Implementation of 'fap baseline-check' command.
+"""src/cli/commands/baseline_check.py — Implementation of 'fap baseline-check' command.
 
 DX Tooling: Ejecuta verificaciones P0.1-P0.5 en secuencia:
   P0.1: pytest --collect-only (importabilidad)
@@ -20,7 +20,7 @@ from rich.table import Table
 
 console = Console()
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _run_cmd(cmd: list[str], timeout: int = 120) -> tuple[bool, str]:

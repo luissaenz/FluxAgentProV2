@@ -3,8 +3,7 @@
 DX Tooling: Verifica que variables de entorno requeridas esten presentes
 antes de ejecutar tests de integracion real. Elimina ciclo falla-intenta.
 
-ADAPTADO: analisis-FINAL.md referencia src/cli/commands/baseline_check.py
-que no existe. Patron real tomado de src/cli/baseline.py (Rich table + exit code).
+Patron: Rich table + exit code, mismo que src/cli/commands/baseline_check.py.
 """
 
 from __future__ import annotations

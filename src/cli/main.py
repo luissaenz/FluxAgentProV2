@@ -11,7 +11,7 @@ if sys.platform == "win32" and sys.stdout.isatty():
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
-from src.cli.baseline import baseline_check
+from src.cli.commands.baseline_check import baseline_check
 from src.cli.commands.check_env import check_env
 from src.cli.commands.dev import dev_command
 from src.cli.commands.export import export_agents

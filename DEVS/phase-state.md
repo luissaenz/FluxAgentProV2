@@ -1,10 +1,10 @@
-# Phase State: Deep Technical Certification (QA) — testing
-# Estado de Fase: Certificación Técnica Profunda (QA) — testing
+# Phase State: Deep Technical Certification (QA) — testing → Patch agents
+# Estado de Fase: Certificación Técnica Profunda (QA) — testing → Patch agents
 
 > **Fecha / Date:** 2026-05-02
-> **Estado / Status:** ✅ CERRADA (Fase VI — testing) — 8/8 pasos originales + Hotfix post-certificación
-> **Último Archivado / Last Archived:** `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/`
-> **Commit:** `5f25aac` — `testing / 00-Fix-Post-Certificacion`
+> **Estado / Status:** 🔄 EN PROGRESO — Fase VI testing CERRADA (8/8). Nueva fase "Patch agents" activa (3/5 pasos del plan v3.2)
+> **Último Commit / Last Commit:** `958f1ba` — `Patch agents / 03-Alinear nombres de pasos en TESTING.md`
+> **⚠️ DISCREPANCIA:** `proyecto-config.json` aún refleja `phase_name: "testing", phase_completed: true`. Nueva fase "Patch agents" no está registrada en config.
 
 ---
 
@@ -23,6 +23,7 @@
 - ✅ **Paso 6: Performance & Observabilidad.** 4 benchmarks (P6.1-P6.4): resolve_tools 50 tools <100ms, WorkflowDefinition 10x5 <50ms, sanitize_output 1MB <500ms, _is_circuit_open <1ms. 9 tests. DX `fap perf-check` con flags --baseline/--compare/--json/--verbose/--no-warmup.
 - ✅ **Paso 7: Documentación y Cierre.** TESTING.md (comandos por paso, mocking strategy, fixtures), CHANGELOG.md (Keep a Changelog), Makefile targets `test-all`/`test-fast`/`coverage` con `uv run` cross-platform, `fap phase-close` generalizado para Fase VI con `--phase testing --certify`, `fap test-step` extendido (pasos 4/6/7), coverage config en `pyproject.toml` (threshold 75%), README actualizado a Fase VI. DX `fap phase-close testing --certify` + `make test-all`.
 - 🆕 **Paso Hotfix: Fix Post-Certificación (Plan v3.2 — Paso 3).** Corregir desincronización nombres de pasos en TESTING.md + CHANGELOG.md. Fuente de verdad = phase-state.md + carpetas IMPLEMENTED. Correcciones al plan: nombres Pasos 4-5 del plan.md hotfix no coinciden con fase real. DX `fap sync-step-names --check --source [phase-state|plan]` con flags `--check`/`--fix`/`--dry-run`.
+- 🆕 **Fase "Patch agents" (en progreso).** Nueva fase post-testing para aplicar fixes del plan v3.2. Pasos ejecutados: Fix Lint I001, Fix `test_3_5_latency.py` (skipif), Alinear nombres TESTING.md. Pasos pendientes: Fix seguridad `registry.py` (Paso 0), Mover `baseline.py` (Paso 4). `proyecto-config.json` no actualizado para reflejar nueva fase — desincronización documentada.
 
 **Dependencias / Dependencies:** Paso 0 → Todos. Pasos 1→7 secuenciales con superposición posible.
 
@@ -53,12 +54,12 @@
 | **AgentFactory** | `src/crews/factory.py` | ✅ | `resolve_tools()` con MCP + `create_agent_async()`. |
 | **ArchitectFlow** | `src/flows/architect_flow.py` | ✅ | Generación avanzada bundles con MCP y ServiceConnector. |
 | **MCPPool** | `src/tools/mcp_pool.py` | ✅ | Circuit breaker + tenacity retries. |
-| **ServiceConnector** | `src/tools/service_connector.py` | ✅ | Integraciones HTTP via service_catalog. |
+| **ServiceConnectorTool** | `src/tools/service_connector.py` | ✅ | Integraciones HTTP via service_catalog. Clase real `ServiceConnectorTool` (no `ServiceConnector`). |
 | **DynamicWorkflow** | `src/flows/dynamic_flow.py` | ✅ | Ejecución multi-paso. Operadores `>=`/`<=`/`==` fixeados en Paso 2. |
 | **ToolRegistry** | `src/tools/registry.py` | ✅ | API `list_tools()`, `get()`, `register()`, `clear()`, `invalidate_tenant_cache()`. |
 | **SecurityGuard** | `src/services/security_guard.py` | ✅ | AST scan + RestrictedPython + restricted `__import__` con ALLOWED_MODULES. Doble vector protegido (execute + _verify_compilation). |
 | **SecurityAudit CLI** | `src/cli/commands/security_audit.py` | ✅ | DX `fap security-audit`. 5 categorias: imports, calls, async, regresion, escape. Filtro + JSON output. 185 loc. |
-| **CLI (fap)** | `src/cli/main.py` | ✅ | 15 comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check, test-step, **security-audit**, stress-bench. |
+| **CLI (fap)** | `src/cli/main.py` | ✅ | 18+ comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check, test-step, **security-audit**, stress-bench, lint-fix, check-env. |
 | **EventStore** | `src/events/store.py` | ✅ | Append síncrono + asíncrono de eventos de dominio. |
 | **BundleManager** | `src/services/bundle_manager.py` | ✅ | Carga remota + validación + atomicidad. |
 | **BaseCrew** | `src/crews/base_crew.py` | ✅ | Resolución de tools con MCP. |
@@ -74,6 +75,8 @@
 | **PhaseClose CLI (extendido)** | `src/cli/commands/phase_close.py` | ✅ | `fap phase-close --phase testing --certify --full`. Ejecuta lint→unit→integration→e2e→security→stress→perf→coverage→report. Backward compat Fase V. |
 | **TestStep CLI (extendido)** | `src/cli/commands/test_step.py` | ✅ | `fap test-step 4` (stress), `fap test-step 6` (perf), `fap test-step 7` (docs check). Coverage files para pasos 4 y 6. |
 | **SyncStepNames CLI** | `src/cli/commands/sync_step_names.py` | ✅ | DX `fap sync-step-names --check` con source configurable (phase-state/plan). Flags `--check`/`--fix`/`--dry-run`. Escanea headings `### Paso N:` y `#### Paso N —` en TESTING.md + CHANGELOG.md. 158 loc. |
+| **LintFix CLI** | `src/cli/commands/lint_fix.py` | ✅ | Creado en Patch agents / 01-Fix Lint I001 (`9e3736f`). CLI para auto-fix imports con Ruff. 65 loc. |
+| **CheckEnv CLI** | `src/cli/commands/check_env.py` | ✅ | Creado en Patch agents / 02-Fix test_3_5_latency.py (`215c383`). Verifica variables de entorno Supabase. 118 loc. |
 
 ### Tests (Verificado contra código / Code-verified)
 
@@ -88,6 +91,7 @@
 | **SecurityGuard** | 29 | 29/29 pass (SE5.1-SE5.18, nuevo en Paso 5) |
 | **Escape** | 2 | 2/2 pass (SE5.17-SE5.18) |
 | **SyncStepNames (unit)** | 1 | 1/1 pass (test_sync_step_names.py) |
+| **Patch agents (lint_fix + check_env)** | — | Commits `9e3736f`, `215c383`, `958f1ba` — sin tests dedicados nuevos |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
 ### Discrepancias Conocidas / Known Discrepancies Plan vs Código
@@ -96,6 +100,10 @@
   - `>=`/`<=`/`==` ya fixeados (`dynamic_flow.py:144-150`)
   - `approval_threshold` no usado en `_run_crew()` — deuda técnica documentada
   - `_on_approved()` marca COMPLETED, no reanuda steps — documentado
+- **NUEVA: Fase "Patch agents" no existe en `proyecto-config.json`.** Config aún muestra `phase_name: "testing", phase_completed: true`. Pero HEAD tiene 4 commits bajo "Patch agents" (`64cf7c5` → setup, `9e3736f` → lint, `215c383` → latency skipif, `958f1ba` → sync step names). `proyecto-config.json` necesita actualización.
+- **NUEVA: Commit `5f25aac` es huérfano.** `testing / 00-Fix-Post-Certificacion` no es ancestro de HEAD. Contenido (sync_step_names.py, TESTING.md fixes) overlap con `958f1ba`.
+- **NUEVA: Plan.md v3.2 Pasos 0 y 4 no ejecutados.** Fix seguridad `registry.py._load_from_db()` (Paso 0) y mover `baseline.py` a `commands/` (Paso 4) están pendientes.
+- **NUEVA: `ServiceConnectorTool` ≠ `ServiceConnector`.** `src/tools/service_connector.py` define clase `ServiceConnectorTool` (no `ServiceConnector`). Plan y phase-state refieren nombre incorrecto. Sin impacto funcional — rename cosmético.
 
 ---
 
@@ -180,6 +188,11 @@
 30. **Fuente de verdad = fase real (carpetas IMPLEMENTED + phase-state.md), no plan.md hotfix:** Plan.md v3.2 Tarea 3.1 contiene nombres incorrectos para Pasos 4-5. Código real archivado gana sobre especificación del plan.
 31. **Scope multi-doc extendido:** CHANGELOG.md incluido en fix, aunque plan.md no lo contempla. Mismo root cause → mismo remedio.
 
+### De Fase "Patch agents" (en progreso, plan v3.2)
+32. **`fap lint-fix` como comando dedicado:** `src/cli/commands/lint_fix.py` — corrección autónoma de imports desordenados, no dependiente de `ruff`` directo en terminal. Simplifica DX para CI.
+33. **`fap check-env` para pre-requisitos:** `src/cli/commands/check_env.py` — verifica `SUPABASE_URL` + `SUPABASE_ANON_KEY` antes de ejecutar tests de integración. Previene falsos fallos.
+34. **Naming de fase inconsistente:** Fase llamada "Patch agents" en commits pero proyecto-config.json aún usa "testing". Sin unified phase context — riesgo de confusión downstream.
+
 ### Correcciones al Plan / Plan Corrections
 - `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
 - `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
@@ -189,6 +202,8 @@
 - Plan.md §5.1 lista SE5.1-SE5.10 como "expandir test_security_guard.py" y SE5.17-SE5.18 como archivo nuevo. Implementación sigue el plan al 100%.
 - Hotfix plan.md v3.2 Tarea 3.1 propone nombres Pasos 4-5 que NO coinciden con fase real: plan dice "Estrés y Condiciones de Borde" / "Seguridad — Hardening" pero fase real usó "Tests de Estrés y Robustez" / "Tests de Seguridad — Hardening". Resuelto: usar fase real (carpetas IMPLEMENTED + phase-state.md) como fuente de verdad.
 - Plan.md v3.2 no incluye CHANGELOG.md en scope del fix de nombres. Extendido para cobertura documental completa.
+- **📝 CORRECCIÓN (2026-05-02):** `src/tools/service_connector.py` clase real es `ServiceConnectorTool`, no `ServiceConnector`. No afecta funcionalidad — rename cosmético para alinear con documentación.
+- **📝 CORRECCIÓN (2026-05-02):** `proyecto-config.json` desactualizado. Fase activa es "Patch agents" (3 pasos completados), no "testing" (completada). Config necesita `phase_name`, `current_step`, `steps_completed` actualizados.
 
 ---
 
@@ -207,6 +222,17 @@
 | 6 — Performance & Observabilidad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/06-Performance-Observabilidad/` | `a07dfea` | 4 benchmarks (P6.1-P6.4). DX `fap perf-check` con --baseline/--compare/--json/--verbose/--no-warmup. Reports JSON en `reports/`. Fixtures autouse en conftest para aislamiento. Correcciones FINAL aplicadas (sin input_data, _is_circuit_open directo). | 9/9 pass. Lint 0. Validación: ✅. |
 | 7 — Documentación y Cierre | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/07-Documentacion-y-Cierre/` | `64e1834` | TESTING.md + CHANGELOG.md creados. Makefile targets `test-all`/`test-fast`/`coverage` + `uv run`. `fap phase-close` generalizado Fase VI. `fap test-step` extendido pasos 4/6/7. Coverage config pyproject.toml (75%). README actualizado. | 14/14 criterios MVP cumplidos. Validación: ✅ |
 | 00-Fix-Post-Certificacion (Hotfix v3.2 — Paso 3) | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/` | `5f25aac` | `sync_step_names.py` creado. TESTING.md + CHANGELOG.md corregidos (Paso 3-5 nombres reales de fase). DX `fap sync-step-names --check --source phase-state`. Correcciones al plan: nombres plan.md v3.2 Tarea 3.1 no coinciden con fase real. | 6/6 agentes analizados. Validación: ✅ APROBADO. 9/9 criterios. Lint 0. |
+
+### Fase "Patch agents" — Hotfix Post-Certificación (Plan v3.2, en progreso)
+
+| Paso | Estado / Status | Commit | Decisiones Tomadas / Decisions Made | Notas / Notes |
+|---|---|---|---|---|
+| Setup — Nuevo contexto de fase | ✅ COMPLETADO | `64cf7c5` | `proyecto-config.json` enriquecido (paths, commands, conventions, patterns). `plan.md` reescrito v3.2 Hotfix. `LAST/log_latencia.json` eliminado. | Config actualizado pero `phase_name` mantiene "testing" en vez de "Patch agents". |
+| 01 — Fix Lint I001 | ✅ COMPLETADO | `9e3736f` | `fap lint-fix` creado (`src/cli/commands/lint_fix.py`). Ruff auto-fix imports en `validate_tools.py`, `mcp/server.py`, `mcp_pool.py`. Modificaciones Makefile + `test_base_crew.py`. | Análisis multi-agente archivado en `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/`. |
+| 02 — Fix test_3_5_latency.py | ✅ COMPLETADO | `215c383` | `@pytest.mark.skipif` añadido a `test_3_5_latency.py` (skip si no `SUPABASE_URL`/`SUPABASE_ANON_KEY`). `fap check-env` creado (`src/cli/commands/check_env.py`). | Test pasa a SKIPPED (no FAILED) sin Supabase real. |
+| 03 — Alinear nombres de pasos en TESTING.md | ✅ COMPLETADO | `958f1ba` | `sync_step_names.py` creado/actualizado. TESTING.md + CHANGELOG.md corregidos. `phase-state.md` actualizado. | Nombres de Pasos 3-5 alineados con fase real. |
+| 00 — Fix Seguridad `registry.py` (Paso 0 plan) | ⏳ PENDIENTE | — | Parchear `_load_from_db()` usar `_create_safe_builtins()`. Agregar tests regresión (R0.1-R0.3). | Crítico: vector `__import__` sin restricción en `registry.py`. |
+| 04 — Mover `baseline.py` (Paso 4 plan) | ⏳ PENDIENTE | — | Mover `src/cli/baseline.py` → `src/cli/commands/baseline_check.py`. Actualizar import en `main.py`. | Consistencia estructural CLI. |
 
 ### Fase V — details4agents
 
@@ -235,5 +261,15 @@
 - [x] **Hotfix Paso 3 (Plan v3.2):** `fap sync-step-names` creado ✅. TESTING.md:66,70,72,78 corregidos ✅. CHANGELOG.md:28,32,36 corregidos ✅. `fap sync-step-names --check --source phase-state` → exit 0 (0 discrepancias) ✅. Correcciones al plan: nombres reales de fase vs nombres erróneos en plan.md v3.2 Tarea 3.1 ✅. Lint 0 ✅
 
 **Progreso Fase VI / Phase VI Progress: 100% (8/8 pasos + Hotfix post-certificación). Fase CERRADA.**
+
+**Progreso Fase "Patch agents": 3/5 pasos completados (Setup, 01, 02, 03). Pendientes: Paso 0 (seguridad registry.py), Paso 4 (mover baseline.py).**
+
+### Checklist Fase "Patch agents":
+- [ ] **Paso 0:** Fix seguridad `registry.py._load_from_db()` → `_create_safe_builtins()` + 3 tests regresión
+- [x] **Paso 1:** Ruff auto-fix imports ejecutado ✅ (commit `9e3736f`)
+- [x] **Paso 2:** `test_3_5_latency.py` → SKIPPED sin Supabase real ✅ (commit `215c383`)
+- [x] **Paso 3:** TESTING.md nombres alineados con fase real ✅ (commit `958f1ba`)
+- [ ] **Paso 4:** Mover `baseline.py` → `src/cli/commands/baseline_check.py`
+- [ ] `proyecto-config.json` actualizado con `phase_name: "patch_agents"` y `current_step` correcto
 
 **Criterios fuera de alcance MVP / Out of MVP scope:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.
