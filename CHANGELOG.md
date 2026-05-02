@@ -25,15 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Tests de performance en `tests/stress/test_performance.py`
 - Observabilidad de metricas de ejecucion
 
-#### Paso 5 — Tests de Regresion E2E
+#### Paso 5 — Tests de Seguridad — Hardening
 - Tests de seguridad: `test_security_guard.py`, `test_security_guard_escape.py`
 - Suite E2E de regresion
 
-#### Paso 4 — Hardening de API Publica
+#### Paso 4 — Tests de Estrés y Robustez
 - Tests de estres: `test_concurrency.py`, `test_edge_cases.py`
 - Robustez ante carga concurrente y casos limite
 
-#### Paso 3 — Validacion de Seguridad Profunda
+#### Paso 3 — E2E — Flujos Completos con Mocks
 - Tests E2E de flujos de produccion con validacion de seguridad
 - SecurityGuard scanning + RestrictedPython sandboxing
 

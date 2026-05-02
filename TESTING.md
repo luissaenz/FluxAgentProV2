@@ -63,19 +63,19 @@ fap test-step 2
 ```
 Tests de integracion para MCP resilience, handover real, approval operators.
 
-### Paso 3: Validacion de Seguridad Profunda
+### Paso 3: E2E — Flujos Completos con Mocks
 ```bash
 fap test-step 3
 ```
-Tests E2E de flujos de produccion con validacion de seguridad.
+Tests E2E: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover (E3.3).
 
-### Paso 4: Hardening de API Publica
+### Paso 4: Tests de Estrés y Robustez
 ```bash
 fap test-step 4
 ```
 Tests de estres (concurrencia) + edge cases.
 
-### Paso 5: Tests de Regresion E2E
+### Paso 5: Tests de Seguridad — Hardening
 ```bash
 fap test-step 5
 ```

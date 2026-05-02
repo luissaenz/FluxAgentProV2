@@ -1,10 +1,10 @@
 # Phase State: Deep Technical Certification (QA) — testing
 # Estado de Fase: Certificación Técnica Profunda (QA) — testing
 
-> **Fecha / Date:** 2026-05-01
-> **Estado / Status:** ✅ CERRADA (Fase VI — testing) — 8/8 pasos completados
-> **Último Archivado / Last Archived:** `DEVS/IMPLEMENTED/testing/07-Documentacion-y-Cierre/`
-> **Commit:** `64e1834` — `testing / 07-Documentacion-y-Cierre`
+> **Fecha / Date:** 2026-05-02
+> **Estado / Status:** ✅ CERRADA (Fase VI — testing) — 8/8 pasos originales + Hotfix post-certificación
+> **Último Archivado / Last Archived:** `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/`
+> **Commit:** `5f25aac` — `testing / 00-Fix-Post-Certificacion`
 
 ---
 
@@ -22,6 +22,7 @@
 - ✅ **Paso 5:** Tests de Seguridad — 14 tests nuevos (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix seguridad en `run.py` + `local_executor.py` (`_create_safe_builtins()`).
 - ✅ **Paso 6: Performance & Observabilidad.** 4 benchmarks (P6.1-P6.4): resolve_tools 50 tools <100ms, WorkflowDefinition 10x5 <50ms, sanitize_output 1MB <500ms, _is_circuit_open <1ms. 9 tests. DX `fap perf-check` con flags --baseline/--compare/--json/--verbose/--no-warmup.
 - ✅ **Paso 7: Documentación y Cierre.** TESTING.md (comandos por paso, mocking strategy, fixtures), CHANGELOG.md (Keep a Changelog), Makefile targets `test-all`/`test-fast`/`coverage` con `uv run` cross-platform, `fap phase-close` generalizado para Fase VI con `--phase testing --certify`, `fap test-step` extendido (pasos 4/6/7), coverage config en `pyproject.toml` (threshold 75%), README actualizado a Fase VI. DX `fap phase-close testing --certify` + `make test-all`.
+- 🆕 **Paso Hotfix: Fix Post-Certificación (Plan v3.2 — Paso 3).** Corregir desincronización nombres de pasos en TESTING.md + CHANGELOG.md. Fuente de verdad = phase-state.md + carpetas IMPLEMENTED. Correcciones al plan: nombres Pasos 4-5 del plan.md hotfix no coinciden con fase real. DX `fap sync-step-names --check --source [phase-state|plan]` con flags `--check`/`--fix`/`--dry-run`.
 
 **Dependencias / Dependencies:** Paso 0 → Todos. Pasos 1→7 secuenciales con superposición posible.
 
@@ -72,6 +73,7 @@
 | **Makefile (extendido)** | `Makefile` | ✅ | Targets `test-all`/`test-fast`/`coverage`. `uv run` cross-platform. 177 líneas. |
 | **PhaseClose CLI (extendido)** | `src/cli/commands/phase_close.py` | ✅ | `fap phase-close --phase testing --certify --full`. Ejecuta lint→unit→integration→e2e→security→stress→perf→coverage→report. Backward compat Fase V. |
 | **TestStep CLI (extendido)** | `src/cli/commands/test_step.py` | ✅ | `fap test-step 4` (stress), `fap test-step 6` (perf), `fap test-step 7` (docs check). Coverage files para pasos 4 y 6. |
+| **SyncStepNames CLI** | `src/cli/commands/sync_step_names.py` | ✅ | DX `fap sync-step-names --check` con source configurable (phase-state/plan). Flags `--check`/`--fix`/`--dry-run`. Escanea headings `### Paso N:` y `#### Paso N —` en TESTING.md + CHANGELOG.md. 158 loc. |
 
 ### Tests (Verificado contra código / Code-verified)
 
@@ -85,6 +87,7 @@
 | **Performance** | 9 | 9/9 pass (P6.1-P6.4, nuevo en Paso 6) |
 | **SecurityGuard** | 29 | 29/29 pass (SE5.1-SE5.18, nuevo en Paso 5) |
 | **Escape** | 2 | 2/2 pass (SE5.17-SE5.18) |
+| **SyncStepNames (unit)** | 1 | 1/1 pass (test_sync_step_names.py) |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
 ### Discrepancias Conocidas / Known Discrepancies Plan vs Código
@@ -172,6 +175,11 @@
 27. **P6.2 sin `input_data`:** Schema real de `WorkflowDefinition` (name/description/flow_type/steps/agents/category). Corrección del FINAL aplicada.
 28. **P6.4 mide `_is_circuit_open()` directo:** Pre-carga `_adapters[key]` con MagicMock para evitar conexión real. O(1) dict lookup + float comparison.
 
+### De Fase VI — testing / Hotfix Post-Certificación (Plan v3.2 — Paso 3)
+29. **`fap sync-step-names`:** Herramienta DX para sincronización de nombres de pasos en TESTING.md + CHANGELOG.md. Source configurable: `phase-state` (default) o `plan`. Flags: `--check` (exit 1 si drift), `--fix` (aplica correcciones), `--dry-run`. Previene desincronización documental recurrente sin depender de verificación manual.
+30. **Fuente de verdad = fase real (carpetas IMPLEMENTED + phase-state.md), no plan.md hotfix:** Plan.md v3.2 Tarea 3.1 contiene nombres incorrectos para Pasos 4-5. Código real archivado gana sobre especificación del plan.
+31. **Scope multi-doc extendido:** CHANGELOG.md incluido en fix, aunque plan.md no lo contempla. Mismo root cause → mismo remedio.
+
 ### Correcciones al Plan / Plan Corrections
 - `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
 - `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
@@ -179,6 +187,8 @@
 - Plan asume `resume()` reanuda steps → `_on_approved()` marca COMPLETED
 - `phase-state.md` línea 20 describe Paso 4 como "Hardening de API Pública" pero plan.md define "Tests de Estrés y Robustez". Desincronización documentada en análisis Paso 4.
 - Plan.md §5.1 lista SE5.1-SE5.10 como "expandir test_security_guard.py" y SE5.17-SE5.18 como archivo nuevo. Implementación sigue el plan al 100%.
+- Hotfix plan.md v3.2 Tarea 3.1 propone nombres Pasos 4-5 que NO coinciden con fase real: plan dice "Estrés y Condiciones de Borde" / "Seguridad — Hardening" pero fase real usó "Tests de Estrés y Robustez" / "Tests de Seguridad — Hardening". Resuelto: usar fase real (carpetas IMPLEMENTED + phase-state.md) como fuente de verdad.
+- Plan.md v3.2 no incluye CHANGELOG.md en scope del fix de nombres. Extendido para cobertura documental completa.
 
 ---
 
@@ -196,6 +206,7 @@
 | 5 — Tests de Seguridad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/` | `534481f` | 14 tests (SE5.1-SE5.12, SE5.17-SE5.18). DX `fap security-audit`. Fix `safe_builtins` en `run.py` + `local_executor.py`. `fap test-step 5`. | 14/14 pass. Lint 0. 6 análises + 1 validación archivados. Validación: ✅ |
 | 6 — Performance & Observabilidad | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/06-Performance-Observabilidad/` | `a07dfea` | 4 benchmarks (P6.1-P6.4). DX `fap perf-check` con --baseline/--compare/--json/--verbose/--no-warmup. Reports JSON en `reports/`. Fixtures autouse en conftest para aislamiento. Correcciones FINAL aplicadas (sin input_data, _is_circuit_open directo). | 9/9 pass. Lint 0. Validación: ✅. |
 | 7 — Documentación y Cierre | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/07-Documentacion-y-Cierre/` | `64e1834` | TESTING.md + CHANGELOG.md creados. Makefile targets `test-all`/`test-fast`/`coverage` + `uv run`. `fap phase-close` generalizado Fase VI. `fap test-step` extendido pasos 4/6/7. Coverage config pyproject.toml (75%). README actualizado. | 14/14 criterios MVP cumplidos. Validación: ✅ |
+| 00-Fix-Post-Certificacion (Hotfix v3.2 — Paso 3) | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/` | `5f25aac` | `sync_step_names.py` creado. TESTING.md + CHANGELOG.md corregidos (Paso 3-5 nombres reales de fase). DX `fap sync-step-names --check --source phase-state`. Correcciones al plan: nombres plan.md v3.2 Tarea 3.1 no coinciden con fase real. | 6/6 agentes analizados. Validación: ✅ APROBADO. 9/9 criterios. Lint 0. |
 
 ### Fase V — details4agents
 
@@ -221,7 +232,8 @@
 - [x] **Paso 5:** 14/14 tests seguridad (SE5.1-SE5.12 + SE5.17-SE5.18) ✅. `fap security-audit` funcional ✅. `fap test-step 5` funcional ✅. Fix `safe_builtins` en `run.py` + `local_executor.py` ✅. 512 tests totales ✅. Lint 0 ✅
 - [x] **Paso 6:** 9/9 tests performance (P6.1-P6.4) ✅. `fap perf-check` funcional ✅. `fap perf-check --baseline` genera baseline ✅. `fap perf-check --compare` detecta regresiones ✅. Correcciones del FINAL aplicadas (sin input_data, _is_circuit_open directo) ✅. Benchmarks usan mocks puros + son independientes ✅. Lint 0 ✅
 - [x] **Paso 7:** TESTING.md ✅, CHANGELOG.md ✅, Makefile `test-all`/`test-fast`/`coverage` ✅, `uv run` cross-platform ✅, `fap phase-close` generalizado ✅, `fap test-step` pasos 4/6/7 ✅, coverage threshold 75% ✅, README actualizado ✅, lint 0 ✅
+- [x] **Hotfix Paso 3 (Plan v3.2):** `fap sync-step-names` creado ✅. TESTING.md:66,70,72,78 corregidos ✅. CHANGELOG.md:28,32,36 corregidos ✅. `fap sync-step-names --check --source phase-state` → exit 0 (0 discrepancias) ✅. Correcciones al plan: nombres reales de fase vs nombres erróneos en plan.md v3.2 Tarea 3.1 ✅. Lint 0 ✅
 
-**Progreso Fase VI / Phase VI Progress: 100% (8/8 pasos). Fase CERRADA.**
+**Progreso Fase VI / Phase VI Progress: 100% (8/8 pasos + Hotfix post-certificación). Fase CERRADA.**
 
 **Criterios fuera de alcance MVP / Out of MVP scope:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.

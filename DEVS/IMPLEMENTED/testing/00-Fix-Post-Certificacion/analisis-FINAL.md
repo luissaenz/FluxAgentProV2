@@ -1,10 +1,10 @@
-# 🏛️ Análisis Unificado — Paso 2: Fix `test_3_5_latency.py`
+# 🏛️ ANÁLISIS UNIFICADO FINAL — Paso 3: Alinear nombres de pasos en TESTING.md
 
-> **Generado por:** UNIFICADOR v3.1
+> **Versión:** v3.2 — Hotfix post-certificación Fase VI (testing)
 > **Fecha:** 2026-05-02
-> **Plan:** `DEVS/plan.md` v3.2 — Paso 2
-> **Fase:** Hotfix post-certificación (Fase VI testing — CERRADA)
-> **Config:** `proyecto-config.json` v2.0 leído ✅
+> **Agentes unificados:** ds · glm · kimi · qwen
+> **Origen:** `DEVS/plan.md` Paso 3 (Tarea 3.1)
+> **Destino:** `DEVS/IN_PROGRESS/analisis-FINAL.md`
 
 ---
 
@@ -14,64 +14,49 @@
 
 | Agente | Verificó código | Discrepancias detectadas | Propuesta DX | Evidencia sólida | Score (1-5) |
 |:-------|:---------------:|:------------------------:|:------------:|:----------------:|:-----------:|
-| kimi   | ✅ (12 checks)  | 5 (D1-D5)               | ✅ 2 tools   | ✅ archivos+ln   | 4.8         |
-| qwen   | ✅ (18 checks)  | 3 (D1-D3)               | ✅ 1 tool    | ✅ archivos+ln   | 4.5         |
-| glm    | ✅ (13 checks)  | 3 (D1-D3)               | ✅ 1 tool    | ✅ archivos+ln   | 3.8         |
-| ds     | ✅ (10 checks)  | 3 (D1-D3)               | ✅ 1 tool    | ✅ archivos+ln   | 3.5         |
+| **ds** | ✅ | 2 (phase-state.md Paso 4/5 divergen) | ✅ `fap sync-step-names` | ✅ Líneas exactas, 9 items verificados | 3.5 |
+| **glm** | ✅ | 4 (D1-D4: descripción TESTING.md:70 + CHANGELOG.md + phase-state + test_step.py) | ✅ `fap check-docs` | ✅ 16 items — más exhaustivo. Detectó descripción + CHANGELOG que nadie más vio | **4.8** |
+| **kimi** | ✅ | 2 (phase-state.md Paso 4/5 divergen) | ✅ `validate_docs.py` script | ✅ Estructura 4 etapas clara, 12 items verificados | 4.0 |
+| **qwen** | ✅ | 2 (plan.md sin Paso 5 explícito; plan.md nombres ≠ fase real) | ✅ `sync_step_names.py` script | ✅ Insight crítico: plan.md hotfix names ≠ carpetas reales. Ruido: items irrelevantes de otros pasos | 4.0 |
 
 ### Discrepancias Críticas Consolidadas
 
 | # | Discrepancia | Detectó | Verificada contra código | Resolución |
 |---|-------------|---------|-------------------------|------------|
-| 1 | Plan usa `SUPABASE_ANON_KEY` pero código usa `SUPABASE_SERVICE_KEY` | kimi (D2), qwen (D1), glm (D1), ds (D1) | ✅ `tests/integration/test_3_5_latency.py:43,491` | Skipif debe verificar `SUPABASE_SERVICE_KEY`, NO `SUPABASE_ANON_KEY`. `acreate_client()` línea 491 usa service key como 2do arg. |
-| 2 | Plan pide decorador `@pytest.mark.skipif` a nivel clase/fn, pero código YA tiene `pytestmark` module-level (línea 46-49) | kimi (D1), qwen (D2), glm (D3), ds (D2) | ✅ `tests/integration/test_3_5_latency.py:46-49` | Mantener `pytestmark` module-level. Es más robusto: cubre TODOS los tests del módulo + fixtures async + `_main()`. No crear skipif duplicado. |
-| 3 | Skipif actual solo verifica `SUPABASE_URL`, falta `SUPABASE_SERVICE_KEY` | kimi (D5), qwen (D3), glm (D2), ds (D3) | ✅ `tests/integration/test_3_5_latency.py:46-49` | Expandir condición: `not SUPABASE_URL or not SUPABASE_SERVICE_KEY`. Fix real del paso. |
-| 4 | Reason del skipif actual dice "SUPABASE_URL y SUPABASE_SERVICE_KEY" pero condición solo verifica URL — inconsistencia | kimi (D3), qwen (D3) | ✅ `tests/integration/test_3_5_latency.py:46-49` | Actualizar reason a versión fusionada: `"Requiere Supabase Realtime + DB real — requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env"` |
-| 5 | Paso 2 del plan v3.2 es redundante con trabajo ya realizado en Paso 0 (Auditoría de Línea Base, decisión #7) | kimi (D5) | ✅ `DEVS/phase-state.md:146` | El archivo YA fue movido a `tests/integration/` y YA tiene skipif parcial. El fix pendiente es menor: expandir condición. No es un cambio desde cero. |
-
-### Detalle de Aportes por Agente
-
-**kimi** — análisis más profundo. Detectó 5 discrepancias vs 3 del resto. Identificó problemas únicos: RPC `get_server_time` no documentado en migraciones, datos residuales por SIGKILL, redundancia con Paso 0. Propuso 2 herramientas DX útiles. Verificación contra código más detallada (12 checks con evidencia de línea exacta).
-
-**qwen** — segundo más completo. 18 verificaciones contra código (máximo). Análisis de estructura del archivo más granular (mapeo línea por línea). Detectó bug concreto con código de fix exacto. Único en notar que imports tempranos de `MultiCrewFlow` pueden tener side effects.
-
-**glm** — análisis correcto pero menos profundo en data/backend. Propsuesta DX `test-skip-check` interesante pero menos práctica que `check-env`. Recomienda usar `os.getenv()` directo en skipif (otros recomiendan constantes de módulo — estas últimas ganan: evaluadas 1 vez al import, más limpias).
-
-**ds** — análisis conciso pero sólido. Identificó que `SUPABASE_ANON_KEY` no existe en ningún `.py` del proyecto (0 resultados grep). Único en verificar patrón `test_3_1_realtime.py` (usa `sys.exit(1)`, no skipif). Recomendación más simple (solo 2 tareas, sin DX tooling obligatorio).
+| 1 | **plan.md Tarea 3.1 propone nombres para Pasos 4-5 que NO coinciden con la fase real.** plan.md dice Paso 4 = "Estrés y Condiciones de Borde", Paso 5 = "Seguridad — Hardening". Pero carpeta IMPLEMENTED `04-Tests-de-Estres-y-Robustez/` y `05-Tests-de-Seguridad/` + phase-state.md muestran nombres distintos. | **qwen** (insight principal), **ds/glm/kimi** (documentaron divergencia) | ✅ `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/` y `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/` existen + `DEVS/phase-state.md:21-22` | Usar **phase-state.md + carpetas IMPLEMENTED** como fuente de verdad. plan.md hotfix contiene error de naming para Pasos 4 y 5. Código real gana. |
+| 2 | **TESTING.md:70 descripción Paso 3 incorrecta** — dice "Tests E2E de flujos de produccion con validacion de seguridad." heredando del nombre viejo. | **glm** (único) | ✅ `TESTING.md:70` leída y confirmada | Corregir descripción: `Tests E2E: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover (E3.3).` |
+| 3 | **CHANGELOG.md líneas 28, 32, 36 tienen mismos nombres incorrectos.** plan.md no lo incluye en scope. | **glm** (único) | ✅ `CHANGELOG.md:28,32,36` leídas y confirmadas | Extender scope: corregir CHANGELOG.md. Misma desincronización, mismo fix. 3 reemplazos. |
+| 4 | **phase-state.md Paso 4 = "Tests de Estrés y Robustez", Paso 5 = "Tests de Seguridad — Hardening".** Plan.md hotfix no actualizó phase-state.md. | **ds, glm, kimi, qwen** (todos) | ✅ `DEVS/phase-state.md:21-22` | phase-state.md NO se modifica en este paso. Documentar para futura sincronización. phase-state.md ya está correcto para la fase real. |
+| 5 | **plan.md no tiene sección explícita "Paso 5".** Salta de Paso 4 a "Criterios de Aceptación MVP". La tabla Tarea 3.1 define el reemplazo pero no hay heading Paso 5 en plan.md. | **qwen** (único) | ✅ `DEVS/plan.md` leído completo. Sección §Paso 4 → §Criterios sin §Paso 5 | Sin impacto. La tabla Tarea 3.1 es suficiente como especificación de reemplazo. No requiere acción. |
+| 6 | **test_step.py no usa nombres de pasos (solo números).** Sin riesgo de desincronización funcional. | **glm** (verificación test_step.py:35-45), **kimi** (test_step.py:21-50) | ✅ `src/cli/commands/test_step.py:21-50` — `STEP_TEST_FILES` indexado por int | Confirmado: sin impacto. Nombres son solo display. |
 
 ---
 
 ## 1️⃣ Resumen Ejecutivo
 
-- **Objetivo:** Corregir skip condicional en `tests/integration/test_3_5_latency.py:46-49` para que test de latencia Realtime no bloquee CI/local cuando faltan credenciales Supabase. El archivo YA tiene `pytestmark` module-level pero con condición incompleta (solo `SUPABASE_URL`, falta `SUPABASE_SERVICE_KEY`).
-- **Corrección crítica al plan:** Plan usa `SUPABASE_ANON_KEY` (incorrecto, no existe en el archivo). Código real usa `SUPABASE_SERVICE_KEY`. Plan propone decorador a nivel clase — código ya tiene `pytestmark` module-level (más robusto). Se implementa expansión del existente.
-- **Herramienta DX seleccionada:** `fap check-env` (fusionado de propuestas qwen + ds + kimi). Verifica vars de entorno requeridas antes de ejecutar tests de integración real.
+**Objetivo:** Corregir desincronización de nombres de pasos en TESTING.md contra la fuente de verdad real (phase-state.md + carpetas IMPLEMENTED).
+
+**Correcciones críticas al plan:** plan.md Tarea 3.1 propone nombres incorrectos para Pasos 4 y 5. Usa "Estrés y Condiciones de Borde" y "Seguridad — Hardening" cuando la fase real archivó "Tests de Estrés y Robustez" y "Tests de Seguridad — Hardening". Se corrige TESTING.md contra fase real, no contra plan.md erróneo.
+
+**Herramienta DX seleccionada:** `fap sync-step-names` — fusión de propuestas ds (nombre) + glm (scope multi-doc: TESTING.md + CHANGELOG.md) + kimi (validación) + qwen (source configurable). Ver §3.
 
 ---
 
 ## 2️⃣ Diseño Funcional Consolidado
 
 ### Happy Path
-
-1. CI/local ejecuta `pytest tests/integration/`
-2. `test_3_5_latency.py` se colecta, módulo se importa
-3. `load_dotenv()` carga `.env` (línea 36)
-4. `SUPABASE_URL = os.getenv("SUPABASE_URL")` → string o None (línea 42)
-5. `SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")` → string o None (línea 43)
-6. `pytestmark = pytest.mark.skipif(not SUPABASE_URL or not SUPABASE_SERVICE_KEY, ...)` evaluado
-7. **Si falta alguna var** → 4 tests = SKIPPED (no FAILED). CI continúa sin bloquearse.
-8. **Si ambas vars presentes** → tests corren contra Supabase real. Latencia Realtime se mide.
-9. Makefile `test-all` puede eliminar `-k "not latency"` — skipif ya protege CI.
+1. Plan.md detecta nombres incorrectos en TESTING.md (Paso 3-5)
+2. Análisis unificado resuelve que fuente de verdad real = phase-state.md + carpetas IMPLEMENTED
+3. Se corrigen 3 headings en TESTING.md (líneas 66, 72, 78)
+4. Se corrige 1 descripción en TESTING.md (línea 70)
+5. Se corrigen 3 entradas en CHANGELOG.md (líneas 28, 32, 36)
+6. Se crea herramienta DX `fap sync-step-names` para prevenir recurrencia
+7. Diff muestra exactamente 7 líneas cambiadas (4 TESTING.md + 3 CHANGELOG.md)
 
 ### Edge Cases MVP
-
-| # | Edge Case | Comportamiento esperado |
-|---|-----------|------------------------|
-| 1 | `SUPABASE_URL` presente pero `SUPABASE_SERVICE_KEY` ausente → SKIPPED | Skipif evalúa `True` por `not SUPABASE_SERVICE_KEY`. Test no ejecuta `acreate_client()` con `None`. |
-| 2 | `SUPABASE_SERVICE_KEY` presente pero `SUPABASE_URL` ausente → SKIPPED | Skipif evalúa `True` por `not SUPABASE_URL`. |
-| 3 | `.env` no existe → vars = None → SKIPPED | `load_dotenv()` no lanza excepción si archivo no existe. `os.getenv()` retorna `None`. |
-| 4 | Ambas vars presentes pero Supabase no alcanzable → test FAILED | Skipif evalúa `False`. Test corre y falla con excepción de red. Es comportamiento esperado (test de integración real). |
-| 5 | Makefile `test-all` ejecuta sin `-k "not latency"` → latency tests protegidos por skipif | No require exclusión manual. Skipif module-level maneja todo. |
+- **Descripción desalineada:** Si solo se cambian headings, línea 70 contradice heading nuevo de Paso 3 → corregir ambas
+- **CHANGELOG.md ignorado:** Si no se corrige, inconsistencia documental persiste post-fix → incluir en scope
+- **Phase-state.md no se toca:** Es archivo de estado, no guía de testing. Su divergencia con plan.md es problema separado
 
 ---
 
@@ -79,141 +64,96 @@
 
 ### Componentes y Modificaciones
 
-#### M1: Expandir skipif en `test_3_5_latency.py`
-
-- **Ruta real:** `D:\Develop\Personal\FluxAgentPro-v2\tests\integration\test_3_5_latency.py`
-- **Tipo de cambio:** Modificación
-- **Descripción:** Expandir condición del `pytestmark` existente (líneas 46-49) para verificar `SUPABASE_URL` y `SUPABASE_SERVICE_KEY`. Actualizar reason string. NO agregar decorador a nivel clase.
-- **Interfaces clave:**
-  ```python
-  # ANTES (líneas 46-49):
-  pytestmark = pytest.mark.skipif(
-      not SUPABASE_URL,
-      reason="Requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env",
-  )
-  
-  # DESPUÉS:
-  pytestmark = pytest.mark.skipif(
-      not SUPABASE_URL or not SUPABASE_SERVICE_KEY,
-      reason="Requiere Supabase Realtime + DB real — requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env",
-  )
-  ```
-- **Patrones a seguir:** `tests/integration/test_3_5_latency.py:46-49` — patrón existente en el mismo archivo. Usar constantes de módulo (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`), NO `os.getenv()` directo.
-
-#### M2: Opcional — Eliminar `-k "not latency"` de Makefile
-
-- **Ruta real:** `D:\Develop\Personal\FluxAgentPro-v2\Makefile`
-- **Tipo de cambio:** Modificación
-- **Descripción:** Remover `-k "not latency"` del target `test-all` (línea 92). Skipif robusto hace innecesaria la exclusión manual.
-- **Dependencia:** M1 debe estar implementado primero.
+| Ruta real | Tipo cambio | Descripción | Interfaces clave | Patrón a seguir |
+|-----------|-------------|-------------|-----------------|-----------------|
+| `TESTING.md` (raíz) | Modificación | 3 headings + 1 descripción corregidos | `### Paso N: [nombre]` | Formato markdown H3 existente |
+| `CHANGELOG.md` (raíz) | Modificación | 3 entries corregidos (líneas 28, 32, 36) | `#### Paso N — [nombre]` | Formato markdown H4 existente |
+| `src/cli/commands/sync_step_names.py` | Creación | Herramienta DX CLI para validar/fix nombres de pasos multi-doc | `def run(check: bool, fix: bool, source: str) -> int` | `src/cli/commands/perf_check.py` — patrón Typer `app.command()` |
 
 ### DX & Tooling — Tarea 0 (OBLIGATORIO)
 
 ```
-### Herramienta: `fap check-env`
-- **Qué automatiza:** Verifica que todas las variables de entorno requeridas por tests de integración real estén presentes antes de ejecutar pytest. Elimina ciclo "correr test → falla por falta de env → revisar cuál falta → reintentar".
-- **Tipo:** CLI comando (Typer app en `src/cli/main.py`)
-- **Ubicación:** `D:\Develop\Personal\FluxAgentPro-v2\src\cli\commands\check_env.py`
-- **Firma:** `def check_env(profile: str = typer.Option("integration", "--profile")) -> None`
-- **Patrón a seguir:** `D:\Develop\Personal\FluxAgentPro-v2\src\cli\commands\baseline_check.py` — estructura de verificación + tabla Rich + exit code.
-- **Registro en main.py:** `from src.cli.commands.check_env import check_env` + `app.command("check-env")(check_env)` (patrón línea 54 de `src/cli/main.py`)
-- **Cómo se usa:** `uv run python -m src.cli.main check-env --profile integration`
-  - Perfiles: `integration` (SUPABASE_URL, SUPABASE_SERVICE_KEY), `full` (todas las de .env.example)
-  - Output: Tabla Rich con vars, estado (✅/❌), exit code 1 si faltan críticas
-- **Impacto para el usuario final:** Feedback inmediato (<1s) si config está completa. Evita ejecutar pytest y descubrir tras 30s que falló por credenciales faltantes.
-- **El implementador DEBE usarla** para verificar configuración antes de ejecutar tests de integración real.
+### Herramienta: fap sync-step-names
+- **Qué automatiza:** Verifica/corrige nombres de pasos en TESTING.md y CHANGELOG.md contra fuente de verdad configurable (plan.md o phase-state.md). Escanea headings `### Paso N:` y `#### Paso N —` y compara.
+- **Tipo:** CLI command (Typer)
+- **Ubicación:** `src/cli/commands/sync_step_names.py`
+- **Cómo se usa:**
+  - `fap sync-step-names --check` → dry-run: lista discrepancias, exit 0 si ok, 1 si drift
+  - `fap sync-step-names --fix` → aplica correcciones a TESTING.md + CHANGELOG.md
+  - `fap sync-step-names --source phase-state` → usa phase-state.md como verdad (default)
+  - `fap sync-step-names --source plan` → usa plan.md como verdad
+- **Impacto para el usuario final:** Elimina verificación manual de 126+ líneas. Previene desincronización futura. CI puede fallar si docs drift.
+- **El implementador DEBE usarla** para verificar pre/post fix que 0 discrepancias.
 ```
 
 ---
 
 ## 4️⃣ Decisiones Tecnológicas
 
-1. **Usar `pytestmark` module-level en vez de decorador de clase:** El plan propone `@pytest.mark.skipif` antes de clase/función. El código ya tiene `pytestmark` module-level (línea 46). Este patrón es superior porque: (a) aplica a TODOS los tests del módulo (4 tests + `_main()`), (b) evita que fixtures async (`supabase_client`) se ejecuten si env vars faltan, (c) es el patrón existente validado. El código gana.
-
-2. **Usar constantes de módulo en skipif, no `os.getenv()` directo:** Las variables `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` ya están cargadas como constantes module-level (líneas 42-43) ANTES de la definición de `pytestmark` (línea 46). Usarlas directamente es: (a) más limpio, (b) evaluado una sola vez al import, (c) consistente con el resto del archivo que las usa en fixtures. `os.getenv()` en skipif sería redundante.
-
-3. **Reason string fusionado:** El reason actual ("Requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env") describe técnicamente qué falta. El reason del plan ("Requiere Supabase Realtime + DB real — plan.md P0 bug conocido") describe contexto de negocio. Se fusionan: "Requiere Supabase Realtime + DB real — requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env". Esto da contexto + diagnóstico sin tener que abrir el plan.
-
-4. **No tocar `SUPABASE_ANON_KEY`:** Esta variable existe en `.env.example` pero no se usa en ningún test de integración del proyecto. El test de latencia usa `SUPABASE_SERVICE_KEY` para operaciones admin (insert, RPC, delete). `SUPABASE_ANON_KEY` sería insuficiente. No agregar al skipif.
-
-5. **⚠️ Corrección al plan:** El plan dice `SUPABASE_ANON_KEY` pero el código real usa `SUPABASE_SERVICE_KEY`. Se implementa `SUPABASE_SERVICE_KEY`.
-
-6. **⚠️ Corrección al plan:** El plan dice "Añadir `@pytest.mark.skipif`" como decorador nuevo. El código ya tiene `pytestmark` module-level. Se expande el existente, no se crea nuevo.
+1. **Fuente de verdad = phase-state.md + carpetas IMPLEMENTED:** plan.md hotfix Tarea 3.1 tiene error en nombres Pasos 4-5. Código real (carpetas archivadas) gana.
+2. **DX tool ubicada en `src/cli/commands/` no `scripts/`:** Consistencia con resto de herramientas fap. ds/kimi/qwen propusieron scripts, pero glm propuso CLI Typer — más integrado con ecosistema existente.
+3. **Scope extendido a CHANGELOG.md:** glm detectó desincronización idéntica en CHANGELOG.md. Incluir en mismo fix — mismo root cause, mismo remedio.
+4. **Correcciones al plan:**
+   - ⚠️ El plan dice Paso 4 = "Estrés y Condiciones de Borde" pero la fase real usó "Tests de Estrés y Robustez" (carpeta `04-Tests-de-Estres-y-Robustez/`). Se implementa nombre real de la fase.
+   - ⚠️ El plan dice Paso 5 = "Seguridad — Hardening" pero la fase real usó "Tests de Seguridad — Hardening" (phase-state.md:22) con carpeta `05-Tests-de-Seguridad/`. Se implementa "Tests de Seguridad — Hardening".
+   - ⚠️ El plan no incluye CHANGELOG.md en scope. Se extiende para cubrir desincronización documental completa.
+   - ⚠️ El plan no menciona corrección de descripción línea 70. Se incluye para consistencia.
 
 ---
 
 ## 5️⃣ Criterios de Aceptación MVP
 
 ```
-✅ [CODE] skipif en test_3_5_latency.py:46-49 verifica SUPABASE_URL y SUPABASE_SERVICE_KEY
-✅ [CODE] No existe skipif duplicado a nivel clase o función — solo pytestmark module-level
-✅ [BACKEND] Sin SUPABASE_URL → pytest muestra SKIPPED (no FAILED)
-✅ [BACKEND] Sin SUPABASE_SERVICE_KEY → pytest muestra SKIPPED (no FAILED)
-✅ [BACKEND] Con ambas vars definidas → tests corren normalmente (comportamiento preservado)
-✅ [DX] fap check-env comando existe y ejecuta sin errores
-✅ [DX] Makefile test-all puede eliminar -k "not latency" (opcional tras skipif robusto)
+✅ [DOCS] TESTING.md:66 → `### Paso 3: E2E — Flujos Completos con Mocks`
+✅ [DOCS] TESTING.md:70 → descripción corregida: `Tests E2E: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover (E3.3).`
+✅ [DOCS] TESTING.md:72 → `### Paso 4: Tests de Estrés y Robustez`
+✅ [DOCS] TESTING.md:78 → `### Paso 5: Tests de Seguridad — Hardening`
+✅ [DOCS] CHANGELOG.md:28 → `#### Paso 5 — Tests de Seguridad — Hardening`
+✅ [DOCS] CHANGELOG.md:32 → `#### Paso 4 — Tests de Estrés y Robustez`
+✅ [DOCS] CHANGELOG.md:36 → `#### Paso 3 — E2E — Flujos Completos con Mocks`
+✅ [DX] `fap sync-step-names --check` ejecuta sin errores y reporta 0 discrepancias post-fix
+✅ [DOCS] Ningún otro heading `### Paso N:` o `#### Paso N —` alterado (Pasos 0,1,2,6,7 intactos)
 ```
 
 **Funcionales:**
-- [ ] `pytest tests/integration/test_3_5_latency.py -v` muestra 4 SKIPPED sin credenciales
-- [ ] `pytest tests/integration/test_3_5_latency.py -v` ejecuta tests con credenciales
-- [ ] `SUPABASE_URL=fake pytest tests/integration/test_3_5_latency.py -v` → SKIPPED (falta SERVICE_KEY)
-- [ ] `ruff check tests/integration/test_3_5_latency.py` → 0 errores
+- [ ] TESTING.md headings Pasos 3-5 corregidos contra fase real
+- [ ] CHANGELOG.md entries Pasos 3-5 corregidos contra fase real
+- [ ] Descripción Paso 3 alineada con contenido real (E2E mocks, no seguridad)
 
 **Técnicos:**
-- [ ] `pytestmark` usa constantes de módulo, no `os.getenv()` directo
-- [ ] Reason string fusionado: contexto de negocio + diagnóstico técnico
-- [ ] Skipif module-level cubre 4 tests + `_main()` + fixtures async
+- [ ] `fap sync-step-names --check --source phase-state` → exit 0 (0 discrepancias)
+- [ ] `fap sync-step-names --fix` → modifica solo archivos esperados
+- [ ] `git diff TESTING.md CHANGELOG.md` → exactamente 7 líneas cambiadas
 
 ---
 
 ## 6️⃣ Plan de Implementación
 
 | # | Tarea | Complejidad | Tiempo Est. | Dependencias |
-|---|-------|-------------|-------------|--------------|
-| 0 | **DX & Tooling:** Crear `fap check-env` en `src/cli/commands/check_env.py` + registrar en `main.py` | Media | 0.3h | Ninguna |
-| 1 | **Expandir skipif en `test_3_5_latency.py`** — cambiar condición + reason en líneas 46-49 | Baja | 0.05h | Tarea 0 (dogfooding: usar `fap check-env` para verificar vars) |
-| 2 | **Opcional: Eliminar `-k "not latency"` de Makefile** línea 92 | Baja | 0.02h | Tarea 1 |
-| | **TOTAL** | | **0.37h** | |
+|---|-------|:-----------:|:-----------:|:------------:|
+| 0 | **DX & Tooling:** `fap sync-step-names` — comando Typer en `src/cli/commands/sync_step_names.py`. Escanea headings en TESTING.md + CHANGELOG.md. Compara contra phase-state.md o plan.md. Flags `--check`/`--fix`/`--source`. | Media | 0.5h | Ninguna |
+| 1 | Corregir heading Paso 3 en TESTING.md:66 | Baja | 0.02h | Tarea 0 (dogfooding) |
+| 2 | Corregir descripción Paso 3 en TESTING.md:70 | Baja | 0.02h | Tarea 0 |
+| 3 | Corregir heading Paso 4 en TESTING.md:72 | Baja | 0.02h | Tarea 0 |
+| 4 | Corregir heading Paso 5 en TESTING.md:78 | Baja | 0.02h | Tarea 0 |
+| 5 | Corregir CHANGELOG.md:28 (Paso 5) | Baja | 0.02h | Tarea 0 |
+| 6 | Corregir CHANGELOG.md:32 (Paso 4) | Baja | 0.02h | Tarea 0 |
+| 7 | Corregir CHANGELOG.md:36 (Paso 3) | Baja | 0.02h | Tarea 0 |
+| 8 | Verificación final: `fap sync-step-names --check --source phase-state` → exit 0 | Baja | 0.02h | Tareas 0-7 |
+| **TOTAL** | | | **0.64h** | |
 
-> **Tarea 0 = DX & Tooling.** Implementador DEBE ejecutarla primero y usar `fap check-env` para verificar configuración antes de tests de integración.
-
-### Detalle Tarea 1 — Expandir skipif
-
-**Archivo:** `tests/integration/test_3_5_latency.py`
-**Líneas:** 46-49
-
-```python
-# ANTES:
-pytestmark = pytest.mark.skipif(
-    not SUPABASE_URL,
-    reason="Requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env",
-)
-
-# DESPUÉS:
-pytestmark = pytest.mark.skipif(
-    not SUPABASE_URL or not SUPABASE_SERVICE_KEY,
-    reason="Requiere Supabase Realtime + DB real — requiere SUPABASE_URL y SUPABASE_SERVICE_KEY en .env",
-)
-```
-
-**Notas de implementación:**
-- Usar `SUPABASE_SERVICE_KEY` (constante módulo línea 43), NO `os.getenv("SUPABASE_ANON_KEY")`
-- NO agregar decorador a nivel clase o función
-- Reason fusionado: contexto de negocio + diagnóstico técnico
-- `ruff check` post-cambio debe retornar 0 errores
+> **Tarea 0 siempre = DX & Tooling.** Implementador DEBE ejecutarla primero y usarla para verificar pre/post fix.
 
 ---
 
 ## 7️⃣ Riesgos y Mitigaciones
 
 | Riesgo | Severidad | Causa | Mitigación |
-|--------|-----------|-------|------------|
-| Skipif incompleto causa TypeError si solo SUPABASE_URL presente | Media | Estado actual: `pytestmark` solo checkea URL, no SERVICE_KEY | Tarea 1 expande condición. Verificar con `SUPABASE_URL=fake pytest ...` |
-| `-k "not latency"` en Makefile oculta tests que deberían correr en CI con DB real | Baja | Exclusión manual evita ejecución incluso con credenciales | Tarea 2 elimina exclusión. Skipif robusto maneja casos sin credenciales. |
-| Import temprano de `MultiCrewFlow` (línea 71-72) sin credenciales tiene side effects | Media | `multi_crew_flow.py` → importa `BaseCrew` → importa `get_service_client` | En pytest, `global_llm_mock` fixture autuse provee mocks. En standalone, `_main()` verifica vars antes. No bloquea. |
-| RPC `get_server_time` no existe en migraciones estándar | Media | Test depende de RPC que no está en schema versionado | Fuera de alcance de este paso. Documentar en TESTING.md como setup manual requerido. |
-| Datos residuales si proceso recibe SIGKILL durante test | Baja | Cleanup en `finally` no ejecuta en SIGKILL | Herramienta `fap cleanup-test-events` propuesta para roadmap. Bajo riesgo por aggregate_id único con UUID. |
+|--------|:---------:|-------|------------|
+| plan.md hotfix usa nombres que no coinciden con fase real archivada | Media | plan.md Tarea 3.1 propone "Estrés y Condiciones de Borde" y "Seguridad — Hardening" pero carpetas reales dicen otra cosa | Resuelto en §4: usar fase real. Documentar corrección al plan. |
+| Phase-state.md queda con nombres divergentes del plan.md hotfix | Baja | Paso 3 no modifica phase-state.md. Nombres de fase archivada vs hotfix difieren. | No requiere acción. phase-state.md es registro histórico. Documentar para futura sincro. |
+| Edición accidental de otros headings | Baja | Reemplazo global por error | Usar cambio línea específica. Verificar diff = solo 7 líneas. |
+| DX tooling overhead > beneficio para paso de 7 líneas | Baja | Paso documental pequeño | Herramienta se amortiza en futuros pasos. Previene recurrencia. |
 
 ---
 
@@ -221,30 +161,20 @@ pytestmark = pytest.mark.skipif(
 
 | ID | Caso | Input | Output Esperado |
 |----|------|-------|-----------------|
-| TP-1 | Sin credenciales Supabase | `pytest tests/integration/test_3_5_latency.py -v` sin .env | 4 SKIPPED (0 FAILED, 0 PASSED) |
-| TP-2 | Solo SUPABASE_URL definida | `SUPABASE_URL=fake pytest tests/integration/test_3_5_latency.py -v` sin SERVICE_KEY | 4 SKIPPED (condición: not URL or not SERVICE_KEY → True) |
-| TP-3 | Ambas vars definidas | `pytest tests/integration/test_3_5_latency.py -v` con .env completo | Tests ejecutan (no skipped). Pueden fallar si no hay Supabase reachable — es aceptable. |
-| TP-4 | DX tool check-env | `uv run python -m src.cli.main check-env --help` | Muestra ayuda del comando sin errores |
-| TP-5 | Lint skipif | `ruff check tests/integration/test_3_5_latency.py` | 0 errores |
-| TP-6 | Makefile test-all (post Tarea 2) | `make test-all` | Test se skipea automáticamente si no hay credenciales. No requiere `-k "not latency"`. |
+| TP-1 | `fap sync-step-names --check --source phase-state` post-fix | Comando CLI | Exit 0. Output: "0 discrepancias encontradas." |
+| TP-2 | `fap sync-step-names --check --source plan` post-fix | Comando CLI | Exit 1. Output: Paso 4 y 5 discrepan (plan.md name ≠ fase real). |
+| TP-3 | `fap sync-step-names --fix --dry-run` | Comando CLI | Lista cambios propuestos sin modificar archivos. |
+| TP-4 | `grep -c "Validacion de Seguridad\|Hardening de API\|Tests de Regresion" TESTING.md CHANGELOG.md` | Shell | Retorna 0 matches en ambos archivos. |
 
-Comando para ejecutar tests: `uv run pytest tests/integration/test_3_5_latency.py -v --timeout=60`
-Comando lint: `uv run ruff check tests/integration/test_3_5_latency.py`
+Comando para ejecutar tests: `uv run pytest tests/unit/ -v --timeout=60`
 
 ---
 
-## 📊 Calidad de Aportes por Análisis
+## 📊 Calidad de Aportes por Agente
 
-| Agente | Score | Fortaleza | Debilidad |
-|--------|:-----:|-----------|-----------|
-| **kimi** | **4.8/5** | Máximas discrepancias (5), más profundo en data layer, identifica RPC gap y redundancia Paso 0. 2 herramientas DX. | Reason string indeciso (dice "documentar sin acción"). |
-| **qwen** | **4.5/5** | Máximas verificaciones (18), estructura granular línea por línea, fix code exacto. | Data/backend marked "N/A" — análisis incompleto en esas etapas. |
-| **glm** | **3.8/5** | Identifica D1-D3 correctamente. Recomienda `os.getenv()` directo (incorrecto vs constantes módulo). 13 verificaciones sólidas. | Data/backend superficial ("N/A" o "Sin cambios"). DX tool menos práctica. |
-| **ds** | **3.5/5** | Conciso pero correcto. Único en verificar inexistencia de `SUPABASE_ANON_KEY` en todo el proyecto. Recomendación más simple (2 tareas). | Análisis menos profundo en todas las etapas. Menos verificaciones (10). |
-
-**Veredicto:** kimi aportó el análisis más valioso (discrepancias únicas, profundidad técnica). qwen segundo mejor (granularidad y precisión). glm y ds correctos pero menos profundos. La unificación toma lo mejor de cada uno: discrepancia de kimi (RPC gap), estructura de qwen (mapeo de archivo), verificación de glm (13 checks), hallazgo de ds (ANON_KEY no existe en .py).
-
----
-
-**Idioma de respuesta:** Español 🇪🇸
-**Destino:** `D:\Develop\Personal\FluxAgentPro-v2\DEVS\IN_PROGRESS\analisis-FINAL.md`
+| Agente | Fortaleza | Debilidad | Aporte neto al FINAL |
+|--------|-----------|-----------|---------------------|
+| **ds** | Evaluación limpia, 9 verificaciones precisas. Propuesta DX con nombre sólido. | No detectó descripción incorrecta ni CHANGELOG. Sin insight sobre error del plan. | **3.5/5** — Correcto pero superficial. Base sólida, sin hallazgos profundos. |
+| **glm** | ✅ **Mejor agente.** 16 verificaciones. Único en detectar D1 (descripción TESTING.md:70) y D3 (CHANGELOG.md). Más exhaustivo en cobertura de archivos (test_step.py, CHANGELOG.md). | Propuesta DX más genérica ("check-docs" vs "sync-step-names"). Sin embargo, scope multi-doc correcto. | **4.8/5** — Dominante. Hallazgos exclusivos que elevan calidad del FINAL. |
+| **kimi** | Estructura 4 etapas más clara. Métrica de calidad al final. DX script `validate_docs.py` bien especificado con pseudo-interfaz. | No detectó descripción ni CHANGELOG. Propuesta script-only (no CLI integrado). | **4.0/5** — Sólido y bien estructurado. Le falta profundidad de glm. |
+| **qwen** | ✅ **Insight crítico:** plan.md hotfix names no son fuente de verdad válida para Pasos 4-5. Verificó contra carpetas IMPLEMENTED. | Items de verificación contaminados con otros pasos (baseline.py, registry.py). Propuesta usa phase-state.md como source pero no integra CHANGELOG. | **4.0/5** — Insight decisivo que cambió la resolución del FINAL. Sin él, habríamos copiado nombres erróneos del plan. |
