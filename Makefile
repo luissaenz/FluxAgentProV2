@@ -2,7 +2,7 @@
 # Comandos comunes para desarrollo y deployment
 # Nota: usa 'uv run' para cross-platform compat (Windows/Linux/WSL).
 
-.PHONY: help install dev server test test-all test-fast test-cov coverage lint clean migrate shell logs stop restart check-env setup
+.PHONY: help install dev server test test-all test-fast test-cov coverage lint lint-fix clean migrate shell logs stop restart check-env setup
 
 # Variables
 PYTHON := uv run python
@@ -29,6 +29,7 @@ help:
 	@echo "  make test-cov     - Ejecutar tests con coverage"
 	@echo "  make coverage     - Reporte de cobertura (--cov-fail-under=75)"
 	@echo "  make lint         - Ejecutar linter (ruff)"
+	@echo "  make lint-fix     - Corregir errores de linter automaticamente"
 	@echo "  make clean        - Limpiar archivos temporales"
 	@echo "  make migrate      - Aplicar migraciones de Supabase"
 	@echo "  make shell        - Abrir shell de Python en el venv"
@@ -129,6 +130,11 @@ lint:
 	@echo "→ Ejecutando linter (ruff)..."
 	uv run ruff check src/ tests/
 	@echo "✓ Lint OK"
+
+lint-fix:
+	@echo "→ Ejecutando lint fix (ruff --fix)..."
+	uv run ruff check --fix src/ tests/
+	@echo "✓ Lint fix completado"
 
 # ── Utilidades ───────────────────────────────────────────────────
 

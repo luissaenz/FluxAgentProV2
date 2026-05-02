@@ -10,7 +10,6 @@ import argparse
 import asyncio
 import logging
 
-from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
 import src.flows.architect_flow  # noqa: F401
@@ -18,6 +17,7 @@ import src.flows.architect_flow  # noqa: F401
 # Eager flow registration (mismos que main.py:15-17)
 import src.flows.generic_flow  # noqa: F401
 import src.flows.test_flows  # noqa: F401
+from mcp.server import Server
 
 from .config import MCPConfig
 from .flow_to_tool import build_flow_tools

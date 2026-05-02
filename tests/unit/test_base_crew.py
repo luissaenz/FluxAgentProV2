@@ -292,21 +292,22 @@ class TestRunMethod:
 
         with patch("src.crews.base_crew.get_service_client", return_value=mock_client):
             with patch("src.crews.base_crew.get_settings", return_value=mock_settings):
-                with patch("crewai.Agent"):
-                    with patch("crewai.Task") as mock_task_cls:
-                        with patch("crewai.Crew") as mock_crew_cls:
-                            mock_crew = MagicMock()
-                            mock_crew_cls.return_value = mock_crew
-                            mock_crew.kickoff.return_value = MagicMock(raw="Result")
+                with patch("src.crews.factory.get_settings", return_value=mock_settings):
+                    with patch("src.crews.factory.Agent"):
+                        with patch("crewai.Task") as mock_task_cls:
+                            with patch("crewai.Crew") as mock_crew_cls:
+                                mock_crew = MagicMock()
+                                mock_crew_cls.return_value = mock_crew
+                                mock_crew.kickoff.return_value = MagicMock(raw="Result")
 
-                            crew = BaseCrew(org_id=sample_org_id, role="analyst")
-                            crew.run(task_description="Do something")
+                                crew = BaseCrew(org_id=sample_org_id, role="analyst")
+                                crew.run(task_description="Do something")
 
-                            task_call_kwargs = mock_task_cls.call_args[1]
-                            assert (
-                                "Structured result"
-                                in task_call_kwargs["expected_output"]
-                            )
+                                task_call_kwargs = mock_task_cls.call_args[1]
+                                assert (
+                                    "Structured result"
+                                    in task_call_kwargs["expected_output"]
+                                )
 
 
 # ── run_async() method tests ────────────────────────────────────

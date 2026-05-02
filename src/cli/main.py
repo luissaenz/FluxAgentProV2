@@ -15,6 +15,7 @@ from src.cli.baseline import baseline_check
 from src.cli.commands.dev import dev_command
 from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
+from src.cli.commands.lint_fix import lint_fix
 from src.cli.commands.login import login
 from src.cli.commands.package import package_bundle
 from src.cli.commands.perf_check import perf_check
@@ -55,6 +56,7 @@ app.command("test-step")(test_step)
 app.command("security-audit")(security_audit)
 app.command("stress-bench")(stress_bench)
 app.command("perf-check")(perf_check)
+app.command("lint-fix")(lint_fix)
 
 if __name__ == "__main__":
     app()
