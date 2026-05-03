@@ -1,8 +1,12 @@
-"""tests/e2e/test_real_tool_calling.py — Paso 3: Tool calling real.
+"""tests/e2e/test_tool_calling_real.py — Tool calling real SIN patches CrewAI.
 
-Agente con ExcelReaderTool via BaseCrew.run_async().
-LLM real (Groq) debe llamar la herramienta para obtener datos.
-Verifica que el output contenga datos reales de las sheets.
+Test E2E que NO parchea crewai.Crew / Task / Agent.
+LLM real (Groq) debe llamar excel_reader tool activamente.
+Requiere GROQ_API_KEY.
+
+Correcciones al plan v3.2:
+- Plan no contemplaba test sin patches de CrewAI — creado aca.
+- Usa BaseCrew con ToolCallTracer interno para verificar tool calling.
 """
 
 from __future__ import annotations
@@ -21,7 +25,7 @@ from src.config import get_settings
 from src.crews import factory as _  # noqa: F401
 from src.crews.base_crew import BaseCrew
 
-# Save real classes before any patches
+# Save real classes at module level (before autouse global_llm_mock patches them)
 _REAL_CREW = crewai.Crew
 _REAL_TASK = crewai.Task
 _REAL_AGENT = crewai.Agent
@@ -52,10 +56,10 @@ AGENT_CONFIG = {
         "role": "Cotizador de Eventos",
         "goal": "Usar el excel_reader para obtener precios reales y generar presupuestos",
         "backstory": (
-            "Sos un experto en cotización de eventos. "
-            "SIEMPRE usás la herramienta excel_reader para obtener datos actualizados "
+            "Sos un experto en cotizacion de eventos. "
+            "SIEMPRE usas la herramienta excel_reader para obtener datos actualizados "
             "de precios y consumos antes de calcular. "
-            "Nunca inventás precios ni usás datos de entrenamiento."
+            "Nunca inventes precios ni uses datos de entrenamiento."
         ),
     },
     "allowed_tools": ["excel_reader"],
@@ -66,13 +70,17 @@ AGENT_CONFIG = {
 
 
 @pytest.mark.asyncio
-async def test_agent_uses_excel_reader_tool():
-    """Agente llama excel_reader para obtener precios reales."""
+async def test_presupuestador_calls_excel_reader():
+    """BaseCrew.run_async() sin patches de CrewAI — tool calling real.
 
+    Verifica que el LLM llame excel_reader tool activamente
+    y que el output contenga datos reales del xlsx.
+    """
     org_id = str(uuid4())
     agent_config = {**AGENT_CONFIG, "org_id": org_id,
                     "soul_json": {**AGENT_CONFIG["soul_json"], "org_id": org_id}}
 
+    # Counter-patch global_llm_mock: restore real CrewAI classes
     with (
         patch("crewai.Crew", _REAL_CREW),
         patch("crewai.Task", _REAL_TASK),
@@ -97,12 +105,12 @@ async def test_agent_uses_excel_reader_tool():
             crew = BaseCrew(org_id=org_id, role="presupuestador")
             result = await crew.run_async(
                 task_description=(
-                    "Usá la herramienta excel_reader para leer el archivo "
-                    "'precios_bebidas.xlsx'. Obtené los precios reales y luego "
-                    "calculá cuánto cuesta preparar 1000 cocteles si cada coctel "
+                    "Usa la herramienta excel_reader para leer el archivo "
+                    "'precios_bebidas.xlsx'. Obtene los precios reales y luego "
+                    "calcula cuanto cuesta preparar 1000 cocteles si cada coctel "
                     "usa 50ml de Gordon's Pink. "
                     "Cada botella tiene 700ml. "
-                    "Devolvé SOLO JSON con: {'precio_botella': 0, 'botellas_necesarias': 0, 'costo_total': 0}"
+                    "Devuelve SOLO JSON con: {'precio_botella': 0, 'botellas_necesarias': 0, 'costo_total': 0}"
                 ),
                 inputs={},
                 expected_output="JSON with calculation",
@@ -110,19 +118,18 @@ async def test_agent_uses_excel_reader_tool():
 
         raw = str(result)
 
-    # SUSTITUYE assert "12000" in raw — usa ToolCallTracer interno de BaseCrew
-    # Verifica que el LLM realmente LLAMO la tool, no solo que el dato aparece
+    # Verify tool was actually called (not just data in prompt)
     tool_calls = crew.get_last_tool_calls()
     assert tool_calls.get("excel_reader", 0) >= 1, (
         f"excel_reader was called {tool_calls.get('excel_reader', 0)} times, expected >=1"
     )
 
-    assert "Mocked Crew Result" not in raw, "LLM mock still active!"
+    # Verify output contains real data from xlsx (not invented)
+    assert "gordon" in raw.lower() or "12000" in raw, "Tool data not in response"
 
     try:
         data = json.loads(_extract_json(raw))
     except json.JSONDecodeError:
-        # Try extracting just the JSON portion
         data = json.loads(raw.strip())
 
     assert "costo_total" in data or "cost" in raw.lower()

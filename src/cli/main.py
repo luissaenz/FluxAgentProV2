@@ -30,6 +30,7 @@ from src.cli.commands.stress_bench import stress_bench
 from src.cli.commands.sync_step_names import sync_step_names
 from src.cli.commands.test_scenarios import test_scenarios
 from src.cli.commands.test_step import test_step
+from src.cli.commands.tool_call_test import test_tool_call
 from src.cli.commands.validate import validate_bundle
 from src.cli.commands.validate_architect import validate_architect_output
 from src.cli.commands.validate_tools import validate_tools_command
@@ -63,6 +64,7 @@ app.command("stress-bench")(stress_bench)
 app.command("perf-check")(perf_check)
 app.command("sync-step-names")(sync_step_names)
 app.command("lint-fix")(lint_fix)
+app.command("test-tool-call")(test_tool_call)
 
 if __name__ == "__main__":
     app()

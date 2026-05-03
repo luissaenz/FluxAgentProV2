@@ -35,7 +35,15 @@ class ExcelReaderTool(OrgBaseTool):
     description: str = (
         "Lee archivos .xlsx de la carpeta PROJECT-Aybar y retorna "
         "los datos como JSON estructurado. Cada sheet se convierte en "
-        "una lista de diccionarios con cabeceras como keys."
+        "una lista de diccionarios con cabeceras como keys.\n\n"
+        "Ejemplos de uso:\n"
+        '- excel_reader(filename="precios_bebidas.xlsx") → todas las sheets\n'
+        '- excel_reader(filename="precios_bebidas.xlsx", sheet_name="whisky") → solo sheet whisky\n\n'
+        "Instrucciones:\n"
+        "- SIEMPRE usa esta herramienta cuando necesites precios, consumos o datos de inventario.\n"
+        "- NUNCA inventes precios ni uses datos de entrenamiento — consulta el archivo real.\n"
+        "- Si no especificas sheet_name, se retornan TODAS las sheets disponibles.\n"
+        "- Los numeros se retornan como int/float, no como strings."
     )
     args_schema: Type[BaseModel] = ExcelReaderInput
 

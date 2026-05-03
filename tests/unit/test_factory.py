@@ -294,3 +294,54 @@ class TestResolveMCPToolAsync:
 
             assert result is None
             assert "Failed to resolve MCP tool" in caplog.text
+
+
+class TestExcelReaderResolution:
+    """AgentFactory.resolve_tools_async() with excel_reader tool."""
+
+    @pytest.mark.asyncio
+    async def test_resolves_excel_reader_tool(self, sample_org_id):
+        """resolve_tools_async retorna tool para excel_reader."""
+        with patch("src.crews.factory.tool_registry") as mock_registry:
+            mock_tool_cls = MagicMock()
+            mock_tool_instance = MagicMock()
+            mock_tool_instance.org_id = sample_org_id
+            mock_tool_cls.return_value = mock_tool_instance
+            mock_registry.get.return_value = mock_tool_cls
+
+            tools = await AgentFactory.resolve_tools_async(
+                ["excel_reader"], sample_org_id
+            )
+
+            assert len(tools) == 1
+            mock_registry.get.assert_called_with("excel_reader", org_id=sample_org_id)
+
+    @pytest.mark.asyncio
+    async def test_excel_reader_org_id_matches(self, sample_org_id):
+        """ExcelReaderTool instanciado con org_id correcto."""
+        with patch("src.crews.factory.tool_registry") as mock_registry:
+            mock_cls = MagicMock()
+            mock_instance = MagicMock()
+            mock_instance.org_id = sample_org_id
+            mock_cls.return_value = mock_instance
+            mock_registry.get.return_value = mock_cls
+
+            tools = await AgentFactory.resolve_tools_async(
+                ["excel_reader"], sample_org_id
+            )
+
+            mock_cls.assert_called_once_with(org_id=sample_org_id)
+            assert tools[0].org_id == sample_org_id
+
+    @pytest.mark.asyncio
+    async def test_excel_reader_not_found_logs_warning(self, sample_org_id, caplog):
+        """Tool name no registrada logea warning, no crash."""
+        with patch("src.crews.factory.tool_registry") as mock_registry:
+            mock_registry.get.side_effect = ValueError("Not found")
+
+            tools = await AgentFactory.resolve_tools_async(
+                ["excel_reader"], sample_org_id
+            )
+
+            assert tools == []
+            assert "excel_reader" in caplog.text

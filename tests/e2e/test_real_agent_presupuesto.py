@@ -140,7 +140,6 @@ async def test_agente_calcula_coctelera():
     """Agente calcula cantidad de cocteles y bebidas necesarias."""
     tool = ExcelReaderTool(org_id="test")
     precios = tool._run("precios_bebidas.xlsx")
-    consumo = tool._run("config_consumo_pax.xlsx")
 
     llm = get_settings().get_llm()
 

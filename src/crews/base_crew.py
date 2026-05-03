@@ -10,6 +10,7 @@ Rule R8: max_iter explicit (≤5 for production).
 
 from __future__ import annotations
 
+import functools
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -17,6 +18,35 @@ from ..config import get_settings  # noqa: F401
 from ..db.session import get_service_client
 
 logger = logging.getLogger(__name__)
+
+
+class ToolCallTracer:
+    """Traza invocaciones a tools durante ejecucion de un agente.
+
+    Se usa internamente en BaseCrew.run()/run_async() para poblar
+    _last_tool_calls. Similar a ToolCallTracer propuesta por kimi, pero
+    integrada como utilidad interna en vez de clase separada.
+    """
+
+    def __init__(self) -> None:
+        self._calls: Dict[str, int] = {}
+        self._originals: List[tuple] = []
+
+    def trace(self, tool: Any) -> None:
+        name = getattr(tool, "name", str(tool))
+        original = tool._run
+
+        @functools.wraps(original)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            self._calls[name] = self._calls.get(name, 0) + 1
+            return original(*args, **kwargs)
+
+        tool._run = wrapper
+        self._originals.append((tool, original))
+
+    def restore(self) -> None:
+        for tool, original in self._originals:
+            tool._run = original
 
 
 class CrewConfigError(Exception):
@@ -109,6 +139,10 @@ class BaseCrew:
 
         agent = AgentFactory.create_agent(config, self.org_id)
 
+        tracer = ToolCallTracer()
+        for tool in getattr(agent, "tools", []) or []:
+            tracer.trace(tool)
+
         task = Task(
             description=task_description,
             expected_output=expected_output,
@@ -126,6 +160,9 @@ class BaseCrew:
 
         # Extract token usage from crew result
         self._extract_token_usage(result)
+
+        self._last_tool_calls = dict(tracer._calls)
+        tracer.restore()
 
         return result
 
@@ -166,6 +203,15 @@ class BaseCrew:
         """Return tokens consumed in last run."""
         return getattr(self, "_last_tokens_used", 0)
 
+    def get_last_tool_calls(self) -> Dict[str, int]:
+        """Return tool invocation counts from last run.
+
+        Returns:
+            Dict mapping tool name -> number of times called.
+            Empty dict if no run has completed yet.
+        """
+        return getattr(self, "_last_tool_calls", {})
+
     async def run_async(
         self,
         task_description: str,
@@ -184,6 +230,10 @@ class BaseCrew:
 
         agent = await AgentFactory.create_agent_async(config, self.org_id)
 
+        tracer = ToolCallTracer()
+        for tool in getattr(agent, "tools", []) or []:
+            tracer.trace(tool)
+
         task = Task(
             description=task_description,
             expected_output=expected_output,
@@ -201,6 +251,9 @@ class BaseCrew:
 
         # Extract token usage from crew result
         self._extract_token_usage(result)
+
+        self._last_tool_calls = dict(tracer._calls)
+        tracer.restore()
 
         return result
 

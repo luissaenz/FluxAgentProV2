@@ -1,10 +1,11 @@
-# 🏛️ ANÁLISIS UNIFICADO FINAL — Paso 3: Alinear nombres de pasos en TESTING.md
 
-> **Versión:** v3.2 — Hotfix post-certificación Fase VI (testing)
-> **Fecha:** 2026-05-02
-> **Agentes unificados:** ds · glm · kimi · qwen
-> **Origen:** `DEVS/plan.md` Paso 3 (Tarea 3.1)
-> **Destino:** `DEVS/IN_PROGRESS/analisis-FINAL.md`
+# 🏛️ Análisis Unificado — Paso 3: Tool Calling Real
+
+> **Fecha:** 2026-05-03
+> **Fase:** Patch agents (progreso 3/5 pasos)
+> **Paso:** 3 — Tool Calling Real (plan.md:80-103)
+> **Fuente de verdad:** `proyecto-config.json` + código en `src/` + `tests/` + `supabase/migrations/`
+> **Tiempo est. plan:** 3h → **Tiempo est. FINAL:** 4.5h
 
 ---
 
@@ -13,50 +14,72 @@
 ### Tabla de Evaluación de Agentes
 
 | Agente | Verificó código | Discrepancias detectadas | Propuesta DX | Evidencia sólida | Score (1-5) |
-|:-------|:---------------:|:------------------------:|:------------:|:----------------:|:-----------:|
-| **ds** | ✅ | 2 (phase-state.md Paso 4/5 divergen) | ✅ `fap sync-step-names` | ✅ Líneas exactas, 9 items verificados | 3.5 |
-| **glm** | ✅ | 4 (D1-D4: descripción TESTING.md:70 + CHANGELOG.md + phase-state + test_step.py) | ✅ `fap check-docs` | ✅ 16 items — más exhaustivo. Detectó descripción + CHANGELOG que nadie más vio | **4.8** |
-| **kimi** | ✅ | 2 (phase-state.md Paso 4/5 divergen) | ✅ `validate_docs.py` script | ✅ Estructura 4 etapas clara, 12 items verificados | 4.0 |
-| **qwen** | ✅ | 2 (plan.md sin Paso 5 explícito; plan.md nombres ≠ fase real) | ✅ `sync_step_names.py` script | ✅ Insight crítico: plan.md hotfix names ≠ carpetas reales. Ruido: items irrelevantes de otros pasos | 4.0 |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **kimi** | ✅ | 4 | ToolCallTracer | ✅ | 4.2 |
+| **qwen** | ✅ | 4 | `fap test-tool-calling` | ✅ | 4.5 |
+| **glm** | ✅ | 3 | `fap test-tool-call` | ✅ | **4.6** |
+| **ds** | ✅ | 5 | `fap test-tool-calling` | ✅ | 3.8 |
 
 ### Discrepancias Críticas Consolidadas
 
 | # | Discrepancia | Detectó | Verificada contra código | Resolución |
-|---|-------------|---------|-------------------------|------------|
-| 1 | **plan.md Tarea 3.1 propone nombres para Pasos 4-5 que NO coinciden con la fase real.** plan.md dice Paso 4 = "Estrés y Condiciones de Borde", Paso 5 = "Seguridad — Hardening". Pero carpeta IMPLEMENTED `04-Tests-de-Estres-y-Robustez/` y `05-Tests-de-Seguridad/` + phase-state.md muestran nombres distintos. | **qwen** (insight principal), **ds/glm/kimi** (documentaron divergencia) | ✅ `DEVS/IMPLEMENTED/testing/04-Tests-de-Estres-y-Robustez/` y `DEVS/IMPLEMENTED/testing/05-Tests-de-Seguridad/` existen + `DEVS/phase-state.md:21-22` | Usar **phase-state.md + carpetas IMPLEMENTED** como fuente de verdad. plan.md hotfix contiene error de naming para Pasos 4 y 5. Código real gana. |
-| 2 | **TESTING.md:70 descripción Paso 3 incorrecta** — dice "Tests E2E de flujos de produccion con validacion de seguridad." heredando del nombre viejo. | **glm** (único) | ✅ `TESTING.md:70` leída y confirmada | Corregir descripción: `Tests E2E: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover (E3.3).` |
-| 3 | **CHANGELOG.md líneas 28, 32, 36 tienen mismos nombres incorrectos.** plan.md no lo incluye en scope. | **glm** (único) | ✅ `CHANGELOG.md:28,32,36` leídas y confirmadas | Extender scope: corregir CHANGELOG.md. Misma desincronización, mismo fix. 3 reemplazos. |
-| 4 | **phase-state.md Paso 4 = "Tests de Estrés y Robustez", Paso 5 = "Tests de Seguridad — Hardening".** Plan.md hotfix no actualizó phase-state.md. | **ds, glm, kimi, qwen** (todos) | ✅ `DEVS/phase-state.md:21-22` | phase-state.md NO se modifica en este paso. Documentar para futura sincronización. phase-state.md ya está correcto para la fase real. |
-| 5 | **plan.md no tiene sección explícita "Paso 5".** Salta de Paso 4 a "Criterios de Aceptación MVP". La tabla Tarea 3.1 define el reemplazo pero no hay heading Paso 5 en plan.md. | **qwen** (único) | ✅ `DEVS/plan.md` leído completo. Sección §Paso 4 → §Criterios sin §Paso 5 | Sin impacto. La tabla Tarea 3.1 es suficiente como especificación de reemplazo. No requiere acción. |
-| 6 | **test_step.py no usa nombres de pasos (solo números).** Sin riesgo de desincronización funcional. | **glm** (verificación test_step.py:35-45), **kimi** (test_step.py:21-50) | ✅ `src/cli/commands/test_step.py:21-50` — `STEP_TEST_FILES` indexado por int | Confirmado: sin impacto. Nombres son solo display. |
+|---|---|---|---|---|
+| 1 | `openpyxl` no está en `[project.dependencies]` | **glm** | ✅ `pyproject.toml` — ausente | Agregar `openpyxl>=3.1.0` a direct deps. Dependencia transitiva via `crewai-tools` (opcional) = riesgo instalación sin extras |
+| 2 | `test_real_tool_calling.py` NO verifica invocación real de tool — assert débil (`"12000" in raw`) | **kimi**, **qwen**, **ds** | ✅ `test_real_tool_calling.py:112` | Agregar interceptor/tracer que cuente calls a `excel_reader._run()`. Assert `calls >= 1` |
+| 3 | `test_real_agent_pipeline.py` usa `allowed_tools: []` con precios hardcodeados | **ds** | ✅ `test_real_agent_pipeline.py:60,102-108` | Migrar a `allowed_tools: ["excel_reader"]`, remover precios hardcodeados del prompt |
+| 4 | Plan.md Paso 2 refiere `name` en bundle JSON pero DB usa `role` | **glm** | ✅ `004_agent_catalog.sql:8` — columna `role`, no `name` | Bundle debe usar `role` como identificador. Plan.md desactualizado |
+| 5 | `PresupuestoFlow` ya existe (plan Paso 5 dice "Crear") | **kimi** | ✅ `src/flows/presupuesto_flow.py:23` — `@register_flow("presupuesto")` | Paso 5 se redefine a validación/refactor, no crear duplicado |
+| 6 | `test_real_tool_calling.py` mockea `crewai.Crew` + `crewai.Task` (patches líneas 76-77) | **glm** | ✅ `test_real_tool_calling.py:76-77` | Test actual mockea CrewAI = NO prueba tool calling real. Crear test NUEVO sin patches para LLM real |
+| 7 | `ExcelReaderTool.description` no optimizada para LLM function calling | **kimi**, **qwen**, **ds** | ✅ `excel_reader.py:35-39` — descripción genérica | Agregar ejemplos concretos + instrucciones cuándo usar la tool |
+| 8 | `registry.py:158` usa `safe_builtins` directo, no `_create_safe_builtins()` | **qwen** | ✅ `src/tools/registry.py:158` | Fix plan v3.2 Paso 0 pendiente. No bloquea Paso 3. Documentar como deuda |
+| 9 | `data/seed/` no existe (plan Paso 2 espera bundle seed) | **kimi** | ✅ `glob` vacío en raíz | No bloquea Paso 3 (tests mockean `agent_catalog`). Seed requerido para producción |
 
 ---
 
 ## 1️⃣ Resumen Ejecutivo
 
-**Objetivo:** Corregir desincronización de nombres de pasos en TESTING.md contra la fuente de verdad real (phase-state.md + carpetas IMPLEMENTED).
+**Objetivo:** Que el agente `presupuestador` llame activamente `ExcelReaderTool` durante `crew.kickoff_async()` para leer `precios_bebidas.xlsx` — en vez de recibir datos precargados en el prompt.
 
-**Correcciones críticas al plan:** plan.md Tarea 3.1 propone nombres incorrectos para Pasos 4 y 5. Usa "Estrés y Condiciones de Borde" y "Seguridad — Hardening" cuando la fase real archivó "Tests de Estrés y Robustez" y "Tests de Seguridad — Hardening". Se corrige TESTING.md contra fase real, no contra plan.md erróneo.
+**Correcciones críticas al plan:**
+1. `openpyxl` es dependencia implícita (transitiva via `crewai-tools`). Agregar a direct deps o falla sin extras.
+2. `test_real_tool_calling.py` patchea `crewai.Crew` + `crewai.Task` — el test NO prueba tool calling real.
+3. `PresupuestoFlow` ya existe y está registrado. Plan Paso 5 asume crearlo → corregir a "validar".
+4. Plan.md Paso 2 refiere campo `name` que no existe en schema DB (`role` es el campo real).
 
-**Herramienta DX seleccionada:** `fap sync-step-names` — fusión de propuestas ds (nombre) + glm (scope multi-doc: TESTING.md + CHANGELOG.md) + kimi (validación) + qwen (source configurable). Ver §3.
+**Decisión DX:** `fap test-tool-call` (fusión de propuestas qwen + glm) como comando CLI que verifica tool calling con/sin LLM real.
 
 ---
 
 ## 2️⃣ Diseño Funcional Consolidado
 
 ### Happy Path
-1. Plan.md detecta nombres incorrectos en TESTING.md (Paso 3-5)
-2. Análisis unificado resuelve que fuente de verdad real = phase-state.md + carpetas IMPLEMENTED
-3. Se corrigen 3 headings en TESTING.md (líneas 66, 72, 78)
-4. Se corrige 1 descripción en TESTING.md (línea 70)
-5. Se corrigen 3 entradas en CHANGELOG.md (líneas 28, 32, 36)
-6. Se crea herramienta DX `fap sync-step-names` para prevenir recurrencia
-7. Diff muestra exactamente 7 líneas cambiadas (4 TESTING.md + 3 CHANGELOG.md)
+
+1. `PresupuestoFlow.execute(input_data)` recibe evento con `tipo_evento`, `pax`, `fecha`
+2. `validate_input()` pasa — campos requeridos presentes
+3. `create_task_record()` persiste en `tasks` con status PENDING
+4. `BaseCrew(org_id, role="presupuestador").run_async(task_description, inputs)`
+5. `_load_agent_config()` consulta `agent_catalog` → `soul_json`, `allowed_tools: ["excel_reader"]`, `max_iter: 5`
+6. `AgentFactory.create_agent_async(config, org_id)` → `resolve_tools_async(["excel_reader"], org_id)`
+7. `tool_registry.get("excel_reader")` → `ExcelReaderTool(org_id=org_id)`
+8. `crewai.Agent(role, goal, backstory, llm=groq/llama-3.3-70b, tools=[ExcelReaderTool(...)])`
+9. `crew.kickoff_async()` → LLM recibe task + tool description
+10. LLM **decide** llamar `excel_reader(filename="precios_bebidas.xlsx")`
+11. `ExcelReaderTool._run()` lee .xlsx → retorna JSON con precios
+12. JSON se inyecta en contexto LLM → LLM calcula presupuesto
+13. Output JSON estructurado: `precio_botella`, `botellas_necesarias`, `costo_total`
+14. `persist_state()` → snapshots + tasks COMPLETED
 
 ### Edge Cases MVP
-- **Descripción desalineada:** Si solo se cambian headings, línea 70 contradice heading nuevo de Paso 3 → corregir ambas
-- **CHANGELOG.md ignorado:** Si no se corrige, inconsistencia documental persiste post-fix → incluir en scope
-- **Phase-state.md no se toca:** Es archivo de estado, no guía de testing. Su divergencia con plan.md es problema separado
+
+| # | Edge Case | Comportamiento esperado |
+|---|---|---|
+| EC1 | LLM no llama la tool (alucina precios) | Test falla con `ToolCallTracer.calls == 0`. Prompt + description deben forzar calling |
+| EC2 | Tool name no existe en registry | `logger.warning` + skip. Agent opera sin esa tool |
+| EC3 | Archivo .xlsx no existe | `ExcelReaderTool._run()` retorna `{"error": "Archivo 'X' no encontrado"}` |
+| EC4 | `agent_catalog` sin registro activo para role | `CrewConfigError` elevado |
+| EC5 | `allowed_tools` vacío o `[]` | Agent creado sin tools — responde con datos de entrenamiento |
+| EC6 | Groq API key ausente o rate limited | Test skip con `skipif(!GROQ_API_KEY)`. Tool calling sin LLM real no verificable |
+| EC7 | Multi-sheet: LLM pide sheet inexistente | Tool retorna `{"error": "Sheet 'X' no encontrada"}` |
 
 ---
 
@@ -64,117 +87,137 @@
 
 ### Componentes y Modificaciones
 
-| Ruta real | Tipo cambio | Descripción | Interfaces clave | Patrón a seguir |
-|-----------|-------------|-------------|-----------------|-----------------|
-| `TESTING.md` (raíz) | Modificación | 3 headings + 1 descripción corregidos | `### Paso N: [nombre]` | Formato markdown H3 existente |
-| `CHANGELOG.md` (raíz) | Modificación | 3 entries corregidos (líneas 28, 32, 36) | `#### Paso N — [nombre]` | Formato markdown H4 existente |
-| `src/cli/commands/sync_step_names.py` | Creación | Herramienta DX CLI para validar/fix nombres de pasos multi-doc | `def run(check: bool, fix: bool, source: str) -> int` | `src/cli/commands/perf_check.py` — patrón Typer `app.command()` |
+| # | Ruta real | Tipo | Descripción | Interfaces clave | Patrón |
+|---|---|---|---|---|---|
+| 0 | `src/cli/commands/tool_call_test.py` | **Creación** | CLI `fap test-tool-call` — verifica tool calling con/sin LLM real | `def run(agent_role: str, tool_name: str, file: str, task: str, dry_run: bool, json_output: bool)` | `src/cli/commands/check_env.py` |
+| 1 | `pyproject.toml` | **Modificación** | Agregar `openpyxl>=3.1.0` a `[project.dependencies]` | línea: `"openpyxl>=3.1.0"` después de `"tenacity>=9.0.0"` | Dependencias existentes |
+| 2 | `src/tools/excel_reader.py:35-39` | **Modificación** | Mejorar `description` para LLM function calling | `description: str` — incluir ejemplos + instrucciones de uso | `src/tools/service_connector.py:57` |
+| 3 | `src/crews/base_crew.py` | **Modificación** | Agregar atributo `_last_tool_calls` poblado durante ejecución | `get_last_tool_calls() -> list[dict]` | Patrón `get_last_tokens_used()` línea 165-167 |
+| 4 | `tests/e2e/test_tool_calling_real.py` | **Creación** | Test E2E sin patches de CrewAI/Task. Verifica tool calling con LLM real | `async def test_presupuestador_calls_excel_reader()` | `test_real_tool_calling.py` (pero sin patches) |
+| 5 | `tests/e2e/test_real_tool_calling.py` | **Modificación** | Agregar `ToolCallTracer` y assert `calls >= 1` | Assert reemplaza `"12000" in raw` por `tracer.calls["excel_reader"] >= 1` | Patrón tracer en test |
+| 6 | `tests/e2e/test_real_agent_pipeline.py` | **Modificación** | Migrar `allowed_tools: []` → `["excel_reader"]`, remover precios hardcodeados | Cambiar `AGENT_CONFIG` + prompt | `test_real_tool_calling.py::AGENT_CONFIG` |
+| 7 | `tests/unit/test_factory.py` | **Modificación** | Agregar test unitario `resolve_tools_async` con `excel_reader` | `class TestExcelReaderResolution` | `tests/unit/test_factory.py:157-191` |
 
 ### DX & Tooling — Tarea 0 (OBLIGATORIO)
 
 ```
-### Herramienta: fap sync-step-names
-- **Qué automatiza:** Verifica/corrige nombres de pasos en TESTING.md y CHANGELOG.md contra fuente de verdad configurable (plan.md o phase-state.md). Escanea headings `### Paso N:` y `#### Paso N —` y compara.
-- **Tipo:** CLI command (Typer)
-- **Ubicación:** `src/cli/commands/sync_step_names.py`
+### Herramienta: fap test-tool-call
+- **Qué automatiza:** Verificación end-to-end de que un agente llama una herramienta durante ejecución real, con/sin LLM real. Elimina configuración manual de tests para validar tool calling.
+- **Tipo:** CLI (comando fap)
+- **Ubicación:** `src/cli/commands/tool_call_test.py` (desde `proyecto-config.json: paths.cli_commands`)
 - **Cómo se usa:**
-  - `fap sync-step-names --check` → dry-run: lista discrepancias, exit 0 si ok, 1 si drift
-  - `fap sync-step-names --fix` → aplica correcciones a TESTING.md + CHANGELOG.md
-  - `fap sync-step-names --source phase-state` → usa phase-state.md como verdad (default)
-  - `fap sync-step-names --source plan` → usa plan.md como verdad
-- **Impacto para el usuario final:** Elimina verificación manual de 126+ líneas. Previene desincronización futura. CI puede fallar si docs drift.
-- **El implementador DEBE usarla** para verificar pre/post fix que 0 discrepancias.
+  ```
+  fap test-tool-call --agent presupuestador --tool excel_reader --file precios_bebidas.xlsx --task "Calculá costo de 100 cocteles"
+  ```
+  Flags:
+  - `--dry-run`: solo verifica config sin ejecutar LLM
+  - `--json`: output machine-readable
+  - `--llm`: forzar uso de LLM real (Groq)
+- **Impacto para el usuario final:** Reduce de ~15 min (configurar test manual con mock DB + mock CrewAI + verificar output) a ~30 seg. Permite iterar tool descriptions sin consumir tokens.
+- **El implementador DEBE usarla** para completar las tareas 1..N del paso.
 ```
 
 ---
 
 ## 4️⃣ Decisiones Tecnológicas
 
-1. **Fuente de verdad = phase-state.md + carpetas IMPLEMENTED:** plan.md hotfix Tarea 3.1 tiene error en nombres Pasos 4-5. Código real (carpetas archivadas) gana.
-2. **DX tool ubicada en `src/cli/commands/` no `scripts/`:** Consistencia con resto de herramientas fap. ds/kimi/qwen propusieron scripts, pero glm propuso CLI Typer — más integrado con ecosistema existente.
-3. **Scope extendido a CHANGELOG.md:** glm detectó desincronización idéntica en CHANGELOG.md. Incluir en mismo fix — mismo root cause, mismo remedio.
-4. **Correcciones al plan:**
-   - ⚠️ El plan dice Paso 4 = "Estrés y Condiciones de Borde" pero la fase real usó "Tests de Estrés y Robustez" (carpeta `04-Tests-de-Estres-y-Robustez/`). Se implementa nombre real de la fase.
-   - ⚠️ El plan dice Paso 5 = "Seguridad — Hardening" pero la fase real usó "Tests de Seguridad — Hardening" (phase-state.md:22) con carpeta `05-Tests-de-Seguridad/`. Se implementa "Tests de Seguridad — Hardening".
-   - ⚠️ El plan no incluye CHANGELOG.md en scope. Se extiende para cubrir desincronización documental completa.
-   - ⚠️ El plan no menciona corrección de descripción línea 70. Se incluye para consistencia.
+1. **Herramienta DX unificada:** `fap test-tool-call` seleccionada sobre `ToolCallTracer` (kimi) porque CLI da verificación invocable sin modificar código de test. `ToolCallTracer` se fusiona como utilidad interna de `base_crew.py` (atributo `_last_tool_calls`).
+
+2. **`openpyxl` como dependencia directa:** No puede ser transitiva via `crewai-tools` (opcional). `ExcelReaderTool` y `ExcelWriterTool` la requieren. Si `crewai` no está instalado, tool calling se rompe silenciosamente.
+
+3. **Test E2E sin patches de CrewAI:** El test existente (`test_real_tool_calling.py:76-77`) patchea `crewai.Crew` + `crewai.Task` anulando el motor CrewAI. Crear `test_tool_calling_real.py` sin patches para validar tool calling real.
+
+4. **Tool calling verification via tracer:** `BaseCrew.get_last_tool_calls()` expone lista de tools invocadas. Similar a `get_last_tokens_used()` existente. Permite assert programático sin parsear output del LLM.
+
+5. **Correcciones al plan:**
+   - ⚠️ Plan dice `agents/presupuestador.json` con campo `name` pero DB `agent_catalog` usa `role`. Se implementa `role` como identificador.
+   - ⚠️ Plan dice Paso 5 "Crear `PresupuestoFlow`" pero ya existe (`src/flows/presupuesto_flow.py:23`). Se redefine Paso 5 a validación.
+   - ⚠️ Plan no menciona `openpyxl` como dependencia. Se agrega como directa.
+   - ⚠️ Plan no contempla test de tool calling sin patches de CrewAI. Se agrega `test_tool_calling_real.py`.
 
 ---
 
 ## 5️⃣ Criterios de Aceptación MVP
 
 ```
-✅ [DOCS] TESTING.md:66 → `### Paso 3: E2E — Flujos Completos con Mocks`
-✅ [DOCS] TESTING.md:70 → descripción corregida: `Tests E2E: Degraded MCP (E3.1), Approval Gate HITL (E3.2), Multi-step Handover (E3.3).`
-✅ [DOCS] TESTING.md:72 → `### Paso 4: Tests de Estrés y Robustez`
-✅ [DOCS] TESTING.md:78 → `### Paso 5: Tests de Seguridad — Hardening`
-✅ [DOCS] CHANGELOG.md:28 → `#### Paso 5 — Tests de Seguridad — Hardening`
-✅ [DOCS] CHANGELOG.md:32 → `#### Paso 4 — Tests de Estrés y Robustez`
-✅ [DOCS] CHANGELOG.md:36 → `#### Paso 3 — E2E — Flujos Completos con Mocks`
-✅ [DX] `fap sync-step-names --check` ejecuta sin errores y reporta 0 discrepancias post-fix
-✅ [DOCS] Ningún otro heading `### Paso N:` o `#### Paso N —` alterado (Pasos 0,1,2,6,7 intactos)
+✅ [DATA] Registro en agent_catalog con role='presupuestador' y allowed_tools=['excel_reader'] existe
+✅ [DATA] soul_json del agente instruye explícitamente el uso de excel_reader
+✅ [CODE] AgentFactory.resolve_tools_async(['excel_reader'], org_id) retorna instancia de ExcelReaderTool
+✅ [CODE] BaseCrew.run_async() crea Agent con excel_reader en tools
+✅ [CODE] openpyxl>=3.1.0 en [project.dependencies] — uv sync sin errores
+✅ [BACKEND] LLM (groq/llama-3.3-70b) llama excel_reader activamente
+✅ [BACKEND] Output del agente contiene datos reales del xlsx (no inventados)
+✅ [FULLSTACK] test_tool_calling_real.py pasa sin patches de CrewAI (requiere GROQ_API_KEY)
+✅ [FULLSTACK] test_real_tool_calling.py modificado verifica tracer.calls >= 1
+✅ [FULLSTACK] test_real_agent_pipeline.py migrado: usa allowed_tools=["excel_reader"]
+✅ [DX] fap test-tool-call ejecuta sin errores con --dry-run y --help
 ```
 
 **Funcionales:**
-- [ ] TESTING.md headings Pasos 3-5 corregidos contra fase real
-- [ ] CHANGELOG.md entries Pasos 3-5 corregidos contra fase real
-- [ ] Descripción Paso 3 alineada con contenido real (E2E mocks, no seguridad)
+- [ ] Agente `presupuestador` con `allowed_tools=["excel_reader"]` llama tool al ejecutar `BaseCrew.run_async()`
+- [ ] Output contiene `costo_total`, `precio_botella`, `botellas_necesarias` (datos reales de sheet)
 
 **Técnicos:**
-- [ ] `fap sync-step-names --check --source phase-state` → exit 0 (0 discrepancias)
-- [ ] `fap sync-step-names --fix` → modifica solo archivos esperados
-- [ ] `git diff TESTING.md CHANGELOG.md` → exactamente 7 líneas cambiadas
+- [ ] `resolve_tools_async(["excel_reader"], org_id)` retorna `[ExcelReaderTool(org_id=...)]`
+- [ ] `BaseCrew.get_last_tool_calls()` retorna lista con ≥1 entry para `excel_reader`
+- [ ] `fap test-tool-call --dry-run --agent presupuestador --tool excel_reader` → exit 0
+- [ ] `uv sync` exitoso después de agregar `openpyxl`
 
 ---
 
 ## 6️⃣ Plan de Implementación
 
 | # | Tarea | Complejidad | Tiempo Est. | Dependencias |
-|---|-------|:-----------:|:-----------:|:------------:|
-| 0 | **DX & Tooling:** `fap sync-step-names` — comando Typer en `src/cli/commands/sync_step_names.py`. Escanea headings en TESTING.md + CHANGELOG.md. Compara contra phase-state.md o plan.md. Flags `--check`/`--fix`/`--source`. | Media | 0.5h | Ninguna |
-| 1 | Corregir heading Paso 3 en TESTING.md:66 | Baja | 0.02h | Tarea 0 (dogfooding) |
-| 2 | Corregir descripción Paso 3 en TESTING.md:70 | Baja | 0.02h | Tarea 0 |
-| 3 | Corregir heading Paso 4 en TESTING.md:72 | Baja | 0.02h | Tarea 0 |
-| 4 | Corregir heading Paso 5 en TESTING.md:78 | Baja | 0.02h | Tarea 0 |
-| 5 | Corregir CHANGELOG.md:28 (Paso 5) | Baja | 0.02h | Tarea 0 |
-| 6 | Corregir CHANGELOG.md:32 (Paso 4) | Baja | 0.02h | Tarea 0 |
-| 7 | Corregir CHANGELOG.md:36 (Paso 3) | Baja | 0.02h | Tarea 0 |
-| 8 | Verificación final: `fap sync-step-names --check --source phase-state` → exit 0 | Baja | 0.02h | Tareas 0-7 |
-| **TOTAL** | | | **0.64h** | |
+|---|---|---|---|---|
+| 0 | **DX & Tooling:** `fap test-tool-call` — `src/cli/commands/tool_call_test.py` | Media | 1.5h | Ninguna |
+| 1 | Agregar `openpyxl>=3.1.0` a `[project.dependencies]` en `pyproject.toml` | Baja | 0.2h | Ninguna |
+| 2 | Mejorar `ExcelReaderTool.description` para LLM function calling | Baja | 0.3h | Tarea 0 |
+| 3 | Agregar `get_last_tool_calls()` en `BaseCrew` (`src/crews/base_crew.py`) | Media | 1h | Tarea 2 |
+| 4 | Crear `tests/e2e/test_tool_calling_real.py` (sin patches CrewAI) | Media | 1h | Tareas 0-3 |
+| 5 | Modificar `test_real_tool_calling.py` con `ToolCallTracer` + assert `calls ≥ 1` | Baja | 0.5h | Tarea 3 |
+| 6 | Migrar `test_real_agent_pipeline.py` a `allowed_tools: ["excel_reader"]` | Baja | 0.5h | Tarea 0 |
+| 7 | Agregar test unitario `TestExcelReaderResolution` en `test_factory.py` | Baja | 0.5h | Tarea 0 |
+| **TOTAL** | | | **4.5h** | |
 
-> **Tarea 0 siempre = DX & Tooling.** Implementador DEBE ejecutarla primero y usarla para verificar pre/post fix.
+> [!IMPORTANT]
+> **Tarea 0 siempre = DX & Tooling.** Implementador DEBE ejecutarla primero y usar `fap test-tool-call` para el resto del paso (dogfooding obligatorio).
 
 ---
 
 ## 7️⃣ Riesgos y Mitigaciones
 
 | Riesgo | Severidad | Causa | Mitigación |
-|--------|:---------:|-------|------------|
-| plan.md hotfix usa nombres que no coinciden con fase real archivada | Media | plan.md Tarea 3.1 propone "Estrés y Condiciones de Borde" y "Seguridad — Hardening" pero carpetas reales dicen otra cosa | Resuelto en §4: usar fase real. Documentar corrección al plan. |
-| Phase-state.md queda con nombres divergentes del plan.md hotfix | Baja | Paso 3 no modifica phase-state.md. Nombres de fase archivada vs hotfix difieren. | No requiere acción. phase-state.md es registro histórico. Documentar para futura sincro. |
-| Edición accidental de otros headings | Baja | Reemplazo global por error | Usar cambio línea específica. Verificar diff = solo 7 líneas. |
-| DX tooling overhead > beneficio para paso de 7 líneas | Baja | Paso documental pequeño | Herramienta se amortiza en futuros pasos. Previene recurrencia. |
+|---|---|---|---|
+| LLM no llama la tool (alucina precios) | **Alta** | `soul_json`/`description` poco explícitos. LLM usa datos entrenamiento en vez de tool | `ToolCallTracer` falla test si `calls == 0`. Reforzar `backstory`: "SIEMPRE usás excel_reader. NUNCA inventés" |
+| CrewAI function calling incompatible con Groq | **Alta** | CrewAI ≥0.100 schema puede no mapear a Groq function calling | Test con LLM real inmediato (Tarea 4). Fallback: inyectar datos vía prompt como workaround |
+| `openpyxl` ausente en runtime sin extras | **Alta** | `crewai-tools` no instalado → `openpyxl` no disponible | Tarea 1 (direct dep) elimina este riesgo |
+| Groq API rate limiting / timeout | **Media** | Tests E2E con LLM real consumen tokens | Tests con `skipif(!GROQ_API_KEY)`. `tenacity` retry ya disponible |
+| Test flakiness por LLM no determinista | **Media** | LLM responde diferente cada ejecución | Verificar presencia de datos clave (no output exacto). `tracer.calls >= 1` es determinista |
+| `_load_from_db()` en `registry.py:158` sin `_create_safe_builtins()` | **Media** | Vector `__import__` sin restricción en carga de skills DB | Fix plan v3.2 Paso 0 pendiente. No bloquea Paso 3. Documentado como deuda |
+| `BASE_DIR` hardcodeado en `excel_reader.py:20` | **Baja** | Path relativo frágil si archivo se mueve | Aceptable MVP. Roadmap: migrar a Google Sheets API |
 
 ---
 
 ## 8️⃣ Testing Mínimo Viable
 
 | ID | Caso | Input | Output Esperado |
-|----|------|-------|-----------------|
-| TP-1 | `fap sync-step-names --check --source phase-state` post-fix | Comando CLI | Exit 0. Output: "0 discrepancias encontradas." |
-| TP-2 | `fap sync-step-names --check --source plan` post-fix | Comando CLI | Exit 1. Output: Paso 4 y 5 discrepan (plan.md name ≠ fase real). |
-| TP-3 | `fap sync-step-names --fix --dry-run` | Comando CLI | Lista cambios propuestos sin modificar archivos. |
-| TP-4 | `grep -c "Validacion de Seguridad\|Hardening de API\|Tests de Regresion" TESTING.md CHANGELOG.md` | Shell | Retorna 0 matches en ambos archivos. |
+|---|---|---|---|
+| TP-1 | Tool resolution: `resolve_tools_async(["excel_reader"], org_id)` | `org_id` UUID | `[ExcelReaderTool(org_id=org_id)]` — tipo y org_id correctos |
+| TP-2 | Tool calling real: agente `presupuestador` con LLM real | `task_description` pidiendo leer `precios_bebidas.xlsx` | `tracer.calls["excel_reader"] >= 1` + output contiene datos de sheet |
+| TP-3 | Tool calling sin patches CrewAI: `BaseCrew.run_async()` | `org_id`, `role="presupuestador"` con mock DB | `crew.kickoff_async()` ejecuta sin error, output tiene `costo_total` |
+| TP-4 | Tool missing: `allowed_tools: ["tool_que_no_existe"]` | `org_id`, role cualquiera | `logger.warning` emitido, Agent creado sin tools, sin crash |
+| TP-5 | `ExcelReaderTool._run()` con archivo inexistente | `filename="no_existe.xlsx"` | `{"error": "Archivo 'no_existe.xlsx' no encontrado en ..."}` |
+| TP-6 | `ExcelReaderTool._run()` con sheet inexistente | `filename="precios_bebidas.xlsx"`, `sheet_name="NOEXISTE"` | `{"NOEXISTE": [{"error": "Sheet 'NOEXISTE' no encontrada"}]}` |
+| TP-7 | `uv sync` con `openpyxl` agregado | `uv sync --all-extras` | Éxito sin errores. `python -c "import openpyxl"` exitoso |
 
-Comando para ejecutar tests: `uv run pytest tests/unit/ -v --timeout=60`
+Comando para ejecutar tests:
+```bash
+# Unitarios
+uv run pytest tests/unit/test_factory.py::TestExcelReaderResolution -v
 
----
+# E2E tool calling real (requiere GROQ_API_KEY)
+uv run pytest tests/e2e/test_tool_calling_real.py -v
 
-## 📊 Calidad de Aportes por Agente
-
-| Agente | Fortaleza | Debilidad | Aporte neto al FINAL |
-|--------|-----------|-----------|---------------------|
-| **ds** | Evaluación limpia, 9 verificaciones precisas. Propuesta DX con nombre sólido. | No detectó descripción incorrecta ni CHANGELOG. Sin insight sobre error del plan. | **3.5/5** — Correcto pero superficial. Base sólida, sin hallazgos profundos. |
-| **glm** | ✅ **Mejor agente.** 16 verificaciones. Único en detectar D1 (descripción TESTING.md:70) y D3 (CHANGELOG.md). Más exhaustivo en cobertura de archivos (test_step.py, CHANGELOG.md). | Propuesta DX más genérica ("check-docs" vs "sync-step-names"). Sin embargo, scope multi-doc correcto. | **4.8/5** — Dominante. Hallazgos exclusivos que elevan calidad del FINAL. |
-| **kimi** | Estructura 4 etapas más clara. Métrica de calidad al final. DX script `validate_docs.py` bien especificado con pseudo-interfaz. | No detectó descripción ni CHANGELOG. Propuesta script-only (no CLI integrado). | **4.0/5** — Sólido y bien estructurado. Le falta profundidad de glm. |
-| **qwen** | ✅ **Insight crítico:** plan.md hotfix names no son fuente de verdad válida para Pasos 4-5. Verificó contra carpetas IMPLEMENTED. | Items de verificación contaminados con otros pasos (baseline.py, registry.py). Propuesta usa phase-state.md como source pero no integra CHANGELOG. | **4.0/5** — Insight decisivo que cambió la resolución del FINAL. Sin él, habríamos copiado nombres erróneos del plan. |
+# Test migrado (requiere GROQ_API_KEY)
+uv run pytest tests/e2e/test_real_agent_pipeline.py -v
+```

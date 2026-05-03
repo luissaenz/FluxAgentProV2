@@ -16,14 +16,15 @@ import crewai
 # Save real classes BEFORE any patches (global_llm_mock runs AFTER import)
 _REAL_CREW = crewai.Crew
 _REAL_TASK = crewai.Task
+_REAL_AGENT = crewai.Agent
 
 import pytest
 
 from src.config import get_settings
-from src.crews.base_crew import BaseCrew
 
 # Force eager import of factory BEFORE any patches
 from src.crews import factory as _  # noqa: F401
+from src.crews.base_crew import BaseCrew
 
 
 def _has_groq_key() -> bool:
@@ -50,16 +51,18 @@ AGENT_CONFIG = {
     "role": "presupuestador",
     "soul_json": {
         "role": "Cotizador de Eventos",
-        "goal": "Generar presupuestos detallados para eventos usando datos de inventario y precios",
+        "goal": "Generar presupuestos detallados para eventos usando excel_reader para precios reales",
         "backstory": (
-            "Sos un experto en cotización de eventos. "
-            "Usás datos reales de precios y consumos para calcular presupuestos precisos. "
-            "Siempre respondés en formato JSON estructurado."
+            "Sos un experto en cotizacion de eventos. "
+            "SIEMPRE usas la herramienta excel_reader para obtener precios actualizados "
+            "del archivo precios_bebidas.xlsx antes de calcular. "
+            "Nunca inventes precios ni uses datos de entrenamiento. "
+            "Siempre respondes en formato JSON estructurado."
         ),
     },
-    "allowed_tools": [],
+    "allowed_tools": ["excel_reader"],
     "model": "groq/llama-3.3-70b-versatile",
-    "max_iter": 3,
+    "max_iter": 5,
     "is_active": True,
 }
 
@@ -75,6 +78,7 @@ async def test_agent_presupuesto_via_crewai():
     with (
         patch("crewai.Crew", _REAL_CREW),
         patch("crewai.Task", _REAL_TASK),
+        patch("crewai.Agent", _REAL_AGENT),
     ):
         # Patch DB for agent_catalog lookup — build proper chain
         chain = MagicMock()
@@ -95,21 +99,17 @@ async def test_agent_presupuesto_via_crewai():
             crew = BaseCrew(org_id=org_id, role="presupuestador")
             result = await crew.run_async(
                 task_description=(
-                    "Generá un presupuesto para este evento:\n"
-                    "- Tipo: Boda\n- Pax: 100\n- Duración: 6 horas\n"
-                    "- Menú: Premium\n- Fecha: 15 Marzo 2026\n- Provincia: Tucumán\n\n"
-                    "Usá esta estructura de precios de referencia:\n"
-                    "Gin Gordon's Pink 700ml: $12000\n"
-                    "Beefeater 700ml: $28000\n"
-                    "Old Smuggler 750ml: $15000\n"
-                    "Havana Club 750ml: $18000\n"
-                    "Absolut 750ml: $25000\n\n"
+                    "Genera un presupuesto para este evento:\n"
+                    "- Tipo: Boda\n- Pax: 100\n- Duracion: 6 horas\n"
+                    "- Menu: Premium\n- Fecha: 15 Marzo 2026\n- Provincia: Tucuman\n\n"
+                    "IMPORTANTE: Usa la herramienta excel_reader para leer 'precios_bebidas.xlsx' "
+                    "y obtener los precios reales de bebidas. NO uses precios inventados.\n\n"
                     "Consumo por PAX (premium): 5 cocteles, 50ml c/u\n"
                     "Mix: 50% gin, 20% whisky, 15% ron, 10% vodka, 5% tequila\n"
                     "Costo hielo/agua/garnish/descartables por PAX: $3500\n"
                     "Bartenders: 1 cada 50 PAX a $50000/hora\n"
                     "Margen recomendado: 45%\n\n"
-                    "Devolvé SOLO JSON con:\n"
+                    "Devuelve SOLO JSON con:\n"
                     "{\n"
                     '  "costo_total": 0,\n'
                     '  "precio_venta": 0,\n'

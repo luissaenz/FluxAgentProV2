@@ -13,12 +13,11 @@ from uuid import uuid4
 import crewai
 import pytest
 
+# Import to trigger @register_flow
+import src.flows.presupuesto_flow  # noqa: F401
 from src.config import get_settings
 from src.flows.registry import flow_registry
 from src.flows.state import FlowStatus
-
-# Import to trigger @register_flow
-import src.flows.presupuesto_flow  # noqa: F401
 
 _REAL_CREW = crewai.Crew
 _REAL_TASK = crewai.Task
