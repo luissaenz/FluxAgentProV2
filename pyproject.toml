@@ -58,6 +58,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "real_llm: Tests que hacen llamadas reales a LLM (Groq/OpenAI/etc). No corren por defecto.",
+]
 filterwarnings = [
     "ignore:The 'timeout' parameter is deprecated:DeprecationWarning",
     "ignore:The 'verify' parameter is deprecated:DeprecationWarning",

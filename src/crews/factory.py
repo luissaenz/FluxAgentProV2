@@ -57,6 +57,10 @@ class AgentFactory:
                     )
                     continue
 
+                logger.warning(
+                    "resolve_tools(async_mode=True) is deprecated. "
+                    "Use resolve_tools_async() instead."
+                )
                 server, mcp_tool_name = mcp_parts
                 try:
                     mcp_tool = AgentFactory._resolve_mcp_tool(
@@ -133,6 +137,101 @@ class AgentFactory:
         return None
 
     @staticmethod
+    async def _resolve_mcp_tool_async(
+        org_id: str, server: str, tool_name: str
+    ) -> Any | None:
+        """Async MCP tool resolution — uses await, safe from async context.
+
+        Lazy imports crewai-tools to handle optional dependency.
+        """
+        try:
+            import importlib.util
+
+            if importlib.util.find_spec("crewai_tools") is None:
+                raise ImportError(
+                    "crewai-tools not installed. Install with: pip install fluxagentpro-v2[crew]"
+                )
+            if importlib.util.find_spec("mcp") is None:
+                raise ImportError(
+                    "mcp package not installed. Install with: pip install fluxagentpro-v2[crew]"
+                )
+        except ImportError as e:
+            if "crewai-tools" in str(e) or "mcp package" in str(e):
+                raise
+            raise ImportError(
+                "crewai-tools not installed. Install with: pip install fluxagentpro-v2[crew]"
+            )
+
+        from src.tools.mcp_pool import MCPPool
+
+        pool = MCPPool.get()
+        try:
+            all_tools = await pool.get_tools(org_id, server)
+        except Exception as e:
+            logger.error(
+                "Failed to resolve MCP tool '%s' from server '%s': %s",
+                tool_name,
+                server,
+                e,
+            )
+            return None
+
+        for tool in all_tools:
+            if hasattr(tool, "name") and tool.name == tool_name:
+                return tool
+
+        logger.warning(
+            "MCP tool '%s' not found in server '%s' (available: %s)",
+            tool_name,
+            server,
+            [getattr(t, "name", str(t)) for t in all_tools],
+        )
+        return None
+
+    @staticmethod
+    async def resolve_tools_async(
+        allowed_tools: list[str], org_id: str
+    ) -> list:
+        """Async variant: resolve regular + MCP tools with await, no deadlock.
+
+        Args:
+            allowed_tools: List of tool names (may include mcp:server:tool).
+            org_id: Organization ID for tenant-scoped resolution.
+
+        Returns:
+            List of instantiated tool objects.
+        """
+        tools = []
+        for tool_name in allowed_tools:
+            if tool_name.startswith("mcp:"):
+                mcp_parts = AgentFactory._parse_mcp_prefix(tool_name)
+                if not mcp_parts:
+                    logger.warning(
+                        "Malformed MCP tool prefix '%s', skipping", tool_name
+                    )
+                    continue
+
+                server, mcp_tool_name = mcp_parts
+                try:
+                    mcp_tool = await AgentFactory._resolve_mcp_tool_async(
+                        org_id, server, mcp_tool_name
+                    )
+                    if mcp_tool:
+                        tools.append(mcp_tool)
+                except Exception as e:
+                    logger.error("Failed to resolve MCP tool '%s': %s", tool_name, e)
+            else:
+                try:
+                    tool_cls = tool_registry.get(tool_name, org_id=org_id)
+                    tools.append(tool_cls(org_id=org_id))
+                except ValueError:
+                    logger.warning(
+                        "Tool '%s' not found in registry for agent creation", tool_name
+                    )
+
+        return tools
+
+    @staticmethod
     def create_agent(config: Dict[str, Any], org_id: str) -> Agent:
         """Create a CrewAI Agent from an agent_catalog record or bundle manifest.
 
@@ -159,17 +258,17 @@ class AgentFactory:
         )
 
     @staticmethod
-    def create_agent_async(config: Dict[str, Any], org_id: str) -> Agent:
-        """Create a CrewAI Agent with full MCP tool resolution (async mode).
+    async def create_agent_async(config: Dict[str, Any], org_id: str) -> Agent:
+        """Create a CrewAI Agent with full async MCP tool resolution.
 
-        Use this in run_async() paths to enable MCP tools.
+        Use this in run_async() paths to enable MCP tools without deadlock.
         """
         soul = config.get("soul_json", {})
         settings = get_settings()
         llm = settings.get_llm()
 
         allowed_tools = config.get("allowed_tools", [])
-        tools = AgentFactory.resolve_tools(allowed_tools, org_id, async_mode=True)
+        tools = await AgentFactory.resolve_tools_async(allowed_tools, org_id)
 
         return Agent(
             role=soul.get("role") or config.get("role") or "Specialised Agent",

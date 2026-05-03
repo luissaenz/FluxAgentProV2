@@ -1,217 +1,175 @@
-# Plan de Implementación — Fix Post-Certificación Fase VI (testing)
+# Plan: Agentes Reales Productivos
 
-> **Versión:** v3.2
-> **Fecha:** 2026-05-01
-> **Origen:** análisis-FINAL.md — discrepancias consolidadas
-> **Fase:** testing (CERRADA — 8/8 pasos completados)
-> **Tipo:** Hotfix post-certificación
+> **Objetivo:** Llevar agentes de presupuesto desde tests offline hasta producción (registrados, ejecutables via API/CLI, con tool calling real y flows formales).
+> **Origen:** Sesión de pruebas con datos reales Aybar (11 sheets, Groq LLM, tests multi-agente).
+> **Estado:** ⏳ PENDIENTE
 
 ---
 
-## Contexto
-
-La Fase VI testing está 100% completada (512 tests, lint 0, 8/8 pasos archivados). El análisis unificado (`analisis-FINAL.md`) detectó **8 discrepancias**, de las cuales **5 requieren acción correctiva** antes de considerar la fase verdaderamente cerrada.
-
----
-
-## Paso 0: Fix Seguridad Crítico — `registry.py` bypass
-
-**Objetivo:** Cerrar vector de seguridad en `_load_from_db()` que usa `safe_builtins` vanilla sin restricted `__import__`.
-
-### Tarea 0.1: Parchear `src/tools/registry.py`
-
-**Archivo:** `src/tools/registry.py`
-**Líneas:** 156-163
-
-**Cambio:**
-
-```python
-# ANTES (vulnerable):
-from RestrictedPython import safe_builtins
-
-loc: Dict[str, Any] = {}
-exec(byte_code, {"__builtins__": safe_builtins}, loc)
-
-# DESPUÉS (seguro):
-safe_env = self.guard._create_safe_builtins()
-
-loc: Dict[str, Any] = {}
-exec(byte_code, {"__builtins__": safe_env}, loc)
-```
-
-**Patrón a seguir:** `src/services/local_executor.py:49` — `safe_env = self.guard._create_safe_builtins()`
-
-**Verificación:**
-- Skill cargada desde DB con `import os` → debe lanzar `SecurityError`
-- Tests SE5.13-SE5.16 siguen pasando
-- `fap validate-tools` no rompe
-
-### Tarea 0.2: Agregar test de regresión
-
-**Archivo nuevo:** `tests/unit/test_registry_security.py`
-
-| # | Prueba | Qué verifica | Criterio |
-|---|---|---|---|
-| R0.1 | `_load_from_db()` con `import os` en código | Restricted import bloquea | `SecurityError` con "not in allowlist" |
-| R0.2 | `_load_from_db()` con `import json` (allowlist) | Módulo permitido pasa | Sin excepción, tool registrada |
-| R0.3 | `_load_from_db()` con `__builtins__["__import__"]` | Bypass indirecto bloqueado | `SecurityError` |
-
-**Estrategia de mocking:** `SecurityGuard` real (no mock). Usar `mock_service_client` fixture para DB. Código fuente inyectado como string.
-
-**Gate:** 3/3 pass. Lint 0.
-
----
-
-## Paso 1: Fix Lint I001
-
-**Objetivo:** Eliminar 3 errores de import sorting.
-
-### Tarea 1.1: Ejecutar auto-fix
-
-```bash
-ruff check --fix src/ tests/
-```
-
-**Archivos afectados (confirmados):**
-- `src/cli/commands/validate_tools.py:69`
-- `src/mcp/server.py:7`
-- `src/tools/mcp_pool.py:149`
-
-**Verificación:**
-```bash
-ruff check src/ tests/
-```
-Debe retornar 0 errores.
-
-**Gate:** `ruff check src/ tests/` → 0 errores.
-
----
-
-## Paso 2: Fix `test_3_5_latency.py`
-
-**Objetivo:** Evitar que test de integración real bloquee CI/local.
-
-### Tarea 2.1: Añadir `@pytest.mark.skipif`
-
-**Archivo:** `tests/integration/test_3_5_latency.py`
-**Ubicación:** Antes de la clase `TestLatencyValidation` o función `test_full_latency_validation`
-
-```python
-@pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL") or not os.getenv("SUPABASE_ANON_KEY"),
-    reason="Requiere Supabase Realtime + DB real — plan.md P0 bug conocido"
-)
-```
-
-**Verificación:**
-```bash
-pytest tests/integration/test_3_5_latency.py -v
-```
-Debe mostrar `SKIPPED` (no `FAILED`).
-
-**Gate:** Test aparece como `SKIPPED`, no `FAILED`.
-
----
-
-## Paso 3: Alinear nombres de pasos en TESTING.md
-
-**Objetivo:** Corregir desincronización entre nombres en TESTING.md y plan.md.
-
-### Tarea 3.1: Corregir nombres de pasos
-
-**Archivo:** `TESTING.md`
-
-| Línea | Antes (incorrecto) | Después (correcto — plan.md) |
-|---|---|---|
-| 66 | `### Paso 3: Validacion de Seguridad Profunda` | `### Paso 3: E2E — Flujos Completos con Mocks` |
-| 72 | `### Paso 4: Hardening de API Publica` | `### Paso 4: Estrés y Condiciones de Borde` |
-| 78 | `### Paso 5: Tests de Regresion E2E` | `### Paso 5: Seguridad — Hardening` |
-
-**Verificación:** Nombres coinciden con `plan.md` secciones Paso 3, Paso 4, Paso 5.
-
-**Gate:** TESTING.md alineado con plan.md.
-
----
-
-## Paso 4: Mover `baseline.py` a `src/cli/commands/`
-
-**Objetivo:** Consistencia estructural con resto de comandos CLI.
-
-### Tarea 4.1: Mover archivo
-
-```bash
-mv src/cli/baseline.py src/cli/commands/baseline_check.py
-```
-
-### Tarea 4.2: Actualizar import en `src/cli/main.py`
-
-**Archivo:** `src/cli/main.py`
-**Línea:** ~53
-
-```python
-# ANTES:
-from src.cli.baseline import run as baseline_check
-
-# DESPUÉS:
-from src.cli.commands.baseline_check import run as baseline_check
-```
-
-### Tarea 4.3: Verificar registro del comando
-
-Confirmar que `app.command("baseline-check")` sigue funcionando tras el move.
-
-**Verificación:**
-```bash
-uv run python -m src.cli.main baseline-check --help
-```
-
-**Gate:** Comando funciona desde nueva ubicación.
-
----
-
-## Criterios de Aceptación MVP
+## Dependencias Entre Pasos
 
 ```
-✅ [SECURITY] registry.py usa _create_safe_builtins() — vector cerrado
-✅ [SECURITY] 3 tests de regresión en test_registry_security.py — 3/3 pass
-✅ [LINT] ruff check src/ tests/ → 0 errores
-✅ [TEST] test_3_5_latency.py → SKIPPED (no FAILED)
-✅ [DOCS] TESTING.md nombres de pasos alineados con plan.md
-✅ [STRUCTURE] baseline.py movido a src/cli/commands/baseline_check.py
+Paso 1 (fix deadlock MCP) ──┐
+                             ├──→ Paso 4 (Flow.execute real) ──→ Paso 5 (flow registrado)
+Paso 2 (registrar agente) ──┘
+           │
+Paso 3 (tool calling) ──────┘
+
+Paso 6 (ExcelWriter) ──→ standalone, paralelo a todo
 ```
 
 ---
 
-## Plan de Implementación
+## Paso 1: Fix Deadlock en MCP Resolution Async
 
-| # | Tarea | Complejidad | Tiempo Est. | Dependencias |
-|---|---|---|---|---|
-| 0 | **Fix seguridad CRÍTICO:** Parchear `registry.py._load_from_db()` + 3 tests regresión | Media | 0.5h | Ninguna |
-| 1 | Ejecutar `ruff check --fix src/ tests/` | Baja | 0.05h | Ninguna |
-| 2 | Añadir `@pytest.mark.skipif` a `test_3_5_latency.py` | Baja | 0.05h | Ninguna |
-| 3 | Alinear nombres de pasos en TESTING.md | Baja | 0.1h | Ninguna |
-| 4 | Mover `baseline.py` a `src/cli/commands/` + actualizar import | Baja | 0.15h | Ninguna |
-| **TOTAL** | | | **0.85h** | |
+**Archivo:** `src/crews/factory.py`
+**Estimación:** 1h
+**Bloqueante para:** Paso 4, 5
 
----
+### Problema
+`_resolve_mcp_tool()` usa `asyncio.run_coroutine_threadsafe(coro, loop).result()` que deadlockea cuando se ejecuta desde el mismo event loop (contexto async).
 
-## Riesgos y Mitigaciones
+### Solución
+Agregar `resolve_tools_async()` y `_resolve_mcp_tool_async()` que usen `await` en vez de `run_coroutine_threadsafe`. `create_agent_async()` pasa a ser async y usa la variante async.
 
-| Riesgo | Severidad | Causa | Mitigación |
-|---|---|---|---|
-| `registry.py` fix rompe carga de skills existentes | Media | Skills DB pueden depender de módulos no en allowlist | Verificar con `fap validate-tools` post-fix. Si falla, expandir `ALLOWED_MODULES` |
-| Mover `baseline.py` rompe import en main.py | Baja | Import path cambia | Tarea 4.2 actualiza import. Verificar con `--help` |
-| `skipif` en latency test oculta fallo real | Baja | Si Supabase está disponible, test debería correr | `skipif` solo activa cuando vars de entorno ausentes |
+### Cambios
+| Archivo | Cambio |
+|---------|--------|
+| `src/crews/factory.py` | Agregar `resolve_tools_async()` y `_resolve_mcp_tool_async()`. `create_agent_async()` → `async def` y llama `await resolve_tools_async()` |
+| `src/crews/base_crew.py` | `run_async()` ya tiene `await AgentFactory.create_agent_async()` — sin cambios |
 
----
+### Tests
+- `tests/unit/test_factory.py`: agregar test para `resolve_tools_async` con MCP mock
+- `tests/e2e/test_exec_agent_mcp.py`: remover parche `_resolve_mcp_tool` → test usa resolución async real
 
-## Protocolo de Ejecución
-
-1. **Paso 0 primero.** Es crítico de seguridad. Sin excepción.
-2. **Pasos 1-4 en cualquier orden.** Son independientes entre sí.
-3. **Verificar con `make test-all`** tras completar todos los pasos.
-4. **Archivar en** `DEVS/IMPLEMENTED/testing/08-Fix-Post-Certificacion/`
+### Criterios
+- [ ] Flow async con MCP tools completa sin deadlock
+- [ ] Flow sync con MCP tools skipea (comportamiento actual)
+- [ ] Tests existentes de factory pasan sin modificación
 
 ---
 
-**Idioma de respuesta:** Español 🇪🇸
+## Paso 2: Registrar Agente Presupuestador en el Sistema
+
+**Archivos:** `data/seed/` (nuevo bundle), API
+**Estimación:** 2h
+**Bloqueante para:** Paso 4, 5
+
+### Qué hacer
+1. Crear bundle ZIP con agente `presupuestador` + `excel_reader` tool
+2. Crear definición de agente en `agents/presupuestador.json` con `soul_json`, `allowed_tools: ["excel_reader"]`
+3. Importar bundle via API `POST /api/bundles/import`
+4. Verificar agente visible en `agent_catalog`
+
+### Bundle structure
+```
+presupuesto-bundle/
+├── manifest.json
+├── agents/
+│   └── presupuestador.json   # role, goal, backstory, allowed_tools
+└── skills/
+    └── excel_reader.py        # opcional — el tool ya está registrado en sistema
+```
+
+### Tests
+- Test E2E: bundle import → HTTP 201 → agente en agent_catalog
+- Test E2E: consultar agente via API → datos correctos
+
+---
+
+## Paso 3: Tool Calling Real (Agente usa herramienta durante ejecución)
+
+**Archivo:** `src/crews/factory.py` (opcional), tests
+**Estimación:** 3h
+**Bloqueante para:** Paso 4, 5
+
+### Qué hacer
+Hoy los tests pasan datos precargados al prompt. El agente no llama `excel_reader` activamente — recibe los datos como contexto.
+
+Para tool calling real:
+1. El agente tiene `allowed_tools: ["excel_reader"]` en su config
+2. `AgentFactory.create_agent_async()` resuelve el tool → `ExcelReaderTool(org_id=xxx)`
+3. CrewAI Agent recibe el tool en su lista
+4. Durante `crew.kickoff_async()`, el LLM decide llamar `excel_reader` según necesidad
+5. El resultado del tool se inyecta en el contexto del LLM
+
+### Desafío
+CrewAI tool calling requiere que el LLM soporte function calling. Groq con llama-3.3-70b lo soporta. Pero el formato de tool description debe ser claro para que el LLM decida usarlo.
+
+### Tests
+- Test con LLM real: agente con `excel_reader` tool que DEBE llamarlo para responder
+- Verificar que la respuesta incluye datos de la sheet (no precargados)
+
+---
+
+## Paso 4: Flow.execute() con LLM Real
+
+**Archivo:** Tests E2E
+**Estimación:** 2h
+**Depende de:** Paso 1 + Paso 2 + Paso 3
+
+### Qué hacer
+Ejecutar pipeline completo: `Flow.execute()` → `BaseFlow._run_crew()` → `BaseCrew.run_async()` → LLM real → output.
+
+Similar a `test_real_agent_pipeline.py` pero pasando por `BaseFlow.execute()` que agrega:
+- `create_task_record()` → persistencia en DB
+- State transitions → PENDING → RUNNING → COMPLETED
+- Event emission → flow.created, flow.completed
+- `persist_state()` → snapshots + tasks update
+
+### Tests
+- Flow.execute() con LLM real + tool excel_reader
+- Verificar state transitions + event emission + output
+
+---
+
+## Paso 5: Flow de Presupuesto Registrado Formalmente
+
+**Archivo:** `src/flows/presupuesto_flow.py`
+**Estimación:** 2h
+**Depende de:** Paso 4
+
+### Qué hacer
+1. Crear `PresupuestoFlow(BaseFlow)` con `@register_flow("presupuesto")`
+2. `validate_input()` verifica: tipo_evento, pax, fecha, provincia
+3. `_run_crew()` ejecuta agente `presupuestador` con datos del input
+4. Output: quote estructurada en JSON
+
+### Tests
+- Flow registrado en `flow_registry`
+- POST `/api/webhooks/trigger` con flow_type="presupuesto"
+- GET `/api/tasks/{task_id}` → status COMPLETED + output
+- Test multi-turn: ejecutar flow, verificar output en DB
+
+---
+
+## Paso 6: ExcelWriterTool (Escribir Presupuesto a .xlsx)
+
+**Archivo:** `src/tools/excel_writer.py`
+**Estimación:** 2h
+**Paralelo a:** todo lo demás
+
+### Qué hacer
+1. Crear `ExcelWriterTool(OrgBaseTool)` con `@register_tool("excel_writer")`
+2. Input: filename, sheet_name, data (JSON array)
+3. Output: escribe .xlsx en PROJECT-Aybar/
+4. Integración futura: reemplazar por Google Sheets API
+
+### Tests
+- Unit: escribir + leer roundtrip
+- Unit: append vs overwrite
+- Unit: validación de datos (estructura JSON consistente)
+
+---
+
+## Resumen de Estimación
+
+| Paso | Tiempo | Depende de |
+|------|--------|------------|
+| 1 — Fix deadlock MCP | 1h | — |
+| 2 — Registrar agente | 2h | — |
+| 3 — Tool calling real | 3h | 1, 2 |
+| 4 — Flow.execute real | 2h | 1, 2, 3 |
+| 5 — Flow registrado | 2h | 4 |
+| 6 — ExcelWriter | 2h | — |
+| **Total** | **~12h** | |

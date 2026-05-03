@@ -182,7 +182,7 @@ class BaseCrew:
 
         from .factory import AgentFactory
 
-        agent = AgentFactory.create_agent_async(config, self.org_id)
+        agent = await AgentFactory.create_agent_async(config, self.org_id)
 
         task = Task(
             description=task_description,

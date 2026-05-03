@@ -7,7 +7,7 @@ without external dependencies.
 from __future__ import annotations
 
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -289,6 +289,9 @@ def global_llm_mock():
 
         mock_crew_instance = MagicMock()
         mock_crew_instance.kickoff.return_value = MagicMock(raw="Mocked Crew Result")
+        mock_crew_instance.kickoff_async = AsyncMock(
+            return_value=MagicMock(raw="Mocked Crew Result")
+        )
         mock_crew.return_value = mock_crew_instance
 
         yield {

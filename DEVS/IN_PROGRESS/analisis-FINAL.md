@@ -1,10 +1,9 @@
-# 🏛️ Análisis FINAL — Paso 4: Mover `baseline.py` a `src/cli/commands/`
+# Análisis FINAL — Paso 1: Split Sync/Async en AgentFactory
 
-> **Unificador:** Arquitecto Senior
-> **Paso:** 4 — Hotfix Post-Certificación
-> **Fecha:** 2026-05-02
-> **Origen:** Unificación de 4 análisis (kimi, glm, qwen, ds)
-> **Fase:** testing — Hotfix post-certificación
+**Paso:** 1 — Fix Deadlock en MCP Resolution Async
+**Fecha:** 2026-05-02
+**Fuentes:** `analisis-paso-1-qwen.md`, `analisis-paso1-ds.md`, `analisis-paso1-glm.md`
+**Plan origen:** `DEVS/plan.md` — "Fix Deadlock en MCP Resolution Async"
 
 ---
 
@@ -12,31 +11,50 @@
 
 ### Tabla de Evaluación de Agentes
 
-| Agente | Verificó código | Discrepancias detectadas | Propuesta DX | Evidencia sólida | Score |
+| Agente | Verificó código | Discrepancias detectadas | Propuesta DX | Evidencia sólida | Score (1-5) |
 |:---|:---|:---|:---|:---|:---|
-| kimi | ✅ 14 elementos verificados | 3 (import alias, PROJECT_ROOT, check_env.py) | ✅ `validate_cli_structure.py` | ✅ Líneas exactas, docstring check_env.py:6-8 | 4.0 |
-| glm | ✅ 14 elementos verificados | 4 (D1-D4: import alias, nombre función, PROJECT_ROOT, check_env.py) | ❌ No propone (justifica: paso trivial) | ✅ Verificación en vivo (`uv run python -c`), Patrones PROJECT_ROOT en commands/ | 4.5 |
-| qwen | ✅ 12 elementos verificados | 2 (PROJECT_ROOT, docstring ruta) | ✅ `fap move-cli-cmd` / `validate_cli_move.py` | ✅ Firma línea 122 completa | 3.5 |
-| ds | ✅ 8 elementos verificados | 3 (D1-D3: import alias, nombre función, check_env.py) | ⚠️ Reutiliza `fap baseline-check` existente como verificación (no crea herramienta nueva) | ✅ grep único punto import | 3.5 |
+| qwen | ✅ 18 elementos | 4 | ✅ `fap check-deadlock` | ✅ Archivos + líneas | 4.5 |
+| ds | ✅ 16 elementos | 5 | ✅ `fap check-deadlock` | ✅ Archivos + líneas | 4.2 |
+| glm | ✅ 18 elementos | 4 | ✅ `fap check-deadlock` | ✅ Archivos + líneas | 4.3 |
+
+### Calidad de aportes por agente
+
+**qwen (Score: 4.5/5):**
+- **Fortalezas:** Mejor cobertura de verificación (18 elementos). Identificó discrepancia clave de firma de `MCPPool.get_tools()` (plan dice 2 params, realidad tiene 4). Incluyó sección de testing mínimo con tabla TP-1..TP-N. Estimación más realista (6.25h). Propuesta DX más detallada con flags `--path` y `--check`.
+- **Debilidades:** No identificó los 5 archivos de tests que parchean `_resolve_mcp_tool` (solo mencionó 2 e2e). No documentó flujos `multi_crew_flow.py` y `dynamic_flow.py` como activadores del deadlock.
+
+**ds (Score: 4.2/5):**
+- **Fortalezas:** Mejor análisis de riesgos — identificó R3 (import guards en versión async) y R4 (circuit breaker abierto). Documentó correctamente que `resolve_tools` NO debe volverse async (breaking change). Estimación más ajustada (2.6h).
+- **Debilidades:** No identificó todos los test files afectados por parches (solo 2 e2e + 1 unit). No mencionó flujos externos (`multi_crew_flow.py`, `dynamic_flow.py`, `agents.py` route).
+
+**glm (Score: 4.3/5):**
+- **Fortalezas:** Mejor detección de discrepancias del plan — identificó D1 (plan dice base_crew "sin cambios" pero requiere await), D2 (alternativa 1 del plan NO resuelve deadlock), D3 (falta `_resolve_tools_async` en BaseCrew). Encontró 5 archivos de tests con parches (incluyendo `test_production_flows.py` y `test_scenario_3_mcp.py` que otros omitieron).
+- **Debilidades:** Estimación de tiempo algo optimista (4.25h). No incluyó tabla de testing mínimo viable. Propuesta DX menos detallada que qwen.
 
 ### Discrepancias Críticas Consolidadas
 
 | # | Discrepancia | Detectó | Verificada contra código | Resolución |
 |---|---|---|---|---|
-| 1 | Plan asume `run as baseline_check` → función real es `baseline_check` directamente | kimi, glm, ds | ✅ `baseline.py:122` → `def baseline_check(...)` | Import sin alias: `from src.cli.commands.baseline_check import baseline_check` |
-| 2 | Plan DESPUÉS dice `import run as baseline_check` → incorrecto, función no se llama `run` | glm, ds | ✅ Refuerza D1 | Import correcto: `from src.cli.commands.baseline_check import baseline_check` |
-| 3 | `PROJECT_ROOT` usa 3 niveles (`parent.parent.parent`) → necesita 4 niveles post-move | kimi, glm, qwen, ds | ✅ `baseline.py:23` → 3 niveles; `lint_fix.py:16`, `security_audit.py:22` → `parents[3]` (4 niveles) | Cambiar `parent.parent.parent` → `parents[3]` post-move |
-| 4 | `check_env.py:7` referencia `baseline_check.py` como inexistente → post-move existirá | kimi, glm, ds | ✅ Leído en código | Opcional: limpiar docstring. No bloqueante |
-| 5 | Docstring línea 1 dice `src/cli/baseline.py` → debe actualizarse a nueva ruta | qwen | ✅ Línea 1 verificada | Actualizar docstring a `src/cli/commands/baseline_check.py` |
-| 6 | Solo `main.py:14` importa `src.cli.baseline` → único punto de cambio | glm, ds | ✅ Grep confirmado: solo línea 14 y comentario check_env.py:7 | Cambio único en `main.py:14` |
+| 1 | Plan dice `base_crew.py` "sin cambios" → FALSO. Línea 185 necesita `await` | glm, qwen, ds | ✅ `base_crew.py:185` | Agregar `await` a llamada `create_agent_async()` |
+| 2 | Plan alternativa 1 (snippet principal) NO resuelve deadlock — sigue llamando `_resolve_mcp_tool()` sync | glm, ds | ✅ `factory.py:62-68` | Usar alternativa 2: métodos async separados (`resolve_tools_async`, `_resolve_mcp_tool_async`) |
+| 3 | `create_agent_async()` es `def` sync, no `async def` — no puede hacer await | qwen, ds, glm | ✅ `factory.py:161` | Convertir a `async def`, usar `await resolve_tools_async()` |
+| 4 | `MCPPool.get_tools()` firma real tiene 4 params, plan asume 2 | qwen | ✅ `mcp_pool.py:77-82` | `_resolve_mcp_tool_async` llama `await pool.get_tools(org_id, server)` — usa defaults para timeout/max_retries |
+| 5 | 5 test files parchean `_resolve_mcp_tool` — deben actualizarse | glm | ✅ grep en tests | Actualizar parches a `_resolve_mcp_tool_async` con `AsyncMock` o remover si resolución real funciona |
+| 6 | `resolve_tools(async_mode=True)` queda obsoleto con métodos separados | glm, ds | ✅ `factory.py:28-78` | Mantener por backward compat pero agregar warning deprecación. No eliminar en este paso. |
+| 7 | Flujos `multi_crew_flow.py`, `dynamic_flow.py`, `agents.py` activan deadlock | ds, glm | ✅ `base_flow.py:135`, `multi_crew_flow.py:118`, `dynamic_flow.py:95` | No requieren cambios — fix en factory/base_crew es suficiente |
 
 ---
 
 ## 1️⃣ Resumen Ejecutivo
 
-- **Objetivo:** Mover `src/cli/baseline.py` a `src/cli/commands/baseline_check.py`, eliminando la única inconsistencia estructural del CLI y normalizando la disposición de comandos.
-- **Correcciones al plan:** (1) Plan Tarea 4.2 asume `from src.cli.baseline import run as baseline_check` → código real usa `from src.cli.baseline import baseline_check` (sin alias). (2) Plan no menciona ajuste de `PROJECT_ROOT` post-move. (3) Plan DESPUÉS usa nombre función incorrecto (`run as baseline_check`).
-- **DX seleccionada:** `validate_cli_structure.py` (script de validación). Detecta comandos CLI en `main.py` cuyo módulo no esté bajo `src/cli/commands/`. Previene futuras desalineaciones como la corregida aquí. Fusión: kimi propuso AST parsing; qwen propuso validación post-move → combinado en script que valida estructura completa pre/post.
+**Objetivo:** Eliminar deadlock en resolución de MCP tools cuando flujos async (`Flow.execute()` → `BaseCrew.run_async()`) intentan resolver tools vía `AgentFactory._resolve_mcp_tool()`. El deadlock ocurre porque `run_coroutine_threadsafe().result()` bloquea el thread mientras el event loop necesita procesar la coroutine scheduleada.
+
+**Correcciones críticas al plan:**
+1. Plan dice `base_crew.py` "sin cambios" → requiere `await` en línea 185.
+2. Alternativa 1 del plan NO resuelve deadlock → usar métodos async separados.
+3. `create_agent_async()` debe convertirse a `async def`.
+
+**Decisión DX:** `fap check-deadlock` — CLI que escanea `run_coroutine_threadsafe().result()` en codebase. Unifica propuesta de los 3 agentes. Previene reintroducción del anti-patrón.
 
 ---
 
@@ -44,21 +62,23 @@
 
 ### Happy Path
 
-1. Ejecutar `validate_cli_structure.py` → detecta `baseline.py` fuera de `commands/`
-2. Mover `src/cli/baseline.py` → `src/cli/commands/baseline_check.py`
-3. Corregir `PROJECT_ROOT` de 3 a 4 niveles en archivo movido
-4. Actualizar docstring línea 1 con nueva ruta
-5. Cambiar import en `main.py:14` → `from src.cli.commands.baseline_check import baseline_check`
-6. Eliminar `src/cli/baseline.py` original
-7. Verificar: `uv run python -m src.cli.main baseline-check --help` → exit 0
-8. Verificar: `ruff check src/ tests/` → 0 errores
+1. `Flow.execute()` (async) llama `BaseCrew.run_async()`
+2. `run_async()` llama `await AgentFactory.create_agent_async(config, org_id)`
+3. `create_agent_async()` llama `await resolve_tools_async(allowed_tools, org_id)`
+4. `resolve_tools_async()` itera `allowed_tools`:
+   - Si `mcp:server:tool` → `await _resolve_mcp_tool_async(org_id, server, tool_name)`
+   - `_resolve_mcp_tool_async()` → `await MCPPool.get().get_tools(org_id, server)` → busca tool por nombre
+   - Si tool regular → `tool_registry.get(tool_name, org_id=org_id)` (sync, sin cambio)
+5. Tools resueltos → `Agent(tools=...)` → `Crew.kickoff_async()` → resultado
 
 ### Edge Cases MVP
 
-- **Import roto:** Si símbolo `baseline_check` no coincide → `ModuleNotFoundError` inmediato al ejecutar Typer app. Detección: verificación inline post-move.
-- **PROJECT_ROOT incorrecto:** Si no se ajusta a 4 niveles → `baseline_check` ejecuta `uv run pytest` desde `src/` en lugar de raíz → subprocess falla. Detección: test funcional.
-- **Archivo original no eliminado:** Si `baseline.py` persiste → import ambiguo. Detección: `ls src/cli/baseline.py` debe fallar.
-- **`__pycache__` stale:** Python puede cachear bytecode viejo. Mitigación: eliminar `__pycache__` post-move.
+- **MCP tool no encontrado en servidor:** `_resolve_mcp_tool_async` retorna `None`, log warning, continúa
+- **Circuit breaker abierto en MCPPool:** `MCPConnectionError` capturado, log error, tool skipped
+- **Prefijo MCP malformado (`mcp:`):** Parseo falla, log warning, tool skipped
+- **Dependencias opcionales no instaladas (crewai-tools, mcp):** `ImportError` con mensaje instalador
+- **Flow sync con MCP tools:** `resolve_tools()` sync skipea MCP con warning — comportamiento actual preservado
+- **`async_mode=True` legacy:** Warning deprecación sugiere usar `resolve_tools_async()`
 
 ---
 
@@ -66,91 +86,122 @@
 
 ### Componentes y Modificaciones
 
-#### Archivo 1: `src/cli/baseline.py` → MOVER → `src/cli/commands/baseline_check.py`
+#### 1. `src/crews/factory.py` — Crear `_resolve_mcp_tool_async()`
 
-- **Ruta real:** `src/cli/commands/baseline_check.py`
-- **Tipo de cambio:** Mover + modificar 2 líneas internas
-- **Descripción:** Archivo completo movido. Contenido idéntico salvo:
-  - Línea 1: docstring `"""src/cli/baseline.py...` → `"""src/cli/commands/baseline_check.py...`
-  - Línea 23: `PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent` → `PROJECT_ROOT = Path(__file__).resolve().parents[3]`
-- **Función pública:** `def baseline_check(audit_tools: bool = typer.Option(False, "--audit-tools", help="Incluye auditoria detallada de tools")) -> None`
-- **Funciones privadas:** `_run_cmd()`, `_check_p0_1_importability()`, `_check_p0_2_existing_suite()`, `_check_p0_3_lint()`, `_check_p0_4_tool_registry()`, `_check_p0_5_fixtures()`
-- **Patrón a seguir:** `src/cli/commands/lint_fix.py` — estructura comando en `commands/`, `parents[3]` para PROJECT_ROOT
-
-#### Archivo 2: `src/cli/main.py` → MODIFICAR línea 14
-
-- **Ruta real:** `src/cli/main.py`
-- **Tipo de cambio:** Modificación (1 línea)
-- **Descripción:** Cambiar import de `src.cli.baseline` a `src.cli.commands.baseline_check`
-- **Cambio exacto:**
+- **Tipo:** Creación
+- **Descripción:** Método async que resuelve un MCP tool individual usando `await` directo sobre `MCPPool.get_tools()`. Sin `run_coroutine_threadsafe().result()`.
+- **Interfaz:**
   ```python
-  # ANTES (línea 14):
-  from src.cli.baseline import baseline_check
-  # DESPUÉS:
-  from src.cli.commands.baseline_check import baseline_check
+  @staticmethod
+  async def _resolve_mcp_tool_async(
+      org_id: str, server: str, tool_name: str
+  ) -> Any | None:
   ```
-- **Sin alias `as`:** La función se llama `baseline_check` en origen y destino.
+- **Patrones a seguir:** `src/tools/mcp_pool.py:77-191` — await directo. Mismo import guard lazy que `_resolve_mcp_tool` actual (factory.py:88-104).
+- **Error handling:** Captura `MCPConnectionError`, `Exception` → log + retorna `None`.
 
-#### Archivo 3: `src/cli/baseline.py` → ELIMINAR
+#### 2. `src/crews/factory.py` — Crear `resolve_tools_async()`
 
-- **Ruta real:** `src/cli/baseline.py`
-- **Tipo de cambio:** Eliminación
-- **Descripción:** Archivo original eliminado tras mover. Verificar que no existe.
+- **Tipo:** Creación
+- **Descripción:** Método async que resuelve lista completa de tools. MCP vía `await _resolve_mcp_tool_async()`, regulares vía `tool_registry.get()` (sync).
+- **Interfaz:**
+  ```python
+  @staticmethod
+  async def resolve_tools_async(
+      allowed_tools: list[str], org_id: str
+  ) -> list:
+  ```
+- **Patrones a seguir:** `src/crews/factory.py:28-78` (`resolve_tools`) — misma lógica iterativa, branch MCP usa await.
 
-#### Archivo 4 (opcional): `src/cli/commands/check_env.py` → MODIFICAR docstring obsoleto
+#### 3. `src/crews/factory.py` — Modificar `create_agent_async()`
 
-- **Ruta real:** `src/cli/commands/check_env.py`
-- **Tipo de cambio:** Modificación (docstring, líneas 6-7)
-- **Descripción:** Limpiar comentario que dice `baseline_check.py que no existe`. Post-move, el archivo existirá.
+- **Tipo:** Modificación (sync → async)
+- **Descripción:** Convertir de `def` a `async def`. Tool resolution cambia de `resolve_tools(async_mode=True)` a `await resolve_tools_async()`.
+- **Interfaz:**
+  ```python
+  @staticmethod
+  async def create_agent_async(
+      config: Dict[str, Any], org_id: str
+  ) -> Agent:
+  ```
+- **Patrones a seguir:** `src/crews/factory.py:135-159` (`create_agent`) — mismo constructor `Agent(...)`.
+
+#### 4. `src/crews/factory.py` — Modificar `resolve_tools()` (sin cambios funcionales)
+
+- **Tipo:** Modificación menor
+- **Descripción:** Agregar warning deprecación en branch `async_mode=True`. Path sync intacto.
+- **Interfaz:** Sin cambio de firma.
+
+#### 5. `src/crews/base_crew.py:185` — Agregar `await`
+
+- **Tipo:** Modificación (1 línea)
+- **Descripción:** `agent = AgentFactory.create_agent_async(config, self.org_id)` → `agent = await AgentFactory.create_agent_async(config, self.org_id)`
+- **Patrones a seguir:** `base_crew.py:200` — ya usa `await crew.kickoff_async()`.
+
+#### 6. Tests — Actualizar parches y agregar tests async
+
+- `tests/unit/test_factory.py` — Agregar `TestResolveToolsAsync`, `TestResolveMCPToolAsync`. Actualizar `test_create_agent_async_enables_mcp`.
+- `tests/e2e/test_exec_agent_mcp.py` — Remover/actualizar parche `_resolve_mcp_tool`.
+- `tests/e2e/test_exec_multi_mcp.py` — Idem.
+- `tests/e2e/test_production_flows.py` — Actualizar parche si existe.
+- `tests/e2e/test_scenario_3_mcp.py` — Actualizar parche si existe.
 
 ### DX & Tooling — Tarea 0 (OBLIGATORIO)
 
 ```
-### Herramienta: validate_cli_structure
-- **Qué automatiza:** Detecta comandos CLI registrados en `main.py` cuyo módulo de origen NO esté bajo `src/cli/commands/`. Previene desalineaciones estructurales.
-- **Tipo:** script / validador
-- **Ubicación:** `scripts/validate_cli_structure.py`
-- **Cómo se usa:** `python scripts/validate_cli_structure.py` o integrado en CI
-- **Impacto para el usuario final:** El mantenedor no necesita verificar manualmente que todo comando nuevo esté en `commands/`. El validador falla si detecta drift. Para este paso, detecta `baseline.py` fuera de `commands/`.
-- **El implementador DEBE usarla** para completar las tareas 1..N del paso.
+### Herramienta: fap check-deadlock
+- **Qué automatiza:** Detecta llamadas a `asyncio.run_coroutine_threadsafe().result()` en código fuente — patrón de deadlock sync→async. Escanea todos los `.py` files buscando este anti-pattern y reporta archivo/línea/contexto.
+- **Tipo:** CLI command (Typer)
+- **Ubicación:** `src/cli/commands/check_deadlock.py`
+- **Cómo se usa:** `fap check-deadlock --path src/` o `fap check-deadlock --check` (exit 1 si encuentra patrones)
+- **Impacto para el usuario final:** Previene reintroducción del bug de deadlock en futuros cambios. CI puede ejecutarlo como gate pre-merge.
+- **El implementador DEBE usarla** para verificar que tras implementar las tareas 1-5, el patrón deadlock ya no existe en el path async.
 ```
 
 ---
 
 ## 4️⃣ Decisiones Tecnológicas
 
-1. **Import sin alias:** La función se llama `baseline_check` en ambos lados. No usar `as`. Resolución: `from src.cli.commands.baseline_check import baseline_check`.
-2. **`parents[3]` para PROJECT_ROOT:** Patrón ya usado en `lint_fix.py:16` y `security_audit.py:22`. Preferir `.parents[3]` sobre `.parent.parent.parent.parent` por brevedad y consistencia.
-3. **No renombrar función:** Mantener `baseline_check` como nombre. Plan incorrecto al sugerir `run as baseline_check`.
-4. **Eliminar archivo original:** No dejar duplicado en `src/cli/baseline.py`. Move = mv + rm, no cp.
-5. **⚠️ El plan dice `from src.cli.baseline import run as baseline_check` pero el código real usa `from src.cli.baseline import baseline_check`. Se implementa según código real.**
-6. **⚠️ El plan no menciona ajuste de `PROJECT_ROOT` post-move. Código real requiere cambio de 3→4 niveles. Se implementa el ajuste.**
+1. **Métodos async separados en vez de hacer `resolve_tools` async:** `resolve_tools()` sync se mantiene intacto. Se crean `resolve_tools_async()` y `_resolve_mcp_tool_async()` como métodos nuevos. Evita breaking change en tests existentes y callers sync.
+
+2. **`create_agent_async()` se vuelve `async def`:** Único caller es `BaseCrew.run_async()` (verificado). Cambio seguro. Requiere agregar `await` en línea 185 de `base_crew.py`.
+
+3. **`async_mode` param se mantiene por backward compat:** No se elimina en este paso. Se agrega warning deprecación si `async_mode=True` para guiar migración a `resolve_tools_async()`.
+
+4. **`_resolve_mcp_tool()` sync se mantiene:** No se elimina. Puede ser útil para contextos no-async (sin event loop running). Se mantiene como fallback.
+
+5. **Plan dice base_crew "sin cambios" → código gana:** Línea 185 de `base_crew.py` requiere `await`. El plan es incorrecto en este punto.
+
+6. **Plan alternativa 1 NO resuelve deadlock → alternativa 2 gana:** El snippet principal del plan muestra `create_agent_async` sync llamando `resolve_tools(async_mode=True)` que sigue usando `_resolve_mcp_tool()` sync → deadlock persiste. Solo métodos async separados lo resuelven.
 
 ---
 
 ## 5️⃣ Criterios de Aceptación MVP
 
 ```
-✅ [CODE] `src/cli/commands/baseline_check.py` existe con contenido de baseline.py + PROJECT_ROOT corregido a parents[3] + docstring actualizado
-✅ [CODE] `src/cli/baseline.py` original eliminado (no existe en filesystem)
-✅ [CODE] `src/cli/main.py:14` importa desde `src.cli.commands.baseline_check` (sin alias `as`)
-✅ [CODE] `src/cli/main.py:57` registra `app.command("baseline-check")(baseline_check)` sin cambios
-✅ [BACKEND] `uv run python -m src.cli.main baseline-check --help` ejecuta sin ModuleNotFoundError
-✅ [BACKEND] `uv run python -m src.cli.main baseline-check` ejecuta P0.1-P0.5 con PROJECT_ROOT correcto
-✅ [FULLSTACK] `fap baseline-check` funciona idéntico a antes del move
-✅ [LINT] `ruff check src/ tests/` → 0 errores
-✅ [DX] `python scripts/validate_cli_structure.py` ejecuta sin errores y detecta drift estructural
+✅ [CODE] `AgentFactory._resolve_mcp_tool_async()` existe con firma `async def _resolve_mcp_tool_async(org_id: str, server: str, tool_name: str) -> Any | None`
+✅ [CODE] `AgentFactory.resolve_tools_async()` existe con firma `async def resolve_tools_async(allowed_tools: list[str], org_id: str) -> list`
+✅ [CODE] `AgentFactory.create_agent_async()` es `async def` y usa `await resolve_tools_async()`
+✅ [CODE] `BaseCrew.run_async()` usa `await AgentFactory.create_agent_async(config, self.org_id)` en línea 185
+✅ [CODE] `resolve_tools()` sync mantiene comportamiento actual — MCP skipped con warning
+✅ [CODE] `_resolve_mcp_tool_async()` usa `await pool.get_tools()` directo — SIN `run_coroutine_threadsafe().result()`
+✅ [BACKEND] Flow async con MCP tools completa sin deadlock
+✅ [BACKEND] Flow sync con MCP tools skipea MCP (comportamiento actual preservado)
+✅ [FULLSTACK] Tests e2e pasan sin parchear `_resolve_mcp_tool` (o con parche actualizado a `_resolve_mcp_tool_async`)
+✅ [FULLSTACK] Tests unitarios de factory pasan (existentes + nuevos async)
+✅ [DX] `fap check-deadlock` ejecuta sin errores y detecta patrón `run_coroutine_threadsafe().result()` en código actual
 ```
 
 **Funcionales:**
-- [ ] Comando `fap baseline-check` ejecuta checks P0.1-P0.5 con salida Rich table + exit code 0/1
-- [ ] Flag `--audit-tools` funciona correctamente post-move
+- [ ] Flow async con agente que tiene `allowed_tools` conteniendo `mcp:*:*` completa sin colgarse
+- [ ] Flow sync con mismo agente skipea MCP tools con warning en log
+- [ ] Tools regulares (no-MCP) se resuelven igual en ambos paths
 
 **Técnicos:**
-- [ ] `python -c "from src.cli.commands.baseline_check import baseline_check"` exit 0
-- [ ] `ls src/cli/baseline.py` falla (archivo no existe)
-- [ ] `ls src/cli/commands/baseline_check.py` existe
-- [ ] PROJECT_ROOT resuelve a `D:\Develop\Personal\FluxAgentPro-v2` desde nueva ubicación
+- [ ] 0 llamadas a `run_coroutine_threadsafe().result()` en path async
+- [ ] `inspect.iscoroutinefunction(AgentFactory.create_agent_async)` retorna `True`
+- [ ] `inspect.iscoroutinefunction(AgentFactory.resolve_tools_async)` retorna `True`
+- [ ] `inspect.iscoroutinefunction(AgentFactory._resolve_mcp_tool_async)` retorna `True`
 
 ---
 
@@ -158,16 +209,17 @@
 
 | # | Tarea | Complejidad | Tiempo Est. | Dependencias |
 |---|---|---|---|---|
-| 0 | **DX & Tooling:** `validate_cli_structure.py` — detecta drift de estructura CLI | Baja | 0.15h | Ninguna |
-| 1 | Mover `baseline.py` → `commands/baseline_check.py` + corregir `PROJECT_ROOT` + docstring | Baja | 0.05h | Tarea 0 |
-| 2 | Actualizar import en `main.py:14` → `from src.cli.commands.baseline_check import baseline_check` | Baja | 0.02h | Tarea 1 |
-| 3 | Eliminar `src/cli/baseline.py` | Baja | 0.01h | Tarea 1 |
-| 4 | Limpiar `__pycache__` stale | Baja | 0.01h | Tarea 3 |
-| 5 | (Opcional) Limpiar docstring obsoleto en `check_env.py:6-7` | Baja | 0.01h | Tarea 1 |
-| 6 | Verificar integridad E2E: `uv run python -m src.cli.main baseline-check --help` + `ruff check src/ tests/` | Baja | 0.05h | Tareas 1-4 |
-| **TOTAL** | | | **0.30h** | |
-
-> **Tarea 0 siempre = DX & Tooling.** Implementador DEBE ejecutarla primero y usar la herramienta resultante para el resto del paso (dogfooding obligatorio).
+| 0 | **DX & Tooling:** `fap check-deadlock` — CLI que escanea anti-pattern `run_coroutine_threadsafe().result()` | Media | 1h | Ninguna |
+| 1 | Crear `_resolve_mcp_tool_async()` en `factory.py` — async, await directo sobre `MCPPool.get_tools()` | Baja | 0.5h | Tarea 0 |
+| 2 | Crear `resolve_tools_async()` en `factory.py` — async, itera tools, MCP usa `await _resolve_mcp_tool_async()` | Baja | 0.5h | Tarea 1 |
+| 3 | Convertir `create_agent_async()` a `async def` — usa `await resolve_tools_async()` | Media | 0.5h | Tarea 2 |
+| 4 | Agregar `await` en `BaseCrew.run_async()` línea 185 | Baja | 0.25h | Tarea 3 |
+| 5 | Agregar warning deprecación en `resolve_tools(async_mode=True)` | Baja | 0.25h | Tarea 2 |
+| 6 | Agregar tests unitarios `TestResolveToolsAsync` + `TestResolveMCPToolAsync` | Media | 0.5h | Tareas 1-2 |
+| 7 | Actualizar test `test_create_agent_async_enables_mcp` a async | Baja | 0.25h | Tarea 3 |
+| 8 | Actualizar parches E2E (`test_exec_agent_mcp.py`, `test_exec_multi_mcp.py`, `test_production_flows.py`, `test_scenario_3_mcp.py`) | Media | 0.5h | Tareas 1-4 |
+| 9 | Validación end-to-end — ejecutar suite completa de tests afectados | Baja | 0.5h | Tareas 1-8 |
+| **TOTAL** | | | **4.75h** | |
 
 ---
 
@@ -175,11 +227,12 @@
 
 | Riesgo | Severidad | Causa | Mitigación |
 |---|---|---|---|
-| `PROJECT_ROOT` apunta a `src/` post-move | Alta | 3 niveles sube solo hasta `src/` desde `commands/` | Cambiar a `parents[3]`. Verificar con `uv run python -m src.cli.main baseline-check` |
-| Import con alias `run as` del plan rompe módulo | Alta | Plan asume función `run`; código real usa `baseline_check` | Usar import directo sin alias: `from src.cli.commands.baseline_check import baseline_check` |
-| `baseline.py` original no eliminado → import ambiguo | Media | Olvido de `rm` tras `mv` | Verificación inline: `ls src/cli/baseline.py` debe fallar |
-| `__pycache__` stale causa import desde ruta vieja | Baja | Python cachea bytecode | Limpiar `__pycache__` tras move. Verificación funcional post-move |
-| Docstring obsoleto en `check_env.py:6-7` | Muy Baja | Post-move, `baseline_check.py` existirá | Opcional: limpiar comentario. No bloquea |
+| Callers de `create_agent_async` sin await fallan silenciosamente | Alta | Cambio sync→async — retorna coroutine si no se hace await | Grep exhaustivo de `create_agent_async` en `src/`. Solo 1 caller confirmado (`base_crew.py:185`). |
+| Tests E2E rompen por parches obsoletos | Media | 5 archivos parchean `_resolve_mcp_tool` sync | Actualizar parches a `_resolve_mcp_tool_async` con `AsyncMock`. Ejecutar tests tras cada cambio. |
+| `_resolve_mcp_tool_async` no replica import guards de versión sync | Media | `crewai-tools` y `mcp` son opcionales | Incluir mismo bloque `importlib.util.find_spec` en `_resolve_mcp_tool_async`. |
+| Circuit breaker abierto en MCPPool durante resolución async | Media | `get_tools()` lanza `MCPConnectionError` | Capturar excepción, log error, retornar `None` — mismo comportamiento que sync. |
+| `async_mode=True` legacy usado por caller externo | Baja | Param obsoleto pero no eliminado | Warning deprecación guía migración. No eliminar en este paso. |
+| Regresión en path sync | Baja | Modificar `resolve_tools` podría romper path sync | Path sync intacto — solo agregar warning en branch `async_mode=True`. Tests existentes verifican. |
 
 ---
 
@@ -187,14 +240,17 @@
 
 | ID | Caso | Input | Output Esperado |
 |---|---|---|---|
-| TP-1 | Import desde nueva ruta funciona | `uv run python -c "from src.cli.commands.baseline_check import baseline_check"` | Exit 0, sin `ModuleNotFoundError` |
-| TP-2 | Comando CLI ejecuta con help | `uv run python -m src.cli.main baseline-check --help` | Output Typer con opciones del comando |
-| TP-3 | PROJECT_ROOT resuelve correctamente | Ejecutar `baseline_check` con `--audit-tools` en proyecto | Checks P0.1-P0.5 ejecutan desde raíz del proyecto (no desde `src/`) |
-| TP-4 | Archivo viejo no existe | `ls src/cli/baseline.py` | Error: archivo no encontrado |
-| TP-5 | Lint sin errores | `uv run ruff check src/ tests/` | Exit 0 |
+| TP-1 | `resolve_tools_async` resuelve tools regulares | `["db_read"]`, org_id | Lista con 1 tool object |
+| TP-2 | `resolve_tools_async` resuelve MCP tools async | `["mcp:fs:list_files"]`, org_id, MCPPool mockeado | Lista con 1 MCP tool object, sin deadlock |
+| TP-3 | `_resolve_mcp_tool_async` retorna tool matching | org_id, server, tool_name, pool mockeado con tool | Tool object con `name == tool_name` |
+| TP-4 | `_resolve_mcp_tool_async` retorna None si no encuentra | org_id, server, tool_name inexistente | `None` + warning log |
+| TP-5 | `create_agent_async` retorna Agent con tools | config con `allowed_tools`, org_id | `Agent` instance con tools resueltos |
+| TP-6 | `resolve_tools` sync skipea MCP | `["mcp:fs:list"]`, org_id, async_mode=False | Lista vacía + warning log |
+| TP-7 | Flow async completo sin deadlock | Flow con MCP tools, mocks | `FlowStatus.COMPLETED` |
+| TP-8 | `fap check-deadlock` detecta patrón actual | `--path src/crews/` | Exit 1, reporta `factory.py:117-119` |
+| TP-9 | `fap check-deadlock` pasa tras fix | `--path src/crews/` tras implementar | Exit 0, 0 patrones encontrados |
 
-Comando para ejecutar tests: `uv run pytest tests/unit/ -v --timeout=60` / `uv run ruff check src/ tests/`
-
----
-
-**Idioma de respuesta:** Español 🇪🇸
+**Comandos para ejecutar tests:**
+- Unitarios: `uv run pytest tests/unit/test_factory.py -v --timeout=60`
+- E2E: `uv run pytest tests/e2e/test_exec_agent_mcp.py tests/e2e/test_exec_multi_mcp.py -v --timeout=120`
+- DX tool: `uv run python -m src.cli.main check-deadlock --path src/crews/`
