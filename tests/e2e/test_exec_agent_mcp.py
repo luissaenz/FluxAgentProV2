@@ -59,11 +59,18 @@ class TestExecAgentMCP:
         mock_resp.data = agent_config
         mock_service_client.table("agent_catalog").execute.return_value = mock_resp
 
-        with patch(
-            "src.crews.factory.AgentFactory._resolve_mcp_tool_async",
-            new_callable=AsyncMock,
-            return_value=None,
+        with (
+            patch(
+                "src.crews.factory.AgentFactory._resolve_mcp_tool_async",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch("src.crews.factory.get_settings") as mock_get,
         ):
+            mock_settings = MagicMock()
+            mock_settings.get_llm.return_value = "groq/llama-3.3-70b-versatile"
+            mock_get.return_value = mock_settings
+
             flow = MCPAgentFlow(org_id=org_id, user_id=str(uuid4()))
             state = await flow.execute({"path": "/tmp"})
 

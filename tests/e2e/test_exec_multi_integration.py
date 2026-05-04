@@ -5,7 +5,7 @@ Tests MultiCrewFlow with service_connector on all agents.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -71,8 +71,13 @@ class TestExecMultiIntegration:
         org_id = str(uuid4())
         _setup_catalog(mock_service_client, org_id)
 
-        flow = MultiCrewFlow(org_id=org_id, user_id=str(uuid4()))
-        state = await flow.execute({"query": "test"})
+        with patch("src.crews.factory.get_settings") as mock_get:
+            mock_settings = MagicMock()
+            mock_settings.get_llm.return_value = "groq/llama-3.3-70b-versatile"
+            mock_get.return_value = mock_settings
+
+            flow = MultiCrewFlow(org_id=org_id, user_id=str(uuid4()))
+            state = await flow.execute({"query": "test"})
 
         assert state.status == FlowStatus.COMPLETED.value, f"Got {state.status}"
         assert state.crew_a_output is not None

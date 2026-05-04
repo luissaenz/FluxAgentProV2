@@ -1,10 +1,10 @@
 # Phase State: Deep Technical Certification (QA) — testing → Patch agents
 # Estado de Fase: Certificación Técnica Profunda (QA) — testing → Patch agents
 
-> **Fecha / Date:** 2026-05-02
-> **Estado / Status:** 🔄 EN PROGRESO — Fase VI testing CERRADA (8/8). Nueva fase "Patch agents" activa (3/5 pasos del plan v3.2)
-> **Último Commit / Last Commit:** `958f1ba` — `Patch agents / 03-Alinear nombres de pasos en TESTING.md`
-> **⚠️ DISCREPANCIA:** `proyecto-config.json` aún refleja `phase_name: "testing", phase_completed: true`. Nueva fase "Patch agents" no está registrada en config.
+> **Fecha / Date:** 2026-05-03
+> **Estado / Status:** 🔄 EN PROGRESO — Implementación plan.md pasos 1-6 (Fix MCP deadlock, Registrar agente, Tool calling real, ExcelWriterTool, PresupuestoFlow). Análisis multi-agente Paso 3 archivado.
+> **Último Commit / Last Commit:** `349d9eb` — `testing / 00-Fix-Post-Certificacion`
+> **⚠️ DISCREPANCIA:** `proyecto-config.json` aún refleja `phase_name: "testing", phase_completed: true`. Fase activa no está registrada en config.
 
 ---
 
@@ -23,7 +23,9 @@
 - ✅ **Paso 6: Performance & Observabilidad.** 4 benchmarks (P6.1-P6.4): resolve_tools 50 tools <100ms, WorkflowDefinition 10x5 <50ms, sanitize_output 1MB <500ms, _is_circuit_open <1ms. 9 tests. DX `fap perf-check` con flags --baseline/--compare/--json/--verbose/--no-warmup.
 - ✅ **Paso 7: Documentación y Cierre.** TESTING.md (comandos por paso, mocking strategy, fixtures), CHANGELOG.md (Keep a Changelog), Makefile targets `test-all`/`test-fast`/`coverage` con `uv run` cross-platform, `fap phase-close` generalizado para Fase VI con `--phase testing --certify`, `fap test-step` extendido (pasos 4/6/7), coverage config en `pyproject.toml` (threshold 75%), README actualizado a Fase VI. DX `fap phase-close testing --certify` + `make test-all`.
 - 🆕 **Paso Hotfix: Fix Post-Certificación (Plan v3.2 — Paso 3).** Corregir desincronización nombres de pasos en TESTING.md + CHANGELOG.md. Fuente de verdad = phase-state.md + carpetas IMPLEMENTED. Correcciones al plan: nombres Pasos 4-5 del plan.md hotfix no coinciden con fase real. DX `fap sync-step-names --check --source [phase-state|plan]` con flags `--check`/`--fix`/`--dry-run`.
-- 🆕 **Fase "Patch agents" (en progreso).** Nueva fase post-testing para aplicar fixes del plan v3.2. Pasos ejecutados: Fix Lint I001, Fix `test_3_5_latency.py` (skipif), Alinear nombres TESTING.md. Pasos pendientes: Fix seguridad `registry.py` (Paso 0), Mover `baseline.py` (Paso 4). `proyecto-config.json` no actualizado para reflejar nueva fase — desincronización documentada.
+- 🆕 **Fase "Patch agents" (en progreso).** Nueva fase post-testing para aplicar fixes del plan v3.2. Pasos ejecutados: Fix Lint I001, Fix `test_3_5_latency.py` (skipif), Alinear nombres TESTING.md. Pasos pendientes: Fix seguridad `registry.py` (Paso 0), Mover `baseline.py` (Paso 4).
+- 🆕 **Implementación plan.md pasos 1-6 (commit `349d9eb`).** Paso 1: Fix deadlock MCP (`resolve_tools_async`/`_resolve_mcp_tool_async` en factory.py). Paso 2: Registrar agente (`PresupuestoFlow` registrado). Paso 3: Tool calling real (`ToolCallTracer`, `fap test-tool-call`, `ExcelReaderTool`). Paso 6: `ExcelWriterTool` + dependencia `openpyxl`. Análisis multi-agente archivado en `IMPLEMENTED/testing/00-Fix-Post-Certificacion/`.
+- `proyecto-config.json` no actualizado para reflejar nueva fase — desincronización documentada.
 
 **Dependencias / Dependencies:** Paso 0 → Todos. Pasos 1→7 secuenciales con superposición posible.
 
@@ -35,8 +37,8 @@
 - `paths.backend:` `src/` (16 módulos: api, cli, connectors, crews, db, events, flows, guardrails, mcp, scheduler, scripts, services, state, tools, utils)
 - `paths.migrations:` `supabase/migrations/` (30 archivos SQL: 001-025)
 - `paths.tests:` `tests/` (unit, integration, e2e)
-- `paths.cli:` `src/cli/` (16 comandos fap: +security-audit, +perf-check)
-- `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado)
+- `paths.cli:` `src/cli/` (20+ comandos fap: +security-audit, +perf-check, +test-tool-call)
+- `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado en commit `349d9eb`)
 - `paths.devs_implemented:` `DEVS/IMPLEMENTED/`
 
 ### Stack Tecnológico / Tech Stack
@@ -59,7 +61,7 @@
 | **ToolRegistry** | `src/tools/registry.py` | ✅ | API `list_tools()`, `get()`, `register()`, `clear()`, `invalidate_tenant_cache()`. |
 | **SecurityGuard** | `src/services/security_guard.py` | ✅ | AST scan + RestrictedPython + restricted `__import__` con ALLOWED_MODULES. Doble vector protegido (execute + _verify_compilation). |
 | **SecurityAudit CLI** | `src/cli/commands/security_audit.py` | ✅ | DX `fap security-audit`. 5 categorias: imports, calls, async, regresion, escape. Filtro + JSON output. 185 loc. |
-| **CLI (fap)** | `src/cli/main.py` | ✅ | 18+ comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check, test-step, **security-audit**, stress-bench, lint-fix, check-env. |
+| **CLI (fap)** | `src/cli/main.py` | ✅ | 20+ comandos: init, login, validate, package, publish, run, scaffold, dev, export-agents, validate-tools, validate-architect-output, test-scenarios, phase-close, baseline-check, test-step, **security-audit**, stress-bench, lint-fix, check-env, sync-step-names, **test-tool-call**. |
 | **EventStore** | `src/events/store.py` | ✅ | Append síncrono + asíncrono de eventos de dominio. |
 | **BundleManager** | `src/services/bundle_manager.py` | ✅ | Carga remota + validación + atomicidad. |
 | **BaseCrew** | `src/crews/base_crew.py` | ✅ | Resolución de tools con MCP. |
@@ -77,6 +79,15 @@
 | **SyncStepNames CLI** | `src/cli/commands/sync_step_names.py` | ✅ | DX `fap sync-step-names --check` con source configurable (phase-state/plan). Flags `--check`/`--fix`/`--dry-run`. Escanea headings `### Paso N:` y `#### Paso N —` en TESTING.md + CHANGELOG.md. 158 loc. |
 | **LintFix CLI** | `src/cli/commands/lint_fix.py` | ✅ | Creado en Patch agents / 01-Fix Lint I001 (`9e3736f`). CLI para auto-fix imports con Ruff. 65 loc. |
 | **CheckEnv CLI** | `src/cli/commands/check_env.py` | ✅ | Creado en Patch agents / 02-Fix test_3_5_latency.py (`215c383`). Verifica variables de entorno Supabase. 118 loc. |
+| **ExcelReaderTool** | `src/tools/excel_reader.py` | ✅ | Lee .xlsx local y retorna JSON. Registrado vía `@register_tool("excel_reader")`. 105 loc. Committed en `349d9eb`. |
+| **ExcelWriterTool** | `src/tools/excel_writer.py` | ✅ | Escribe JSON array a .xlsx. Soporta overwrite/append. Registrado vía `@register_tool("excel_writer")`. 108 loc. |
+| **PresupuestoFlow** | `src/flows/presupuesto_flow.py` | ✅ | Flow formal registrado como `@register_flow("presupuesto")`. Ejecuta agente presupuestador via BaseCrew. 68 loc. |
+| **ToolCallTracer** | `src/crews/base_crew.py` | ✅ | Traza invocaciones a tools durante ejecución. `get_last_tool_calls()` retorna dict tool_name→count. 265 loc total. |
+| **resolve_tools_async** | `src/crews/factory.py` | ✅ | Variante async de `resolve_tools()` para MCP tools. `_resolve_mcp_tool_async()` usa await. Evita deadlock. 291 loc. |
+| **ToolCallTest CLI** | `src/cli/commands/tool_call_test.py` | ✅ | DX `fap test-tool-call`. Verifica tool calling con dry-run o LLM real. Flags: `--agent`, `--tool`, `--file`, `--dry-run`, `--json`, `--llm`. 177 loc. |
+| **Excel Reader/Writer unit tests** | `tests/unit/test_factory.py` | ✅ | TestExcelReaderResolution: 3 tests async para resolución de excel_reader tool. Clase TestResolveToolsAsync + TestResolveMCPToolAsync (~150 lines nuevas). |
+| **E2E Tool Calling Real** | `tests/e2e/test_tool_calling_real.py` | ✅ | Test E2E sin patches CrewAI. LLM real (Groq) llama excel_reader. Verifica `tool_calls >= 1` y datos reales en output. 136 loc. Requiere GROQ_API_KEY. |
+| **E2E PresupuestoFlow** | `tests/e2e/test_presupuesto_flow.py` | ✅ | Verifica registro en FlowRegistry + ejecución con LLM real. `test_execute_with_real_llm` + `test_flow_registered` + `test_validate_input`. 120 loc. |
 
 ### Tests (Verificado contra código / Code-verified)
 
@@ -92,6 +103,7 @@
 | **Escape** | 2 | 2/2 pass (SE5.17-SE5.18) |
 | **SyncStepNames (unit)** | 1 | 1/1 pass (test_sync_step_names.py) |
 | **Patch agents (lint_fix + check_env)** | — | Commits `9e3736f`, `215c383`, `958f1ba` — sin tests dedicados nuevos |
+| **Plan impl: Fix deadlock MCP + Tool Calling + Excel** | 4 (unit) + 2 (e2e) + 2 (flow) | Nuevos en `349d9eb`: 4 tests unit (resolve_tools_async, _resolve_mcp_tool_async, excel_reader resolver), 2 e2e (tool_calling_real, presupuesto_flow), 1 flow. |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
 ### Discrepancias Conocidas / Known Discrepancies Plan vs Código
@@ -104,6 +116,9 @@
 - **NUEVA: Commit `5f25aac` es huérfano.** `testing / 00-Fix-Post-Certificacion` no es ancestro de HEAD. Contenido (sync_step_names.py, TESTING.md fixes) overlap con `958f1ba`.
 - **NUEVA: Plan.md v3.2 Pasos 0 y 4 no ejecutados.** Fix seguridad `registry.py._load_from_db()` (Paso 0) y mover `baseline.py` a `commands/` (Paso 4) están pendientes.
 - **NUEVA: `ServiceConnectorTool` ≠ `ServiceConnector`.** `src/tools/service_connector.py` define clase `ServiceConnectorTool` (no `ServiceConnector`). Plan y phase-state refieren nombre incorrecto. Sin impacto funcional — rename cosmético.
+- **📝 CORRECCIÓN (2026-05-03):** Commit `349d9eb` archivó análisis NUEVOS para "Paso 3: Tool Calling Real" en `IMPLEMENTED/testing/00-Fix-Post-Certificacion/`, sobrescribiendo análisis previos de "Alinear nombres". Contenido actual = análisis multi-agente Paso 3 del plan.md (Fix MCP deadlock, Registrar agente, Tool calling real).
+- **📝 CORRECCIÓN (2026-05-03):** `proyecto-config.json` necesita `phase_name` actualizado a `patch_agents`, `current_step` a paso activo. Desincronización persiste desde commit `64cf7c5`.
+- **📝 CORRECCIÓN (2026-05-03):** `DEVS/sugest.md` documenta ID-002 (imports no utilizados en excel_writer.py) e ID-003 (BaseFlowState en presupuesto_flow.py). Ambos fueron corregidos antes de commit `349d9eb` — lint 0 confirma. Sugest.md contiene análisis previo no actualizado.
 
 ---
 
@@ -112,7 +127,10 @@
 ### Patrones de Código / Code Patterns
 - **RLS:** `tenant_isolation` via `org_id::text` contra `app.org_id` (verificado en migraciones)
 - **Registry (Tools):** Singleton `ToolRegistry`. Decorador `@tool_registry.register`. API: `list_tools()`, `get()`, `register()`, `get_metadata()`, `clear()`, `invalidate_tenant_cache()`
-- **Registry (Flows):** `FlowRegistry` en `src/flows/registry.py`. Decorador `@flow_registry.register`
+- **Registry (Flows):** `FlowRegistry` en `src/flows/registry.py`. Decorador `@flow_registry.register` o `@register_flow("name")`.
+- **Excel Tools (Aybar):** `ExcelReaderTool` y `ExcelWriterTool` en `src/tools/`. Lee/escribe .xlsx en `PROJECT-Aybar/`. `openpyxl` backend. BaseTool con `BASE_DIR = Path(...)/PROJECT-Aybar`.
+- **ToolCallTracer:** Wrapper `tool._run` con `@functools.wraps` para contar llamadas. `trace()` aplica wrapper, `restore()` lo remueve. Usado en `BaseCrew.run()` y `run_async()`.
+- **Resolución Async MCP:** `resolve_tools_async()` llama `_resolve_mcp_tool_async()` que usa `MCPPool.get_tools()` con await. Sync mode skipea MCP con warning.
 - **MCP Resolution:** Prefijo `mcp:{server}:{tool}`. Solo paths asíncronos
 - **Auth:** Middleware en `src/api/middleware.py`. JWKS + validación membresía
 - **Seguridad (skills):** AST scan + RestrictedPython + restricted `__import__` con `ALLOWED_MODULES`
@@ -137,7 +155,7 @@
 - Tests: `test_*.py` en `tests/unit/`, `tests/integration/`, `tests/e2e/`
 
 ### Dependencias Clave / Key Dependencies
-- **Directas / Direct:** fastapi>=0.115.0, pydantic>=2.10.0, supabase>=2.10.0, anthropic>=0.40.0, openai>=1.58.0, PyJWT>=2.0.0, httpx>=0.28.0, structlog>=24.4.0, mcp>=1.0.0, RestrictedPython>=7.0, typer>=0.12.0, tenacity>=9.0.0
+- **Directas / Direct:** fastapi>=0.115.0, pydantic>=2.10.0, supabase>=2.10.0, anthropic>=0.40.0, openai>=1.58.0, PyJWT>=2.0.0, httpx>=0.28.0, structlog>=24.4.0, mcp>=1.0.0, RestrictedPython>=7.0, typer>=0.12.0, tenacity>=9.0.0, **openpyxl>=3.1.0** (nuevo en `349d9eb`)
 - **Dev:** pytest>=8.3.0, pytest-asyncio>=0.24.0, pytest-mock>=3.14.0, pytest-cov>=6.0.0, pytest-timeout>=1.5.0, ruff>=0.8.0
 - **Opcionales / Optional:** crewai>=0.100.0, crewai-tools>=0.20.0
 
@@ -193,6 +211,19 @@
 33. **`fap check-env` para pre-requisitos:** `src/cli/commands/check_env.py` — verifica `SUPABASE_URL` + `SUPABASE_ANON_KEY` antes de ejecutar tests de integración. Previene falsos fallos.
 34. **Naming de fase inconsistente:** Fase llamada "Patch agents" en commits pero proyecto-config.json aún usa "testing". Sin unified phase context — riesgo de confusión downstream.
 
+### De Implementación plan.md Pasos 1-6 (commit `349d9eb`)
+35. **`resolve_tools_async()` + `_resolve_mcp_tool_async()`:** Variante async de resolución MCP que evita deadlock por `run_coroutine_threadsafe().result()`. Usa `await MCPPool.get().get_tools()` directamente. Sync mode skipea MCP con warning (backward compat).
+36. **`ToolCallTracer` como utilidad interna:** No clase separada en su propio módulo. Integrada en `BaseCrew` como wrapper de `tool._run`. `trace()`/`restore()` para limpieza post-ejecución. `get_last_tool_calls()` para verificación en tests.
+37. **ExcelReaderTool + ExcelWriterTool como `OrgBaseTool`:** Heredan de `OrgBaseTool` con `org_id` para tenant isolation. `BASE_DIR = Path(...)/PROJECT-Aybar/` como destino fijo. `openpyxl` como backend (no pandas — evitar dependencia pesada).
+38. **`PresupuestoFlow` registrado como `@register_flow("presupuesto")`:** Sigue patrón existente de `ArchitectFlow`. `validate_input()` propio. `_run_crew()` crea `BaseCrew(role="presupuestador")` y ejecuta con datos del input. Output: `{"result": str(crew_output), "flow_type": "presupuesto"}`.
+39. **`fap test-tool-call` como DX:** Sigue patrón `check_env.py`. Dos modos: `--dry-run` (solo verifica config sin LLM) y full (ejecuta BaseCrew.run_async() con LLM real + ToolCallTracer). Verifica tool_registry + GROQ_API_KEY antes de ejecución.
+40. **E2E tool calling sin patches CrewAI:** `test_tool_calling_real.py` salva clases reales `_REAL_CREW/_REAL_TASK/_REAL_AGENT` a nivel módulo ANTES de imports que disparan `global_llm_mock`. Contra-parchea con `patch("crewai.Crew", _REAL_CREW)` dentro del test. Verifica `tool_calls >= 1` como criterio de aprobación.
+
+### Deuda técnica documentada (nuevo `DEVS/sugest.md`)
+- **ID-001:** `proyecto-config.json` desactualizado — `phase_name: "testing"` en vez de fase activa.
+- **ID-002:** `excel_writer.py` imports no utilizados — F401. Corregido en `349d9eb` (lint 0). Sugest.md contiene análisis previo a fix.
+- **ID-003:** `presupuesto_flow.py` import `BaseFlowState` sin usar — F401. Corregido en `349d9eb` (lint 0).
+
 ### Correcciones al Plan / Plan Corrections
 - `plan.md:21`: `list_all()` → `list_tools()` (P0.4)
 - `plan.md:83`: `>=, <=, ==` "NO implementados" → "se rompen silenciosamente" (ya fixeado en Paso 2)
@@ -223,16 +254,26 @@
 | 7 — Documentación y Cierre | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/07-Documentacion-y-Cierre/` | `64e1834` | TESTING.md + CHANGELOG.md creados. Makefile targets `test-all`/`test-fast`/`coverage` + `uv run`. `fap phase-close` generalizado Fase VI. `fap test-step` extendido pasos 4/6/7. Coverage config pyproject.toml (75%). README actualizado. | 14/14 criterios MVP cumplidos. Validación: ✅ |
 | 00-Fix-Post-Certificacion (Hotfix v3.2 — Paso 3) | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/` | `5f25aac` | `sync_step_names.py` creado. TESTING.md + CHANGELOG.md corregidos (Paso 3-5 nombres reales de fase). DX `fap sync-step-names --check --source phase-state`. Correcciones al plan: nombres plan.md v3.2 Tarea 3.1 no coinciden con fase real. | 6/6 agentes analizados. Validación: ✅ APROBADO. 9/9 criterios. Lint 0. |
 
-### Fase "Patch agents" — Hotfix Post-Certificación (Plan v3.2, en progreso)
+### Fase "Patch agents" — Implementación plan.md Pasos 1-6
 
-| Paso | Estado / Status | Commit | Decisiones Tomadas / Decisions Made | Notas / Notes |
-|---|---|---|---|---|
-| Setup — Nuevo contexto de fase | ✅ COMPLETADO | `64cf7c5` | `proyecto-config.json` enriquecido (paths, commands, conventions, patterns). `plan.md` reescrito v3.2 Hotfix. `LAST/log_latencia.json` eliminado. | Config actualizado pero `phase_name` mantiene "testing" en vez de "Patch agents". |
-| 01 — Fix Lint I001 | ✅ COMPLETADO | `9e3736f` | `fap lint-fix` creado (`src/cli/commands/lint_fix.py`). Ruff auto-fix imports en `validate_tools.py`, `mcp/server.py`, `mcp_pool.py`. Modificaciones Makefile + `test_base_crew.py`. | Análisis multi-agente archivado en `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/`. |
-| 02 — Fix test_3_5_latency.py | ✅ COMPLETADO | `215c383` | `@pytest.mark.skipif` añadido a `test_3_5_latency.py` (skip si no `SUPABASE_URL`/`SUPABASE_ANON_KEY`). `fap check-env` creado (`src/cli/commands/check_env.py`). | Test pasa a SKIPPED (no FAILED) sin Supabase real. |
-| 03 — Alinear nombres de pasos en TESTING.md | ✅ COMPLETADO | `958f1ba` | `sync_step_names.py` creado/actualizado. TESTING.md + CHANGELOG.md corregidos. `phase-state.md` actualizado. | Nombres de Pasos 3-5 alineados con fase real. |
-| 00 — Fix Seguridad `registry.py` (Paso 0 plan) | ⏳ PENDIENTE | — | Parchear `_load_from_db()` usar `_create_safe_builtins()`. Agregar tests regresión (R0.1-R0.3). | Crítico: vector `__import__` sin restricción en `registry.py`. |
-| 04 — Mover `baseline.py` (Paso 4 plan) | ⏳ PENDIENTE | — | Mover `src/cli/baseline.py` → `src/cli/commands/baseline_check.py`. Actualizar import en `main.py`. | Consistencia estructural CLI. |
+| Paso | Estado / Status | Archivos Archivados En / Archived At | Commit | Decisiones Tomadas / Decisions Made | Notas / Notes |
+|---|---|---|---|---|---|
+| 00-Fix-Post-Certificacion — Análisis Paso 3: Tool Calling Real | ✅ COMPLETADO | `DEVS/IMPLEMENTED/testing/00-Fix-Post-Certificacion/` | `349d9eb` | 6 archivos multi-agente archivados (analisis-3-ds, glm, FINAL, paso-3-qwen, paso3-kimi, validacion). Análisis cubre: Fix MCP deadlock, Registrar agente, Tool calling real, ExcelWriterTool. | Nuevos análisis (2026-05-03) sobrescriben previos. Lint 0 previa a commit. |
+| Plan Paso 1 — Fix deadlock MCP | ✅ COMPLETADO | — | `349d9eb` | `resolve_tools_async()` + `_resolve_mcp_tool_async()` en factory.py. Tests: TestResolveToolsAsync (6), TestResolveMCPToolAsync (3). | Sync mode skipea MCP. Async mode usa await directo. 0 deadlock. |
+| Plan Paso 2 — Registrar agente presupuestador | ✅ COMPLETADO | — | `349d9eb` | `PresupuestoFlow(BaseFlow)` registrado como `@register_flow("presupuesto")`. Test: `test_flow_registered`, `test_validate_input`, `test_execute_with_real_llm`. | Flow visible en FlowRegistry. |
+| Plan Paso 3 — Tool calling real | ✅ COMPLETADO | — | `349d9eb` | `ToolCallTracer` en BaseCrew. `get_last_tool_calls()`. `fap test-tool-call`. `test_tool_calling_real.py` sin patches CrewAI. | ToolCallTracer wrapper tool._run. E2E requiere GROQ_API_KEY. |
+| Plan Paso 6 — ExcelWriterTool | ✅ COMPLETADO | — | `349d9eb` | `ExcelWriterTool(OrgBaseTool)` con `@register_tool("excel_writer")`. Soportes overwrite/append. openpyxl backend. | Dependencia `openpyxl>=3.1.0` agregada. |
+| 00 — Fix Seguridad `registry.py` (Paso 0 plan) | ⏳ PENDIENTE | — | — | Parchear `_load_from_db()` usar `_create_safe_builtins()`. Agregar tests regresión (R0.1-R0.3). | Crítico: vector `__import__` sin restricción en `registry.py`. |
+| 04 — Mover `baseline.py` (Paso 4 plan) | ⏳ PENDIENTE | — | — | Mover `src/cli/baseline.py` → `src/cli/commands/baseline_check.py`. Actualizar import en `main.py`. | Consistencia estructural CLI. |
+
+### Fase "Patch agents" — Hotfix Post-Certificación (previo, Plan v3.2 hotfix)
+
+| Paso | Commit | Decisiones Tomadas / Decisions Made | Notas / Notes |
+|---|---|---|---|
+| Setup — Nuevo contexto de fase | `64cf7c5` | `proyecto-config.json` enriquecido. `plan.md` reescrito v3.2 Hotfix. | Config mantiene `phase_name: "testing"`. |
+| 01 — Fix Lint I001 | `9e3736f` | `fap lint-fix`. Ruff auto-fix imports. | Análisis en `IMPLEMENTED/testing/00-Fix-Post-Certificacion/`. |
+| 02 — Fix test_3_5_latency.py | `215c383` | `@pytest.mark.skipif`. `fap check-env`. | Test SKIPPED sin Supabase real. |
+| 03 — Alinear nombres pasos TESTING.md | `958f1ba` | `sync_step_names.py`. TESTING.md/CHANGELOG.md corregidos. | Nombres alineados con fase real. |
 
 ### Fase V — details4agents
 
@@ -262,14 +303,31 @@
 
 **Progreso Fase VI / Phase VI Progress: 100% (8/8 pasos + Hotfix post-certificación). Fase CERRADA.**
 
-**Progreso Fase "Patch agents": 3/5 pasos completados (Setup, 01, 02, 03). Pendientes: Paso 0 (seguridad registry.py), Paso 4 (mover baseline.py).**
+**Progreso Fase "Patch agents" (hotfix): 4/4 pasos completados (Setup, 01, 02, 03).**
 
-### Checklist Fase "Patch agents":
-- [ ] **Paso 0:** Fix seguridad `registry.py._load_from_db()` → `_create_safe_builtins()` + 3 tests regresión
+**Progreso plan.md Pasos 1-6: 4/6 completados (Paso 1 Fix deadlock ✅, Paso 2 Registrar agente ✅, Paso 3 Tool calling ✅, Paso 6 ExcelWriter ✅). Pendientes: Paso 4 (Flow.execute real), Paso 5 (Flow registrado formal — PresupuestoFlow ya registrado, test E2E ok).**
+
+### Checklist Fase "Patch agents" (hotfix plan v3.2):
+- [x] **Setup:** `proyecto-config.json` enriquecido ✅ (commit `64cf7c5`)
 - [x] **Paso 1:** Ruff auto-fix imports ejecutado ✅ (commit `9e3736f`)
 - [x] **Paso 2:** `test_3_5_latency.py` → SKIPPED sin Supabase real ✅ (commit `215c383`)
 - [x] **Paso 3:** TESTING.md nombres alineados con fase real ✅ (commit `958f1ba`)
-- [ ] **Paso 4:** Mover `baseline.py` → `src/cli/commands/baseline_check.py`
-- [ ] `proyecto-config.json` actualizado con `phase_name: "patch_agents"` y `current_step` correcto
+
+### Checklist plan.md Pasos 1-6 (implementados en `349d9eb`):
+- [x] **Paso 1 (Fix deadlock MCP):** `resolve_tools_async()` + `_resolve_mcp_tool_async()` en factory.py ✅. 9 tests unitarios (TestResolveToolsAsync + TestResolveMCPToolAsync). Sync skipea MCP con warning.
+- [x] **Paso 2 (Registrar agente):** `PresupuestoFlow(@register_flow)` creado ✅. `validate_input()` verifica tipo_evento/pax/fecha. E2E test con LLM real en test_presupuesto_flow.py.
+- [x] **Paso 3 (Tool calling real):** `ToolCallTracer` en BaseCrew ✅. `get_last_tool_calls()` verifica llamadas. `fap test-tool-call` DX tool. E2E test sin patches CrewAI en test_tool_calling_real.py.
+- [x] **Paso 6 (ExcelWriterTool):** `ExcelWriterTool(OrgBaseTool)` con `@register_tool` ✅. Overwrite/append. openpyxl backend. Dependencia `openpyxl>=3.1.0` añadida.
+- [ ] **Paso 4 (Flow.execute real):** Pendiente — ejecutar `Flow.execute()` completo con state transitions + event emission + persist_state.
+- [ ] **Paso 5 (Flow registrado formal):** PresupuestoFlow ya registrado + test E2E ok. Pendiente verificar multi-turn + webhook trigger.
+- [ ] `proyecto-config.json` actualizado con `phase_name` y `current_step` correctos.
+
+### Deuda técnica / Technical debt:
+- **ID-001:** `proyecto-config.json` desactualizado — `phase_name: "testing"` (debe ser fase activa)
+- **ID-002/ID-003:** Sugest.md documenta F401 lint en excel_writer y presupuesto_flow — corregidos en `349d9eb` (lint 0). Sugest.md pre-fix.
+- **Riesgo:** Commit `5f25aac` huérfano. `proyecto-config.json` inconsistente desde `64cf7c5`.
+
+### Herramientas DX detectadas/propuestas
+- `fap test-tool-call` — Verifica tool calling con dry-run o LLM real (NUEVO en `349d9eb`)
 
 **Criterios fuera de alcance MVP / Out of MVP scope:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.

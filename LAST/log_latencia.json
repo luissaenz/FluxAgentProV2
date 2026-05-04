@@ -1,137 +1,104 @@
 {
-  "timestamp": "2026-05-02T19:26:55.029791+00:00",
-  "task_id": "lat-test-bdb1b32b3f04",
-  "clock_offset_ms": -1847.88,
+  "timestamp": "2026-05-03T23:50:44.927001+00:00",
+  "task_id": "lat-test-ded45a4405d1",
+  "clock_offset_ms": 280.97,
   "metrics": {
-    "events_received": 14,
-    "events_in_db": 15,
-    "integrity_pct": 93.33333333333333,
-    "latency_avg_ms": 509.51,
-    "latency_p95_ms": 1790.84,
-    "latency_min_ms": 376.71,
-    "latency_max_ms": 1790.84
+    "events_received": 10,
+    "events_in_db": 10,
+    "integrity_pct": 100.0,
+    "latency_avg_ms": 848.99,
+    "latency_p95_ms": 1546.92,
+    "latency_min_ms": 382.46,
+    "latency_max_ms": 1546.92
   },
   "thresholds": {
     "p95_target_ms": 5000,
     "p95_passed": true,
     "max_target_ms": 10000,
     "max_passed": true,
-    "integrity_100_pct": false
+    "integrity_100_pct": true
   },
   "events": [
     {
-      "id": "f5cf9736-8d27-40b9-a589-5207d4a8ad81",
-      "event_type": "flow.created",
+      "id": "8b540ac1-aa7e-42cd-8377-1c3f98f2026a",
+      "event_type": "agent_thought",
       "sequence": 1,
-      "db_ts_ms": 1777749997190.99,
-      "recv_wall_ms": 1777749995719.8186,
-      "latency_ms": 376.70751953125
+      "db_ts_ms": 1777852230529.8618,
+      "recv_wall_ms": 1777852232266.5547,
+      "latency_ms": 1455.726318359375
     },
     {
-      "id": "df5a68a1-f564-41ac-a1bd-8e1af4eee522",
-      "event_type": "flow.started",
+      "id": "d2269bb9-0529-4017-8c5e-b0d0905a28d7",
+      "event_type": "agent_thought",
       "sequence": 2,
-      "db_ts_ms": 1777749998352.35,
-      "recv_wall_ms": 1777749996887.334,
-      "latency_ms": 382.86279296875
+      "db_ts_ms": 1777852231600.8142,
+      "recv_wall_ms": 1777852233428.6995,
+      "latency_ms": 1546.918701171875
     },
     {
-      "id": "f70c8dfd-5946-4350-af73-517e440d63e4",
-      "event_type": "crew_a.completed",
+      "id": "f4265887-f844-4d47-b30d-09a996ccea2c",
+      "event_type": "agent_thought",
       "sequence": 3,
-      "db_ts_ms": 1777749999534.962,
-      "recv_wall_ms": 1777749998078.9016,
-      "latency_ms": 391.818603515625
+      "db_ts_ms": 1777852232724.9192,
+      "recv_wall_ms": 1777852233428.6995,
+      "latency_ms": 422.813720703125
     },
     {
-      "id": "bd55b526-f237-4380-badd-9e6d730f68a0",
-      "event_type": "crew_c.completed",
+      "id": "70124c80-5239-405d-8e06-4a7b8b223b96",
+      "event_type": "agent_thought",
       "sequence": 4,
-      "db_ts_ms": 1777750000722.049,
-      "recv_wall_ms": 1777749999256.8022,
-      "latency_ms": 382.632080078125
+      "db_ts_ms": 1777852233823.394,
+      "recv_wall_ms": 1777852234492.654,
+      "latency_ms": 388.29345703125
     },
     {
-      "id": "5632bc4f-8f62-4964-ad89-a6717f15b412",
-      "event_type": "flow.completed",
+      "id": "72e1b10a-a690-48b1-9343-57da44a410fb",
+      "event_type": "agent_thought",
       "sequence": 5,
-      "db_ts_ms": 1777750001926.972,
-      "recv_wall_ms": 1777750000466.748,
-      "latency_ms": 387.655029296875
+      "db_ts_ms": 1777852234922.7632,
+      "recv_wall_ms": 1777852235608.613,
+      "latency_ms": 404.88330078125
     },
     {
-      "id": "b0aa4dd4-7f74-4b69-965c-a8e752b7e519",
+      "id": "7893f89c-4291-4201-9f45-486cc1fd61f8",
       "event_type": "agent_thought",
       "sequence": 6,
-      "db_ts_ms": 1777750003522.92,
-      "recv_wall_ms": 1777750003465.8765,
-      "latency_ms": 1790.83544921875
+      "db_ts_ms": 1777852236027.181,
+      "recv_wall_ms": 1777852236694.589,
+      "latency_ms": 386.441650390625
     },
     {
-      "id": "3928a48a-9692-4a5e-9400-9a7a070c43a9",
+      "id": "ae161306-73e8-4c93-b85e-958e2cbb38a5",
       "event_type": "agent_thought",
       "sequence": 7,
-      "db_ts_ms": 1777750004922.923,
-      "recv_wall_ms": 1777750003466.9302,
-      "latency_ms": 391.885986328125
+      "db_ts_ms": 1777852237095.8108,
+      "recv_wall_ms": 1777852237759.236,
+      "latency_ms": 382.458740234375
     },
     {
-      "id": "7e95ef8b-bc4f-45a5-ab85-3e94988f1e20",
+      "id": "21731bda-b49b-411a-824a-e52893821d5f",
       "event_type": "agent_thought",
       "sequence": 8,
-      "db_ts_ms": 1777750006018.58,
-      "recv_wall_ms": 1777750004559.763,
-      "latency_ms": 389.061767578125
+      "db_ts_ms": 1777852238141.3281,
+      "recv_wall_ms": 1777852239863.4758,
+      "latency_ms": 1441.18115234375
     },
     {
-      "id": "bb91ebba-9241-420b-9a71-1cd1fd8f625b",
+      "id": "713fb647-6597-4767-8b25-2772b2c00f77",
       "event_type": "agent_thought",
       "sequence": 9,
-      "db_ts_ms": 1777750007106.075,
-      "recv_wall_ms": 1777750005646.1128,
-      "latency_ms": 387.916748046875
+      "db_ts_ms": 1777852239201.694,
+      "recv_wall_ms": 1777852240924.5242,
+      "latency_ms": 1441.863525390625
     },
     {
-      "id": "d0cdc126-8de8-498c-b647-db8ac69f1811",
+      "id": "4d71b65a-51d4-471b-866c-59c7bdbfa0cb",
       "event_type": "agent_thought",
       "sequence": 10,
-      "db_ts_ms": 1777750008208.131,
-      "recv_wall_ms": 1777750006753.4946,
-      "latency_ms": 393.242431640625
-    },
-    {
-      "id": "3f6f364a-367e-4736-afcb-3c5fa582db1a",
-      "event_type": "tool_output",
-      "sequence": 11,
-      "db_ts_ms": 1777750009302.97,
-      "recv_wall_ms": 1777750007832.0654,
-      "latency_ms": 376.974365234375
-    },
-    {
-      "id": "3d639663-7ab7-4185-b4c4-de54ee7ac3da",
-      "event_type": "flow_step",
-      "sequence": 12,
-      "db_ts_ms": 1777750010494.001,
-      "recv_wall_ms": 1777750009035.4116,
-      "latency_ms": 389.28955078125
-    },
-    {
-      "id": "bb0e00fa-1526-401b-9fc2-446932429cf3",
-      "event_type": "tool_output",
-      "sequence": 13,
-      "db_ts_ms": 1777750011677.084,
-      "recv_wall_ms": 1777750010248.1094,
-      "latency_ms": 418.904296875
-    },
-    {
-      "id": "5a2a14f4-5350-44ad-ba7b-3d2872dd0232",
-      "event_type": "flow_step",
-      "sequence": 14,
-      "db_ts_ms": 1777750012920.5552,
-      "recv_wall_ms": 1777750011745.9707,
-      "latency_ms": 673.29443359375
+      "db_ts_ms": 1777852240265.2048,
+      "recv_wall_ms": 1777852241165.468,
+      "latency_ms": 619.296630859375
     }
   ],
-  "passed": false,
-  "reason": "integridad 14/15"
+  "passed": true
 }

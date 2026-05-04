@@ -89,22 +89,21 @@ class AgentFactory:
 
         Lazy imports crewai-tools to handle optional dependency.
         """
-        try:
-            import importlib.util
+        import importlib.util
 
-            if importlib.util.find_spec("crewai_tools") is None:
-                raise ImportError(
-                    "crewai-tools not installed. Install with: pip install fluxagentpro-v2[crew]"
-                )
-            if importlib.util.find_spec("mcp") is None:
-                raise ImportError(
-                    "mcp package not installed. Install with: pip install fluxagentpro-v2[crew]"
-                )
-        except ImportError as e:
-            if "crewai-tools" in str(e) or "mcp package" in str(e):
-                raise
+        def _find_spec_safe(name: str):
+            try:
+                return importlib.util.find_spec(name)
+            except (ValueError, ImportError):
+                return None
+
+        if _find_spec_safe("crewai_tools") is None:
             raise ImportError(
                 "crewai-tools not installed. Install with: pip install fluxagentpro-v2[crew]"
+            )
+        if _find_spec_safe("mcp") is None:
+            raise ImportError(
+                "mcp package not installed. Install with: pip install fluxagentpro-v2[crew]"
             )
 
         from src.tools.mcp_pool import MCPPool
@@ -144,22 +143,21 @@ class AgentFactory:
 
         Lazy imports crewai-tools to handle optional dependency.
         """
-        try:
-            import importlib.util
+        import importlib.util
 
-            if importlib.util.find_spec("crewai_tools") is None:
-                raise ImportError(
-                    "crewai-tools not installed. Install with: pip install fluxagentpro-v2[crew]"
-                )
-            if importlib.util.find_spec("mcp") is None:
-                raise ImportError(
-                    "mcp package not installed. Install with: pip install fluxagentpro-v2[crew]"
-                )
-        except ImportError as e:
-            if "crewai-tools" in str(e) or "mcp package" in str(e):
-                raise
+        def _find_spec_safe(name: str):
+            try:
+                return importlib.util.find_spec(name)
+            except (ValueError, ImportError):
+                return None
+
+        if _find_spec_safe("crewai_tools") is None:
             raise ImportError(
                 "crewai-tools not installed. Install with: pip install fluxagentpro-v2[crew]"
+            )
+        if _find_spec_safe("mcp") is None:
+            raise ImportError(
+                "mcp package not installed. Install with: pip install fluxagentpro-v2[crew]"
             )
 
         from src.tools.mcp_pool import MCPPool

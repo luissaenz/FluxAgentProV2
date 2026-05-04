@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "agents": [
+    "presupuestador"
+  ],
+  "skills": [],
+  "compatibility": ">=0.1.0",
+  "bundle_info": {
+    "name": "presupuesto-bundle",
+    "description": "Agente presupuestador para eventos - lee precios reales de Excel y genera cotizaciones",
+    "version": "1.0.0",
+    "author": "Unknown"
+  },
+  "hashes": {
+    "agents/presupuestador.json": "sha256:8bdc4257879bd9c362819bcafff163a0d54ded2d1f6f9b20d4598d188ec5524a"
+  }
+}

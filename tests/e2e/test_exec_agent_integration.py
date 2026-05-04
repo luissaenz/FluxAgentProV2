@@ -6,7 +6,7 @@ Exercises AgentFactory.resolve_tools() through real ToolRegistry.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -59,8 +59,13 @@ class TestExecAgentIntegration:
         mock_resp.data = agent_config
         mock_service_client.table("agent_catalog").execute.return_value = mock_resp
 
-        flow = IntegrationAgentFlow(org_id=org_id, user_id=str(uuid4()))
-        state = await flow.execute({"endpoint": "/api/data"})
+        with patch("src.crews.factory.get_settings") as mock_get:
+            mock_settings = MagicMock()
+            mock_settings.get_llm.return_value = "groq/llama-3.3-70b-versatile"
+            mock_get.return_value = mock_settings
+
+            flow = IntegrationAgentFlow(org_id=org_id, user_id=str(uuid4()))
+            state = await flow.execute({"endpoint": "/api/data"})
 
         assert state.status == FlowStatus.COMPLETED.value, f"Got {state.status}"
         assert state.task_id is not None

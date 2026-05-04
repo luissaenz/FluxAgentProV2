@@ -250,7 +250,10 @@ class TestResolveMCPToolAsync:
         mock_pool = MagicMock()
         mock_pool.get_tools = AsyncMock(return_value=[mock_tool1, mock_tool2])
 
-        with patch("src.tools.mcp_pool.MCPPool") as mock_mcp_pool_cls:
+        with (
+            patch("src.tools.mcp_pool.MCPPool") as mock_mcp_pool_cls,
+            patch("importlib.util.find_spec", return_value=MagicMock()),
+        ):
             mock_mcp_pool_cls.get.return_value = mock_pool
 
             result = await AgentFactory._resolve_mcp_tool_async(
@@ -269,7 +272,10 @@ class TestResolveMCPToolAsync:
         mock_pool = MagicMock()
         mock_pool.get_tools = AsyncMock(return_value=[mock_tool])
 
-        with patch("src.tools.mcp_pool.MCPPool") as mock_mcp_pool_cls:
+        with (
+            patch("src.tools.mcp_pool.MCPPool") as mock_mcp_pool_cls,
+            patch("importlib.util.find_spec", return_value=MagicMock()),
+        ):
             mock_mcp_pool_cls.get.return_value = mock_pool
 
             result = await AgentFactory._resolve_mcp_tool_async(
@@ -285,7 +291,10 @@ class TestResolveMCPToolAsync:
         mock_pool = MagicMock()
         mock_pool.get_tools = AsyncMock(side_effect=Exception("Connection refused"))
 
-        with patch("src.tools.mcp_pool.MCPPool") as mock_mcp_pool_cls:
+        with (
+            patch("src.tools.mcp_pool.MCPPool") as mock_mcp_pool_cls,
+            patch("importlib.util.find_spec", return_value=MagicMock()),
+        ):
             mock_mcp_pool_cls.get.return_value = mock_pool
 
             result = await AgentFactory._resolve_mcp_tool_async(

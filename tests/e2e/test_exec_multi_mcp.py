@@ -72,11 +72,18 @@ class TestExecMultiMCP:
         org_id = str(uuid4())
         _setup_catalog(mock_service_client, org_id)
 
-        with patch(
-            "src.crews.factory.AgentFactory._resolve_mcp_tool_async",
-            new_callable=AsyncMock,
-            return_value=None,
+        with (
+            patch(
+                "src.crews.factory.AgentFactory._resolve_mcp_tool_async",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch("src.crews.factory.get_settings") as mock_get,
         ):
+            mock_settings = MagicMock()
+            mock_settings.get_llm.return_value = "groq/llama-3.3-70b-versatile"
+            mock_get.return_value = mock_settings
+
             flow = MultiCrewFlow(org_id=org_id, user_id=str(uuid4()))
             state = await flow.execute({"query": "test"})
 

@@ -77,12 +77,13 @@ def test_read_file_not_found():
     assert "error" in data
 
 
-def test_read_specific_sheet():
-    """Solicitar sheet específica funciona."""
+def test_read_all_sheets_multi_sheet():
+    """Lee multi-sheet retorna todas las sheets."""
     tool = ExcelReaderTool(org_id="test")
-    raw = tool._run("config_margenes.xlsx", sheet_name="Climatico")
+    raw = tool._run("config_margenes.xlsx")
     data = json.loads(raw)
 
+    assert "Margenes" in data
     assert "Climatico" in data
     rows = data["Climatico"]
     assert len(rows) >= 1

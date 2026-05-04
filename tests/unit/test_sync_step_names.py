@@ -29,8 +29,8 @@ class TestSyncStepNames:
         )
         assert "0 discrepancias" in result.output
 
-    def test_check_plan_detects_discrepancies(self):
-        """TP-2: --check --source plan → exit 1 (plan names != fase real)."""
+    def test_check_plan_source_not_found(self):
+        """TP-2: --check --source plan → exit 1 (plan.md sin tabla Tarea 3.1)."""
         runner = CliRunner()
         result = runner.invoke(
             app, ["sync-step-names", "--check", "--source", "plan"]
@@ -38,7 +38,7 @@ class TestSyncStepNames:
         assert result.exit_code == 1, (
             f"Expected exit 1, got {result.exit_code}. Output: {result.output}"
         )
-        assert "discrepancia" in result.output
+        assert "No se encontr" in result.output
 
     def test_fix_dry_run_shows_changes(self):
         """TP-3: --fix --dry-run → muestra cambios sin modificar."""

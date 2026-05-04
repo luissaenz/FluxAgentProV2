@@ -9,7 +9,7 @@ execution pipeline through BaseFlow.execute().
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -65,8 +65,13 @@ class TestExecSimpleAgent:
         mock_resp.data = agent_config
         mock_service_client.table("agent_catalog").execute.return_value = mock_resp
 
-        flow = SimpleAgentFlow(org_id=org_id, user_id=str(uuid4()))
-        state = await flow.execute({"user": "Alice", "message": "Hello!"})
+        with patch("src.crews.factory.get_settings") as mock_get:
+            mock_settings = MagicMock()
+            mock_settings.get_llm.return_value = "groq/llama-3.3-70b-versatile"
+            mock_get.return_value = mock_settings
+
+            flow = SimpleAgentFlow(org_id=org_id, user_id=str(uuid4()))
+            state = await flow.execute({"user": "Alice", "message": "Hello!"})
 
         assert state.status == FlowStatus.COMPLETED.value, f"Got {state.status}"
         assert state.task_id is not None
@@ -86,10 +91,15 @@ class TestExecSimpleAgent:
         mock_resp.data = agent_config
         mock_service_client.table("agent_catalog").execute.return_value = mock_resp
 
-        flow = SimpleAgentFlow(org_id=org_id, user_id=str(uuid4()))
-        assert flow.state is None
+        with patch("src.crews.factory.get_settings") as mock_get:
+            mock_settings = MagicMock()
+            mock_settings.get_llm.return_value = "groq/llama-3.3-70b-versatile"
+            mock_get.return_value = mock_settings
 
-        state = await flow.execute({"user": "Bob"})
+            flow = SimpleAgentFlow(org_id=org_id, user_id=str(uuid4()))
+            assert flow.state is None
+
+            state = await flow.execute({"user": "Bob"})
         assert FlowStatus(state.status) == FlowStatus.COMPLETED
         assert state.task_id is not None
 

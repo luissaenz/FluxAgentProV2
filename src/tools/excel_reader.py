@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Type
 
 import openpyxl
 from pydantic import BaseModel, Field
@@ -22,7 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent / "PROJECT-Aybar"
 
 class ExcelReaderInput(BaseModel):
     filename: str = Field(description="Nombre del archivo .xlsx (ej: precios_bebidas.xlsx)")
-    sheet_name: Optional[str] = Field(None, description="Nombre de la sheet (opcional). Si no se especifica, retorna todas las sheets.")
 
 
 @register_tool(
@@ -34,20 +33,18 @@ class ExcelReaderTool(OrgBaseTool):
     name: str = "excel_reader"
     description: str = (
         "Lee archivos .xlsx de la carpeta PROJECT-Aybar y retorna "
-        "los datos como JSON estructurado. Cada sheet se convierte en "
-        "una lista de diccionarios con cabeceras como keys.\n\n"
-        "Ejemplos de uso:\n"
-        '- excel_reader(filename="precios_bebidas.xlsx") → todas las sheets\n'
-        '- excel_reader(filename="precios_bebidas.xlsx", sheet_name="whisky") → solo sheet whisky\n\n'
+        "los datos como JSON estructurado de TODAS las sheets. "
+        "Cada sheet se convierte en una lista de diccionarios con "
+        "cabeceras como keys.\n\n"
         "Instrucciones:\n"
-        "- SIEMPRE usa esta herramienta cuando necesites precios, consumos o datos de inventario.\n"
+        "- SIEMPRE usa esta herramienta cuando necesites precios, consumos, márgenes o datos de inventario.\n"
         "- NUNCA inventes precios ni uses datos de entrenamiento — consulta el archivo real.\n"
-        "- Si no especificas sheet_name, se retornan TODAS las sheets disponibles.\n"
+        "- Retorna todas las sheets disponibles en el archivo.\n"
         "- Los numeros se retornan como int/float, no como strings."
     )
     args_schema: Type[BaseModel] = ExcelReaderInput
 
-    def _run(self, filename: str, sheet_name: Optional[str] = None) -> str:
+    def _run(self, filename: str) -> str:
         filepath = BASE_DIR / filename
         if not filepath.exists():
             return json.dumps({"error": f"Archivo '{filename}' no encontrado en {BASE_DIR}"})
@@ -61,7 +58,7 @@ class ExcelReaderTool(OrgBaseTool):
 
         result: Dict[str, List[Dict[str, Any]]] = {}
 
-        sheets = [sheet_name] if sheet_name else wb.sheetnames
+        sheets = wb.sheetnames
 
         for sn in sheets:
             if sn not in wb.sheetnames:

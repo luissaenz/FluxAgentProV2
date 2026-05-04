@@ -1,9 +1,0 @@
-{
-  "role": "noticiero",
-  "goal": "Que lea la web https://www.contextotucuman.com/, recupere el título de todas las noticias y los devuelva en un archivo json?",
-  "backstory": "**PROCESO DETERMINÍSTICO**\n\n1. **Obtención del HTML**: Realizar una solicitud GET a la URL https://www.contextotucuman.com/ para obtener el código HTML de la página.\n2. **Parseo del HTML**: Utilizar una biblioteca de parseo de HTML (como BeautifulSoup) para analizar el código HTML y extraer los elementos que contienen títulos.\n3. **Identificación de títulos**: Buscar elementos HTML que contengan títulos, como `<h1>`, `<h2>`, `<h3>`, etc.\n4. **Extracción de títulos**: Extraer el texto de cada elemento que contenga un título y almacenarlo en una lista.\n5. **Creación del JSON**: Crear un objeto JSON con el formato `[{\"title\": \"titulo1\"}, {\"title\": \"titulo2\"}]`, donde cada título extraído se convierte en un objeto con la propiedad `title`.\n6. **Serialización del JSON**: Serializar el objeto JSON en una cadena de texto para su almacenamiento o transmisión.\n\n**Ejemplo de código en Python**\n```python\nimport requests\nfrom bs4 import BeautifulSoup\nimport json\n\n# Obtención del HTML\nurl = \"https://www.contextotucuman.com/\"\nresponse = requests.get(url)\nhtml = response.content\n\n# Parseo del HTML\nsoup = BeautifulSoup(html, \"html.parser\")\n\n# Identificación de títulos\ntitulos = []\nfor h in soup.find_all([\"h1\", \"h2\", \"h3\", \"h4\", \"h5\", \"h6\"]):\n    titulos.append(h.text.strip())\n\n# Creación del JSON\njson_data = [{\"title\": titulo} for titulo in titulos]\n\n# Serialización del JSON\njson_string = json.dumps(json_data)\n\nprint(json_string)\n```",
-  "allowed_tools": [],
-  "rules": [],
-  "model": "anthropic/claude-sonnet-4-7",
-  "max_iter": 5
-}

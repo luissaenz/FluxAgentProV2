@@ -35,7 +35,7 @@ class PresupuestoFlow(BaseFlow):
     """
 
     def validate_input(self, input_data: Dict[str, Any]) -> bool:
-        required = ["tipo_evento", "pax", "fecha"]
+        required = ["tipo_evento", "pax", "fecha", "provincia"]
         return all(k in input_data for k in required)
 
     async def _run_crew(self) -> Dict[str, Any]:
