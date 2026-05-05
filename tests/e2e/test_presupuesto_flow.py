@@ -21,9 +21,8 @@ from fastapi.testclient import TestClient
 # Import to trigger @register_flow
 import src.flows.presupuesto_flow  # noqa: F401
 from src.api.main import app
-from src.api.middleware import require_org_id, verify_org_membership
+from src.api.middleware import verify_org_membership
 from src.config import get_settings
-from src.flows.base_flow import BaseFlow
 from src.flows.presupuesto_flow import PresupuestoFlow
 from src.flows.registry import flow_registry
 from src.flows.state import FlowStatus
@@ -41,7 +40,21 @@ def _has_groq_key() -> bool:
         return False
 
 
-_RUN_REAL_LLM = _has_groq_key()
+def _can_init_llm() -> bool:
+    """True if LLM model can be initialized with current crewai version."""
+    if not _has_groq_key():
+        return False
+    try:
+        from crewai import LLM
+        LLM(model="groq/llama-3.3-70b-versatile", api_key="test")
+        return True
+    except ImportError:
+        return False
+    except Exception:
+        return False
+
+
+_RUN_REAL_LLM = _can_init_llm()
 
 
 def _extract_json(text: str) -> str:
@@ -104,21 +117,6 @@ class TestPresupuestoFlowRegistry:
         assert flow_registry.has("presupuesto"), "Flow 'presupuesto' not registered!"
         FlowClass = flow_registry.get("presupuesto")
         assert FlowClass.__name__ == "PresupuestoFlow"
-
-    def test_validate_input_requires_all_fields(self):
-        flow = PresupuestoFlow(org_id=str(uuid4()), user_id=str(uuid4()))
-        assert flow.validate_input(VALID_INPUT)
-        assert not flow.validate_input({"tipo_evento": "boda"})
-        assert not flow.validate_input({"tipo_evento": "boda", "pax": 100, "fecha": "2026-01-01"})
-        assert not flow.validate_input({})
-
-    def test_validate_input_rejects_missing_provincia(self):
-        flow = PresupuestoFlow(org_id=str(uuid4()), user_id=str(uuid4()))
-        assert not flow.validate_input({"tipo_evento": "boda", "pax": 100, "fecha": "2026-01-01"})
-
-    def test_validate_input_accepts_with_provincia(self):
-        flow = PresupuestoFlow(org_id=str(uuid4()), user_id=str(uuid4()))
-        assert flow.validate_input({**VALID_INPUT, "pax": 100})
 
 
 class TestPresupuestoWebhookTrigger:

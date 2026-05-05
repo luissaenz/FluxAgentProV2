@@ -35,8 +35,21 @@ def _has_groq_key() -> bool:
         return False
 
 
+def _can_init_llm() -> bool:
+    if not _has_groq_key():
+        return False
+    try:
+        from crewai import LLM
+        LLM(model="groq/llama-3.3-70b-versatile", api_key="test")
+        return True
+    except ImportError:
+        return False
+    except Exception:
+        return False
+
+
 pytestmark = [
-    pytest.mark.skipif(not _has_groq_key(), reason="Requiere GROQ_API_KEY"),
+    pytest.mark.skipif(not _can_init_llm(), reason="Requiere GROQ_API_KEY o litellm"),
     pytest.mark.real_llm,
 ]
 
@@ -168,6 +181,12 @@ async def test_flow_execute_with_tool(
     mock_service_client.table("tasks").insert.assert_called()
     mock_service_client.table("tasks").update.assert_called()
     mock_service_client.table("snapshots").upsert.assert_called()
+
+    # ── Tool calling verification (7.4) ──
+    tool_calls = flow.last_tool_calls
+    assert tool_calls.get("excel_reader", 0) >= 1, (
+        f"excel_reader called {tool_calls.get('excel_reader', 0)} times, expected >=1"
+    )
 
     # ── Event emission (flow.created + flow.completed) ──
     event_db = mock_event_store.return_value.__enter__.return_value

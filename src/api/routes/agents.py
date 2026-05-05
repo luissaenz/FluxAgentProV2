@@ -28,6 +28,29 @@ class RunAgentResponse(BaseModel):
     status: str
 
 
+@router.get("/by-role/{role}")
+async def get_agent_by_role(
+    role: str,
+    org_id: str = Depends(require_org_id),
+):
+    """Get agent config by role name. Returns agent_catalog record."""
+    with get_tenant_client(org_id) as db:
+        result = (
+            db.table("agent_catalog")
+            .select("*")
+            .eq("org_id", org_id)
+            .eq("role", role)
+            .eq("is_active", True)
+            .maybe_single()
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail=f"Agent '{role}' not found")
+
+        return result.data
+
+
 @router.get("/{agent_id}/detail")
 async def get_agent_detail(
     agent_id: str,

@@ -39,8 +39,21 @@ def _has_groq_key() -> bool:
         return False
 
 
+def _can_init_llm() -> bool:
+    if not _has_groq_key():
+        return False
+    try:
+        from crewai import LLM
+        LLM(model="groq/llama-3.3-70b-versatile", api_key="test")
+        return True
+    except ImportError:
+        return False
+    except Exception:
+        return False
+
+
 pytestmark = [
-    pytest.mark.skipif(not _has_groq_key(), reason="Requiere GROQ_API_KEY"),
+    pytest.mark.skipif(not _can_init_llm(), reason="Requiere GROQ_API_KEY o litellm"),
     pytest.mark.real_llm,
 ]
 

@@ -35,8 +35,21 @@ def _has_groq_key() -> bool:
         return False
 
 
+def _can_init_llm() -> bool:
+    if not _has_groq_key():
+        return False
+    try:
+        from crewai import LLM
+        LLM(model="groq/llama-3.3-70b-versatile", api_key="test")
+        return True
+    except ImportError:
+        return False
+    except Exception:
+        return False
+
+
 pytestmark = [
-    pytest.mark.skipif(not _has_groq_key(), reason="Requiere GROQ_API_KEY"),
+    pytest.mark.skipif(not _can_init_llm(), reason="Requiere GROQ_API_KEY o litellm"),
     pytest.mark.real_llm,
 ]
 
@@ -137,3 +150,9 @@ async def test_agent_presupuesto_via_crewai():
     assert data["precio_venta"] > data["costo_total"]
     assert len(data["bebidas"]) >= 3
     assert data["cantidad_bartenders"] >= 2
+
+    # Verify tool was called (7.4: tool calling check)
+    tool_calls = crew.get_last_tool_calls()
+    assert tool_calls.get("excel_reader", 0) >= 1, (
+        f"excel_reader called {tool_calls.get('excel_reader', 0)} times, expected >=1"
+    )

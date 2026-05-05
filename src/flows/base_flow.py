@@ -428,6 +428,18 @@ class BaseFlow(ABC):
     # ── Properties ─────────────────────────────────────────────
 
     @property
+    def last_tool_calls(self) -> Dict[str, int]:
+        """Tool invocation counts from last crew run.
+
+        Delegates to internal BaseCrew if available.
+        Returns empty dict if no run completed or crew not exposed.
+        """
+        crew = getattr(self, "_last_crew", None)
+        if crew is not None:
+            return crew.get_last_tool_calls()
+        return {}
+
+    @property
     def flow_type(self) -> str:
         """Return the flow type name for DB records."""
         # Priorizar el nombre con el que se registró en FlowRegistry

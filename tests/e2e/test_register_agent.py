@@ -139,3 +139,85 @@ class TestRegisterAgent:
 
         assert config["role"] == "presupuestador"
         assert "excel_reader" in config["allowed_tools"]
+
+    def test_get_agent_via_api_returns_correct_data(self, api_client, mock_service_client, mock_tenant_client):
+        """Import bundle -> GET /api/agents/by-role/presupuestador -> validate 5+ fields."""
+        org_id = "test-org"
+        agent_data = {
+            "role": "presupuestador",
+            "org_id": org_id,
+            "soul_json": {
+                "role": "Cotizador de Eventos",
+                "goal": "Generar presupuestos detallados para eventos usando excel_reader con datos reales de precios_bebidas.xlsx",
+                "backstory": "Sos un experto en cotizacion de eventos. SIEMPRE usas excel_reader.",
+            },
+            "allowed_tools": ["excel_reader"],
+            "model": "groq/llama-3.3-70b-versatile",
+            "max_iter": 5,
+            "is_active": True,
+        }
+
+        # Configure mock_service_client.table("agent_catalog") chain
+        catalog = mock_service_client.table("agent_catalog")
+        catalog.select.return_value = catalog
+        catalog.eq.return_value = catalog
+        catalog.maybe_single.return_value = catalog
+        mock_resp = MagicMock()
+        mock_resp.data = agent_data
+        catalog.execute.return_value = mock_resp
+
+        resp = api_client.get(
+            "/agents/by-role/presupuestador",
+            headers={"X-Org-ID": org_id},
+        )
+
+        assert resp.status_code == 200, f"Got {resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data["role"] == "presupuestador"
+        assert data["soul_json"]["role"] == "Cotizador de Eventos"
+        assert "excel_reader" in data["soul_json"]["goal"]
+        assert data["allowed_tools"] == ["excel_reader"]
+        assert data["is_active"] is True
+
+    def test_import_seed_bundle_via_api(self, api_client, mock_tenant_client, tmp_path):
+        """Import seed from data/seed/presupuesto-bundle/ via API."""
+        import io
+        import zipfile
+
+        seed_dir = Path(__file__).resolve().parent.parent.parent / "data" / "seed" / "presupuesto-bundle"
+        assert seed_dir.exists(), f"Seed dir not found: {seed_dir}"
+
+        with open(seed_dir / "manifest.json") as f:
+            manifest = json.load(f)
+        with open(seed_dir / "agents" / "presupuestador.json") as f:
+            agent_json = f.read()
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("manifest.json", json.dumps(manifest))
+            z.writestr("agents/presupuestador.json", agent_json)
+        zip_bytes = buf.getvalue()
+
+        mock_tenant_client.rpc.return_value.execute.return_value.data = {
+            "status": "success",
+            "bundle_id": "presupuesto-bundle-seed",
+            "agents_count": 1,
+            "flows_count": 0,
+            "skills_count": 0,
+        }
+
+        response = api_client.post(
+            "/api/bundles/import",
+            files={"file": ("presupuesto-seed.zip", zip_bytes, "application/zip")},
+            headers={"X-Org-Id": "test-org"},
+        )
+
+        assert response.status_code == 201, f"Got {response.status_code}: {response.text}"
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["agents_count"] == 1
+
+        # Verify fields from seed match
+        assert manifest["bundle_info"]["name"] == "presupuesto-bundle"
+        assert manifest["hashes"]["agents/presupuestador.json"].startswith("sha256:")
+        assert '"excel_reader"' in agent_json

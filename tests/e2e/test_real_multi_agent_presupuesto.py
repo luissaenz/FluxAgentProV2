@@ -1,11 +1,8 @@
-"""tests/e2e/test_real_multi_agent_presupuesto.py — Multi-agente real con Groq.
+"""tests/e2e/test_real_multi_agent_presupuesto.py — Legacy: multi-agente pre-fetch, no tool calling.
 
-3 agentes en pipeline:
-  1. ClasificadorEvento → clasifica pedido, extrae parámetros
-  2. CalculadorPresupuesto → lee sheets, calcula escandallo + opciones
-  3. RevisorPresupuesto → valida márgenes, coherencia, emite versión final
-
-Requiere GROQ_API_KEY. Marcar: @pytest.mark.real_llm
+DEPRECATED: Reemplazado por test_tool_calling_real.py::test_presupuestador_calls_excel_reader.
+Pipeline multi-agente con datos precargados via ExcelReaderTool._run() directo.
+Conservado como referencia historica — no ejecutar en CI.
 """
 
 from __future__ import annotations
@@ -28,6 +25,7 @@ def _has_groq_key() -> bool:
 
 
 pytestmark = [
+    pytest.mark.skip(reason="Legacy: reemplazado por test_tool_calling_real.py::test_presupuestador_calls_excel_reader (2026-05-04)"),
     pytest.mark.skipif(not _has_groq_key(), reason="Requiere GROQ_API_KEY"),
     pytest.mark.real_llm,
 ]

@@ -1,8 +1,8 @@
-"""tests/e2e/test_real_agent_presupuesto.py — Agente real con Groq.
+"""tests/e2e/test_real_agent_presupuesto.py — Legacy: pre-fetch data, no tool calling.
 
-Escenario: agente recibe pedido, consulta sheets, genera presupuesto.
-Usa LLM real (Groq). Requiere GROQ_API_KEY en .env.
-Marcar: @pytest.mark.real_llm — no corre por defecto.
+DEPRECATED: Reemplazado por test_tool_calling_real.py::test_presupuestador_calls_excel_reader.
+Este test pre-fetchea datos via ExcelReaderTool._run() directo en vez de tool calling real.
+Conservado como referencia historica — no ejecutar en CI.
 """
 
 from __future__ import annotations
@@ -32,10 +32,13 @@ def _has_groq_key() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(
-    not _has_groq_key(),
-    reason="Requiere GROQ_API_KEY en .env",
-)
+pytestmark = [
+    pytest.mark.skip(reason="Legacy: reemplazado por test_tool_calling_real.py::test_presupuestador_calls_excel_reader (2026-05-04)"),
+    pytest.mark.skipif(
+        not _has_groq_key(),
+        reason="Requiere GROQ_API_KEY en .env",
+    ),
+]
 
 
 @pytest.mark.real_llm
