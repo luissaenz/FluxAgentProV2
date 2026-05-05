@@ -388,3 +388,33 @@ async def test_validate_input_rejects_missing_fields():
 | 7.7 | Verificación cruzada bundle seed | 0.5h |
 | 7.8 | Test unitario validate_input() | 0.25h |
 | **Total** | | **~3.75h** |
+
+---
+
+## 📥 Pasos incorporados desde sugerencias de validación
+> Incorporados el 2026-05-05 — Fase activa: patch_agents
+
+## Paso 8: 08-sincronizar-proyecto-config-con-fase-activa
+
+**Origen:** Sugerencia 🟡 de validación — Paso 3: Tool Calling Real
+**Prioridad:** Alta
+**Fase:** patch_agents
+
+### Objetivo
+Actualizar `proyecto-config.json` para reflejar la fase activa `patch_agents`, sincronizando `phase_name`, `current_step` y `pipeline` con el estado real del proyecto registrado en `phase-state.md`.
+
+### Tareas
+- [ ] Cambiar `phase.phase_name` de `"testing"` a `"patch_agents"` en `proyecto-config.json`
+- [ ] Actualizar `phase.current_step` al último paso completado (06-ExcelWriterTool, commit `7827d78`)
+- [ ] Actualizar `pipeline.*` flags para reflejar estado actual (phase_state_exists ✅, pasos implementados)
+- [ ] Verificar que discrepancias documentadas en phase-state.md §2 y §4 se reducen post-actualización
+- [ ] Confirmar lint 0 post-cambio
+
+### Criterios de Aceptación
+- [ ] `proyecto-config.json` muestra `phase_name: "patch_agents"` (no `"testing"`)
+- [ ] `phase.current_step` coincide con el último paso completado en `phase-state.md §5`
+- [ ] Todas las discrepancias sobre `phase_name` incorrecto en phase-state.md están resueltas
+- [ ] Pipeline downstream (analistas, implementadores, validadores) reciben `phase_name` correcto
+
+### Notas
+Dependencia con ID-001 de sugest.md. Este paso es crítico porque `proyecto-config.json` es la fuente de verdad que todos los agentes downstream consumen. Error aquí = error en todo el pipeline. La desincronización persiste desde commit `64cf7c5`.

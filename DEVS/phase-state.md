@@ -1,10 +1,10 @@
 # Phase State: Deep Technical Certification (QA) — testing → Patch agents
 # Estado de Fase: Certificación Técnica Profunda (QA) — testing → Patch agents
 
-> **Fecha / Date:** 2026-05-03
-> **Estado / Status:** 🔄 EN PROGRESO — Implementación plan.md pasos 1-6 (Fix MCP deadlock, Registrar agente, Tool calling real, ExcelWriterTool, PresupuestoFlow). Análisis multi-agente Paso 3 archivado.
-> **Último Commit / Last Commit:** `349d9eb` — `testing / 00-Fix-Post-Certificacion`
-> **⚠️ DISCREPANCIA:** `proyecto-config.json` aún refleja `phase_name: "testing", phase_completed: true`. Fase activa no está registrada en config.
+> **Fecha / Date:** 2026-05-05
+> **Estado / Status:** 🔄 EN PROGRESO — Plan.md Pasos 1-6 implementados (4/6 ✅: Fix MCP deadlock, Registrar agente, Tool calling real, ExcelWriterTool). Análisis multi-agente Paso 7 archivado + validado (✅ APROBADO, 25/25 criterios).
+> **Último Commit / Last Commit:** `7827d78` — `patch_agents / 06-ExcelWriterTool`
+> **📝 CORREGIDO (2026-05-05):** `proyecto-config.json` ahora refleja `phase_name: "patch_agents"`, `current_step: "06-ExcelWriterTool"`. Fase activa registrada correctamente via `fap sync-config --fix`.
 
 ---
 
@@ -24,7 +24,8 @@
 - ✅ **Paso 7: Documentación y Cierre.** TESTING.md (comandos por paso, mocking strategy, fixtures), CHANGELOG.md (Keep a Changelog), Makefile targets `test-all`/`test-fast`/`coverage` con `uv run` cross-platform, `fap phase-close` generalizado para Fase VI con `--phase testing --certify`, `fap test-step` extendido (pasos 4/6/7), coverage config en `pyproject.toml` (threshold 75%), README actualizado a Fase VI. DX `fap phase-close testing --certify` + `make test-all`.
 - 🆕 **Paso Hotfix: Fix Post-Certificación (Plan v3.2 — Paso 3).** Corregir desincronización nombres de pasos en TESTING.md + CHANGELOG.md. Fuente de verdad = phase-state.md + carpetas IMPLEMENTED. Correcciones al plan: nombres Pasos 4-5 del plan.md hotfix no coinciden con fase real. DX `fap sync-step-names --check --source [phase-state|plan]` con flags `--check`/`--fix`/`--dry-run`.
 - 🆕 **Fase "Patch agents" (en progreso).** Nueva fase post-testing para aplicar fixes del plan v3.2. Pasos ejecutados: Fix Lint I001, Fix `test_3_5_latency.py` (skipif), Alinear nombres TESTING.md. Pasos pendientes: Fix seguridad `registry.py` (Paso 0), Mover `baseline.py` (Paso 4).
-- 🆕 **Implementación plan.md pasos 1-6 (commit `349d9eb`).** Paso 1: Fix deadlock MCP (`resolve_tools_async`/`_resolve_mcp_tool_async` en factory.py). Paso 2: Registrar agente (`PresupuestoFlow` registrado). Paso 3: Tool calling real (`ToolCallTracer`, `fap test-tool-call`, `ExcelReaderTool`). Paso 6: `ExcelWriterTool` + dependencia `openpyxl`. Análisis multi-agente archivado en `IMPLEMENTED/testing/00-Fix-Post-Certificacion/`.
+- ✅ **Implementación plan.md pasos 1-6 (commit `349d9eb`).** Paso 1: Fix deadlock MCP (`resolve_tools_async`/`_resolve_mcp_tool_async` en factory.py). Paso 2: Registrar agente (`PresupuestoFlow` registrado). Paso 3: Tool calling real (`ToolCallTracer`, `fap test-tool-call`, `ExcelReaderTool`). Paso 6: `ExcelWriterTool` + dependencia `openpyxl`.
+- ✅ **Análisis Paso 7 — Cierre (commit `7827d78`).** 6 análisis multi-agente (ds, Y, mm, kilo) archivados + validación (✅ APROBADO, 25/25 criterios). 8 sub-pasos analizados: 7.1 Remover parche MCP test, 7.2 Bundle seed, 7.3 Test GET agente API, 7.4 Tool calling check en Flow.execute, 7.5 Consolidar tests duplicados, 7.6 Deprecar tests legacy, 7.7 Test import seed, 7.8 Test unitario validate_input.
 - `proyecto-config.json` no actualizado para reflejar nueva fase — desincronización documentada.
 
 **Dependencias / Dependencies:** Paso 0 → Todos. Pasos 1→7 secuenciales con superposición posible.
@@ -38,7 +39,7 @@
 - `paths.migrations:` `supabase/migrations/` (30 archivos SQL: 001-025)
 - `paths.tests:` `tests/` (unit, integration, e2e)
 - `paths.cli:` `src/cli/` (20+ comandos fap: +security-audit, +perf-check, +test-tool-call)
-- `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado en commit `349d9eb`)
+- `paths.devs_in_progress:` `DEVS/IN_PROGRESS/` — vacío (archivado en commit `7827d78`)
 - `paths.devs_implemented:` `DEVS/IMPLEMENTED/`
 
 ### Stack Tecnológico / Tech Stack
@@ -88,6 +89,13 @@
 | **Excel Reader/Writer unit tests** | `tests/unit/test_factory.py` | ✅ | TestExcelReaderResolution: 3 tests async para resolución de excel_reader tool. Clase TestResolveToolsAsync + TestResolveMCPToolAsync (~150 lines nuevas). |
 | **E2E Tool Calling Real** | `tests/e2e/test_tool_calling_real.py` | ✅ | Test E2E sin patches CrewAI. LLM real (Groq) llama excel_reader. Verifica `tool_calls >= 1` y datos reales en output. 136 loc. Requiere GROQ_API_KEY. |
 | **E2E PresupuestoFlow** | `tests/e2e/test_presupuesto_flow.py` | ✅ | Verifica registro en FlowRegistry + ejecución con LLM real. `test_execute_with_real_llm` + `test_flow_registered` + `test_validate_input`. 120 loc. |
+| **BaseFlow.last_tool_calls** | `src/flows/base_flow.py:430-440` | ✅ | Property `last_tool_calls` que delega a `BaseCrew.get_last_tool_calls()`. Retorna `{}` si no hay crew. Nueva en commit `7827d78`. |
+| **GET /agents/by-role/{role}** | `src/api/routes/agents.py:31-40` | ✅ | Endpoint público que consulta `agent_catalog` por role name. Usa `get_tenant_client`. Nueva en commit `7827d78`. |
+| **seed_bundle.py** | `scripts/seed_bundle.py` | ✅ | DX tooling: copia `presupuesto-bundle/` a `data/seed/presupuesto-bundle/`, recalcula SHA256, verifica integridad. 71 loc. Nueva en commit `7827d78`. |
+| **Bundle seed** | `data/seed/presupuesto-bundle/` | ✅ | Manifest + agent JSON con SHA256 verificado (`8bdc4257...`). Para import automatizado via `POST /api/bundles/import`. Nueva en commit `7827d78`. |
+| **test_register_agent.py (extendido)** | `tests/e2e/test_register_agent.py` | ✅ | Test GET agente via API (`test_get_agent_via_api_returns_correct_data` valida ≥5 campos) + test import seed bundle (`test_import_seed_bundle_via_api`). Nuevos en commit `7827d78`. |
+| **Test unitario PresupuestoFlow** | `tests/unit/test_presupuesto_flow.py` | ✅ | 4 tests: validate_input acepta/rechaza campos. Nuevo en commit `7827d78`. |
+| **test_real_tool_calling.py** | `tests/e2e/test_real_tool_calling.py` | ❌ ELIMINADO | Duplicado de `test_tool_calling_real.py`. Eliminado en commit `7827d78`. |
 
 ### Tests (Verificado contra código / Code-verified)
 
@@ -104,6 +112,7 @@
 | **SyncStepNames (unit)** | 1 | 1/1 pass (test_sync_step_names.py) |
 | **Patch agents (lint_fix + check_env)** | — | Commits `9e3736f`, `215c383`, `958f1ba` — sin tests dedicados nuevos |
 | **Plan impl: Fix deadlock MCP + Tool Calling + Excel** | 4 (unit) + 2 (e2e) + 2 (flow) | Nuevos en `349d9eb`: 4 tests unit (resolve_tools_async, _resolve_mcp_tool_async, excel_reader resolver), 2 e2e (tool_calling_real, presupuesto_flow), 1 flow. |
+| **Paso 7 — Cierre** | 4 (unit) + 1 (deleted) | Nuevos en `7827d78`: 4 tests unit (validate_input), 2+ tests e2e (GET agente, import seed), tool calling check en Flow.execute, MCP sin parche. `test_real_tool_calling.py` eliminado (duplicado). 2 tests legacy deprecados (skip). |
 | **Lint** | — | 0 errores (`ruff check src/ tests/`) |
 
 ### Discrepancias Conocidas / Known Discrepancies Plan vs Código
@@ -112,13 +121,15 @@
   - `>=`/`<=`/`==` ya fixeados (`dynamic_flow.py:144-150`)
   - `approval_threshold` no usado en `_run_crew()` — deuda técnica documentada
   - `_on_approved()` marca COMPLETED, no reanuda steps — documentado
-- **NUEVA: Fase "Patch agents" no existe en `proyecto-config.json`.** Config aún muestra `phase_name: "testing", phase_completed: true`. Pero HEAD tiene 4 commits bajo "Patch agents" (`64cf7c5` → setup, `9e3736f` → lint, `215c383` → latency skipif, `958f1ba` → sync step names). `proyecto-config.json` necesita actualización.
+- **📝 CORREGIDO (2026-05-05):** Fase "Patch agents" registrada en `proyecto-config.json` con `phase_name: "patch_agents"`, `current_step: "06-ExcelWriterTool"`. HEAD tiene 4 commits bajo "Patch agents" (`64cf7c5` → setup, `9e3736f` → lint, `215c383` → latency skipif, `958f1ba` → sync step names). `proyecto-config.json` actualizado (2026-05-05 via `fap sync-config --fix`).
 - **NUEVA: Commit `5f25aac` es huérfano.** `testing / 00-Fix-Post-Certificacion` no es ancestro de HEAD. Contenido (sync_step_names.py, TESTING.md fixes) overlap con `958f1ba`.
 - **NUEVA: Plan.md v3.2 Pasos 0 y 4 no ejecutados.** Fix seguridad `registry.py._load_from_db()` (Paso 0) y mover `baseline.py` a `commands/` (Paso 4) están pendientes.
 - **NUEVA: `ServiceConnectorTool` ≠ `ServiceConnector`.** `src/tools/service_connector.py` define clase `ServiceConnectorTool` (no `ServiceConnector`). Plan y phase-state refieren nombre incorrecto. Sin impacto funcional — rename cosmético.
 - **📝 CORRECCIÓN (2026-05-03):** Commit `349d9eb` archivó análisis NUEVOS para "Paso 3: Tool Calling Real" en `IMPLEMENTED/testing/00-Fix-Post-Certificacion/`, sobrescribiendo análisis previos de "Alinear nombres". Contenido actual = análisis multi-agente Paso 3 del plan.md (Fix MCP deadlock, Registrar agente, Tool calling real).
-- **📝 CORRECCIÓN (2026-05-03):** `proyecto-config.json` necesita `phase_name` actualizado a `patch_agents`, `current_step` a paso activo. Desincronización persiste desde commit `64cf7c5`.
+- **📝 CORREGIDO (2026-05-05):** `proyecto-config.json` actualizado con `phase_name: "patch_agents"`, `current_step: "06-ExcelWriterTool"` via `fap sync-config --fix`. Desincronización desde commit `64cf7c5` resuelta.
 - **📝 CORRECCIÓN (2026-05-03):** `DEVS/sugest.md` documenta ID-002 (imports no utilizados en excel_writer.py) e ID-003 (BaseFlowState en presupuesto_flow.py). Ambos fueron corregidos antes de commit `349d9eb` — lint 0 confirma. Sugest.md contiene análisis previo no actualizado.
+- **📝 CORREGIDO (2026-05-05):** `proyecto-config.json` `current_step` era `04-flow-execute-con-llm-real` (no reflejaba Paso 6 completado en `349d9eb` ni análisis Paso 7 archivado en `7827d78`). ✅ Corregido a `"06-ExcelWriterTool"` via `fap sync-config --fix`.
+- **📝 CORRECCIÓN (2026-05-05):** Análisis archivado bajo `IMPLEMENTED/patch_agents/06-ExcelWriterTool/` pero su contenido es análisis de **Paso 7 (Cierre)**, no Paso 6 (ExcelWriterTool). Esto ocurre porque el `current_step` del config (04-flow-execute-con-llm-real) no coincide con el último paso completado real (06-ExcelWriterTool). Sin impacto funcional — el análisis fue validado (✅ APROBADO, 25/25).
 
 ---
 
@@ -136,6 +147,9 @@
 - **Seguridad (skills):** AST scan + RestrictedPython + restricted `__import__` con `ALLOWED_MODULES`
 - **Sandbox execution:** `SecurityGuard.execute()` usa `_create_safe_builtins()`. System bundles bypass RestrictedPython
 - **CLI:** Typer app en `src/cli/main.py`. Comandos via `app.command()` o `app.add_typer()`
+- **last_tool_calls property:** `BaseFlow.last_tool_calls` (`src/flows/base_flow.py:430-440`) delega a `_last_crew.get_last_tool_calls()`. Retorna `{}` si no hay crew. Nuevo en commit `7827d78`.
+- **Agent by-role endpoint:** `GET /api/agents/by-role/{role}` (`src/api/routes/agents.py:31-40`). Consulta `agent_catalog` con `get_tenant_client`. Nuevo en commit `7827d78`.
+- **Seed bundle tooling:** `scripts/seed_bundle.py`. Copia bundle → `data/seed/` + recalcula SHA256. Uso: `python scripts/seed_bundle.py`. Nuevo en commit `7827d78`.
 
 ### Esquemas DB Clave / Key DB Schemas (verificado en migraciones)
 - `agent_catalog` (004): id, org_id, name, description, allowed_tools text[], code, soul_json jsonb, version, enabled
@@ -219,8 +233,16 @@
 39. **`fap test-tool-call` como DX:** Sigue patrón `check_env.py`. Dos modos: `--dry-run` (solo verifica config sin LLM) y full (ejecuta BaseCrew.run_async() con LLM real + ToolCallTracer). Verifica tool_registry + GROQ_API_KEY antes de ejecución.
 40. **E2E tool calling sin patches CrewAI:** `test_tool_calling_real.py` salva clases reales `_REAL_CREW/_REAL_TASK/_REAL_AGENT` a nivel módulo ANTES de imports que disparan `global_llm_mock`. Contra-parchea con `patch("crewai.Crew", _REAL_CREW)` dentro del test. Verifica `tool_calls >= 1` como criterio de aprobación.
 
+### De Análisis Paso 7 — Cierre (archivado en `7827d78`)
+41. **`BaseFlow.last_tool_calls` como property:** Property simple que retorna `{}` por defecto. No modifica `_run_crew()`. Sin impacto en flujos existentes. Unánime entre 4 agentes.
+42. **`seed_bundle.py` sobre `fap seed-import`:** Script standalone > CLI command. Menos overhead (sin registro en `cli/main.py`). Suficiente para operación única.
+43. **Opción B para tests legacy (deprecar):** Unánime. Tests legacy dan falso positivo de tool calling. `test_tool_calling_real.py` ya cubre con mejor calidad.
+44. **Eliminar `test_real_tool_calling.py`, actualizar `test_real_agent_pipeline.py`:** `test_real_agent_pipeline.py` prueba pipeline completo (no solo tool calling). Mayor cobertura mantenerlo.
+45. **Ruta `GET /api/agents/by-role/{role}`:** Endpoint real agregado (plan asumía `GET /api/agents/{role}` sin verificar). Verificado en código.
+46. **Mover tests validate_input de e2e a unit:** Tests de validación pura pertenecen a `tests/unit/`. E2E conserva solo integración.
+
 ### Deuda técnica documentada (nuevo `DEVS/sugest.md`)
-- **ID-001:** `proyecto-config.json` desactualizado — `phase_name: "testing"` en vez de fase activa.
+- **ID-001:** `proyecto-config.json` desactualizado — `phase_name: "testing"` en vez de fase activa. ✅ RESUELTO (2026-05-05 via `fap sync-config --fix`).
 - **ID-002:** `excel_writer.py` imports no utilizados — F401. Corregido en `349d9eb` (lint 0). Sugest.md contiene análisis previo a fix.
 - **ID-003:** `presupuesto_flow.py` import `BaseFlowState` sin usar — F401. Corregido en `349d9eb` (lint 0).
 
@@ -265,6 +287,7 @@
 | Plan Paso 6 — ExcelWriterTool | ✅ COMPLETADO | — | `349d9eb` | `ExcelWriterTool(OrgBaseTool)` con `@register_tool("excel_writer")`. Soportes overwrite/append. openpyxl backend. | Dependencia `openpyxl>=3.1.0` agregada. |
 | 00 — Fix Seguridad `registry.py` (Paso 0 plan) | ⏳ PENDIENTE | — | — | Parchear `_load_from_db()` usar `_create_safe_builtins()`. Agregar tests regresión (R0.1-R0.3). | Crítico: vector `__import__` sin restricción en `registry.py`. |
 | 04 — Mover `baseline.py` (Paso 4 plan) | ⏳ PENDIENTE | — | — | Mover `src/cli/baseline.py` → `src/cli/commands/baseline_check.py`. Actualizar import en `main.py`. | Consistencia estructural CLI. |
+| Plan Paso 7 — Cierre (Análisis multi-agente) | ✅ ANÁLISIS COMPLETADO | `DEVS/IMPLEMENTED/patch_agents/06-ExcelWriterTool/` | `7827d78` | 6 decisones (D41-D46): `last_tool_calls`, `seed_bundle.py`, deprecar tests legacy, eliminar duplicado, endpoint by-role, mover validate_input a unit. | ✅ APROBADO — 25/25 criterios. 8 sub-pasos (7.1-7.8) listos para implementar. |
 
 ### Fase "Patch agents" — Hotfix Post-Certificación (previo, Plan v3.2 hotfix)
 
@@ -307,6 +330,8 @@
 
 **Progreso plan.md Pasos 1-6: 4/6 completados (Paso 1 Fix deadlock ✅, Paso 2 Registrar agente ✅, Paso 3 Tool calling ✅, Paso 6 ExcelWriter ✅). Pendientes: Paso 4 (Flow.execute real), Paso 5 (Flow registrado formal — PresupuestoFlow ya registrado, test E2E ok).**
 
+**Progreso Paso 7 — Cierre: Análisis ✅ (commit `7827d78`, archivado en `IMPLEMENTED/patch_agents/06-ExcelWriterTool/`). Pendiente: implementación de 8 sub-pasos.**
+
 ### Checklist Fase "Patch agents" (hotfix plan v3.2):
 - [x] **Setup:** `proyecto-config.json` enriquecido ✅ (commit `64cf7c5`)
 - [x] **Paso 1:** Ruff auto-fix imports ejecutado ✅ (commit `9e3736f`)
@@ -320,14 +345,22 @@
 - [x] **Paso 6 (ExcelWriterTool):** `ExcelWriterTool(OrgBaseTool)` con `@register_tool` ✅. Overwrite/append. openpyxl backend. Dependencia `openpyxl>=3.1.0` añadida.
 - [ ] **Paso 4 (Flow.execute real):** Pendiente — ejecutar `Flow.execute()` completo con state transitions + event emission + persist_state.
 - [ ] **Paso 5 (Flow registrado formal):** PresupuestoFlow ya registrado + test E2E ok. Pendiente verificar multi-turn + webhook trigger.
-- [ ] `proyecto-config.json` actualizado con `phase_name` y `current_step` correctos.
+- [x] `proyecto-config.json` actualizado con `phase_name` y `current_step` correctos (via `fap sync-config --fix`).
+
+### Checklist Paso 7 — Cierre (análisis completado en `7827d78`):
+- [x] **Análisis multi-agente completado:** 6 análisis (ds, Y, mm, kilo) + FINAL + validación ✅
+- [x] **Validación:** ✅ APROBADO — 25/25 criterios MVP cumplidos. Lint 0. 41 tests pass, 1 skip.
+- [x] **Correcciones al plan (4):** BaseFlow.last_tool_calls, endpoint by-role, validate_input mover a unit, seed_bundle.py tooling ✅
+- [x] **Archivado en:** `DEVS/IMPLEMENTED/patch_agents/06-ExcelWriterTool/` ✅ (commit `7827d78`)
+- [ ] **Pendiente implementación:** 8 sub-pasos (7.1 Remover parche MCP test, 7.2 Bundle seed, 7.3 Test GET agente API, 7.4 Tool calling check Flow.execute, 7.5 Consolidar tests, 7.6 Deprecar legacy, 7.7 Test import seed, 7.8 Test unitario validate_input)
 
 ### Deuda técnica / Technical debt:
-- **ID-001:** `proyecto-config.json` desactualizado — `phase_name: "testing"` (debe ser fase activa)
+- **ID-001:** `proyecto-config.json` desactualizado — `phase_name: "testing"` persiste (debe ser `patch_agents`). `current_step: "04-flow-execute-con-llm-real"` no refleja Paso 6 completado ni Paso 7 análisis archivado. ✅ RESUELTO (2026-05-05 via `fap sync-config --fix`).
 - **ID-002/ID-003:** Sugest.md documenta F401 lint en excel_writer y presupuesto_flow — corregidos en `349d9eb` (lint 0). Sugest.md pre-fix.
 - **Riesgo:** Commit `5f25aac` huérfano. `proyecto-config.json` inconsistente desde `64cf7c5`.
 
 ### Herramientas DX detectadas/propuestas
 - `fap test-tool-call` — Verifica tool calling con dry-run o LLM real (NUEVO en `349d9eb`)
+- `scripts/seed_bundle.py` — Copia bundle a `data/seed/`, recalcula SHA256, verifica integridad. Uso: `python scripts/seed_bundle.py` (NUEVO en `7827d78`)
 
 **Criterios fuera de alcance MVP / Out of MVP scope:** retry con backoff, caching, rate limiting, logging avanzado, optimización performance extrema.

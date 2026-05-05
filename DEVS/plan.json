@@ -151,6 +151,35 @@
       ],
       "estimated_complexity": "high",
       "suggested_model": null
+    },
+    {
+      "id": "08",
+      "name": "08-sincronizar-proyecto-config-con-fase-activa",
+      "status": "pending",
+      "objective": "Actualizar proyecto-config.json para reflejar la fase activa patch_agents, sincronizando phase_name, current_step y pipeline flags con el estado real del proyecto registrado en phase-state.md.",
+      "scope": [
+        "proyecto-config.json",
+        "DEVS/plan.json",
+        "src/cli/commands/sync_config.py"
+      ],
+      "depends_on": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07"
+      ],
+      "acceptance_criteria": [
+        "proyecto-config.json muestra phase_name: patch_agents",
+        "phase.current_step coincide con ultimo paso completado en phase-state.md (06-ExcelWriterTool)",
+        "pipeline flags reflejan estado real del proyecto",
+        "fap sync-config --check retorna exit 0",
+        "lint 0 post-cambio"
+      ],
+      "estimated_complexity": "low",
+      "suggested_model": null
     }
   ]
 }
