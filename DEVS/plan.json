@@ -1,185 +1,218 @@
 {
   "project": "FluxAgentPro-v2",
-  "phase": "patch_agents",
+  "phase": "guiAgentGenerator",
   "source": "plan.md",
-  "generated_at": "2026-05-04T00:00:00Z",
+  "generated_at": "2026-05-13",
   "steps": [
     {
       "id": "01",
-      "name": "01-fix-deadlock-mcp-resolution-async",
-      "status": "done",
-      "objective": "Solucionar el deadlock en _resolve_mcp_tool() mediante variantes asíncronas resolve_tools_async() y _resolve_mcp_tool_async() que usen await en lugar de run_coroutine_threadsafe.",
+      "name": "01-tools-available-endpoint",
+      "status": "pending",
+      "objective": "Exponer ToolRegistry y MCPPool como API REST (GET /api/tools/available) para que el builder liste herramientas disponibles.",
       "scope": [
-        "src/crews/factory.py",
-        "tests/unit/test_factory.py",
-        "tests/e2e/test_exec_agent_mcp.py"
+        "src/api/routes/tools.py (nuevo)",
+        "src/api/__init__.py"
       ],
       "depends_on": [],
       "acceptance_criteria": [
-        "Flow async con MCP tools completa sin deadlock",
-        "Flow sync con MCP tools skipea (comportamiento actual)",
-        "Tests existentes de factory pasan sin modificación"
+        "Endpoint responde 200 con array de tools",
+        "Tools MCPPool con prefijo mcp:server:tool",
+        "Tools locales con nombre registrado",
+        "Timeout < 500ms"
       ],
-      "estimated_complexity": "medium",
-      "suggested_model": null
+      "estimated_complexity": "low",
+      "suggested_model": "gemini"
     },
     {
       "id": "02",
-      "name": "02-registrar-agente-presupuestador-en-el-sistema",
-      "status": "done",
-      "objective": "Registrar formalmente el agente presupuestador creando su bundle, definición JSON e importándolo a través de la API para que sea visible en el catálogo.",
+      "name": "02-bundles-export-endpoint",
+      "status": "pending",
+      "objective": "Endpoint POST /api/bundles/export que genera ZIP descargable en formato bundle-schema-v2.md desde agentes configurados en el builder.",
       "scope": [
-        "data/seed/",
-        "src/api/routes/agents.py",
-        "agents/presupuestador.json"
+        "src/api/routes/bundles.py"
       ],
       "depends_on": [],
       "acceptance_criteria": [
-        "Test E2E: bundle import -> HTTP 201 -> agente en agent_catalog",
-        "Test E2E: consultar agente via API -> datos correctos"
+        "POST con datos válidos → ZIP descargable",
+        "ZIP contiene manifest.json válido según schema v2",
+        "manifest.json incluye bundle_info + hashes",
+        "POST con datos inválidos → 422 con errores",
+        "ZIP re-importable sin errores"
       ],
       "estimated_complexity": "medium",
-      "suggested_model": null
+      "suggested_model": "gemini"
     },
     {
       "id": "03",
-      "name": "03-tool-calling-real",
-      "status": "done",
-      "objective": "Habilitar la capacidad del agente para invocar herramientas (excel_reader) de forma autónoma durante la ejecución, en lugar de recibir datos precargados.",
-      "scope": [
-        "src/crews/factory.py",
-        "tests/e2e/test_tool_calling_real.py"
-      ],
-      "depends_on": [
-        "01",
-        "02"
-      ],
-      "acceptance_criteria": [
-        "Test con LLM real: agente con excel_reader tool que DEBE llamarlo para responder",
-        "Verificar que la respuesta incluye datos de la sheet (no precargados)"
-      ],
-      "estimated_complexity": "medium",
-      "suggested_model": null
-    },
-    {
-      "id": "04",
-      "name": "04-flow-execute-con-llm-real",
+      "name": "03-templates-crud",
       "status": "pending",
-      "objective": "Ejecutar el pipeline completo a través de Flow.execute() integrando persistencia en DB, transiciones de estado, emisión de eventos y snapshots.",
+      "objective": "Crear tabla agent_templates en Supabase + endpoints REST para alimentar la librería de templates del builder.",
       "scope": [
-        "src/flows/base_flow.py",
-        "tests/e2e/test_real_agent_pipeline.py"
-      ],
-      "depends_on": [
-        "01",
-        "02",
-        "03"
-      ],
-      "acceptance_criteria": [
-        "Flow.execute() con LLM real + tool excel_reader",
-        "Verificar state transitions + event emission + output"
-      ],
-      "estimated_complexity": "medium",
-      "suggested_model": null
-    },
-    {
-      "id": "05",
-      "name": "05-flow-de-presupuesto-registrado-formalmente",
-      "status": "pending",
-      "objective": "Implementar y registrar el PresupuestoFlow, incluyendo validación de entrada, ejecución del agente presupuestador y generación de presupuesto estructurado.",
-      "scope": [
-        "src/flows/presupuesto_flow.py",
-        "tests/e2e/test_presupuesto_flow.py"
-      ],
-      "depends_on": [
-        "04"
-      ],
-      "acceptance_criteria": [
-        "Flow registrado en flow_registry",
-        "POST /api/webhooks/trigger con flow_type=\"presupuesto\"",
-        "GET /api/tasks/{task_id} -> status COMPLETED + output",
-        "Test multi-turn: ejecutar flow, verificar output en DB"
-      ],
-      "estimated_complexity": "medium",
-      "suggested_model": null
-    },
-    {
-      "id": "06",
-      "name": "06-excel-writer-tool",
-      "status": "done",
-      "objective": "Desarrollar la herramienta ExcelWriterTool para permitir a los agentes escribir resultados de presupuestos en archivos .xlsx dentro del directorio del proyecto.",
-      "scope": [
-        "src/tools/excel_writer.py",
-        "tests/unit/test_excel_writer.py"
+        "supabase/migrations/ (nueva migración)",
+        "src/api/routes/templates.py (nuevo)",
+        "src/api/__init__.py"
       ],
       "depends_on": [],
       "acceptance_criteria": [
-        "Unit: escribir + leer roundtrip",
-        "Unit: append vs overwrite",
-        "Unit: validación de datos (estructura JSON consistente)"
+        "Tabla agent_templates creada con migración versionada",
+        "GET /api/templates devuelve array de templates",
+        "GET /api/templates/{id} devuelve template con soul_json",
+        "Filtro ?category= funciona",
+        "Seed con al menos 8 templates is_system:true",
+        "RLS: lectura pública, escritura solo system"
       ],
       "estimated_complexity": "medium",
-      "suggested_model": null
+      "suggested_model": "gemini"
+    },
+    {
+      "id": "04",
+      "name": "04-builder-layout-and-form",
+      "status": "pending",
+      "objective": "Añadir ruta /dashboard/app/builder con layout split-panel: canvas ReactFlow (izquierda) + formulario de agente (derecha). El formulario replica todos los campos del Agent de CrewAI.",
+      "scope": [
+        "dashboard/app/(app)/builder/page.tsx (nuevo)",
+        "dashboard/components/builder/AgentForm.tsx (nuevo)",
+        "dashboard/components/builder/BuilderCanvas.tsx (nuevo)",
+        "dashboard/components/builder/BuilderLayout.tsx (nuevo)",
+        "dashboard/package.json"
+      ],
+      "depends_on": ["01-tools-available-endpoint"],
+      "acceptance_criteria": [
+        "Ruta /builder accesible desde navegación del dashboard",
+        "Layout responsive panel izquierdo + derecho",
+        "Formulario con todos los campos del Agent de CrewAI",
+        "Validación Zod: no guardar sin role/goal/backstory",
+        "Guardado persiste en Supabase agent_catalog",
+        "Select de tools carga desde endpoint real"
+      ],
+      "estimated_complexity": "high",
+      "suggested_model": "gemini"
+    },
+    {
+      "id": "05",
+      "name": "05-template-picker",
+      "status": "pending",
+      "objective": "Selector de templates (equivalente al Template Library de Crew Studio). El usuario elige template y formulario se auto-completa.",
+      "scope": [
+        "dashboard/components/builder/TemplatePicker.tsx (nuevo)",
+        "dashboard/app/(app)/builder/page.tsx"
+      ],
+      "depends_on": ["03-templates-crud", "04-builder-layout-and-form"],
+      "acceptance_criteria": [
+        "TemplatePicker visible desde builder (botón Templates)",
+        "Templates cargan desde API real",
+        "Click Use Template → rellena formulario",
+        "Filtro por categoría funciona",
+        "Búsqueda por texto funciona",
+        "Loading/error states manejados"
+      ],
+      "estimated_complexity": "low",
+      "suggested_model": "gemini"
+    },
+    {
+      "id": "06",
+      "name": "06-agent-playground",
+      "status": "pending",
+      "objective": "Panel de chat para probar agente en tiempo real (equivalente a Real-time testing de Crew Studio). Enviar mensaje, ver respuesta + tool calls.",
+      "scope": [
+        "dashboard/components/builder/AgentPlayground.tsx (nuevo)",
+        "dashboard/app/(app)/builder/page.tsx"
+      ],
+      "depends_on": ["04-builder-layout-and-form"],
+      "acceptance_criteria": [
+        "Input chat funcional: mensaje → respuesta del agente",
+        "Tool calls listadas con nombre + argumentos",
+        "Indicador de carga durante ejecución",
+        "Tokens usados visibles al finalizar",
+        "Manejo de errores: timeout, fallo, agente no encontrado"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": "gemini"
     },
     {
       "id": "07",
-      "name": "07-cierre-remanentes-y-pulido-para-cobertura-total",
+      "name": "07-crew-canvas",
       "status": "pending",
-      "objective": "Completar remanentes del plan: remover parche MCP en test E2E, crear bundle seed en data/seed/, agregar test de consulta GET agente via API, verificar tool calling real en Flow.execute, consolidar tests duplicados de tool calling, migrar/deprecar tests legacy con pre-fetch data, verificación cruzada de importación bundle seed, y test unitario de validate_input().",
-      "scope": [],
-      "depends_on": [
-        "01",
-        "02",
-        "03",
-        "04",
-        "05",
-        "06"
+      "objective": "Canvas ReactFlow con nodos drag-and-drop para ensamblar crews visualmente. Arrastrar agentes + tareas, conectar, exportar/ejecutar.",
+      "scope": [
+        "dashboard/components/builder/nodes/AgentNode.tsx (nuevo)",
+        "dashboard/components/builder/nodes/TaskNode.tsx (nuevo)",
+        "dashboard/components/builder/nodes/ToolNode.tsx (nuevo)",
+        "dashboard/components/builder/CrewCanvas.tsx (nuevo)",
+        "dashboard/app/(app)/builder/page.tsx"
       ],
+      "depends_on": ["04-builder-layout-and-form"],
       "acceptance_criteria": [
-        "test_exec_agent_mcp.py no usa parche sobre _resolve_mcp_tool_async",
-        "Mock de MCPPool.get() provee tools sin bloquear event loop",
-        "Flow completa con estado COMPLETED",
-        "data/seed/presupuesto-bundle/ existe con manifest.json + agents/presupuestador.json",
-        "POST /api/bundles/import con seed data retorna HTTP 201",
-        "Test test_get_agent_via_api_returns_correct_data implementado y valida >=5 campos",
-        "test_real_flow_execute.py verifica excel_reader invocada >= 1 vez",
-        "BaseFlow expone last_tool_calls o equivalente",
-        "Solo 1 archivo (o 2 con roles distintos) cubre tool calling real con LLM",
-        "Tests legacy con pre-fetch data tienen @pytest.mark.skip + docstring reemplazo",
-        "Test test_import_seed_bundle_via_api pasa con seed real",
-        "Test unitario validate_input() para PresupuestoFlow"
+        "Drag & drop de agentes desde sidebar al canvas",
+        "Conexiones visuales entre nodos (edges)",
+        "Nodo agente muestra role + tools",
+        "Nodo tarea muestra description + expected_output",
+        "Export genera JSON compatible bundle-schema-v2",
+        "Vista previa de código Python generado",
+        "Canvas tiene minimapa + zoom controls"
       ],
       "estimated_complexity": "high",
-      "suggested_model": null
+      "suggested_model": "gemini"
     },
     {
       "id": "08",
-      "name": "08-sincronizar-proyecto-config-con-fase-activa",
+      "name": "08-export-dialog",
       "status": "pending",
-      "objective": "Actualizar proyecto-config.json para reflejar la fase activa patch_agents, sincronizando phase_name, current_step y pipeline flags con el estado real del proyecto registrado en phase-state.md.",
+      "objective": "Diálogo de exportación que consume POST /api/bundles/export y permite descargar crew como bundle ZIP listo para importar o compartir.",
       "scope": [
-        "proyecto-config.json",
-        "DEVS/plan.json",
-        "src/cli/commands/sync_config.py"
+        "dashboard/components/builder/ExportDialog.tsx (nuevo)",
+        "dashboard/components/builder/AgentForm.tsx",
+        "dashboard/components/builder/CrewCanvas.tsx"
       ],
-      "depends_on": [
-        "01",
-        "02",
-        "03",
-        "04",
-        "05",
-        "06",
-        "07"
-      ],
+      "depends_on": ["02-bundles-export-endpoint", "04-builder-layout-and-form", "07-crew-canvas"],
       "acceptance_criteria": [
-        "proyecto-config.json muestra phase_name: patch_agents",
-        "phase.current_step coincide con ultimo paso completado en phase-state.md (06-ExcelWriterTool)",
-        "pipeline flags reflejan estado real del proyecto",
-        "fap sync-config --check retorna exit 0",
-        "lint 0 post-cambio"
+        "Diálogo muestra resumen de lo que se va a exportar",
+        "Botón Export descarga ZIP válido",
+        "ZIP re-importable con Import Wizard existente",
+        "Copy as JSON copia al portapapeles",
+        "Manejo de errores: ZIP vacío, sin role, timeout"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": "gemini"
+    },
+    {
+      "id": "09",
+      "name": "09-navigation-integration",
+      "status": "pending",
+      "objective": "Integrar builder en navegación del dashboard: sidebar, breadcrumbs, consistencia visual, loading states, error boundaries.",
+      "scope": [
+        "dashboard/components/sidebar/ (existente)",
+        "dashboard/app/(app)/builder/page.tsx",
+        "dashboard/app/(app)/layout.tsx"
+      ],
+      "depends_on": ["04-builder-layout-and-form"],
+      "acceptance_criteria": [
+        "Builder accesible desde sidebar con ícono + label",
+        "Breadcrumbs funcionales en subpáginas",
+        "Estilo visual consistente con dashboard",
+        "Canvas no rompe en SSR (dynamic import)",
+        "Loading skeletons mientras cargan tools/templates"
       ],
       "estimated_complexity": "low",
-      "suggested_model": null
+      "suggested_model": "gemini"
+    },
+    {
+      "id": "10",
+      "name": "10-e2e-tests",
+      "status": "pending",
+      "objective": "Tests E2E validando flujo completo: crear agente → probar → ensamblar crew → exportar → re-importar.",
+      "scope": [
+        "tests/e2e/test_builder_flow.py (nuevo)",
+        "tests/e2e/test_builder_api.py (nuevo)"
+      ],
+      "depends_on": ["01-tools-available-endpoint", "02-bundles-export-endpoint", "03-templates-crud", "04-builder-layout-and-form", "05-template-picker", "06-agent-playground", "07-crew-canvas", "08-export-dialog"],
+      "acceptance_criteria": [
+        "uv run pytest tests/e2e/ -k builder pasa",
+        "Cobertura de flujo completo crear → probar → ensamblar → exportar → importar",
+        "Tests usan Supabase real"
+      ],
+      "estimated_complexity": "high",
+      "suggested_model": "gemini"
     }
   ]
 }

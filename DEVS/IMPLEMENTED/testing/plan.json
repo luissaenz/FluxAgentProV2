@@ -1,0 +1,185 @@
+{
+  "project": "FluxAgentPro-v2",
+  "phase": "patch_agents",
+  "source": "plan.md",
+  "generated_at": "2026-05-04T00:00:00Z",
+  "steps": [
+    {
+      "id": "01",
+      "name": "01-fix-deadlock-mcp-resolution-async",
+      "status": "done",
+      "objective": "Solucionar el deadlock en _resolve_mcp_tool() mediante variantes asíncronas resolve_tools_async() y _resolve_mcp_tool_async() que usen await en lugar de run_coroutine_threadsafe.",
+      "scope": [
+        "src/crews/factory.py",
+        "tests/unit/test_factory.py",
+        "tests/e2e/test_exec_agent_mcp.py"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Flow async con MCP tools completa sin deadlock",
+        "Flow sync con MCP tools skipea (comportamiento actual)",
+        "Tests existentes de factory pasan sin modificación"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": null
+    },
+    {
+      "id": "02",
+      "name": "02-registrar-agente-presupuestador-en-el-sistema",
+      "status": "done",
+      "objective": "Registrar formalmente el agente presupuestador creando su bundle, definición JSON e importándolo a través de la API para que sea visible en el catálogo.",
+      "scope": [
+        "data/seed/",
+        "src/api/routes/agents.py",
+        "agents/presupuestador.json"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Test E2E: bundle import -> HTTP 201 -> agente en agent_catalog",
+        "Test E2E: consultar agente via API -> datos correctos"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": null
+    },
+    {
+      "id": "03",
+      "name": "03-tool-calling-real",
+      "status": "done",
+      "objective": "Habilitar la capacidad del agente para invocar herramientas (excel_reader) de forma autónoma durante la ejecución, en lugar de recibir datos precargados.",
+      "scope": [
+        "src/crews/factory.py",
+        "tests/e2e/test_tool_calling_real.py"
+      ],
+      "depends_on": [
+        "01",
+        "02"
+      ],
+      "acceptance_criteria": [
+        "Test con LLM real: agente con excel_reader tool que DEBE llamarlo para responder",
+        "Verificar que la respuesta incluye datos de la sheet (no precargados)"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": null
+    },
+    {
+      "id": "04",
+      "name": "04-flow-execute-con-llm-real",
+      "status": "pending",
+      "objective": "Ejecutar el pipeline completo a través de Flow.execute() integrando persistencia en DB, transiciones de estado, emisión de eventos y snapshots.",
+      "scope": [
+        "src/flows/base_flow.py",
+        "tests/e2e/test_real_agent_pipeline.py"
+      ],
+      "depends_on": [
+        "01",
+        "02",
+        "03"
+      ],
+      "acceptance_criteria": [
+        "Flow.execute() con LLM real + tool excel_reader",
+        "Verificar state transitions + event emission + output"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": null
+    },
+    {
+      "id": "05",
+      "name": "05-flow-de-presupuesto-registrado-formalmente",
+      "status": "pending",
+      "objective": "Implementar y registrar el PresupuestoFlow, incluyendo validación de entrada, ejecución del agente presupuestador y generación de presupuesto estructurado.",
+      "scope": [
+        "src/flows/presupuesto_flow.py",
+        "tests/e2e/test_presupuesto_flow.py"
+      ],
+      "depends_on": [
+        "04"
+      ],
+      "acceptance_criteria": [
+        "Flow registrado en flow_registry",
+        "POST /api/webhooks/trigger con flow_type=\"presupuesto\"",
+        "GET /api/tasks/{task_id} -> status COMPLETED + output",
+        "Test multi-turn: ejecutar flow, verificar output en DB"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": null
+    },
+    {
+      "id": "06",
+      "name": "06-excel-writer-tool",
+      "status": "done",
+      "objective": "Desarrollar la herramienta ExcelWriterTool para permitir a los agentes escribir resultados de presupuestos en archivos .xlsx dentro del directorio del proyecto.",
+      "scope": [
+        "src/tools/excel_writer.py",
+        "tests/unit/test_excel_writer.py"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Unit: escribir + leer roundtrip",
+        "Unit: append vs overwrite",
+        "Unit: validación de datos (estructura JSON consistente)"
+      ],
+      "estimated_complexity": "medium",
+      "suggested_model": null
+    },
+    {
+      "id": "07",
+      "name": "07-cierre-remanentes-y-pulido-para-cobertura-total",
+      "status": "pending",
+      "objective": "Completar remanentes del plan: remover parche MCP en test E2E, crear bundle seed en data/seed/, agregar test de consulta GET agente via API, verificar tool calling real en Flow.execute, consolidar tests duplicados de tool calling, migrar/deprecar tests legacy con pre-fetch data, verificación cruzada de importación bundle seed, y test unitario de validate_input().",
+      "scope": [],
+      "depends_on": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06"
+      ],
+      "acceptance_criteria": [
+        "test_exec_agent_mcp.py no usa parche sobre _resolve_mcp_tool_async",
+        "Mock de MCPPool.get() provee tools sin bloquear event loop",
+        "Flow completa con estado COMPLETED",
+        "data/seed/presupuesto-bundle/ existe con manifest.json + agents/presupuestador.json",
+        "POST /api/bundles/import con seed data retorna HTTP 201",
+        "Test test_get_agent_via_api_returns_correct_data implementado y valida >=5 campos",
+        "test_real_flow_execute.py verifica excel_reader invocada >= 1 vez",
+        "BaseFlow expone last_tool_calls o equivalente",
+        "Solo 1 archivo (o 2 con roles distintos) cubre tool calling real con LLM",
+        "Tests legacy con pre-fetch data tienen @pytest.mark.skip + docstring reemplazo",
+        "Test test_import_seed_bundle_via_api pasa con seed real",
+        "Test unitario validate_input() para PresupuestoFlow"
+      ],
+      "estimated_complexity": "high",
+      "suggested_model": null
+    },
+    {
+      "id": "08",
+      "name": "08-sincronizar-proyecto-config-con-fase-activa",
+      "status": "pending",
+      "objective": "Actualizar proyecto-config.json para reflejar la fase activa patch_agents, sincronizando phase_name, current_step y pipeline flags con el estado real del proyecto registrado en phase-state.md.",
+      "scope": [
+        "proyecto-config.json",
+        "DEVS/plan.json",
+        "src/cli/commands/sync_config.py"
+      ],
+      "depends_on": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07"
+      ],
+      "acceptance_criteria": [
+        "proyecto-config.json muestra phase_name: patch_agents",
+        "phase.current_step coincide con ultimo paso completado en phase-state.md (06-ExcelWriterTool)",
+        "pipeline flags reflejan estado real del proyecto",
+        "fap sync-config --check retorna exit 0",
+        "lint 0 post-cambio"
+      ],
+      "estimated_complexity": "low",
+      "suggested_model": null
+    }
+  ]
+}

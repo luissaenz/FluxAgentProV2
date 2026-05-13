@@ -1,0 +1,12 @@
+{
+  "version": "2.0",
+  "bundle_info": {
+    "name": "level-1-greeter",
+    "description": "Agente recepcionista simple - Nivel 1: sin tools",
+    "version": "1.0.0",
+    "author": "claude-code"
+  },
+  "hashes": {
+    "agents/recepcionista.json": "sha256:16edde148ae4502d9166aca0e7088fa299a40f46e61917050a04feee47aba463"
+  }
+}

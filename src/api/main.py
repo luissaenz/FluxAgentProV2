@@ -28,6 +28,7 @@ from .routes.integrations import router as integrations_router
 from .routes.mcp import router as mcp_router
 from .routes.tasks import router as tasks_router
 from .routes.tickets import router as tickets_router
+from .routes.tools import router as tools_router
 from .routes.transcripts import router as transcripts_router
 from .routes.webhooks import router as webhooks_router
 from .routes.workflows import router as workflows_router
@@ -108,6 +109,7 @@ app.include_router(analytical_chat_router)  # Phase 4: analytical assistant
 app.include_router(integrations_router)  # Phase 5: service catalog TIPO C
 app.include_router(bundles_router)
 app.include_router(mcp_router)
+app.include_router(tools_router)
 
 
 @app.get("/health")

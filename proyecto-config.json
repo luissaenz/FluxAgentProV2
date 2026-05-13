@@ -116,20 +116,20 @@
     ]
   },
   "phase": {
-    "phase_name": "patch_agents",
-    "current_step": "06-ExcelWriterTool"
+    "phase_name": "guiAgentGenerator",
+    "current_step": null
   },
   "pipeline": {
-    "phase_state_exists": true,
+    "phase_state_exists": false,
     "in_progress_dir_exists": true,
     "implemented_dir_exists": true,
-    "analisis_final_exists": true,
+    "analisis_final_exists": false,
     "validacion_exists": false,
     "plan_json_exists": true,
     "plan_json_needs_review": false,
-    "plan_json_steps_total": 8,
-    "plan_json_steps_pending": 4,
-    "plan_json_steps_done": 4,
+    "plan_json_steps_total": 10,
+    "plan_json_steps_pending": 10,
+    "plan_json_steps_done": 0,
     "plan_json_steps_needs_review": 0
   }
 }
