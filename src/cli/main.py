@@ -12,6 +12,7 @@ if sys.platform == "win32" and sys.stdout.isatty():
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 from src.cli.commands.baseline_check import baseline_check
+from src.cli.commands.bundle_export import bundle_app
 from src.cli.commands.check_deadlock import check_deadlock
 from src.cli.commands.check_env import check_env
 from src.cli.commands.dev import dev_command
@@ -69,6 +70,7 @@ app.command("sync-step-names")(sync_step_names)
 app.command("sync-config")(sync_config)
 app.command("lint-fix")(lint_fix)
 app.command("test-tool-call")(test_tool_call)
+app.add_typer(bundle_app, name="bundle")
 
 if __name__ == "__main__":
     app()

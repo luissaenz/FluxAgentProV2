@@ -1,10 +1,11 @@
-"""src/api/routes/bundles.py — Endpoint for bundle imports."""
+"""src/api/routes/bundles.py — Endpoints for bundle import, export, and management."""
 
 from __future__ import annotations
 
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 
 from src.api.middleware import require_org_id
 from src.services.bundle_manager import (
@@ -13,7 +14,12 @@ from src.services.bundle_manager import (
     VersionConflictError,
     VersionDowngradeError,
 )
-from src.services.bundle_schemas import BundleRPCResult, BundleValidationResult
+from src.services.bundle_schemas import (
+    BundleRPCResult,
+    BundleValidationResult,
+    ExportBundleRequest,
+)
+from src.services.export_service import ExportService
 from src.services.import_service import ImportService
 from src.services.security_guard import SecurityError
 
@@ -188,3 +194,60 @@ async def delete_bundle(
     service = ImportService(org_id=org_id)
     service.delete_bundle(bundle_id)
     return None
+
+
+@router.post(
+    "/export",
+    response_class=Response,
+    status_code=status.HTTP_200_OK,
+    summary="Export agents as FAP-Bundle v2 ZIP",
+)
+async def export_bundle(
+    payload: ExportBundleRequest,
+    org_id: str = Depends(require_org_id),
+) -> Response:
+    """
+    Export agents (and optionally skills) as a downloadable FAP-Bundle v2 ZIP.
+
+    The request body defines which agents and skills to include.
+    The response is a ZIP file ready for import via POST /api/bundles/import.
+    """
+    for agent in payload.agents:
+        soul = agent.soul_json or {}
+        if not soul.get("goal"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"agent '{agent.role}': soul_json.goal required",
+            )
+        if not soul.get("backstory"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"agent '{agent.role}': soul_json.backstory required",
+            )
+        # Mitigación §258: goal/backstory muy cortos producen agentes de baja calidad.
+        # Validación de longitud mínima 10 chars para prevenir datos insuficientes.
+        if len(str(soul.get("goal", ""))) < 10:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"agent '{agent.role}': soul_json.goal must be at least 10 characters",
+            )
+        if len(str(soul.get("backstory", ""))) < 10:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"agent '{agent.role}': soul_json.backstory must be at least 10 characters",
+            )
+
+    try:
+        service = ExportService(org_id=org_id)
+        zip_bytes, filename = service.export(payload)
+        return Response(
+            content=zip_bytes,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    except Exception as e:
+        logger.exception("Unexpected error exporting bundle for org %s", org_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error during export: {str(e)}",
+        )

@@ -90,3 +90,27 @@ class BundleValidationResult(BaseModel):
     security_report: Optional[Dict] = None
     warnings: List[str] = Field(default_factory=list)
     error: Optional[str] = None
+
+
+class SkillExportItem(BaseModel):
+    """Skill definition in an export request payload."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    code: str = Field(..., min_length=1, max_length=50000)
+
+
+class AgentExportItem(BaseModel):
+    """Agent definition in an export request payload."""
+
+    role: str = Field(..., min_length=1, max_length=100)
+    soul_json: Dict = Field(..., description="Must contain 'goal', 'backstory', and optionally 'role'")
+    allowed_tools: List[str] = Field(default_factory=list)
+    max_iter: int = Field(default=5, ge=1, le=50)
+
+
+class ExportBundleRequest(BaseModel):
+    """Payload for POST /api/bundles/export."""
+
+    bundle_name: Optional[str] = Field(default=None, min_length=3, max_length=200)
+    agents: List[AgentExportItem] = Field(..., min_length=1, max_length=15)
+    skills: Optional[List[SkillExportItem]] = Field(default_factory=list)
