@@ -17,6 +17,7 @@
 | 2 | Crear endpoint `POST /api/bundles/export` | ✅ Completado |
 | 3 | Endpoints CRUD para templates de agentes | ✅ Completado |
 | 4 | Builder visual — UI con ReactFlow | ✅ Completado |
+| 5 | Template Picker — librería de templates | ✅ Completado |
 
 ### Dependencias entre pasos
 - Paso 2 requiere Paso 1 (tools list para export)
@@ -69,6 +70,13 @@
 | Constante `PROVIDER_MODELS` | `dashboard/lib/constants.ts:16-21` | Mapa estático con 4 providers | groq, openai, anthropic, openrouter |
 | Deps frontend `reactflow` v11 | `dashboard/package.json` | ReactFlow v11 para builder canvas | No @xyflow/react v12 (rename) |
 | Deps frontend `zod` | `dashboard/package.json` | Validación Zod en AgentForm | `@hookform/resolvers` ya instalado (v5.2.2) |
+| `TemplatePicker` component | `dashboard/components/builder/TemplatePicker.tsx` | Grid cards + búsqueda + filtro categoría + "Use Template" | useQuery `GET /api/templates`, 4 estados (loading/error/empty/data) |
+| `TemplatePicker` integrado en BuilderLayout | `dashboard/components/builder/BuilderLayout.tsx` | Dialog modal + botón "Templates" + orquestación template→AgentForm | `mapTemplateToFormValues()` con mapeo defensivo + fallbacks |
+| AgentForm: prop `templateData` | `dashboard/components/builder/AgentForm.tsx:50,91-107` | `useEffect` + `reset(templateData)` para aplicar template post-montaje | Sin `forwardRef` |
+| Constante `TEMPLATE_CATEGORIES` | `dashboard/lib/constants.ts:16` | `['Research', 'Development', 'Support', 'General'] as const` | Usada por TemplatePicker para chips de filtro |
+| CLI `fap templates use` | `src/cli/commands/templates_use.py` | Crear agente desde template vía CLI | `--org-id`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--dry-run`. Dogfooding: valida mapeo template→agent |
+| CLI registro `templates use` | `src/cli/main.py:35,61` | `templates_app.command("use")(use_template)` | Sub-comando `templates use` |
+| LoadingSpinner en botón TemplatePicker | `TemplatePicker.tsx:224-225` | `<LoadingSpinner size="sm" />` durante fetch de detalle | Consistente con AgentForm |
 
 ### 📦 Archivado — Paso 1
 
@@ -93,6 +101,12 @@
 | Archivos | Destino |
 |---|---|
 | `analisis-FINAL.md`, `analisis-*-*.md` (8 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` |
+
+### 📦 Archivado — Paso 5
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-*-*.md` (14 análisis), `validacion.md` (16 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -138,6 +152,17 @@
 | D9 | Nav sidebar "Builder" añadido en Paso 04 (no paso 09) | `nav-main.tsx:50` |
 | D10 | `PROVIDER_MODELS` estático en `constants.ts` con 4 providers | `constants.ts:16-21` |
 | D11 | `model` no se migra; `llm_model` va en `soul_json.llm_model` | `AgentForm.tsx:117-131` — `soul_json` plano |
+
+#### Paso 05 — Template Picker — librería de templates
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | `soul_json` del seed tiene `{role, goal, backstory}` pero AgentForm tiene `role` como campo separado y `soul_json` plano | `BuilderLayout.tsx:28-38` — `mapTemplateToFormValues()` extrae `soul_json.role` → `role` plano, con fallbacks |
+| D2 | `AgentForm.initialValues` solo afecta `defaultValues` al montar; TemplatePicker necesita aplicar post-montaje | `AgentForm.tsx:50,91-107` — prop `templateData` + `useEffect` con `form.reset(templateData)` |
+| D3 | `TemplateInfo` (lista) no incluye `soul_json` → requiere double fetch | `TemplatePicker.tsx:88-89` — `api.get('/api/templates/${template.id}')` al hacer "Use Template" |
+| D4 | `BuilderLayout` no manejaba estado de template | `BuilderLayout.tsx:43-50` — `useState<AgentFormData \| null>`, `handleSelectTemplate` |
+| D5 | Categorías hardcodeadas como constante | `constants.ts:16` — `TEMPLATE_CATEGORIES` |
+| D6 | Prop `templateData` elegida sobre `forwardRef` | `AgentForm.tsx:50` — prop simple, sin refactoring |
 
 ---
 
@@ -328,6 +353,7 @@ src/
 | 02-Crear-endpoint-POST-api-bundles-export | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/02-Crear-endpoint-POST-api-bundles-export/` | `af35a0a` | ExportService orquestador; Response vs StreamingResponse; skills key con `.py` para round-trip; validación goal/backstory + min_length en handler | Validación aprobada. 0 issues. |
 | 03-Endpoints-CRUD-para-templates-de-agentes | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` | `992a1d1` | Tabla global sin org_id; endpoints públicos sin auth; seed CLI idempotente; índice parcial UNIQUE WHERE; check-then-insert compatible con partial index | Validación rechazada (ID-001 upsert + partial index). Corregido a check-then-insert. Queda pendiente verificación live Supabase post-migración 030. |
 | 04-Builder-visual-UI-con-ReactFlow | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` | `6d9539c` | POST /agents con TenantClient (RLS fix D4); reactflow v11 + dynamic import ssr:false; AgentForm react-hook-form + zod; ToolMultiSelect custom; PROVIDER_MODELS estático; soul_json plano; upsert update-or-insert; sidebar Builder en nav-main.tsx | Implementación completa. 0 errores lint backend + frontend. Criterios de aceptación cubiertos. Tarea 0 DX: `fap agent create`. |
+| 05-Template-Picker-libreria-de-templates | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` | `131d619` | TemplatePicker grid + búsqueda + filtro chips; double fetch list+detail; prop templateData en AgentForm; mapTemplateToFormValues con fallbacks; Dialog modal en BuilderLayout; TEMPLATE_CATEGORIES constante; CLI fap templates use | Validación aprobada. 0 issues 🔴. 2 🟡 (dogfooding no verificado, TS errores preexistentes AgentForm). Tarea 0 DX: `fap templates use`. |
 
 ---
 
@@ -355,6 +381,13 @@ src/
 - ✅ Zod rechaza submit sin role/goal/backstory con error inline
 - ✅ Zod rechaza max_iter <1 o >10
 - ✅ LLM Provider select cambia dinámicamente opciones de LLM Model
+- ✅ TemplatePicker grid con 4 estados: loading (skeletons), error (EmptyState+Retry), empty (EmptyState+seed hint), data (cards)
+- ✅ TemplatePicker búsqueda client-side case-insensitive + filtro por categoría con chips (4 + "All")
+- ✅ TemplatePicker integrado en BuilderLayout vía Dialog modal (`max-w-3xl max-h-[80vh] overflow-y-auto`)
+- ✅ "Use Template" → double fetch: `GET /api/templates` (cards) + `GET /api/templates/{id}` (detail con soul_json)
+- ✅ Mapeo defensivo template→AgentForm: `soul_json.role` → `role` plano, fallbacks con `??` para campos ausentes
+- ✅ `fap templates use` CLI funcional: `--dry-run`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, Rich table output
+- ✅ `fap templates use` maneja errores gracefully: try/except en `get_service_client()` + `.execute()`, mensajes limpios sin traceback
 
 ### Herramientas DX detectadas/propuestas
 | Herramienta | Ubicación | Automatiza |
@@ -366,3 +399,5 @@ src/
 | `fap agent create` | `src/cli/commands/agent_create.py` | Crear agente desde terminal vía POST /agents. `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--llm-provider`, `--llm-model`, `--verbose`, `--reasoning`, `--inject-date`, `--memory`, `--dry-run`. Dogfooding: validar backend antes de UI. |
 | `bundle_validator.py` | `scripts/bundle_validator.py` | Validar estructura de ZIP exportado sin consumir endpoint |
 | Builder UI (`/builder`) | `dashboard/app/(app)/builder/page.tsx` | Interfaz visual split 60/40: canvas ReactFlow + formulario de agente con 11 campos. Save vía POST /agents con RLS. |
+| `fap templates use` | `src/cli/commands/templates_use.py` | Crear agente desde template vía CLI. `--org-id`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--dry-run`. Dogfooding: validar mapeo template→agent antes de UI. |
+| TemplatePicker UI | `dashboard/components/builder/TemplatePicker.tsx` | Grid de cards con búsqueda + filtro chips + "Use Template". Carga desde API real, 4 estados visuales. Integrado en BuilderLayout vía Dialog modal. |

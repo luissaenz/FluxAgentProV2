@@ -40,3 +40,23 @@
 - **ID-019:** CSS de reactflow cargado eager — Línea 32: `import 'reactflow/dist/style.css'` fuera de dynamic import. Mover dentro si CSS >10KB.
 - **ID-020:** Sin test unitario para `AgentForm` o `POST /agents` — El análisis-FINAL §8 define 10 casos. Añadir TP-1, TP-2, TP-3 en `tests/unit/test_agents.py`.
 - **ID-021:** `ToolMultiSelect` no usa `Command` (cmdk) — Implementación custom pura. Análisis sugería `Command` + `Popover`. Evaluar migración si UX actual es insuficiente.
+
+---
+
+## 🟡 Importantes (Paso 05 — Template Picker)
+
+- **ID-022:** Dogfooding no verificado (T0-C) — Sin evidencia de que `fap templates use --dry-run` se usara para validar mapeos template→agent antes de construir TemplatePicker UI. Ejecutar `fap templates use --dry-run` para los 8 templates y documentar resultados.
+
+- **ID-023:** TypeScript `tsc --noEmit` — 2 errores en `AgentForm.tsx` (líneas 75, 207) por zodResolver type mismatch entre schema con `.default()` y tipo esperado por `useForm`. Preexistentes al Paso 05. Criterio T3 del FINAL exige "TypeScript compila sin errores en AgentForm.tsx". Corregir en Paso 04 o 05.
+
+- **ID-023b (NUEVO):** Tests de integración — 3 FAILED + 1 ERROR en `test_3_5_latency.py` por desconexión de Supabase (`RemoteProtocolError: Server disconnected`). Infraestructura, no código. Verificar conectividad Supabase para tests de latencia. No bloquea validación de templates.
+
+## 🔵 Mejoras (Paso 05 — Template Picker)
+
+- **ID-024:** ~~`TemplatePicker.tsx` — `staleTime: 5 * 60 * 1000` hardcodeado (línea 68). Extraer a constante `TEMPLATE_CACHE_MS` en `constants.ts`.~~ → ✅ Corregido: `TEMPLATE_CACHE_MS` importado desde `constants.ts:18` (TemplatePicker.tsx:14,69).
+
+- **ID-025:** ~~`TemplatePicker.tsx:220` — texto "Loading..." en botón.~~ → ✅ Corregido: `<LoadingSpinner size="sm" />` implementado (línea 225).
+
+- **ID-026:** `BuilderLayout.tsx` — `mapTemplateToFormValues` definida como función suelta en el módulo, no exportada ni testeable aisladamente. Extraer a `dashboard/lib/template-mapper.ts` con tests unitarios.
+
+- **ID-027:** ~~`templates_use.py` — `import uuid as _uuid` dentro de la función (lazy import).~~ → ✅ Corregido: `import uuid as _uuid` movido al top del módulo (línea 11).

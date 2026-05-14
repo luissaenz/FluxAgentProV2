@@ -31,22 +31,23 @@ const agentFormSchema = z.object({
   role: z.string().min(1, 'Role is required'),
   goal: z.string().min(1, 'Goal is required'),
   backstory: z.string().min(1, 'Backstory is required'),
-  llmProvider: z.enum(['groq', 'openai', 'anthropic', 'openrouter']).default('groq'),
-  llmModel: z.string().default('llama-3.1-70b-versatile'),
-  allowedTools: z.array(z.string()).default([]),
-  maxIter: z.coerce.number().int().min(1).max(10).default(3),
-  verbose: z.boolean().default(false),
-  reasoning: z.boolean().default(false),
-  injectDate: z.boolean().default(false),
-  memory: z.boolean().default(false),
+  llmProvider: z.enum(['groq', 'openai', 'anthropic', 'openrouter']),
+  llmModel: z.string(),
+  allowedTools: z.array(z.string()),
+  maxIter: z.number().int().min(1).max(10),
+  verbose: z.boolean(),
+  reasoning: z.boolean(),
+  injectDate: z.boolean(),
+  memory: z.boolean(),
 })
 
-type AgentFormData = z.infer<typeof agentFormSchema>
+export type AgentFormData = z.infer<typeof agentFormSchema>
 
 interface AgentFormProps {
   onSave?: (data: AgentFormData) => Promise<void>
   onClear?: () => void
   initialValues?: Partial<AgentFormData>
+  templateData?: AgentFormData | null
 }
 
 interface ToolInfo {
@@ -59,6 +60,7 @@ export function AgentForm({
   onSave,
   onClear,
   initialValues,
+  templateData,
 }: AgentFormProps) {
   const { orgId } = useCurrentOrg()
 
@@ -85,6 +87,24 @@ export function AgentForm({
       memory: initialValues?.memory ?? false,
     },
   })
+
+  useEffect(() => {
+    if (templateData) {
+      reset({
+        role: templateData.role,
+        goal: templateData.goal,
+        backstory: templateData.backstory,
+        llmProvider: templateData.llmProvider,
+        llmModel: templateData.llmModel,
+        allowedTools: templateData.allowedTools,
+        maxIter: templateData.maxIter,
+        verbose: templateData.verbose,
+        reasoning: templateData.reasoning,
+        injectDate: templateData.injectDate,
+        memory: templateData.memory,
+      })
+    }
+  }, [templateData, reset])
 
   const llmProvider = watch('llmProvider')
   const allowedTools = watch('allowedTools')
@@ -276,7 +296,7 @@ export function AgentForm({
           type="number"
           min={1}
           max={10}
-          {...register('maxIter')}
+          {...register('maxIter', { valueAsNumber: true })}
         />
         {errors.maxIter && (
           <p className="text-xs text-destructive">{errors.maxIter.message}</p>

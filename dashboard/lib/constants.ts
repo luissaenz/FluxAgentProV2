@@ -13,6 +13,10 @@ export const ROLES = {
   org_operator: { label: 'Operador', description: 'Lectura + aprobaciones' },
 } as const
 
+export const TEMPLATE_CATEGORIES = ['Research', 'Development', 'Support', 'General'] as const
+
+export const TEMPLATE_CACHE_MS = 5 * 60 * 1000
+
 export const PROVIDER_MODELS: Record<string, string[]> = {
   groq: ["llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"],
   openai: ["gpt-4o", "gpt-4o-mini"],
