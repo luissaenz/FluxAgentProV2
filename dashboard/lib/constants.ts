@@ -13,6 +13,13 @@ export const ROLES = {
   org_operator: { label: 'Operador', description: 'Lectura + aprobaciones' },
 } as const
 
+export const PROVIDER_MODELS: Record<string, string[]> = {
+  groq: ["llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"],
+  openai: ["gpt-4o", "gpt-4o-mini"],
+  anthropic: ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
+  openrouter: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet"],
+}
+
 export const STATUS_BADGES: Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'info' | 'secondary' | 'default' }> = {
   pending: { label: 'Pendiente', variant: 'secondary' },
   running: { label: 'Ejecutando', variant: 'info' },

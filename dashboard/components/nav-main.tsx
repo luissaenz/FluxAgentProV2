@@ -47,6 +47,7 @@ export const defaultNavItems: NavItem[] = [
   { title: 'Historial', url: '/tasks', icon: History },
   { title: 'Tickets', url: '/tickets', icon: Ticket },
   { title: 'Agentes', url: '/agents', icon: Bot },
+  { title: 'Builder', url: '/builder', icon: Wand2 },
   { title: 'Workflows', url: '/workflows', icon: Workflow },
   { title: 'Eventos', url: '/events', icon: Activity },
   { 

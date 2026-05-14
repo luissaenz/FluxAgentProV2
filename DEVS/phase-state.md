@@ -16,7 +16,7 @@
 | 1 | Crear endpoint `GET /api/tools/available` | ✅ Completado |
 | 2 | Crear endpoint `POST /api/bundles/export` | ✅ Completado |
 | 3 | Endpoints CRUD para templates de agentes | ✅ Completado |
-| 4 | Builder visual — UI con ReactFlow | ⬜ Pendiente |
+| 4 | Builder visual — UI con ReactFlow | ✅ Completado |
 
 ### Dependencias entre pasos
 - Paso 2 requiere Paso 1 (tools list para export)
@@ -57,6 +57,18 @@
 | CLI `fap templates seed` | `src/cli/commands/templates_seed.py:140-220` | Seed 8 system templates + `--dry-run` + `--reset` | Check-then-insert idempotente |
 | CLI registro `templates` sub-app | `src/cli/main.py:33,58` | Import + `add_typer(templates_app, name="templates")` | Sub-comando `templates seed` |
 | Tests unitarios templates | `tests/unit/test_templates.py` | 7 tests: list, filter, detail, 404, auth, soul_json | 7/7 pasan |
+| Endpoint `POST /agents` | `src/api/routes/agents.py:51-92` | `AgentCreate` + `AgentResponse` + upsert logic | `require_org_id` + `TenantClient` (corrección D4 RLS) |
+| CLI `fap agent create` | `src/cli/commands/agent_create.py:30-134` | Typer `agent` sub-app | `--role`, `--goal`, `--backstory`, `--tools`, `--dry-run`, `--org-id`, LLM flags |
+| CLI registro `agent` sub-app | `src/cli/main.py:14,77` | Import + `add_typer(agent_app, name="agent")` | Sub-comando `agent create` |
+| Página `/builder` | `dashboard/app/(app)/builder/page.tsx` | Entry page `'use client'` | Orquesta `BuilderLayout` |
+| `BuilderLayout` component | `dashboard/components/builder/BuilderLayout.tsx` | Split 60/40 responsive | `lg:grid-cols-[60%_40%]`, stack vertical mobile |
+| `AgentForm` component | `dashboard/components/builder/AgentForm.tsx` | 11 campos: react-hook-form + zodResolver | useQuery `GET /api/tools/available`, `POST /agents` |
+| `BuilderCanvas` component | `dashboard/components/builder/BuilderCanvas.tsx` | ReactFlow vacío `dynamic import ssr:false` | Placeholder Paso 07 |
+| `ToolMultiSelect` component | `dashboard/components/builder/ToolMultiSelect.tsx` | Checkboxes + búsqueda + badges por source | Custom sin deps extra |
+| Sidebar "Builder" entry | `dashboard/components/nav-main.tsx:50` | `{ title: 'Builder', url: '/builder', icon: Wand2 }` | Añadido a `defaultNavItems` |
+| Constante `PROVIDER_MODELS` | `dashboard/lib/constants.ts:16-21` | Mapa estático con 4 providers | groq, openai, anthropic, openrouter |
+| Deps frontend `reactflow` v11 | `dashboard/package.json` | ReactFlow v11 para builder canvas | No @xyflow/react v12 (rename) |
+| Deps frontend `zod` | `dashboard/package.json` | Validación Zod en AgentForm | `@hookform/resolvers` ya instalado (v5.2.2) |
 
 ### 📦 Archivado — Paso 1
 
@@ -75,6 +87,12 @@
 | Archivos | Destino |
 |---|---|
 | `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` |
+
+### 📦 Archivado — Paso 4
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-*-*.md` (8 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -106,6 +124,20 @@
 | D4 | Endpoints sin `require_org_id` (catálogo público) | `templates.py:54-67,70-83` — sin `Depends(require_org_id)` |
 | D5 | Idempotencia seed → check-then-insert (no upsert) | `templates_seed.py:183-193` — `SELECT` + `INSERT` condicional por índice parcial `UNIQUE WHERE` |
 | D6 | Emojis reemplazados por Rich markup (cp1252 compat) | `templates_seed.py:191,208,211` — `OK`, `FAIL`, `-` |
+
+#### Paso 04 — Builder visual — UI con ReactFlow
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | `reactflow` v11 instalado, no `@xyflow/react` v12 (rename drástico) | `package.json` + `BuilderCanvas.tsx` |
+| D3 | `Input type="number"` para max_iter, no Slider (componente no existe en shadcn/ui) | `AgentForm.tsx:275-284` |
+| D4 | **CRÍTICA: `POST /agents` con `TenantClient`** para RLS — el plan decía "guardar directo desde frontend sin nuevo endpoint" pero `app.org_id` solo lo setea middleware backend | `agents.py:51-92` — `require_org_id` + `get_tenant_client(org_id)` |
+| D5 | `ToolMultiSelect` custom con checkboxes + badges, sin deps externas (Command/Popover no instalados) | `ToolMultiSelect.tsx` — búsqueda/filtro + agrupación por source |
+| D7 | `soul_json` plano: `{goal, backstory, llm_provider, llm_model, verbose, reasoning, inject_date, memory}` | `agent_create.py:79-88` + `AgentForm.tsx:117-131` |
+| D8 | Upsert vía update-if-exists + insert si no existe (no `.upsert()` directo con Supabase) | `agents.py:62-92` |
+| D9 | Nav sidebar "Builder" añadido en Paso 04 (no paso 09) | `nav-main.tsx:50` |
+| D10 | `PROVIDER_MODELS` estático en `constants.ts` con 4 providers | `constants.ts:16-21` |
+| D11 | `model` no se migra; `llm_model` va en `soul_json.llm_model` | `AgentForm.tsx:117-131` — `soul_json` plano |
 
 ---
 
@@ -139,6 +171,7 @@
 | `/approvals/...` | `src/api/routes/approvals.py` | * | `require_org_id` |
 | `/chat/...` | `src/api/routes/chat.py` | * | `require_org_id` |
 | `/agents/...` | `src/api/routes/agents.py` | * | `require_org_id` |
+| `/agents` (POST create) | `src/api/routes/agents.py` | POST | `require_org_id` — crea/upsert agente con `soul_json` + `allowed_tools` + `max_iter` |
 | `/bundles/...` | `src/api/routes/bundles.py` | * | `require_org_id` |
 | `/mcp/...` | `src/api/routes/mcp.py` | * | `require_org_id` |
 | `/integrations/...` | `src/api/routes/integrations.py` | * | `require_org_id` |
@@ -276,6 +309,14 @@ src/
 | Índice parcial `UNIQUE(name) WHERE is_system = TRUE` | Solo system templates son únicos por nombre. Custom templates (futuro) usarán `UNIQUE(org_id, name)`. | `030_agent_templates.sql:32-33` |
 | `soul_json` sin validación Pydantic en API | DB almacena JSONB, endpoint retorna `Dict[str, Any]`. Validación de estructura en seed script. Post-MVP: validator. | `templates.py:37-41` |
 | Response incluye `count` | Consistente con `tools.py`. `TemplateListResponse.count`. | `templates.py:38,66` |
+| `POST /agents` con `TenantClient` obligatorio | RLS `agent_catalog_tenant_isolation` usa `current_setting('app.org_id')` — solo el backend puede setear esta variable vía RPC. Frontend browser client NO puede. Sin este endpoint el Save Agent falla con 42501. Corrección crítica D4 al plan. | `agents.py:51-92` |
+| Upsert update-or-insert | `UNIQUE(org_id, role)` hace que `.insert()` falle en duplicado. Flow: SELECT existente → UPDATE si existe, INSERT si no. Permite re-guardar/editar sin error 409. | `agents.py:62-92` |
+| `soul_json` plano sin anidación | Estructura: `{goal, backstory, llm_provider, llm_model, verbose, reasoning, inject_date, memory}`. Sin sub-objeto `config`. Consistente con cómo `agents/page.tsx:62` ya accede a `soul_json` como `Record<string, string>`. | `agent_create.py:79-88` |
+| `reactflow` v11, no `@xyflow/react` v12 | v12 cambió API drásticamente. v11 estable por consistencia con plan y mayoría de agentes. Migración a v12 post-MVP si necesario. | `BuilderCanvas.tsx` — `import('reactflow')` |
+| `Input type="number"` para max_iter, no Slider | Componente `Slider` no existe en shadcn/ui. Misma funcionalidad sin dep extra (`@radix-ui/react-slider`). Slider visual post-MVP. | `AgentForm.tsx:275-284` |
+| `ToolMultiSelect` custom sin deps externas | Checkboxes nativos + búsqueda/filtro + badges. Sin `cmdk`, `@radix-ui/react-popover`, ni `@radix-ui/react-checkbox` — no instalados. Post-MVP: Command combobox. | `ToolMultiSelect.tsx` |
+| `PROVIDER_MODELS` estático en frontend | Sin endpoint para listar modelos por provider en MVP. Mapa con ≥2 modelos/provider. Post-MVP: `GET /api/llm/models?provider=`. | `constants.ts:16-21` |
+| Nav sidebar "Builder" en Paso 04 | Ruta `/builder` accesible desde el momento en que existe la página. No pospuesto a Paso 09. | `nav-main.tsx:50` |
 
 ---
 
@@ -286,6 +327,7 @@ src/
 | 01-Crear-endpoint-GET-api-tools-available | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/01-Crear-endpoint-GET-api-tools-available/` | `b26dbe9` | ToolInfo con Literal source; MCP con timeout 5s; category derivada de tags[0]; router en main.py | Validación aprobada. 1 🟡 (dogfooding no verificado). |
 | 02-Crear-endpoint-POST-api-bundles-export | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/02-Crear-endpoint-POST-api-bundles-export/` | `af35a0a` | ExportService orquestador; Response vs StreamingResponse; skills key con `.py` para round-trip; validación goal/backstory + min_length en handler | Validación aprobada. 0 issues. |
 | 03-Endpoints-CRUD-para-templates-de-agentes | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` | `992a1d1` | Tabla global sin org_id; endpoints públicos sin auth; seed CLI idempotente; índice parcial UNIQUE WHERE; check-then-insert compatible con partial index | Validación rechazada (ID-001 upsert + partial index). Corregido a check-then-insert. Queda pendiente verificación live Supabase post-migración 030. |
+| 04-Builder-visual-UI-con-ReactFlow | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` | `6d9539c` | POST /agents con TenantClient (RLS fix D4); reactflow v11 + dynamic import ssr:false; AgentForm react-hook-form + zod; ToolMultiSelect custom; PROVIDER_MODELS estático; soul_json plano; upsert update-or-insert; sidebar Builder en nav-main.tsx | Implementación completa. 0 errores lint backend + frontend. Criterios de aceptación cubiertos. Tarea 0 DX: `fap agent create`. |
 
 ---
 
@@ -303,6 +345,16 @@ src/
 - ✅ Tests unitarios templates: 7/7 (list, filter, detail, 404, auth, soul_json)
 - ✅ Migración `030_agent_templates.sql` con tabla + RLS + índices
 - ✅ Seed idempotente: check-then-insert compatible con índice parcial `UNIQUE WHERE`
+- ✅ POST /agents con TenantClient: RLS respetada vía backend (corrección D4 al plan)
+- ✅ AgentForm 11 campos con react-hook-form + zodResolver: validación inline
+- ✅ BuilderLayout split 60/40 responsive con Tailwind: ReactFlow izquierda + formulario derecha
+- ✅ BuilderCanvas ReactFlow placeholder con dynamic import + ssr:false
+- ✅ ToolMultiSelect custom con búsqueda/filtro + agrupación por source (local/mcp)
+- ✅ Sidebar con entrada "Builder" navegable a `/builder`
+- ✅ PROVIDER_MODELS con 4 providers y ≥2 modelos cada uno
+- ✅ Zod rechaza submit sin role/goal/backstory con error inline
+- ✅ Zod rechaza max_iter <1 o >10
+- ✅ LLM Provider select cambia dinámicamente opciones de LLM Model
 
 ### Herramientas DX detectadas/propuestas
 | Herramienta | Ubicación | Automatiza |
@@ -311,4 +363,6 @@ src/
 | `fap validate-tools` | `src/cli/commands/validate_tools.py` | Validar tools contra agent configs (existente pre-Paso 1) |
 | `fap bundle export` | `src/cli/commands/bundle_export.py` | Exportar agentes DB a ZIP bundle desde CLI. `--org-id`, `--output`, `--include-skills`, `--roles` |
 | `fap templates seed` | `src/cli/commands/templates_seed.py` | Insertar 8 system templates en Supabase desde CLI. `--dry-run`, `--reset`. Setup 15min → 1s. |
+| `fap agent create` | `src/cli/commands/agent_create.py` | Crear agente desde terminal vía POST /agents. `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--llm-provider`, `--llm-model`, `--verbose`, `--reasoning`, `--inject-date`, `--memory`, `--dry-run`. Dogfooding: validar backend antes de UI. |
 | `bundle_validator.py` | `scripts/bundle_validator.py` | Validar estructura de ZIP exportado sin consumir endpoint |
+| Builder UI (`/builder`) | `dashboard/app/(app)/builder/page.tsx` | Interfaz visual split 60/40: canvas ReactFlow + formulario de agente con 11 campos. Save vía POST /agents con RLS. |

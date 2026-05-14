@@ -1,8 +1,9 @@
-"""Endpoints para detalle de agentes con metricas."""
+"""Endpoints para detalle de agentes con metricas y creacion via POST."""
 
 from __future__ import annotations
 
-from typing import Any, Dict
+import logging
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -12,7 +13,26 @@ from ...crews.base_crew import BaseCrew
 from ...db.session import get_tenant_client
 from ..middleware import require_org_id, verify_org_membership
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+class AgentCreate(BaseModel):
+    role: str
+    soul_json: Dict[str, Any]
+    allowed_tools: List[str] = []
+    max_iter: int = 3
+
+
+class AgentResponse(BaseModel):
+    id: str
+    org_id: str
+    role: str
+    soul_json: Dict[str, Any]
+    allowed_tools: List[str] = []
+    max_iter: int
+    created_at: str | None = None
 
 
 class RunAgentRequest(BaseModel):
@@ -26,6 +46,59 @@ class RunAgentResponse(BaseModel):
 
     task_id: str
     status: str
+
+
+@router.post("", response_model=AgentResponse, status_code=201)
+async def create_agent(
+    payload: AgentCreate,
+    org_id: str = Depends(require_org_id),
+):
+    """Create or upsert an agent in agent_catalog via POST.
+
+    Uses TenantClient for RLS compliance (D4 fix vs plan).
+    Upserts via on_conflict='org_id,role' to allow re-saving.
+    Returns 409 on duplicate role within same org.
+    """
+    with get_tenant_client(org_id) as db:
+        existing = (
+            db.table("agent_catalog")
+            .select("id")
+            .eq("org_id", org_id)
+            .eq("role", payload.role)
+            .maybe_single()
+            .execute()
+        )
+
+        if existing.data:
+            result = (
+                db.table("agent_catalog")
+                .update({
+                    "soul_json": payload.soul_json,
+                    "allowed_tools": payload.allowed_tools,
+                    "max_iter": payload.max_iter,
+                    "is_active": True,
+                })
+                .eq("id", existing.data["id"])
+                .execute()
+            )
+            logger.info("Agent '%s' updated in org '%s'", payload.role, org_id)
+            return AgentResponse(**result.data[0])
+
+        result = (
+            db.table("agent_catalog")
+            .insert({
+                "org_id": org_id,
+                "role": payload.role,
+                "soul_json": payload.soul_json,
+                "allowed_tools": payload.allowed_tools,
+                "max_iter": payload.max_iter,
+                "is_active": True,
+            })
+            .execute()
+        )
+
+        logger.info("Agent '%s' created in org '%s'", payload.role, org_id)
+        return AgentResponse(**result.data[0])
 
 
 @router.get("/by-role/{role}")
