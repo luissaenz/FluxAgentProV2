@@ -27,6 +27,7 @@ from .routes.flows import router as flows_router
 from .routes.integrations import router as integrations_router
 from .routes.mcp import router as mcp_router
 from .routes.tasks import router as tasks_router
+from .routes.templates import router as templates_router
 from .routes.tickets import router as tickets_router
 from .routes.tools import router as tools_router
 from .routes.transcripts import router as transcripts_router
@@ -109,6 +110,7 @@ app.include_router(analytical_chat_router)  # Phase 4: analytical assistant
 app.include_router(integrations_router)  # Phase 5: service catalog TIPO C
 app.include_router(bundles_router)
 app.include_router(mcp_router)
+app.include_router(templates_router)
 app.include_router(tools_router)
 
 

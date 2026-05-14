@@ -30,6 +30,7 @@ from src.cli.commands.security_audit import security_audit
 from src.cli.commands.stress_bench import stress_bench
 from src.cli.commands.sync_config import sync_config
 from src.cli.commands.sync_step_names import sync_step_names
+from src.cli.commands.templates_seed import templates_app
 from src.cli.commands.test_scenarios import test_scenarios
 from src.cli.commands.test_step import test_step
 from src.cli.commands.tool_call_test import test_tool_call
@@ -54,6 +55,7 @@ app.add_typer(run_app, name="run")
 app.command("scaffold")(scaffold_command)
 app.command("dev")(dev_command)
 app.command("export-agents")(export_agents)
+app.add_typer(templates_app, name="templates")
 app.add_typer(tools_list_app, name="tools")
 app.command("validate-tools")(validate_tools_command)
 app.command("validate-architect-output")(validate_architect_output)

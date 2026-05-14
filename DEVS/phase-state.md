@@ -14,8 +14,8 @@
 | # | Paso | Estado |
 |---|------|--------|
 | 1 | Crear endpoint `GET /api/tools/available` | ✅ Completado |
-| 2 | Crear endpoint `POST /api/bundles/export` | ⬜ Pendiente |
-| 3 | Endpoints CRUD para templates de agentes | ⬜ Pendiente |
+| 2 | Crear endpoint `POST /api/bundles/export` | ✅ Completado |
+| 3 | Endpoints CRUD para templates de agentes | ✅ Completado |
 | 4 | Builder visual — UI con ReactFlow | ⬜ Pendiente |
 
 ### Dependencias entre pasos
@@ -42,12 +42,39 @@
 | Flujo warmup + health checks | `src/api/main.py:48-77` | lifespan handler | warmup_all_active_tenants() + run_health_checks() |
 | Tool register decorator | `src/tools/registry.py:276-287` | `@register_tool(...)` | Uso en `src/tools/builtin` |
 | MCP server query | `src/tools/mcp_pool.py:122-131` | `get_service_client()` | `.table("org_mcp_servers").select("*")` |
+| Endpoint `POST /api/bundles/export` | `src/api/routes/bundles.py:199-210` | Handler + validación goal/backstory | `Depends(require_org_id)` |
+| `ExportService` orquestador | `src/services/export_service.py:21-66` | `export(payload) -> tuple[bytes, str]` | Reutiliza `BundleManager.create_bundle()` |
+| Modelos export Pydantic | `src/services/bundle_schemas.py:102-116` | `AgentExportItem`, `ExportBundleRequest`, `SkillExportItem` | Validación campo por campo con Pydantic |
+| CLI `fap bundle export` | `src/cli/commands/bundle_export.py:34-135` | Typer command `bundle export` | Dogfooding: usa `ExportService` |
+| CLI registro `app.add_typer(bundle_app, ...)` | `src/cli/main.py:15,73` | Import + registro `bundle` sub-app | Sub-comando `bundle export` |
+| Script helper `bundle_validator.py` | `scripts/bundle_validator.py` | Validar estructura ZIP exportado | Opcional, no bloqueante |
+| Tests unitarios export | `tests/unit/test_bundle_export.py` | 7 tests: validación, generación, edge cases | 7/7 pasan |
+| Tests integración round-trip | `tests/integration/test_bundle_export_roundtrip.py` | 3 tests: process_zip, mock import, estructura | 3/3 pasan |
+| Tabla `agent_templates` | `supabase/migrations/030_agent_templates.sql:10-21` | Global sin `org_id`, RLS SELECT auth, ALL service_role | Índice parcial `UNIQUE(name) WHERE is_system=TRUE` |
+| Endpoint `GET /api/templates` | `src/api/routes/templates.py:54-67` | Lista + filtro `?category=` + `count` | Sin `require_org_id` |
+| Endpoint `GET /api/templates/{id}` | `src/api/routes/templates.py:70-83` | Detalle con `soul_json`, 404 si no existe | `maybe_single()` |
+| Modelos Pydantic templates | `src/api/routes/templates.py:25-51` | `TemplateInfo`, `TemplateListResponse`, `TemplateDetailResponse` | Consistente con `tools.py` |
+| CLI `fap templates seed` | `src/cli/commands/templates_seed.py:140-220` | Seed 8 system templates + `--dry-run` + `--reset` | Check-then-insert idempotente |
+| CLI registro `templates` sub-app | `src/cli/main.py:33,58` | Import + `add_typer(templates_app, name="templates")` | Sub-comando `templates seed` |
+| Tests unitarios templates | `tests/unit/test_templates.py` | 7 tests: list, filter, detail, 404, auth, soul_json | 7/7 pasan |
 
 ### 📦 Archivado — Paso 1
 
 | Archivos | Destino |
 |---|---|
 | `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/01-Crear-endpoint-GET-api-tools-available/` |
+
+### 📦 Archivado — Paso 2
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/02-Crear-endpoint-POST-api-bundles-export/` |
+
+### 📦 Archivado — Paso 3
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -59,6 +86,26 @@
 | D4 | Router en `main.py`, NO en `__init__.py` | `main.py:31,112` |
 | D5 | `list_tools()` retorna solo nombres → `get_metadata()` por cada uno | `tools.py:75-78` |
 | D6 | Tools DB-loaded sin warmup en listado → documentado como limitación MVP | Sin implementar (correcto) |
+
+#### Paso 02 — POST /api/bundles/export
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | `StreamingResponse` → `Response` (ZIP en memoria, no streaming real) | `bundles.py:241` — `Response(content=zip_bytes)` |
+| D2 | `skills [{name,code}]` → `Dict[str,str]` para `create_bundle()` | `export_service.py:52-60` — convierte + `.py` en key (necesario round-trip) |
+| D3 | `ExportService` como orquestador separado (patrón `ImportService`) | `export_service.py:21-66` |
+| D4 | `flows` excluido de MVP, pasar `flows=[]` | `export_service.py:65` — `flows=[]` |
+
+#### Paso 03 — Endpoints CRUD para templates de agentes
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | Router en `main.py` (NO `__init__.py`) | `main.py:30,113` — import + `include_router` |
+| D2 | Tabla GLOBAL sin `org_id` (patrón `service_catalog`) | `030_agent_templates.sql:10-21` — sin columna `org_id` |
+| D3 | Seed vía CLI + script, NO en migración SQL | `templates_seed.py` + `cli/main.py:33,58` |
+| D4 | Endpoints sin `require_org_id` (catálogo público) | `templates.py:54-67,70-83` — sin `Depends(require_org_id)` |
+| D5 | Idempotencia seed → check-then-insert (no upsert) | `templates_seed.py:183-193` — `SELECT` + `INSERT` condicional por índice parcial `UNIQUE WHERE` |
+| D6 | Emojis reemplazados por Rich markup (cp1252 compat) | `templates_seed.py:191,208,211` — `OK`, `FAIL`, `-` |
 
 ---
 
@@ -78,6 +125,7 @@
 - `org_mcp_servers(id UUID, org_id UUID, name TEXT, command TEXT, args JSONB, secret_name TEXT, is_active BOOLEAN)`
 - `skill_catalog(id UUID, org_id UUID, name TEXT, code_source TEXT, ...)`
 - `flow_presentations`, `tickets`, `agent_metadata`, `service_catalog`, `conversations`, `workflow_templates`, etc.
+- `agent_templates(id UUID, name TEXT NOT NULL, description TEXT, category TEXT NOT NULL, soul_json JSONB, suggested_tools TEXT[], max_iter INTEGER, is_system BOOLEAN, ...)` — tabla global sin `org_id`, RLS SELECT auth, ALL service_role
 
 ### Endpoints / APIs (rutas reales)
 | Ruta | Archivo | Método | Auth |
@@ -94,6 +142,8 @@
 | `/bundles/...` | `src/api/routes/bundles.py` | * | `require_org_id` |
 | `/mcp/...` | `src/api/routes/mcp.py` | * | `require_org_id` |
 | `/integrations/...` | `src/api/routes/integrations.py` | * | `require_org_id` |
+| `/api/templates` | `src/api/routes/templates.py` | GET | None (catálogo público) |
+| `/api/templates/{id}` | `src/api/routes/templates.py` | GET | None (catálogo público) |
 | `/health` | `src/api/main.py` | GET | None |
 
 ### Patrones de código en uso
@@ -132,6 +182,31 @@ from src.scheduler.health_check import run_health_checks
 asyncio.create_task(run_health_checks())
 ```
 Jobs definidos en `src/scheduler/` (health_check.py, bartenders_jobs.py).
+
+**5. Patrón tabla global sin `org_id` — catálogo público**
+```sql
+-- Migración 030_agent_templates.sql:10,25-29
+CREATE TABLE IF NOT EXISTS agent_templates (...);
+-- Sin columna org_id
+CREATE POLICY "agent_templates_read" ON agent_templates
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "agent_templates_write" ON agent_templates
+    FOR ALL USING (auth.role() = 'service_role');
+```
+Tablas globales sin tenant isolation. SELECT requiere autenticación, escritura solo `service_role`. Mismo patrón que `service_catalog` (mig 024).
+
+**6. Patrón seed vía CLI — check-then-insert idempotente**
+```python
+# src/cli/commands/templates_seed.py:183-193
+existing = db.table("agent_templates").select("id")\
+    .eq("name", template["name"]).eq("is_system", True).execute()
+if existing.data:
+    console.print(f"  [dim]-[/dim] {template['name']} (already exists, skipped)")
+    skipped += 1
+    continue
+db.table("agent_templates").insert({...}).execute()
+```
+Seed idempotente compatible con índices parciales `UNIQUE(...) WHERE`. Reemplaza `upsert()` que no soporta `WHERE` en PostgREST.
 
 ### Convenciones de naming (de proyecto-config.json)
 - Backend: `snake_case`
@@ -189,6 +264,18 @@ src/
 | CLI `fap tools list` como DX | Reemplaza curl/Postman. Typer sub-app en `src/cli/main.py` | `src/cli/commands/tools_list.py` |
 | `get_service_client()` para queries DB | Bypass RLS con filtro manual `.eq("org_id", ...)`. Consistente con integrations/mcp_pool | `src/api/routes/tools.py:111` |
 | Response incluye `count` | Consistente con `flows.py` pattern | `src/api/routes/tools.py:63` |
+| Response vs StreamingResponse | `BundleManager.create_bundle()` genera ZIP en memoria → `Response(content=bytes)`. Sin beneficio de streaming. Post-MVP >50MB migrar a `StreamingResponse`. | `bundles.py:241` |
+| ExportService en archivo separado | Consistente con `ImportService`. Separa concerns: handler maneja HTTP, service maneja lógica negocio. Permite test unitario sin FastAPI. | `export_service.py:21-66` |
+| Skills key incluye `.py` | `create_bundle()` escribe `skills/{filename}` y `_parse_file_content()` requiere `.py` suffix. Usar `s.name` sin extensión rompería round-trip import. | `export_service.py:55-58` |
+| Validación goal/backstory en handler | Responsabilidad del endpoint (contrato HTTP), no del service. Incluye longitud mínima 10 chars (mitigación §258). | `bundles.py:215-238` |
+| Sin registro en `bundle_imports` | Export stateless. No persiste registro de exportación. | `export_service.py:28-70` |
+| Tabla global `agent_templates` sin `org_id` | Catálogo público de templates. Mismo patrón que `service_catalog` (mig 024). Post-MVP: custom templates por org → migración adicional con `org_id`. | `030_agent_templates.sql:10-21` |
+| Endpoints públicos sin `require_org_id` | Templates son catálogo de referencia. Consistente con `integrations.py`. Autenticación vía RLS (auth.role() = 'authenticated'). | `templates.py:54-67,70-83` |
+| RLS: SELECT auth, ALL service_role | Lectura requiere autenticación. Escritura solo service_role (seed vía CLI). | `030_agent_templates.sql:25-29` |
+| Seed vía CLI + script, NO en migración SQL | Consistente con `seed_system_bundles.py`. `--dry-run`, `--reset`. Check-then-insert idempotente. | `templates_seed.py:140-220` |
+| Índice parcial `UNIQUE(name) WHERE is_system = TRUE` | Solo system templates son únicos por nombre. Custom templates (futuro) usarán `UNIQUE(org_id, name)`. | `030_agent_templates.sql:32-33` |
+| `soul_json` sin validación Pydantic en API | DB almacena JSONB, endpoint retorna `Dict[str, Any]`. Validación de estructura en seed script. Post-MVP: validator. | `templates.py:37-41` |
+| Response incluye `count` | Consistente con `tools.py`. `TemplateListResponse.count`. | `templates.py:38,66` |
 
 ---
 
@@ -197,6 +284,8 @@ src/
 | Paso | Estado | Archivos Archivados En | Commit | Decisiones Tomadas | Notas |
 |---|---|---|---|---|---|
 | 01-Crear-endpoint-GET-api-tools-available | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/01-Crear-endpoint-GET-api-tools-available/` | `b26dbe9` | ToolInfo con Literal source; MCP con timeout 5s; category derivada de tags[0]; router en main.py | Validación aprobada. 1 🟡 (dogfooding no verificado). |
+| 02-Crear-endpoint-POST-api-bundles-export | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/02-Crear-endpoint-POST-api-bundles-export/` | `af35a0a` | ExportService orquestador; Response vs StreamingResponse; skills key con `.py` para round-trip; validación goal/backstory + min_length en handler | Validación aprobada. 0 issues. |
+| 03-Endpoints-CRUD-para-templates-de-agentes | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` | `992a1d1` | Tabla global sin org_id; endpoints públicos sin auth; seed CLI idempotente; índice parcial UNIQUE WHERE; check-then-insert compatible con partial index | Validación rechazada (ID-001 upsert + partial index). Corregido a check-then-insert. Queda pendiente verificación live Supabase post-migración 030. |
 
 ---
 
@@ -208,10 +297,18 @@ src/
 - ✅ Validaciones de input presentes (Query regex, require_org_id)
 - ✅ Código ejecuta sin errores ni warnings nuevos
 - ✅ Tooling DX: `fap tools list` — listado de tools desde CLI sin dashboard
-- ⬜ Pendiente para pasos futuros: tests automatizados (Tarea 4 del plan)
+- ✅ Tooling DX: `fap bundle export` — exporta agentes DB a ZIP desde CLI
+- ✅ Tests automatizados implementados: 7 unit + 3 integración (round-trip)
+- ✅ ZIP exportado es re-importable vía `POST /api/bundles/import` (round-trip verificado)
+- ✅ Tests unitarios templates: 7/7 (list, filter, detail, 404, auth, soul_json)
+- ✅ Migración `030_agent_templates.sql` con tabla + RLS + índices
+- ✅ Seed idempotente: check-then-insert compatible con índice parcial `UNIQUE WHERE`
 
 ### Herramientas DX detectadas/propuestas
 | Herramienta | Ubicación | Automatiza |
 |---|---|---|
 | `fap tools list` | `src/cli/commands/tools_list.py` | Listar tools locales + MCP desde terminal. `--org-id`, `--source`, `--json` |
 | `fap validate-tools` | `src/cli/commands/validate_tools.py` | Validar tools contra agent configs (existente pre-Paso 1) |
+| `fap bundle export` | `src/cli/commands/bundle_export.py` | Exportar agentes DB a ZIP bundle desde CLI. `--org-id`, `--output`, `--include-skills`, `--roles` |
+| `fap templates seed` | `src/cli/commands/templates_seed.py` | Insertar 8 system templates en Supabase desde CLI. `--dry-run`, `--reset`. Setup 15min → 1s. |
+| `bundle_validator.py` | `scripts/bundle_validator.py` | Validar estructura de ZIP exportado sin consumir endpoint |
