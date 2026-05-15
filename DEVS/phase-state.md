@@ -6,7 +6,7 @@
 
 ## 1. Resumen de Fase
 
-**Fase activa:** `guiAgentGenerator`
+**Fase activa:** `guiAgentGenerator` — ✅ **FINALIZADA** (8/8 pasos completados)
 **Objetivo:** Replicar experiencia de creación visual de agentes (Crew Studio) dentro del dashboard FAP, sobre stack propio (Next.js + ReactFlow + FastAPI + Supabase).
 
 ### Pasos en orden
@@ -20,12 +20,14 @@
 | 5 | Template Picker — librería de templates | ✅ Completado |
 | 6 | Agent Playground — prueba en tiempo real | ✅ Completado |
 | 7 | Canvas visual — ensamblaje de crews | ✅ Completado |
+| 8 | ExportDialog + flujo completo de exportación | ✅ Completado |
 
 ### Dependencias entre pasos
 - Paso 2 requiere Paso 1 (tools list para export)
 - Paso 4 requiere Pasos 1-3 (tools + export + templates para builder)
 - Paso 6 requiere Paso 4 (AgentForm creado con `onRoleChange`) + `POST /agents/{role}/run` existente
 - Paso 7 requiere Paso 4 (AgentForm + BuilderLayout) + `GET /agents` + `POST /bundles/export` existentes
+- Paso 8 requiere Paso 2 (`POST /api/bundles/export` existente) + Paso 7 (CrewCanvas con `canvasToExportPayload()`) + Paso 4 (AgentForm con campos completos)
 
 ---
 
@@ -112,6 +114,14 @@
 | Deps `reactflow` v11 existente | `dashboard/package.json` | ReactFlow v11 para crew canvas | Sin librería DnD externa (HTML5 native) |
 | Tests unitarios canvas serialize | `tests/unit/test_canvas_serialize.py` | 7 tests: payload, code gen (single agent, empty canvas, multi agent+task) | 7/7 pasan (usando `_generate_py()` mirror Python de `generateCrewPy` TypeScript) |
 | Tests unitarios crew endpoints | `tests/unit/test_crew_endpoints.py` | 8 tests: list agents, create workflow, duplicate 409, validación crew graph | 8/8 pasan |
+| `ExportDialog` component | `dashboard/components/builder/ExportDialog.tsx:1-322` | Diálogo modal unificado para export ZIP desde AgentForm (1 agente) y CrewCanvas (N agentes) | 5 estados: summary/exporting/success/error/empty. Validación `max_length=15`. Warning LLM config + tasks not exported en crew-canvas |
+| `fapDownload()` helper | `dashboard/lib/api.ts:54-94` | Descarga binaria (ZIP) autenticada con JWT + X-Org-ID headers | Retorna Response sin parsear para `.blob()`. No modifica `fapFetch` existente |
+| `Checkbox` shadcn/ui | `dashboard/components/ui/checkbox.tsx:1-27` | Componente Checkbox con Radix primitives + cva + cn | `@radix-ui/react-checkbox` ya instalado como dep transitiva |
+| Tipos export | `dashboard/lib/types.ts:291-307` | `AgentExportItem`, `SkillExportItem`, `ExportBundleRequest` | Tipado fuerte del payload de exportación |
+| Botón Export en AgentForm | `dashboard/components/builder/AgentForm.tsx:385-393,203-222` | Botón "Export" junto a Save Agent + `buildSingleAgentPayload()` | Disabled sin role/goal/backstory. Incluye LLM config completa |
+| CrewCanvas refactorizado para ExportDialog | `dashboard/components/builder/CrewCanvas.tsx:83,207-235,573-580` | Eliminados `confirmExport()`, `handleCopyJSON()`, Dialog inline. Usa `<ExportDialog>` con `useMemo` para exportPayload + fullGraphJson | `handleSaveCrew` preservado (línea 307) |
+| `fap bundle validate-payload` CLI | `src/cli/commands/bundle_validate_payload.py:1-149` | Valida payload JSON contra ExportBundleRequest sin llamar endpoint | `--file`, `--stdin`, `--json`. Output Rich: schema status, agentes, skills, warnings |
+| Registro CLI validate-payload | `src/cli/main.py:18,82` | `bundle_app.command("validate-payload")(validate_payload)` | Sub-comando `bundle validate-payload` |
 
 ### 📦 Archivado — Paso 1
 
@@ -154,6 +164,12 @@
 | Archivos | Destino |
 |---|---|
 | `analisis-FINAL.md`, `analisis-07-*.md` (2 archivos), `analisis-7-*.md` (6 archivos), `validacion.md` (10 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/07-Canvas-visual-ensamblaje-de-crews/` |
+
+### 📦 Archivado — Paso 8
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-08-*.md` (3 archivos), `analisis-8-*.md` (7 archivos), `validacion.md`, `eval_models.html` (13 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/08-ExportDialog-flujo-completo-de-exportacion/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -497,6 +513,21 @@ src/
 | D13 | `fap crew export` usa `get_service_client()` (service_role), no API HTTP. Consistente con `templates_seed.py`. | `crew.py:271-341` — `supabase.table("agent_catalog")` |
 | D14 | `fap crew validate` con `_validate_crew_graph()` llama validación directa, sin HTTP. Testeable en unit sin mock de API. | `crew.py:78-154,344-377` |
 
+#### Paso 08 — ExportDialog + flujo completo de exportación
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | ExportDialog extraído a archivo independiente. Plan asume crear desde cero, pero existía lógica inline en `CrewCanvas.tsx:604-627`. Refactorizar, no duplicar. | `ExportDialog.tsx:1-322` — componente creado. `CrewCanvas.tsx:573-580` — usa `<ExportDialog>`. `confirmExport`/`handleCopyJSON`/Dialog inline eliminados |
+| D2 | AgentForm sin botón Export. Plan requiere integración. | `AgentForm.tsx:385-393` — botón Export junto a Save Agent, disabled sin role/goal/backstory |
+| D3 | "Include skills" checkbox no existe en UI ni hay endpoint `GET /api/skills/available`. MVP: checkbox visible pero disabled con tooltip "Coming soon". | `ExportDialog.tsx:232-257` — Checkbox con `disabled={!enableSkills}` + TooltipProvider |
+| D4 | `api.post()` no soporta blob response — `fapFetch` siempre hace `.json()`. Plan asume usar `api.post()`. Se crea `fapDownload()` dedicado sin modificar `fapFetch`. | `api.ts:54-94` — `fapDownload(path, body): Promise<Response>`. `ExportDialog.tsx:120` — usa `fapDownload('/bundles/export', payload)` |
+| D5 | `Checkbox` shadcn/ui no existe — bug preexistente en `bundles/page.tsx:18`. Se crea con Radix primitives. | `checkbox.tsx:1-27` — `CheckboxPrimitive.Root` + `cva` + `cn` + `Check` icon |
+| D6 | LLM config (`llm_provider`/`llm_model`) se pierde en export desde canvas — AgentNode creado por drag-deploy no recibe estos campos. | `ExportDialog.tsx:79-80` — warning useMemo: "LLM configuration not included. Use Agent Form export for full config." |
+| D7 | `max_length=15` en `ExportBundleRequest.agents` no se valida en frontend — canvas con >15 agentes causa 422 silencioso. | `ExportDialog.tsx:72-74` — `exceedsLimit = agents.length > 15`. Botón Export deshabilitado + mensaje "+15 agents limit reached" |
+| D8 | Filename hardcoded `crew_export.zip` — no usa `bundle_name` personalizable. | `ExportDialog.tsx:48-52` — `generateDefaultBundleName()` con timestamp. `ExportDialog.tsx:221-229` — Input editable |
+| D9 | bundle-schema-v2 no soporta tasks/edges — solo agents se exportan. Warning informativo. | `ExportDialog.tsx:81` — "Tasks and connections not exported (bundle-schema-v2 limitation). Use Copy as JSON for full graph." |
+| D10 | Sin feedback de progreso/tamaño en export — `confirmExport()` solo tenía toast. | `ExportDialog.tsx:136-138` — toast "Exported as {filename} ({size})". `ExportDialog.tsx:286-288` — LoadingSpinner "Generating bundle..." |
+
 ---
 
 ## 5. Registro de Pasos Completados
@@ -510,6 +541,7 @@ src/
 | 05-Template-Picker-libreria-de-templates | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` | `131d619` | TemplatePicker grid + búsqueda + filtro chips; double fetch list+detail; prop templateData en AgentForm; mapTemplateToFormValues con fallbacks; Dialog modal en BuilderLayout; TEMPLATE_CATEGORIES constante; CLI fap templates use | Validación aprobada. 0 issues 🔴. 2 🟡 (dogfooding no verificado, TS errores preexistentes AgentForm). Tarea 0 DX: `fap templates use`. |
 | 06-Agent-Playground-prueba-en-tiempo-real | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` | `e3b5101` | AgentPlayground con useMutation + useQuery polling 2s; MessageBubble con Collapsible >2000 chars; formatResult polimórfico; Sheet lateral right; onRoleChange para habilitar Playground; CLI fap agent run con --watch; Task interface extendida con tokens_used | Validación APROBADO. 22/22 criterios. 0 🔴. 1 🟡 (dogfooding no verificado). 3 🔵 mejoras. Tarea 0 DX: `fap agent run`. |
 | 07-Canvas-visual-ensamblaje-de-crews | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/07-Canvas-visual-ensamblaje-de-crews/` | `54e7936` | HTML5 native DnD sin libs externas; Export agents-only (bundle-schema-v2 limitación); Run All frontend-orquestado; localStorage + JSON download; BuilderLayout tabs Agent Form / Crew Canvas; generateCrewPy código preview; 4 templates preset; Sin ToolNode (badges inline); fap crew CLI (save/load/export/validate/scaffold) | Validación paso 07 completada. 0 migraciones nuevas. 15 tests unitarios (7 canvas + 8 crew endpoints). Tareas DX: `fap crew save`, `fap crew load`, `fap crew export`, `fap crew validate`, `fap crew scaffold`. |
+| 08-ExportDialog-flujo-completo-de-exportacion | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/08-ExportDialog-flujo-completo-de-exportacion/` | `4fbab4d` | ExportDialog componente con 5 estados + validación max_length=15 + checkbox Include skills disabled MVP + warning LLM config + tasks not exported; fapDownload helper en api.ts; Checkbox shadcn/ui creado; CrewCanvas refactorizado (export inline eliminado); AgentForm botón Export; fap bundle validate-payload CLI | Validación APROBADO. 19/19 criterios. 0 🔴. 3 🟡 (dogfooding no verificado, fapDownload hardcodea POST, magic number límite agentes). 5 🔵 mejoras. Tarea 0 DX: `fap bundle validate-payload` + `fapDownload()`. |
 
 ---
 
@@ -608,3 +640,29 @@ src/
 | `fap crew validate` | `src/cli/commands/crew.py:344-377` | Valida crew graph JSON (roles, edges, ciclos DFS). `--file`. |
 | `fap crew scaffold` | `src/cli/commands/crew.py:379-422` | Crea crew desde preset template. `--preset` (4 opciones). `--output`. |
 | CrewCanvas UI (`/builder`) | `dashboard/components/builder/CrewCanvas.tsx` | Canvas ReactFlow con sidebar Agent Palette + drag-and-drop + conexiones. Export ZIP, Run All, Preview Code, Save/Load JSON. 4 templates preset. Autosave localStorage 30s. |
+| `fap bundle validate-payload` | `src/cli/commands/bundle_validate_payload.py` | Validar payload JSON contra schema ExportBundleRequest sin llamar endpoint. `--file`, `--stdin`, `--json`. Output Rich con schema status, agentes, skills, warnings. Reduce ciclo "exportar → 422 → corregir → re-exportar". |
+| `fapDownload()` helper | `dashboard/lib/api.ts:54-94` | Descarga binaria autenticada (ZIP) desde endpoints backend con JWT + X-Org-ID headers automáticos. Evita duplicar fetch raw en cada componente. |
+| ExportDialog UI | `dashboard/components/builder/ExportDialog.tsx` | Diálogo modal unificado para exportar agentes como bundle ZIP. Accesible desde AgentForm (1 agente) y CrewCanvas (N agentes). 5 estados: summary/exporting/success/error/empty. Checkbox "Include skills" (disabled MVP). Warning LLM config + tasks not exported en canvas. Input editable bundle name. Copy as JSON. Loading spinner + toast con filename y tamaño. |
+| Checkbox UI | `dashboard/components/ui/checkbox.tsx` | Componente Checkbox shadcn/ui con Radix primitives. Requisito previo para "Include skills" en ExportDialog. |
+
+### Criterios de Aceptación MVP — Paso 08
+
+- ✅ ExportDialog componente reutilizable con props: open, onOpenChange, agents, source, bundleName, enableSkills, fullGraphJson
+- ✅ ExportDialog muestra resumen: agentes (role + tools count), input bundle name, checkbox Include skills (disabled con tooltip)
+- ✅ Botón "Export as ZIP" → `fapDownload('/bundles/export', payload)` → blob download → toast "Exported as {filename} ({size})"
+- ✅ LoadingSpinner "Generating bundle..." durante export + feedback al completar
+- ✅ "Copy as JSON" copia al portapapeles (agente individual en AgentForm, CrewGraph completo en CrewCanvas)
+- ✅ Warning "LLM config not included" visible cuando source='crew-canvas'
+- ✅ Warning "Tasks and connections not exported (bundle-schema-v2 limitation)" visible en crew-canvas
+- ✅ Validación frontend `agents.length > 15` → botón Export deshabilitado + mensaje "+15 agents limit reached"
+- ✅ Empty state: "No agents to export" + botón Close
+- ✅ Error handling: 422/500 → toast error + botón Retry
+- ✅ CrewCanvas refactorizado: `confirmExport`/`handleCopyJSON`/Dialog inline eliminados. `handleSaveCrew` preservado
+- ✅ AgentForm botón "Export" junto a Save Agent, disabled sin role/goal/backstory
+- ✅ `fapDownload()` helper en api.ts para descargas binarias con auth headers automáticos
+- ✅ `Checkbox` shadcn/ui creado con Radix primitives
+- ✅ Tipos `AgentExportItem`, `SkillExportItem`, `ExportBundleRequest` en types.ts
+- ✅ `fap bundle validate-payload` CLI funcional: valida payload contra schema, muestra warnings
+- ✅ Sin regresiones: 382 tests unitarios pasan, 3 tests integración round-trip pasan, ruff lint limpio
+- ✅ Sin nuevas migraciones — paso puramente UI + integración con endpoint existente
+- ✅ ZIP descargable es reimportable vía `POST /api/bundles/import` (round-trip verificado Paso 02)
