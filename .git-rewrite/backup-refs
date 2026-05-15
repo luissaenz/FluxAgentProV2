@@ -1,0 +1,5 @@
+8799340267bce5be2368fe2557d67d197cbc4217 commit	refs/heads/backup-before-filter-branch
+f79a161ec5ab7826331aa2b9a04756dce5c11e05 commit	refs/heads/kaput-bee
+8799340267bce5be2368fe2557d67d197cbc4217 commit	refs/heads/main
+8799340267bce5be2368fe2557d67d197cbc4217 commit	refs/remotes/origin/HEAD
+8799340267bce5be2368fe2557d67d197cbc4217 commit	refs/remotes/origin/main
