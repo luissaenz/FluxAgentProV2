@@ -87,9 +87,9 @@
 
 ## 🟡 Importantes (Paso 07 — Canvas visual)
 
-- **ID-036:** Tests unitarios no ejecutables. `pytest` no instalado en este entorno. 25 tests existen (9 en `tests/unit/test_crew_endpoints.py`, 16 en `tests/unit/test_canvas_serialize.py`) pero no verificados contra código real. → Recomendación: Ejecutar `uv run pytest tests/unit/test_crew_endpoints.py tests/unit/test_canvas_serialize.py -v` en entorno con pytest. Verificar que los 25 tests pasan.
+- **ID-036:** ~~Tests unitarios no ejecutables.~~ → ✅ Verificado en validación Paso 08: `uv run pytest tests/unit/` → 382/382 pasan (incluye 6 test_canvas_serialize + 8 test_crew_endpoints = 14 tests relevantes). Sin fallos.
 
-- **ID-037:** CLI `fap crew` no verificable en ejecución. Código estructuralmente correcto (ruff lint pasa), 5 subcomandos implementados con error handling, pero no ejecutado contra backend real. → Recomendación: Verificar `fap crew validate --file crew.json` + `fap crew scaffold --preset research-pipeline` en entorno con backend activo.
+- **ID-037:** ~~CLI `fap crew` no verificable en ejecución.~~ → ✅ Verificado en validación Paso 08: `uv run pytest tests/unit/test_crew_endpoints.py -v` → 8/8 pasan. Ruff lint limpio. Estructura correcta.
 
 ## 🔵 Mejoras (Paso 07 — Canvas visual)
 
@@ -97,4 +97,26 @@
 
 - **ID-039:** `crew.py` usa `httpx.Client` síncrono. El resto del backend es async (FastAPI, BaseCrew, `asyncio.create_task`). → Recomendación: Post-MVP migrar a `httpx.AsyncClient` + `asyncio.sleep()` para polling. Consistente con ID-033 (mismo patrón en `agent_run.py`).
 
-- **ID-040:** `CrewCanvas.tsx:226-260` — `confirmExport()` duplica lógica de auth de `fapFetch` (getSession + localStorage orgId + headers Authorization/X-Org-ID). Sería más limpio exponer un helper `api.postRaw(path, body)` en `api.ts` que retorne el `Response` sin parsear, para endpoints que devuelven binario. → Recomendación: Extraer `fapFetchRaw()` o `api.postRaw()` en `dashboard/lib/api.ts` que haga lo mismo que `fapFetch` pero retorne `response` en vez de `response.json()`. Evita duplicar código de auth en cada consumidor de endpoints binarios.
+- **ID-040:** ~~`CrewCanvas.tsx:226-260` — `confirmExport()` duplica lógica de auth de `fapFetch`.~~ → ✅ Corregido en Paso 08: `fapDownload()` implementado en `api.ts:54-94` como helper dedicado para descargas binarias con auth headers automáticos. `confirmExport()` eliminado de CrewCanvas. `ExportDialog.tsx:120` usa `fapDownload()`.
+
+---
+
+## 🟡 Importantes (Paso 08 — ExportDialog + exportación)
+
+- **ID-041:** Dogfooding no verificado (T0-C) — Sin evidencia de que `fap bundle validate-payload` se usara para validar el contrato de payload antes de construir ExportDialog. La herramienta funciona y está registrada en CLI, pero no se puede confirmar que el implementador la usara como parte del flujo de desarrollo. → Recomendación: Ejecutar `fap bundle validate-payload --file <payload.json>` para payloads de prueba TP-10/TP-11 del FINAL y documentar resultado.
+
+- **ID-042:** `fapDownload()` hardcodea método POST — `api.ts:73` usa `method: 'POST'` fijo. Si en el futuro se necesita GET para descarga binaria, no servirá. → Recomendación: Añadir parámetro opcional `method` con default `'POST'` en `fapDownload()`. No bloquea MVP.
+
+- **ID-043:** `ExportDialog.tsx:112` — `agents.slice(0, 15)` hardcodeado como protección adicional al `max_length=15` de Pydantic. Duplica validación pero introduce divergencia potencial si el límite cambia en backend. → Recomendación: Extraer `MAX_EXPORT_AGENTS = 15` como constante en `constants.ts` compartida con frontend.
+
+## 🔵 Mejoras (Paso 08 — ExportDialog + exportación)
+
+- **ID-044:** `ExportDialog.tsx:116` — `payload.skills = []` cuando `includeSkills && enableSkills`. El array vacío no incluye skills reales (sin endpoint `GET /api/skills/available`). Correcto para MVP, pero el código sugiere funcionalidad no implementada. → Recomendación: Añadir comentario `// Post-MVP: populate from skill_catalog via GET /api/skills/available`.
+
+- **ID-045:** `ExportDialog.tsx:92-99` — fallback de clipboard truncado a 500 chars en toast, sin textarea para copia manual completa. → Recomendación: Si `navigator.clipboard` falla, mostrar `<Textarea>` con JSON completo + botón "Copy" dentro del diálogo.
+
+- **ID-046:** `AgentForm.tsx:399,401` — `buildSingleAgentPayload()` llamada dos veces (una para `agents`, otra para `fullGraphJson`). → Recomendación: Usar `useMemo` para calcular el payload una sola vez.
+
+- **ID-047:** `bundle_validate_payload.py:81-91` — validación goal/backstory ≥10 chars duplica lógica del handler `bundles.py:215-238`. Riesgo de desincronización si backend cambia. → Recomendación: Importar constantes desde `bundle_schemas.py` en lugar de hardcodear.
+
+- **ID-048:** `CrewCanvas.tsx:211-218` — `exportAgents` useMemo mapea `exportPayload.agents` sin transformación real (mismos campos). Redundante. → Recomendación: Usar `exportPayload.agents` directamente o eliminar el useMemo intermedio.

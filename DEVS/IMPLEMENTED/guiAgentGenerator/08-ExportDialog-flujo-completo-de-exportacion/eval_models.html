@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluación de Calidad — Paso 08 — FluxAgentPro-v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; color: #f8fafc; }
+  .subtitle { color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 2rem; }
+  th { background: #1e293b; color: #e2e8f0; padding: 10px 12px; text-align: left; font-weight: 600; }
+  td { padding: 10px 12px; vertical-align: top; border-bottom: 1px solid #1e293b; }
+  .score { text-align: center; font-weight: 700; font-size: 1.1rem; }
+  .tier-s { background: #065f46; color: #d1fae5; }
+  .tier-a { background: #14532d; color: #bbf7d0; }
+  .tier-b { background: #713f12; color: #fef3c7; }
+  .tier-c { background: #7f1d1d; color: #fee2e2; }
+  .tier-c td strong { color: #fca5a5; }
+  .virtue { color: #86efac; }
+  .defect { color: #fca5a5; }
+  .summary { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem; }
+  .card { background: #1e293b; border-radius: 8px; padding: 1rem 1.25rem; min-width: 160px; }
+  .card .value { font-size: 1.6rem; font-weight: 700; color: #38bdf8; }
+  .card .label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .winner { border: 1px solid #22c55e; }
+</style>
+</head>
+<body>
+
+<h1>&#x1F4CA; Evaluación de Calidad de Aportes por Modelo</h1>
+<p class="subtitle">Paso 08: ExportDialog + flujo completo de exportación — Fase guiAgentGenerator — 10 análisis evaluados</p>
+
+<table>
+<thead>
+<tr>
+  <th width="100">Modelo</th>
+  <th width="50">Score</th>
+  <th>Virtudes</th>
+  <th>Defectos</th>
+</tr>
+</thead>
+<tbody>
+
+<tr class="tier-s">
+  <td><strong>step</strong></td>
+  <td class="score">5.0</td>
+  <td>
+    <span class="virtue">&#x2705; 24 verificaciones contra código real (récord)</span><br>
+    <span class="virtue">&#x2705; 6 discrepancias con evidencia archivo:línea</span><br>
+    <span class="virtue">&#x2705; Detectó Checkbox ausente, max_length=15 no validado, LLM config pérdida</span><br>
+    <span class="virtue">&#x2705; Identificó que <code>api.post()</code> retorna <code>.json()</code> incompatible con blob</span><br>
+    <span class="virtue">&#x2705; Plan de implementación con firmas exactas y verificaciones inline</span><br>
+    <span class="virtue">&#x2705; Reutiliza DX existente (fap bundle export) sin inflar</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; Sin propuesta DX nueva propia (solo reutiliza existente)</span><br>
+    <span class="defect">&#x26A0; Estimación 7.5h — ligeramente alta</span>
+  </td>
+</tr>
+
+<tr class="tier-s">
+  <td><strong>dsp</strong></td>
+  <td class="score">4.5</td>
+  <td>
+    <span class="virtue">&#x2705; 22 verificaciones sólidas</span><br>
+    <span class="virtue">&#x2705; 7 discrepancias (D1-D7) — mejor cobertura de gaps</span><br>
+    <span class="virtue">&#x2705; Propone DX más valiosa: <code>fap bundle validate-payload</code> (CLI nuevo)</span><br>
+    <span class="virtue">&#x2705; Props ExportDialog muy bien definidas con tipos exactos</span><br>
+    <span class="virtue">&#x2705; Identificó 4 gaps arquitectónicos (LLM loss, skills no-op, no progress, api.post blob)</span><br>
+    <span class="virtue">&#x2705; Roadmap post-MVP detallado</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; No detectó que Checkbox no existe como problema bloqueante independiente</span><br>
+    <span class="defect">&#x26A0; Estimación 6.25h — quizás optimista para 6 archivos</span>
+  </td>
+</tr>
+
+<tr class="tier-s">
+  <td><strong>glm5.1</strong></td>
+  <td class="score">4.5</td>
+  <td>
+    <span class="virtue">&#x2705; 22 verificaciones con evidencia</span><br>
+    <span class="virtue">&#x2705; Detectó D2 crítica: <code>api.ts</code> siempre <code>.json()</code> → propone <code>fapDownload()</code> (adoptado)</span><br>
+    <span class="virtue">&#x2705; Detectó D3: Checkbox no existe + bug preexistente en <code>bundles/page.tsx:18</code></span><br>
+    <span class="virtue">&#x2705; Detectó D4: filename hardcoded <code>crew_export.zip</code></span><br>
+    <span class="virtue">&#x2705; Propuso tipos TS completos (AgentExportItem, ExportBundleRequest)</span><br>
+    <span class="virtue">&#x2705; Identificó necesidad de crear <code>checkbox.tsx</code> con Radix</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; Propuesta DX <code>fap bundle preview</code> es post-MVP, no accionable ahora</span><br>
+    <span class="defect">&#x26A0; No detectó <code>max_length=15</code> como discrepancia de validación frontend</span>
+  </td>
+</tr>
+
+<tr class="tier-a">
+  <td><strong>qwen3.6</strong></td>
+  <td class="score">4.0</td>
+  <td>
+    <span class="virtue">&#x2705; 18 verificaciones</span><br>
+    <span class="virtue">&#x2705; Propone <code>exportUtils.ts</code> como helper reutilizable (buena modularidad)</span><br>
+    <span class="virtue">&#x2705; Propone <code>canvasToExportPayloadWithSkills()</code> (extensión útil)</span><br>
+    <span class="virtue">&#x2705; Flujo end-to-end bien descrito para ambos modos (single/crew)</span><br>
+    <span class="virtue">&#x2705; 7 tareas atómicas con firmas exactas</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; No detectó que Checkbox no existe — lo usa en imports como si existiera</span><br>
+    <span class="defect">&#x26A0; No detectó <code>max_length=15</code> ni LLM config loss en canvas</span><br>
+    <span class="defect">&#x26A0; Propuesta <code>fap bundle validate</code> duplica script existente sin mencionarlo</span>
+  </td>
+</tr>
+
+<tr class="tier-a">
+  <td><strong>lgn</strong></td>
+  <td class="score">4.0</td>
+  <td>
+    <span class="virtue">&#x2705; Buena estructura, 8 verificaciones</span><br>
+    <span class="virtue">&#x2705; Identificó bien 4 discrepancias clave</span><br>
+    <span class="virtue">&#x2705; Firmas de props ExportDialog con tipos</span><br>
+    <span class="virtue">&#x2705; Identificó que CrewCanvas ya tiene export inline (no crear desde cero)</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; Propone <code>export-validator</code> en Node.js — inconsistente con stack Python (Typer)</span><br>
+    <span class="defect">&#x26A0; Pocas verificaciones (8 vs 18-24 de los top)</span><br>
+    <span class="defect">&#x26A0; No detectó Checkbox ausente ni <code>api.post</code> blob incompatibilidad</span>
+  </td>
+</tr>
+
+<tr class="tier-b">
+  <td><strong>gpt-ossH</strong></td>
+  <td class="score">3.5</td>
+  <td>
+    <span class="virtue">&#x2705; Detectó 5 gaps agudos: falta summary, no progress, no checkbox skills, Copy JSON formato incorrecto, AgentForm sin export</span><br>
+    <span class="virtue">&#x2705; Identificó que <code>confirmExport</code> ya existe inline (604-627)</span><br>
+    <span class="virtue">&#x2705; Breve pero todas las observaciones son accionables</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; Muy corto (72 líneas) — sin plan de implementación detallado</span><br>
+    <span class="defect">&#x26A0; Sin firmas de componentes ni patrón de referencia</span><br>
+    <span class="defect">&#x26A0; Propone <code>--as-json</code> al CLI existente sin detalles de implementación</span>
+  </td>
+</tr>
+
+<tr class="tier-b">
+  <td><strong>mm2.5</strong></td>
+  <td class="score">3.5</td>
+  <td>
+    <span class="virtue">&#x2705; Buena estructura de documento</span><br>
+    <span class="virtue">&#x2705; Props ExportDialog definidas</span><br>
+    <span class="virtue">&#x2705; Roadmap post-MVP presente</span>
+  </td>
+  <td>
+    <span class="defect">&#x26A0; Solo 8 verificaciones — superficial</span><br>
+    <span class="defect">&#x26A0; No detectó <code>max_length=15</code>, LLM config loss, <code>api.post</code> blob incompatibilidad</span><br>
+    <span class="defect">&#x26A0; Propone <code>fap bundle validate</code> sin definir interfaz exacta</span><br>
+    <span class="defect">&#x26A0; Importa Checkbox como si existiera sin verificar</span>
+  </td>
+</tr>
+
+<tr class="tier-c">
+  <td><strong>nemoH</strong></td>
+  <td class="score">3.0</td>
+  <td>
+    <span class="virtue">&#x2705; 10 verificaciones básicas correctas</span><br>
+    <span class="virtue">&#x2705; Propuesta DX (ExportDialog como componente) es correcta pero obvia</span>
+  </td>
+  <td>
+    <span class="defect">&#x274C; Solo 2 discrepancias — perdió 8 de las 10 que existían</span><br>
+    <span class="defect">&#x274C; Sin detección de Checkbox ausente, <code>api.post</code> blob, <code>max_length=15</code>, LLM loss</span><br>
+    <span class="defect">&#x274C; Sin verificación de código real a profundidad</span><br>
+    <span class="defect">&#x274C; ExportDialog como "herramienta DX" — confunde componente UI con tooling CLI</span>
+  </td>
+</tr>
+
+<tr class="tier-c">
+  <td><strong>llama3.3</strong></td>
+  <td class="score">3.0</td>
+  <td>
+    <span class="virtue">&#x2705; Mismo contenido que nemoH (consistente)</span><br>
+    <span class="virtue">&#x2705; 10 verificaciones básicas</span>
+  </td>
+  <td>
+    <span class="defect">&#x274C; <strong>Idéntico a nemoH</strong> — texto calcado, cero diferenciación</span><br>
+    <span class="defect">&#x274C; Mismos defectos: pocas discrepancias, sin detalle de código real</span><br>
+    <span class="defect">&#x274C; Sin valor añadido sobre nemoH — redundante</span>
+  </td>
+</tr>
+
+<tr class="tier-c">
+  <td><strong>x&lt;env&gt;</strong></td>
+  <td class="score">2.5</td>
+  <td>
+    <span class="virtue">&#x2705; Detectó 4 discrepancias básicas</span><br>
+    <span class="virtue">&#x2705; Referencia correcta a archivos clave</span>
+  </td>
+  <td>
+    <span class="defect">&#x274C; Solo 5 verificaciones — el mínimo absoluto</span><br>
+    <span class="defect">&#x274C; Sin plan de implementación (solo "resumen de acciones")</span><br>
+    <span class="defect">&#x274C; Sin firmas, sin patrones de referencia, sin tareas atómicas</span><br>
+    <span class="defect">&#x274C; Sin propuesta DX concreta</span><br>
+    <span class="defect">&#x274C; Sin estimación de tiempo</span><br>
+    <span class="defect">&#x274C; Análisis superficial que no cumple requisitos mínimos del template</span>
+  </td>
+</tr>
+
+</tbody>
+</table>
+
+<div class="summary">
+  <div class="card">
+    <div class="label">Análisis totales</div>
+    <div class="value">10</div>
+  </div>
+  <div class="card">
+    <div class="label">Score promedio</div>
+    <div class="value">3.7</div>
+  </div>
+  <div class="card">
+    <div class="label">Aprobados (≥4.0)</div>
+    <div class="value" style="color:#22c55e">5</div>
+  </div>
+  <div class="card">
+    <div class="label">Insuficientes (&lt;3.5)</div>
+    <div class="value" style="color:#ef4444">3</div>
+  </div>
+  <div class="card winner">
+    <div class="label">Mejor análisis</div>
+    <div class="value" style="color:#fbbf24">step</div>
+  </div>
+  <div class="card winner">
+    <div class="label">DX seleccionada</div>
+    <div class="value" style="font-size:0.95rem;color:#38bdf8">validate-payload</div>
+  </div>
+  <div class="card">
+    <div class="label">Discrepancias consolidadas</div>
+    <div class="value">10</div>
+  </div>
+  <div class="card">
+    <div class="label">Tiempo est. unificado</div>
+    <div class="value">6.5h</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -19,17 +19,17 @@ import {
   Download,
   Play,
   Code,
-  Share2,
   Plus,
   Layers,
   Save,
 } from 'lucide-react'
 
 import { api } from '@/lib/api'
-import { createClient } from '@/lib/supabase'
 import { generateCrewPy } from '@/lib/crewCodeGen'
 import { canvasToExportPayload, nodesToSnapshot, snapshotToNodes } from '@/lib/canvasUtils'
 import { CREW_TEMPLATES } from '@/lib/crewTemplates'
+import { ExportDialog } from '@/components/builder/ExportDialog'
+import type { AgentExportItem } from '@/lib/types'
 import { AgentNode } from '@/components/builder/nodes/AgentNode'
 import { TaskNode } from '@/components/builder/nodes/TaskNode'
 import { Button } from '@/components/ui/button'
@@ -81,7 +81,6 @@ function FlowCanvas() {
   const [codeDialogOpen, setCodeDialogOpen] = useState(false)
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false)
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
-  const [exportWarning, setExportWarning] = useState('')
   const saveRef = useRef(false)
   const snapshotRestored = useRef(false)
 
@@ -205,7 +204,20 @@ function FlowCanvas() {
     setNodes((nds) => nds.concat(newNode))
   }
 
-  function handleExport() {
+  const exportPayload = useMemo(() => canvasToExportPayload(nodes), [nodes])
+
+  const fullGraphJson = useMemo(() => nodesToSnapshot(nodes, edges), [nodes, edges])
+
+  const exportAgents = useMemo((): AgentExportItem[] => {
+    return exportPayload.agents.map((a) => ({
+      role: a.role,
+      soul_json: a.soul_json,
+      allowed_tools: a.allowed_tools,
+      max_iter: a.max_iter,
+    }))
+  }, [exportPayload])
+
+  function handleExportClick() {
     const agentNodes = nodes.filter((n) => n.type === 'agentNode')
     if (agentNodes.length === 0) {
       toast.error('Add at least one agent to export')
@@ -219,44 +231,7 @@ function FlowCanvas() {
       return
     }
 
-    setExportWarning('Tasks and connections not exported (bundle-schema-v2.md limitation). Use Copy as JSON for complete graph.')
     setExportDialogOpen(true)
-  }
-
-  async function confirmExport() {
-    try {
-      const payload = canvasToExportPayload(nodes)
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const orgId = typeof window !== 'undefined'
-        ? localStorage.getItem('organization_id') || localStorage.getItem('selected_org_id') || ''
-        : ''
-      const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/bundles/export`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'X-Org-ID': orgId,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ bundle_name: 'crew_export', agents: payload.agents }),
-      })
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}))
-        throw new Error(err.detail || `Export failed: ${response.status}`)
-      }
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'crew_export.zip'
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Crew exported as ZIP')
-      setExportDialogOpen(false)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Export failed'
-      toast.error(message)
-    }
   }
 
   async function handleRunAll() {
@@ -357,12 +332,6 @@ function FlowCanvas() {
     setEdges(template.edges.map((e) => ({ ...e, animated: true, style: { stroke: '#555' } })))
     setTemplatesDialogOpen(false)
     toast.success(`Loaded template: ${template.name}`)
-  }
-
-  function handleCopyJSON() {
-    const snapshot = nodesToSnapshot(nodes, edges)
-    navigator.clipboard.writeText(snapshot)
-    toast.success('Full graph copied to clipboard as JSON')
   }
 
   const sidebarAgents = agentsData?.agents ?? []
@@ -475,7 +444,7 @@ function FlowCanvas() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExport}
+              onClick={handleExportClick}
               disabled={exportDisabled || running}
               title={exportDisabled ? (duplicatedRoles.size > 0 ? 'Duplicate roles detected' : 'Add at least one agent') : undefined}
             >
@@ -601,30 +570,14 @@ function FlowCanvas() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5" />
-              Export Crew
-            </DialogTitle>
-            <DialogDescription className="space-y-3">
-              <p className="text-yellow-600 dark:text-yellow-400 text-sm">
-                {exportWarning}
-              </p>
-              <div className="flex gap-2 pt-2">
-                <Button variant="default" onClick={confirmExport}>
-                  Export as ZIP
-                </Button>
-                <Button variant="outline" onClick={handleCopyJSON}>
-                  <Share2 className="mr-1.5 h-4 w-4" />
-                  Copy as JSON
-                </Button>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        agents={exportAgents}
+        source="crew-canvas"
+        fullGraphJson={fullGraphJson}
+        onExportComplete={() => setExportDialogOpen(false)}
+      />
     </div>
   )
 }

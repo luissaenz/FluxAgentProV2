@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { toast } from 'sonner'
+import { Download } from 'lucide-react'
 
 import { api } from '@/lib/api'
 import { PROVIDER_MODELS } from '@/lib/constants'
 import { useCurrentOrg } from '@/hooks/useCurrentOrg'
+import type { AgentExportItem } from '@/lib/types'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +28,7 @@ import {
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ToolMultiSelect } from '@/components/builder/ToolMultiSelect'
+import { ExportDialog } from '@/components/builder/ExportDialog'
 
 const agentFormSchema = z.object({
   role: z.string().min(1, 'Role is required'),
@@ -65,6 +68,7 @@ export function AgentForm({
   onRoleChange,
 }: AgentFormProps) {
   const { orgId } = useCurrentOrg()
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
 
   const {
     register,
@@ -72,6 +76,7 @@ export function AgentForm({
     setValue,
     watch,
     reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<AgentFormData>({
     resolver: zodResolver(agentFormSchema),
@@ -193,6 +198,27 @@ export function AgentForm({
       memory: false,
     })
     onClear?.()
+  }
+
+  function buildSingleAgentPayload(): { agents: AgentExportItem[] } {
+    const values = getValues()
+    return {
+      agents: [{
+        role: values.role,
+        soul_json: {
+          goal: values.goal,
+          backstory: values.backstory,
+          llm_provider: values.llmProvider,
+          llm_model: values.llmModel,
+          verbose: values.verbose,
+          reasoning: values.reasoning,
+          inject_date: values.injectDate,
+          memory: values.memory,
+        },
+        allowed_tools: values.allowedTools,
+        max_iter: values.maxIter,
+      }],
+    }
   }
 
   useEffect(() => {
@@ -356,7 +382,25 @@ export function AgentForm({
         <Button type="button" variant="outline" onClick={handleClear}>
           Clear
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setExportDialogOpen(true)}
+          disabled={!watch('role') || !watch('goal') || !watch('backstory')}
+        >
+          <Download className="mr-1.5 h-4 w-4" />
+          Export
+        </Button>
       </div>
+
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        agents={buildSingleAgentPayload().agents}
+        source="agent-form"
+        fullGraphJson={JSON.stringify(buildSingleAgentPayload(), null, 2)}
+        onExportComplete={() => setExportDialogOpen(false)}
+      />
     </form>
   )
 }

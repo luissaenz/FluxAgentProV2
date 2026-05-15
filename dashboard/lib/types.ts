@@ -287,3 +287,21 @@ export interface CrewGraph {
   edges: CrewGraphEdge[]
   metadata: { name: string; createdAt: string }
 }
+
+export interface AgentExportItem {
+  role: string
+  soul_json: Record<string, unknown>
+  allowed_tools: string[]
+  max_iter: number
+}
+
+export interface SkillExportItem {
+  name: string
+  code: string
+}
+
+export interface ExportBundleRequest {
+  bundle_name?: string
+  agents: AgentExportItem[]
+  skills?: SkillExportItem[]
+}

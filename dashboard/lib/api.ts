@@ -51,6 +51,48 @@ export async function fapFetch(
   return response.json()
 }
 
+export async function fapDownload(path: string, body: unknown): Promise<Response> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const orgId = typeof window !== 'undefined'
+    ? localStorage.getItem('organization_id') || localStorage.getItem('selected_org_id') || ''
+    : ''
+
+  if (!session?.access_token) {
+    throw new Error('Not authenticated')
+  }
+
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${session.access_token}`,
+    'X-Org-ID': orgId,
+    'Content-Type': 'application/json',
+  }
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_FASTAPI_URL}${path}`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    }
+  )
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    const detail = errorData.detail
+
+    let message = `API error: ${response.status}`
+    if (typeof detail === 'string') {
+      message = detail
+    } else if (detail && typeof detail === 'object') {
+      message = detail.error || detail.message || JSON.stringify(detail)
+    }
+
+    throw new Error(message)
+  }
+
+  return response
+}
+
 export const api = {
   get: (path: string, options: Partial<RequestInit> = {}) => 
     fapFetch(path, { method: 'GET', ...options }),
