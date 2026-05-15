@@ -60,3 +60,25 @@
 - **ID-026:** `BuilderLayout.tsx` — `mapTemplateToFormValues` definida como función suelta en el módulo, no exportada ni testeable aisladamente. Extraer a `dashboard/lib/template-mapper.ts` con tests unitarios.
 
 - **ID-027:** ~~`templates_use.py` — `import uuid as _uuid` dentro de la función (lazy import).~~ → ✅ Corregido: `import uuid as _uuid` movido al top del módulo (línea 11).
+
+---
+
+## 🟡 Importantes (Paso 06 — Agent Playground)
+
+- **ID-028:** Dogfooding no verificado (T0-C) — Sin evidencia de que `fap agent run` se usara para validar el flujo POST/GET antes de construir AgentPlayground. Ejecutar `fap agent run --role "test" --message "verify" --org-id <uuid>` contra backend live y documentar resultado.
+
+- **ID-029:** ~~Tests unitarios del CLI no implementados.~~ → ✅ Corregido: `tests/unit/test_agent_run.py` con 3 tests (success, role not found, connection error). 3/3 pasan (4.31s).
+
+## 🔵 Mejoras (Paso 06 — Agent Playground)
+
+- **ID-030:** ~~`ToolCallInfo` definido pero no usado.~~ → ✅ Documentado con comentario `// Post-MVP: tool calls interface para cuando tool_calls se persistan`. Aceptable.
+
+- **ID-031:** ~~`agent_run.py` usa `.replace(" ", "%20")`~~ → ✅ Corregido: `urllib.parse.quote(role, safe='')` en `agent_run.py:84`.
+
+- **ID-032:** ~~Timeout redundante en AgentPlayground.~~ → ✅ Corregido: `isTimedOut` state + segundo useEffect eliminados. Solo queda el mecanismo en `useEffect([taskData])` con verificación `elapsed > POLLING_TIMEOUT`.
+
+- **ID-033:** `agent_run.py` usa `httpx.Client` síncrono con `time.sleep(2)` para polling. Aceptable para CLI mono-usuario. Migrar a `httpx.AsyncClient` + `asyncio.sleep()` post-MVP.
+
+- **ID-034:** `AgentForm.onRoleChange` dispara en cada keystroke del campo role. Debounce 300ms o usar `onBlur` post-MVP.
+
+- **ID-035:** `ScrollArea` ref `scrollRef` apunta a `<div>` interno, no al viewport de Radix. Verificar scroll auto funcional en navegador real.

@@ -12,6 +12,7 @@ if sys.platform == "win32" and sys.stdout.isatty():
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 from src.cli.commands.agent_create import agent_app
+from src.cli.commands.agent_run import run_agent
 from src.cli.commands.baseline_check import baseline_check
 from src.cli.commands.bundle_export import bundle_app
 from src.cli.commands.check_deadlock import check_deadlock
@@ -77,6 +78,7 @@ app.command("lint-fix")(lint_fix)
 app.command("test-tool-call")(test_tool_call)
 app.add_typer(bundle_app, name="bundle")
 app.add_typer(agent_app, name="agent")
+agent_app.command("run")(run_agent)
 
 if __name__ == "__main__":
     app()

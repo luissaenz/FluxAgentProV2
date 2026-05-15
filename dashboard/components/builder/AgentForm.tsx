@@ -48,6 +48,7 @@ interface AgentFormProps {
   onClear?: () => void
   initialValues?: Partial<AgentFormData>
   templateData?: AgentFormData | null
+  onRoleChange?: (role: string) => void
 }
 
 interface ToolInfo {
@@ -61,6 +62,7 @@ export function AgentForm({
   onClear,
   initialValues,
   templateData,
+  onRoleChange,
 }: AgentFormProps) {
   const { orgId } = useCurrentOrg()
 
@@ -108,6 +110,11 @@ export function AgentForm({
 
   const llmProvider = watch('llmProvider')
   const allowedTools = watch('allowedTools')
+  const roleValue = watch('role')
+
+  useEffect(() => {
+    onRoleChange?.(roleValue)
+  }, [roleValue, onRoleChange])
 
   const {
     data: toolsResponse,

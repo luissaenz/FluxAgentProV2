@@ -18,10 +18,12 @@
 | 3 | Endpoints CRUD para templates de agentes | ✅ Completado |
 | 4 | Builder visual — UI con ReactFlow | ✅ Completado |
 | 5 | Template Picker — librería de templates | ✅ Completado |
+| 6 | Agent Playground — prueba en tiempo real | ✅ Completado |
 
 ### Dependencias entre pasos
 - Paso 2 requiere Paso 1 (tools list para export)
 - Paso 4 requiere Pasos 1-3 (tools + export + templates para builder)
+- Paso 6 requiere Paso 4 (AgentForm creado con `onRoleChange`) + `POST /agents/{role}/run` existente
 
 ---
 
@@ -77,6 +79,14 @@
 | CLI `fap templates use` | `src/cli/commands/templates_use.py` | Crear agente desde template vía CLI | `--org-id`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--dry-run`. Dogfooding: valida mapeo template→agent |
 | CLI registro `templates use` | `src/cli/main.py:35,61` | `templates_app.command("use")(use_template)` | Sub-comando `templates use` |
 | LoadingSpinner en botón TemplatePicker | `TemplatePicker.tsx:224-225` | `<LoadingSpinner size="sm" />` durante fetch de detalle | Consistente con AgentForm |
+| `AgentPlayground` component | `dashboard/components/builder/AgentPlayground.tsx` | Chat panel: POST `/agents/{role}/run` + polling `GET /tasks/{task_id}` | Timeout 120s, `MessageBubble` subcomponent, `formatResult()` polimórfico |
+| `MessageBubble` subcomponent | `AgentPlayground.tsx:227-269` | Render user/assistant/error bubbles con tokens badge | Truncate >2000 chars con `Collapsible` |
+| Sheet `AgentPlayground` integrado en `BuilderLayout` | `BuilderLayout.tsx:8,51,78-86,118-128` | Botón "Playground" + Sheet `side="right"` `w-full sm:max-w-md` | `disabled={!currentRole}` hasta que AgentForm tenga role |
+| `AgentForm.onRoleChange` prop | `AgentForm.tsx:51,116-117` | `watch('role')` + `useEffect` → callback al padre | Dispara cada keystroke (mejora pendiente: debounce) |
+| `Task` interface extendida con `tokens_used` | `dashboard/lib/types.ts:8` | `tokens_used: number` + `approval_required?`, `approval_status?`, `approval_payload?` | Corrección D4 del FINAL |
+| CLI `fap agent run` | `src/cli/commands/agent_run.py` | Typer command: POST `/agents/{role}/run` + polling `GET /tasks/{task_id}` | `--role`, `--message`, `--org-id`, `--watch`, `--timeout` |
+| CLI registro `agent run` | `src/cli/main.py:15,81` | `agent_app.command("run")(run_agent)` | Sub-comando `agent run` |
+| Tests unitarios `agent_run` | `tests/unit/test_agent_run.py` | 3 tests: success, role_not_found, connection_error | 3/3 pasan |
 
 ### 📦 Archivado — Paso 1
 
@@ -107,6 +117,12 @@
 | Archivos | Destino |
 |---|---|
 | `analisis-FINAL.md`, `analisis-*-*.md` (14 análisis), `validacion.md` (16 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` |
+
+### 📦 Archivado — Paso 6
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-*-*.md` (7 análisis), `validacion.md` (9 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -163,6 +179,18 @@
 | D4 | `BuilderLayout` no manejaba estado de template | `BuilderLayout.tsx:43-50` — `useState<AgentFormData \| null>`, `handleSelectTemplate` |
 | D5 | Categorías hardcodeadas como constante | `constants.ts:16` — `TEMPLATE_CATEGORIES` |
 | D6 | Prop `templateData` elegida sobre `forwardRef` | `AgentForm.tsx:50` — prop simple, sin refactoring |
+
+#### Paso 06 — Agent Playground — prueba en tiempo real
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | Tool calls solo conteo `Dict[str, int]`. Plan promete "nombre + argumentos" → NO realizable. MVP: sin tool calls en UI. | `AgentPlayground.tsx:20-24` — `ToolCallInfo` definido con comentario `// Post-MVP`. `MessageBubble` no renderiza tool calls. |
+| D2 | Tool calls NO persistidos en `tasks`. `agents.py:299-305` no guarda `crew.get_last_tool_calls()`. MVP sin columna `tool_calls`. | Sin migraciones nuevas. `agents.py` sin modificar. |
+| D3 | `result` como `str()` en backend. Frontend tratar como texto plano, no JSON. | `AgentPlayground.tsx:39-45` — `formatResult()`: string→directo, object→JSON.stringify, resto→String. Truncate >2000 con `Collapsible`. |
+| D4 | `types.ts` desactualizado sin `tokens_used`. `TaskResponse` backend tiene `tokens_used: int = 0`. | `types.ts:8-11` — `tokens_used: number` + `approval_required?`, `approval_status?`, `approval_payload?`. |
+| D5 | Sin validación previa de role en `POST /run`. Endpoint retorna 202 inmediato. Si role no existe, error en polling. | `AgentPlayground.tsx:135-146` — maneja `status: failed` mostrando `taskData.error`. Sin pre-validación. |
+| D6 | Auth mixta: `POST /agents/{role}/run` usa `verify_org_membership` (JWT+membership). `POST /agents` usa `require_org_id` (header). Compatibles. | Sin cambios de auth. `fapFetch` envía ambos headers. |
+| D7 | Background task async: `_execute()` es `async def` pasado a `background_tasks.add_task()`. Compatible FastAPI 0.115+. | `agents.py` sin modificar. Verificado compatible. |
 
 ---
 
@@ -342,6 +370,11 @@ src/
 | `ToolMultiSelect` custom sin deps externas | Checkboxes nativos + búsqueda/filtro + badges. Sin `cmdk`, `@radix-ui/react-popover`, ni `@radix-ui/react-checkbox` — no instalados. Post-MVP: Command combobox. | `ToolMultiSelect.tsx` |
 | `PROVIDER_MODELS` estático en frontend | Sin endpoint para listar modelos por provider en MVP. Mapa con ≥2 modelos/provider. Post-MVP: `GET /api/llm/models?provider=`. | `constants.ts:16-21` |
 | Nav sidebar "Builder" en Paso 04 | Ruta `/builder` accesible desde el momento en que existe la página. No pospuesto a Paso 09. | `nav-main.tsx:50` |
+| `useMutation` + `useQuery` polling (2s, stop en completed/failed) | TanStack Query mutations para POST run, polling para GET task. 120s timeout. Consistente con `AnalyticalAssistantChat.tsx`. | `AgentPlayground.tsx:66-101` |
+| `formatResult()` polimórfico | String→directo, object→JSON.stringify, resto→String. `result` de backend siempre es `str()` → tratamiento genérico para robustez. | `AgentPlayground.tsx:39-45` |
+| `encodeURIComponent` en URL del agente | Roles con espacios/ASCII necesitan encoding. `quote(role, safe='')` en CLI. | `agent_run.py:84`, `AgentPlayground.tsx:64` |
+| Sheet lateral para AgentPlayground | `side="right"` `max-w-md` consistente con Pattern de `AnalyticalAssistantChat`. Botón "Playground" en Agent Configuration panel. | `BuilderLayout.tsx:78-86,118-128` |
+| `httpx.Client` síncrono en CLI (no asyncio) | Aceptable para CLI mono-usuario. `time.sleep(2)` entre polls. Post-MVP: `httpx.AsyncClient` + `asyncio.sleep()`. | `agent_run.py:131,163` |
 
 ---
 
@@ -354,6 +387,7 @@ src/
 | 03-Endpoints-CRUD-para-templates-de-agentes | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` | `992a1d1` | Tabla global sin org_id; endpoints públicos sin auth; seed CLI idempotente; índice parcial UNIQUE WHERE; check-then-insert compatible con partial index | Validación rechazada (ID-001 upsert + partial index). Corregido a check-then-insert. Queda pendiente verificación live Supabase post-migración 030. |
 | 04-Builder-visual-UI-con-ReactFlow | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` | `6d9539c` | POST /agents con TenantClient (RLS fix D4); reactflow v11 + dynamic import ssr:false; AgentForm react-hook-form + zod; ToolMultiSelect custom; PROVIDER_MODELS estático; soul_json plano; upsert update-or-insert; sidebar Builder en nav-main.tsx | Implementación completa. 0 errores lint backend + frontend. Criterios de aceptación cubiertos. Tarea 0 DX: `fap agent create`. |
 | 05-Template-Picker-libreria-de-templates | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` | `131d619` | TemplatePicker grid + búsqueda + filtro chips; double fetch list+detail; prop templateData en AgentForm; mapTemplateToFormValues con fallbacks; Dialog modal en BuilderLayout; TEMPLATE_CATEGORIES constante; CLI fap templates use | Validación aprobada. 0 issues 🔴. 2 🟡 (dogfooding no verificado, TS errores preexistentes AgentForm). Tarea 0 DX: `fap templates use`. |
+| 06-Agent-Playground-prueba-en-tiempo-real | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` | `e3b5101` | AgentPlayground con useMutation + useQuery polling 2s; MessageBubble con Collapsible >2000 chars; formatResult polimórfico; Sheet lateral right; onRoleChange para habilitar Playground; CLI fap agent run con --watch; Task interface extendida con tokens_used | Validación APROBADO. 22/22 criterios. 0 🔴. 1 🟡 (dogfooding no verificado). 3 🔵 mejoras. Tarea 0 DX: `fap agent run`. |
 
 ---
 
@@ -388,6 +422,24 @@ src/
 - ✅ Mapeo defensivo template→AgentForm: `soul_json.role` → `role` plano, fallbacks con `??` para campos ausentes
 - ✅ `fap templates use` CLI funcional: `--dry-run`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, Rich table output
 - ✅ `fap templates use` maneja errores gracefully: try/except en `get_service_client()` + `.execute()`, mensajes limpios sin traceback
+- ✅ AgentPlayground chat funcional: input → Enter → POST `/agents/{role}/run` → polling 2s a `GET /tasks/{task_id}`
+- ✅ Respuesta del agente en burbuja debajo del mensaje del usuario (estilo chat)
+- ✅ Indicador de carga "Agent is thinking..." + `LoadingSpinner` durante ejecución
+- ✅ Tokens badge al finalizar: "Tokens: {N}" en burbuja assistant
+- ✅ Manejo de errores: agente no encontrado (status failed), timeout 120s, error de conexión/red
+- ✅ Historial local de mensajes durante la sesión (useState, sin persistencia en DB)
+- ✅ `formatResult()` polimórfico: string→directo, object→JSON.stringify, resto→String
+- ✅ Truncate >2000 chars con `Collapsible` + "Show more"/"Show less"
+- ✅ Sheet lateral derecho `max-w-md` con botón "Playground" en Agent Configuration
+- ✅ Botón Playground disabled hasta que AgentForm tenga role (vía `onRoleChange`)
+- ✅ Scroll automático al último mensaje (scrollRef + useEffect)
+- ✅ Polling se detiene automáticamente en `completed`/`failed` (refetchInterval→false)
+- ✅ `Task` interface extendida con `tokens_used: number` + campos approval opcionales
+- ✅ CLI `fap agent run` funcional: `--role`, `--message`, `--org-id`, `--watch`, `--timeout`
+- ✅ `fap agent run --watch` muestra polling en tiempo real: `[N/M] status=X tokens=Y`
+- ✅ `fap agent run` maneja errores gracefully: ConnectError, timeout, polling errors, 404
+- ✅ URI encoding correcto: `encodeURIComponent` (frontend) + `urllib.parse.quote(role, safe='')` (CLI)
+- ✅ Tests unitarios: 3/3 pasan (success, role_not_found, connection_error)
 
 ### Herramientas DX detectadas/propuestas
 | Herramienta | Ubicación | Automatiza |
@@ -401,3 +453,5 @@ src/
 | Builder UI (`/builder`) | `dashboard/app/(app)/builder/page.tsx` | Interfaz visual split 60/40: canvas ReactFlow + formulario de agente con 11 campos. Save vía POST /agents con RLS. |
 | `fap templates use` | `src/cli/commands/templates_use.py` | Crear agente desde template vía CLI. `--org-id`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--dry-run`. Dogfooding: validar mapeo template→agent antes de UI. |
 | TemplatePicker UI | `dashboard/components/builder/TemplatePicker.tsx` | Grid de cards con búsqueda + filtro chips + "Use Template". Carga desde API real, 4 estados visuales. Integrado en BuilderLayout vía Dialog modal. |
+| `fap agent run` | `src/cli/commands/agent_run.py` | Probar agente desde terminal: POST `/agents/{role}/run` + polling `GET /tasks/{task_id}`. `--role`, `--message`, `--org-id`, `--watch`, `--timeout`. Rich output con status + tokens. Dogfooding: validar flujo run→poll→result antes de UI. |
+| AgentPlayground UI | `dashboard/components/builder/AgentPlayground.tsx` | Chat panel integrado en Builder vía Sheet lateral. useMutation + useQuery polling 2s. Burbujas user/assistant/error. Tokens badge. Timeout 120s. Historial local sin persistencia. |

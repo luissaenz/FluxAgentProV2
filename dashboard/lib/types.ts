@@ -5,6 +5,10 @@ export interface Task {
   status: TaskStatus
   result: Record<string, unknown> | null
   error: string | null
+  tokens_used: number
+  approval_required?: boolean
+  approval_status?: string
+  approval_payload?: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { BuilderCanvas } from '@/components/builder/BuilderCanvas'
 import { AgentForm, type AgentFormData } from '@/components/builder/AgentForm'
 import { TemplatePicker } from '@/components/builder/TemplatePicker'
+import { AgentPlayground } from '@/components/builder/AgentPlayground'
 import type { TemplateDetail } from '@/components/builder/TemplatePicker'
 import {
   Dialog,
@@ -12,8 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Layers } from 'lucide-react'
+import { Layers, Play } from 'lucide-react'
 
 function mapTemplateToFormValues(template: TemplateDetail): AgentFormData {
   const soul = template.soul_json ?? {}
@@ -41,7 +48,9 @@ function mapTemplateToFormValues(template: TemplateDetail): AgentFormData {
 
 export function BuilderLayout() {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [playgroundOpen, setPlaygroundOpen] = useState(false)
   const [templateData, setTemplateData] = useState<AgentFormData | null>(null)
+  const [currentRole, setCurrentRole] = useState<string | null>(null)
 
   function handleSelectTemplate(template: TemplateDetail) {
     const mapped = mapTemplateToFormValues(template)
@@ -53,6 +62,10 @@ export function BuilderLayout() {
     setTemplateData(null)
   }
 
+  function handleRoleChange(role: string) {
+    setCurrentRole(role || null)
+  }
+
   return (
     <div className="grid h-full gap-4 lg:grid-cols-[60%_40%]">
       <div className="min-h-0">
@@ -61,19 +74,31 @@ export function BuilderLayout() {
       <div className="flex flex-col overflow-hidden rounded-lg border bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold">Agent Configuration</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDialogOpen(true)}
-          >
-            <Layers className="mr-1.5 h-4 w-4" />
-            Templates
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPlaygroundOpen(true)}
+              disabled={!currentRole}
+            >
+              <Play className="mr-1.5 h-4 w-4" />
+              Playground
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDialogOpen(true)}
+            >
+              <Layers className="mr-1.5 h-4 w-4" />
+              Templates
+            </Button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           <AgentForm
             templateData={templateData}
             onClear={handleClear}
+            onRoleChange={handleRoleChange}
           />
         </div>
       </div>
@@ -89,6 +114,18 @@ export function BuilderLayout() {
           <TemplatePicker onSelect={handleSelectTemplate} />
         </DialogContent>
       </Dialog>
+
+      <Sheet open={playgroundOpen} onOpenChange={setPlaygroundOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-4">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              Agent Playground
+            </SheetTitle>
+          </SheetHeader>
+          {currentRole && <AgentPlayground role={currentRole} />}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
