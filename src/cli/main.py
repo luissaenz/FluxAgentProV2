@@ -17,6 +17,7 @@ from src.cli.commands.baseline_check import baseline_check
 from src.cli.commands.bundle_export import bundle_app
 from src.cli.commands.check_deadlock import check_deadlock
 from src.cli.commands.check_env import check_env
+from src.cli.commands.crew import crew_app
 from src.cli.commands.dev import dev_command
 from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
@@ -77,6 +78,7 @@ app.command("sync-config")(sync_config)
 app.command("lint-fix")(lint_fix)
 app.command("test-tool-call")(test_tool_call)
 app.add_typer(bundle_app, name="bundle")
+app.add_typer(crew_app, name="crew")
 app.add_typer(agent_app, name="agent")
 agent_app.command("run")(run_agent)
 

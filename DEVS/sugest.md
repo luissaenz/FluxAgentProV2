@@ -82,3 +82,19 @@
 - **ID-034:** `AgentForm.onRoleChange` dispara en cada keystroke del campo role. Debounce 300ms o usar `onBlur` post-MVP.
 
 - **ID-035:** `ScrollArea` ref `scrollRef` apunta a `<div>` interno, no al viewport de Radix. Verificar scroll auto funcional en navegador real.
+
+---
+
+## 🟡 Importantes (Paso 07 — Canvas visual)
+
+- **ID-036:** Tests unitarios no ejecutables. `pytest` no instalado en este entorno. 25 tests existen (9 en `tests/unit/test_crew_endpoints.py`, 16 en `tests/unit/test_canvas_serialize.py`) pero no verificados contra código real. → Recomendación: Ejecutar `uv run pytest tests/unit/test_crew_endpoints.py tests/unit/test_canvas_serialize.py -v` en entorno con pytest. Verificar que los 25 tests pasan.
+
+- **ID-037:** CLI `fap crew` no verificable en ejecución. Código estructuralmente correcto (ruff lint pasa), 5 subcomandos implementados con error handling, pero no ejecutado contra backend real. → Recomendación: Verificar `fap crew validate --file crew.json` + `fap crew scaffold --preset research-pipeline` en entorno con backend activo.
+
+## 🔵 Mejoras (Paso 07 — Canvas visual)
+
+- **ID-038:** `AgentPlayground.tsx:147` — warning preexistente de Paso 06 (`useEffect` missing dep `startTime`). No introducido por Paso 07 pero persiste en el proyecto. → Recomendación: Corregir en paso separado o añadir eslint-disable con comentario.
+
+- **ID-039:** `crew.py` usa `httpx.Client` síncrono. El resto del backend es async (FastAPI, BaseCrew, `asyncio.create_task`). → Recomendación: Post-MVP migrar a `httpx.AsyncClient` + `asyncio.sleep()` para polling. Consistente con ID-033 (mismo patrón en `agent_run.py`).
+
+- **ID-040:** `CrewCanvas.tsx:226-260` — `confirmExport()` duplica lógica de auth de `fapFetch` (getSession + localStorage orgId + headers Authorization/X-Org-ID). Sería más limpio exponer un helper `api.postRaw(path, body)` en `api.ts` que retorne el `Response` sin parsear, para endpoints que devuelven binario. → Recomendación: Extraer `fapFetchRaw()` o `api.postRaw()` en `dashboard/lib/api.ts` que haga lo mismo que `fapFetch` pero retorne `response` en vez de `response.json()`. Evita duplicar código de auth en cada consumidor de endpoints binarios.

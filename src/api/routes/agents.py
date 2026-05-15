@@ -6,7 +6,7 @@ import logging
 from typing import Any, Dict, List
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ...crews.base_crew import BaseCrew
@@ -46,6 +46,56 @@ class RunAgentResponse(BaseModel):
 
     task_id: str
     status: str
+
+
+class AgentListItem(BaseModel):
+    id: str
+    role: str
+    goal: str
+    backstory: str
+    allowed_tools: list[str] = []
+    max_iter: int
+
+
+class ListAgentsResponse(BaseModel):
+    agents: list[AgentListItem]
+
+
+@router.get("", response_model=ListAgentsResponse)
+async def list_agents(
+    org_id: str = Depends(require_org_id),
+    active_only: bool = Query(True, description="Filter to active agents only"),
+):
+    """List all agents in the organization.
+
+    Uses TenantClient for RLS compliance.
+    Optional ?active_only=true filters to is_active=True.
+    """
+    with get_tenant_client(org_id) as db:
+        query = (
+            db.table("agent_catalog")
+            .select("id, role, soul_json, allowed_tools, max_iter")
+            .eq("org_id", org_id)
+        )
+        if active_only:
+            query = query.eq("is_active", True)
+        result = query.execute()
+
+    agents = []
+    for row in (result.data or []):
+        soul = row.get("soul_json") or {}
+        agents.append(
+            AgentListItem(
+                id=row.get("id", ""),
+                role=row.get("role", ""),
+                goal=soul.get("goal", ""),
+                backstory=soul.get("backstory", ""),
+                allowed_tools=row.get("allowed_tools", []),
+                max_iter=row.get("max_iter", 3),
+            )
+        )
+
+    return ListAgentsResponse(agents=agents)
 
 
 @router.post("", response_model=AgentResponse, status_code=201)

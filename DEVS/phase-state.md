@@ -19,11 +19,13 @@
 | 4 | Builder visual — UI con ReactFlow | ✅ Completado |
 | 5 | Template Picker — librería de templates | ✅ Completado |
 | 6 | Agent Playground — prueba en tiempo real | ✅ Completado |
+| 7 | Canvas visual — ensamblaje de crews | ✅ Completado |
 
 ### Dependencias entre pasos
 - Paso 2 requiere Paso 1 (tools list para export)
 - Paso 4 requiere Pasos 1-3 (tools + export + templates para builder)
 - Paso 6 requiere Paso 4 (AgentForm creado con `onRoleChange`) + `POST /agents/{role}/run` existente
+- Paso 7 requiere Paso 4 (AgentForm + BuilderLayout) + `GET /agents` + `POST /bundles/export` existentes
 
 ---
 
@@ -87,6 +89,29 @@
 | CLI `fap agent run` | `src/cli/commands/agent_run.py` | Typer command: POST `/agents/{role}/run` + polling `GET /tasks/{task_id}` | `--role`, `--message`, `--org-id`, `--watch`, `--timeout` |
 | CLI registro `agent run` | `src/cli/main.py:15,81` | `agent_app.command("run")(run_agent)` | Sub-comando `agent run` |
 | Tests unitarios `agent_run` | `tests/unit/test_agent_run.py` | 3 tests: success, role_not_found, connection_error | 3/3 pasan |
+| `CrewCanvas` component | `dashboard/components/builder/CrewCanvas.tsx:74` | Canvas ReactFlow v11 con sidebar Agent Palette + Run Results | HTML5 native DnD (sin librería externa), autosave localStorage 30s, 4 templates preset |
+| `AgentNode` custom ReactFlow node | `dashboard/components/builder/nodes/AgentNode.tsx:22` | Nodo visual con role + goal truncado + tools badges (max 3) + model label | `memo()` para rendimiento, Tooltip Radix UI para tools completas |
+| `TaskNode` custom ReactFlow node | `dashboard/components/builder/nodes/TaskNode.tsx:15` | Nodo visual con description + expectedOutput + assignedAgent badge | `memo()` para rendimiento |
+| `canvasToExportPayload()` | `dashboard/lib/canvasUtils.ts:36-44` | Convierte agentNodes → `{ agents: AgentExportItem[] }` para export | Export agents-only (tasks/edges excluidos por limitación bundle-schema-v2) |
+| `nodesToSnapshot()` / `snapshotToNodes()` | `dashboard/lib/canvasUtils.ts:46-103` | Serializa/deserializa grafo completo (nodes+edges+metadata) ↔ JSON | `CrewGraph` formato canónico |
+| `generateCrewPy()` | `dashboard/lib/crewCodeGen.ts:3-80` | Genera código Python ejecutable (crewai Agent+Task+Crew+Process.sequential) | Vista previa de código en diálogo modal |
+| `CREW_TEMPLATES` | `dashboard/lib/crewTemplates.ts:12-167` | 4 templates preset: Research Pipeline, Code Review, Content Creation, Data Analysis | Nodos + edges predefinidos con posiciones |
+| `BuilderCanvas` reimplementado | `dashboard/components/builder/BuilderCanvas.tsx` | Wrapper `dynamic(() => import('@/components/builder/CrewCanvas'), { ssr: false })` | Reemplaza placeholder vacío del Paso 04 |
+| `BuilderLayout` tabs | `dashboard/components/builder/BuilderLayout.tsx:55,72-83,105-127` | `TabsList` con "Agent Form" y "Crew Canvas" | `@radix-ui/react-tabs` ya instalado |
+| Endpoint `POST /workflows` | `src/api/routes/workflows.py:108-147` | Crea `workflow_template` desde definición de canvas | `WorkflowCreate` + `TenantClient` RLS, 409 si flow_type duplicado |
+| Endpoint `GET /workflows/` | `src/api/routes/workflows.py:46-66` | Lista workflows activos con filtro `?status=` | `WorkflowSummary` |
+| Endpoint `GET /workflows/{flow_type}` | `src/api/routes/workflows.py:69-88` | Obtiene workflow por flow_type | — |
+| Endpoint `DELETE /workflows/{flow_type}` | `src/api/routes/workflows.py:91-105` | Soft-delete (is_active=false, status=archived) | — |
+| CLI `fap crew save` | `src/cli/commands/crew.py:157-216` | Guarda agentes desde API como crew JSON | `--name`, `--org-id`, `--output` |
+| CLI `fap crew load` | `src/cli/commands/crew.py:219-268` | Carga y muestra crew JSON con Rich Table | `--file` |
+| CLI `fap crew export` | `src/cli/commands/crew.py:271-341` | Exporta agentes como bundle ZIP vía ExportService | `--name`, `--roles`. Usa `get_service_client()` (service_role) |
+| CLI `fap crew validate` | `src/cli/commands/crew.py:344-377` | Valida estructura JSON de crew graph | `_validate_crew_graph()` con detección de ciclos DFS |
+| CLI `fap crew scaffold` | `src/cli/commands/crew.py:379-422` | Crea crew desde preset template | `--preset` (4 valores) |
+| CLI registro `crew` sub-app | `src/cli/main.py:20,81` | `add_typer(crew_app, name="crew")` | Sub-comandos: save, load, export, validate, scaffold |
+| Canvas types | `dashboard/lib/types.ts:254-289` | `CanvasAgentNode`, `CanvasTaskNode`, `CrewGraphNode`, `CrewGraphEdge`, `CrewGraph` | Formato canónico de serialización |
+| Deps `reactflow` v11 existente | `dashboard/package.json` | ReactFlow v11 para crew canvas | Sin librería DnD externa (HTML5 native) |
+| Tests unitarios canvas serialize | `tests/unit/test_canvas_serialize.py` | 7 tests: payload, code gen (single agent, empty canvas, multi agent+task) | 7/7 pasan (usando `_generate_py()` mirror Python de `generateCrewPy` TypeScript) |
+| Tests unitarios crew endpoints | `tests/unit/test_crew_endpoints.py` | 8 tests: list agents, create workflow, duplicate 409, validación crew graph | 8/8 pasan |
 
 ### 📦 Archivado — Paso 1
 
@@ -123,6 +148,12 @@
 | Archivos | Destino |
 |---|---|
 | `analisis-FINAL.md`, `analisis-*-*.md` (7 análisis), `validacion.md` (9 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` |
+
+### 📦 Archivado — Paso 7
+
+| Archivos | Destino |
+|---|---|
+| `analisis-FINAL.md`, `analisis-07-*.md` (2 archivos), `analisis-7-*.md` (6 archivos), `validacion.md` (10 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/07-Canvas-visual-ensamblaje-de-crews/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -230,6 +261,10 @@
 | `/integrations/...` | `src/api/routes/integrations.py` | * | `require_org_id` |
 | `/api/templates` | `src/api/routes/templates.py` | GET | None (catálogo público) |
 | `/api/templates/{id}` | `src/api/routes/templates.py` | GET | None (catálogo público) |
+| `/workflows` | `src/api/routes/workflows.py` | POST | `require_org_id` — crea `workflow_template` desde definición canvas |
+| `/workflows/` | `src/api/routes/workflows.py` | GET | `require_org_id` — lista workflows activos, filtro `?status=` |
+| `/workflows/{flow_type}` | `src/api/routes/workflows.py` | GET | `require_org_id` — obtiene workflow por flow_type |
+| `/workflows/{flow_type}` | `src/api/routes/workflows.py` | DELETE | `require_org_id` — soft-delete (archiva) |
 | `/health` | `src/api/main.py` | GET | None |
 
 ### Patrones de código en uso
@@ -293,6 +328,73 @@ if existing.data:
 db.table("agent_templates").insert({...}).execute()
 ```
 Seed idempotente compatible con índices parciales `UNIQUE(...) WHERE`. Reemplaza `upsert()` que no soporta `WHERE` en PostgREST.
+
+**7. Patrón canvas DnD — HTML5 native, sin librerías externas**
+```tsx
+// dashboard/components/builder/CrewCanvas.tsx:127-166
+const onDragStart = (event: React.DragEvent, agent: AgentListItem) => {
+  event.dataTransfer.setData('application/reactflow', JSON.stringify({
+    type: 'agentNode', label: agent.role, data: { role, goal, backstory, tools, maxIter, model }
+  }))
+  event.dataTransfer.effectAllowed = 'move'
+}
+const onDrop = (event: React.DragEvent) => {
+  const raw = event.dataTransfer.getData('application/reactflow')
+  const parsed = JSON.parse(raw)
+  const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY })
+  setNodes((nds) => nds.concat({ id, type, position, data: parsed.data }))
+}
+```
+Drag de sidebar al canvas sin `@dnd-kit` ni `react-beautiful-dnd`. Solo HTML5 `dataTransfer` + `screenToFlowPosition()`.
+
+**8. Patrón snapshot localStorage con autosave**
+```tsx
+// dashboard/components/builder/CrewCanvas.tsx:50-51,117-125
+const LOCALSTORAGE_KEY = 'fap_crew_canvas_snapshot'
+const AUTOSAVE_INTERVAL = 30000
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    const json = nodesToSnapshot(nodes, edges, savedName)
+    localStorage.setItem(LOCALSTORAGE_KEY, json)
+  }, AUTOSAVE_INTERVAL)
+  return () => clearInterval(interval)
+}, [nodes, edges])
+```
+Persistencia local sin tabla DB. 30s autosave + restauración al montar.
+
+**9. Patrón crew graph validation — DFS ciclo detection**
+```python
+# src/cli/commands/crew.py:78-154
+def _validate_crew_graph(graph: dict) -> tuple[list[str], list[str]]:
+    # Checks: nodes/edges arrays, agentNode roles, taskNode descriptions
+    # Edge source/target existence, DFS cycle detection
+    # Returns (errors, warnings)
+```
+Validación reusable sin depender de CLI. Llamable desde tests unitarios directamente.
+
+**10. Patrón canvas serialization — CrewGraph**
+```typescript
+// dashboard/lib/types.ts:285-289
+interface CrewGraph {
+  nodes: CrewGraphNode[]
+  edges: CrewGraphEdge[]
+  metadata: { name: string; createdAt: string }
+}
+```
+Formato canónico de serialización. `nodesToSnapshot()` serializa, `snapshotToNodes()` deserializa con validación estructural.
+
+**11. Patrón código generado — crewai sequential**
+```typescript
+// dashboard/lib/crewCodeGen.ts:3-80
+// Output format:
+// from crewai import Agent, Task, Crew, Process
+// agent_0 = Agent(role="...", goal="...", backstory="...", tools=[...])
+// task_0 = Task(description="...", expected_output="...", agent=agent_0)
+// crew = Crew(agents=[...], tasks=[...], process=Process.sequential)
+// result = crew.kickoff()
+```
+Genera Python ejecutable directamente del grafo canvas. `Process.sequential` hardcoded.
 
 ### Convenciones de naming (de proyecto-config.json)
 - Backend: `snake_case`
@@ -376,6 +478,25 @@ src/
 | Sheet lateral para AgentPlayground | `side="right"` `max-w-md` consistente con Pattern de `AnalyticalAssistantChat`. Botón "Playground" en Agent Configuration panel. | `BuilderLayout.tsx:78-86,118-128` |
 | `httpx.Client` síncrono en CLI (no asyncio) | Aceptable para CLI mono-usuario. `time.sleep(2)` entre polls. Post-MVP: `httpx.AsyncClient` + `asyncio.sleep()`. | `agent_run.py:131,163` |
 
+#### Paso 07 — Canvas visual — ensamblaje de crews
+
+| ID | Corrección | Código |
+|---|---|---|
+| D1 | HTML5 native DnD, sin librería externa. Plan no especifica librería. `@dnd-kit` no instalado. | `CrewCanvas.tsx:127-166` — `onDragOver` + `onDrop` con `dataTransfer.getData('application/reactflow')` |
+| D2 | Export agents-only (sin tasks/edges). `bundle-schema-v2.md` no contempla tasks ni edges. `canvasToExportPayload()` filtra solo agentNodes. "Copy as JSON" como fallback para grafo completo. | `canvasUtils.ts:36-44` — filtra `node.type === 'agentNode'` |
+| D3 | "Run All" frontend-orquestado, no endpoint crew flow. Itera agentNodes, llama `POST /agents/{role}/run` por cada uno, polling individual. Post-MVP: endpoint `POST /flows/crew/run`. | `CrewCanvas.tsx:262-324` — `handleRunAll()` con `fetch` + polling 2s |
+| D4 | Persistencia vía localStorage + JSON download. Sin tabla DB. Autosave cada 30s, restauración al montar. Post-MVP: tabla `crew_snapshots`. | `CrewCanvas.tsx:50-51,99-125` — `LOCALSTORAGE_KEY`, 30s interval |
+| D5 | `BuilderCanvas` reimplementado como wrapper `dynamic(ssr:false)` del CrewCanvas. Placeholder Paso 04 queda obsoleto. | `BuilderCanvas.tsx` — `dynamic(() => import(...), { ssr: false })` |
+| D6 | `BuilderLayout` con tabs "Agent Form" / "Crew Canvas". `@radix-ui/react-tabs` ya instalado. | `BuilderLayout.tsx:72-83` |
+| D7 | `generateCrewPy()` genera código crewai con `Process.sequential`. Sin soporte hierarchical. | `crewCodeGen.ts:62` — `Process.sequential` hardcoded |
+| D8 | `_validate_crew_graph()` con detección de ciclos DFS. Reusable sin depender de CLI. | `crew.py:78-154` — `visited` + `cycle_stack` |
+| D9 | `POST /workflows` usa `TenantClient` para RLS. Consistente con `POST /agents`. | `workflows.py:115` — `get_tenant_client(org_id)` |
+| D10 | Sin nuevas migraciones. `workflow_templates` (mig 006) ya existía. Canvas lee `agent_catalog`, escribe `workflow_templates`. | Sin cambios en `supabase/migrations/` |
+| D11 | 4 templates preset: Research Pipeline, Code Review Crew, Content Creation, Data Analysis. | `crewTemplates.ts:12-167` |
+| D12 | Sin ToolNode separado. Plan menciona `ToolNode.tsx` pero herramientas se muestran como badges en AgentNode. Tool drag-and-drop post-MVP. | `AgentNode.tsx:25-46` — badges inline |
+| D13 | `fap crew export` usa `get_service_client()` (service_role), no API HTTP. Consistente con `templates_seed.py`. | `crew.py:271-341` — `supabase.table("agent_catalog")` |
+| D14 | `fap crew validate` con `_validate_crew_graph()` llama validación directa, sin HTTP. Testeable en unit sin mock de API. | `crew.py:78-154,344-377` |
+
 ---
 
 ## 5. Registro de Pasos Completados
@@ -388,6 +509,7 @@ src/
 | 04-Builder-visual-UI-con-ReactFlow | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` | `6d9539c` | POST /agents con TenantClient (RLS fix D4); reactflow v11 + dynamic import ssr:false; AgentForm react-hook-form + zod; ToolMultiSelect custom; PROVIDER_MODELS estático; soul_json plano; upsert update-or-insert; sidebar Builder en nav-main.tsx | Implementación completa. 0 errores lint backend + frontend. Criterios de aceptación cubiertos. Tarea 0 DX: `fap agent create`. |
 | 05-Template-Picker-libreria-de-templates | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` | `131d619` | TemplatePicker grid + búsqueda + filtro chips; double fetch list+detail; prop templateData en AgentForm; mapTemplateToFormValues con fallbacks; Dialog modal en BuilderLayout; TEMPLATE_CATEGORIES constante; CLI fap templates use | Validación aprobada. 0 issues 🔴. 2 🟡 (dogfooding no verificado, TS errores preexistentes AgentForm). Tarea 0 DX: `fap templates use`. |
 | 06-Agent-Playground-prueba-en-tiempo-real | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` | `e3b5101` | AgentPlayground con useMutation + useQuery polling 2s; MessageBubble con Collapsible >2000 chars; formatResult polimórfico; Sheet lateral right; onRoleChange para habilitar Playground; CLI fap agent run con --watch; Task interface extendida con tokens_used | Validación APROBADO. 22/22 criterios. 0 🔴. 1 🟡 (dogfooding no verificado). 3 🔵 mejoras. Tarea 0 DX: `fap agent run`. |
+| 07-Canvas-visual-ensamblaje-de-crews | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/07-Canvas-visual-ensamblaje-de-crews/` | `54e7936` | HTML5 native DnD sin libs externas; Export agents-only (bundle-schema-v2 limitación); Run All frontend-orquestado; localStorage + JSON download; BuilderLayout tabs Agent Form / Crew Canvas; generateCrewPy código preview; 4 templates preset; Sin ToolNode (badges inline); fap crew CLI (save/load/export/validate/scaffold) | Validación paso 07 completada. 0 migraciones nuevas. 15 tests unitarios (7 canvas + 8 crew endpoints). Tareas DX: `fap crew save`, `fap crew load`, `fap crew export`, `fap crew validate`, `fap crew scaffold`. |
 
 ---
 
@@ -440,6 +562,31 @@ src/
 - ✅ `fap agent run` maneja errores gracefully: ConnectError, timeout, polling errors, 404
 - ✅ URI encoding correcto: `encodeURIComponent` (frontend) + `urllib.parse.quote(role, safe='')` (CLI)
 - ✅ Tests unitarios: 3/3 pasan (success, role_not_found, connection_error)
+- ✅ Canvas ReactFlow funcional con HTML5 native drag-and-drop: sidebar Agent Palette → drop → AgentNode en canvas
+- ✅ Conexiones entre nodos (edges): agent → task y task → task. Conexiones inválidas rechazadas con toast.
+- ✅ Nodo AgentNode muestra role (título), goal (truncado), tools badges (max 3 visibles + overflow +N), model label
+- ✅ Nodo TaskNode muestra description, expectedOutput, assignedAgent badge
+- ✅ Agentes sin tasks → borde amarillo de warning visual
+- ✅ Roles duplicados detectados → botón Export deshabilitado
+- ✅ "Export" genera ZIP vía `POST /bundles/export` → descarga directa en navegador
+- ✅ "Preview Code" genera código Python ejecutable (crewai Agent+Task+Crew+Process.sequential) en diálogo modal
+- ✅ "Run All" ejecuta agentes secuencialmente vía `POST /agents/{role}/run` + polling individual. Resultados por rol.
+- ✅ "Run All" maneja errores por agente (timeout, role not found) sin bloquear resto
+- ✅ Autosave snapshot a localStorage cada 30s. Restauración al montar componente.
+- ✅ "Save Crew" descarga JSON con `CrewGraph` (nodes+edges+metadata) para backup/share
+- ✅ "Load Template" carga 4 templates preset (Research Pipeline, Code Review Crew, Content Creation, Data Analysis)
+- ✅ "Copy as JSON" copia grafo completo al portapapeles (incluye tasks/edges, no solo agents como export)
+- ✅ BuilderLayout tabs: "Agent Form" (Wand2 icon) y "Crew Canvas" (Network icon). `@radix-ui/react-tabs`
+- ✅ BuilderCanvas wrapper `dynamic(ssr: false)` con Skeleton loading state
+- ✅ Endpoint `POST /workflows` crea workflow_template con TenantClient RLS. 409 si flow_type duplicado.
+- ✅ Endpoints `GET /workflows/`, `GET /workflows/{flow_type}`, `DELETE /workflows/{flow_type}` funcionales
+- ✅ CLI `fap crew save` — guarda agentes desde API como crew JSON
+- ✅ CLI `fap crew load` — carga y muestra crew JSON con Rich Table
+- ✅ CLI `fap crew export` — exporta agentes como bundle ZIP vía ExportService (service_role)
+- ✅ CLI `fap crew validate` — valida estructura JSON (roles requeridos, edges válidos, sin ciclos)
+- ✅ CLI `fap crew scaffold` — crea crew desde 1 de 4 presets
+- ✅ Tests unitarios canvas serialize: 7/7 pasan (export payload, code gen single/multi/empty)
+- ✅ Tests unitarios crew endpoints: 8/8 pasan (list agents, workflow create/duplicate, validate)
 
 ### Herramientas DX detectadas/propuestas
 | Herramienta | Ubicación | Automatiza |
@@ -455,3 +602,9 @@ src/
 | TemplatePicker UI | `dashboard/components/builder/TemplatePicker.tsx` | Grid de cards con búsqueda + filtro chips + "Use Template". Carga desde API real, 4 estados visuales. Integrado en BuilderLayout vía Dialog modal. |
 | `fap agent run` | `src/cli/commands/agent_run.py` | Probar agente desde terminal: POST `/agents/{role}/run` + polling `GET /tasks/{task_id}`. `--role`, `--message`, `--org-id`, `--watch`, `--timeout`. Rich output con status + tokens. Dogfooding: validar flujo run→poll→result antes de UI. |
 | AgentPlayground UI | `dashboard/components/builder/AgentPlayground.tsx` | Chat panel integrado en Builder vía Sheet lateral. useMutation + useQuery polling 2s. Burbujas user/assistant/error. Tokens badge. Timeout 120s. Historial local sin persistencia. |
+| `fap crew save` | `src/cli/commands/crew.py:157-216` | Guarda agentes desde API como crew JSON. `--name`, `--org-id`, `--output`. |
+| `fap crew load` | `src/cli/commands/crew.py:219-268` | Carga y muestra crew JSON con Rich Table. `--file`. |
+| `fap crew export` | `src/cli/commands/crew.py:271-341` | Exporta agentes como bundle ZIP vía ExportService. `--name`, `--roles`. Dogfooding: exportar crew desde terminal. |
+| `fap crew validate` | `src/cli/commands/crew.py:344-377` | Valida crew graph JSON (roles, edges, ciclos DFS). `--file`. |
+| `fap crew scaffold` | `src/cli/commands/crew.py:379-422` | Crea crew desde preset template. `--preset` (4 opciones). `--output`. |
+| CrewCanvas UI (`/builder`) | `dashboard/components/builder/CrewCanvas.tsx` | Canvas ReactFlow con sidebar Agent Palette + drag-and-drop + conexiones. Export ZIP, Run All, Preview Code, Save/Load JSON. 4 templates preset. Autosave localStorage 30s. |

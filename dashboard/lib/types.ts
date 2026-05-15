@@ -250,3 +250,40 @@ export interface FlowInfo {
 export interface FlowsListResponse {
   flows: FlowInfo[]
 }
+
+export interface CanvasAgentNode {
+  role: string
+  goal: string
+  backstory: string
+  tools: string[]
+  model?: string
+}
+
+export interface CanvasTaskNode {
+  description: string
+  expectedOutput: string
+  assignedAgent?: string
+}
+
+export type CanvasNodeType = 'agentNode' | 'taskNode'
+
+export interface CrewGraphNode {
+  id: string
+  type: CanvasNodeType
+  data: Record<string, unknown>
+  position: { x: number; y: number }
+}
+
+export interface CrewGraphEdge {
+  id: string
+  source: string
+  target: string
+  sourceHandle?: string
+  targetHandle?: string
+}
+
+export interface CrewGraph {
+  nodes: CrewGraphNode[]
+  edges: CrewGraphEdge[]
+  metadata: { name: string; createdAt: string }
+}
