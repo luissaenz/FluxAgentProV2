@@ -2,15 +2,6 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Box, Loader2, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
-
-import { BundleDropzone } from './components/BundleDropzone'
-import { ValidationReport } from './components/ValidationReport'
-
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft, Box, Loader2, Sparkles, CheckCircle2, ChevronRight, AlertCircle, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'

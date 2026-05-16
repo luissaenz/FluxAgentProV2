@@ -6,7 +6,7 @@
 
 ## 1. Resumen de Fase
 
-**Fase activa:** `guiAgentGenerator` — ✅ **FINALIZADA** (8/8 pasos completados)
+**Fase activa:** `guiAgentGenerator` — ⏳ **EN PROGRESO** (8/9 pasos completados)
 **Objetivo:** Replicar experiencia de creación visual de agentes (Crew Studio) dentro del dashboard FAP, sobre stack propio (Next.js + ReactFlow + FastAPI + Supabase).
 
 ### Pasos en orden
@@ -21,6 +21,7 @@
 | 6 | Agent Playground — prueba en tiempo real | ✅ Completado |
 | 7 | Canvas visual — ensamblaje de crews | ✅ Completado |
 | 8 | ExportDialog + flujo completo de exportación | ✅ Completado |
+| 9 | Navegación, breadcrumbs e integración | ❌ **RECHAZADO** |
 
 ### Dependencias entre pasos
 - Paso 2 requiere Paso 1 (tools list para export)
@@ -28,6 +29,7 @@
 - Paso 6 requiere Paso 4 (AgentForm creado con `onRoleChange`) + `POST /agents/{role}/run` existente
 - Paso 7 requiere Paso 4 (AgentForm + BuilderLayout) + `GET /agents` + `POST /bundles/export` existentes
 - Paso 8 requiere Paso 2 (`POST /api/bundles/export` existente) + Paso 7 (CrewCanvas con `canvasToExportPayload()`) + Paso 4 (AgentForm con campos completos)
+- Paso 9 requiere Pasos 4, 7 y 8 (integración de componentes navegación en rutas existentes)
 
 ---
 
@@ -40,7 +42,7 @@
 | Componente | Archivo | Línea | Notas |
 |---|---|---|---|
 | Endpoint `GET /api/tools/available` | `src/api/routes/tools.py:46-63` | Handler + modelos Pydantic | Retorna `ToolsListResponse` con `ToolInfo[]` |
-| Router registrado en API | `src/api/main.py:31,112` | Import + `include_router` | No en `__init__.py` (corrección D4) |
+| Router registrado en API | `src/api/main.py:31,114` | Import + `include_router` | No en `__init__.py` (corrección D4) |
 | ToolRegistry singleton | `src/tools/registry.py:272` | `tool_registry = ToolRegistry()` | `list_tools()` + `get_metadata()` |
 | MCPPool singleton | `src/tools/mcp_pool.py:42-56` | `get()` classmethod | Circuit breaker + retry exponential |
 | Auth middleware `require_org_id` | `src/api/middleware.py:66` | FastAPI Depends | Extrae `X-Org-ID` header |
@@ -78,7 +80,7 @@
 | Deps frontend `zod` | `dashboard/package.json` | Validación Zod en AgentForm | `@hookform/resolvers` ya instalado (v5.2.2) |
 | `TemplatePicker` component | `dashboard/components/builder/TemplatePicker.tsx` | Grid cards + búsqueda + filtro categoría + "Use Template" | useQuery `GET /api/templates`, 4 estados (loading/error/empty/data) |
 | `TemplatePicker` integrado en BuilderLayout | `dashboard/components/builder/BuilderLayout.tsx` | Dialog modal + botón "Templates" + orquestación template→AgentForm | `mapTemplateToFormValues()` con mapeo defensivo + fallbacks |
-| AgentForm: prop `templateData` | `dashboard/components/builder/AgentForm.tsx:50,91-107` | `useEffect` + `reset(templateData)` para aplicar template post-montaje | Sin `forwardRef` |
+| AgentForm: prop `templateData` | `dashboard/components/builder/AgentForm.tsx:53,99-107` | `useEffect` + `reset(templateData)` para aplicar template post-montaje | Sin `forwardRef` (corrección L53) |
 | Constante `TEMPLATE_CATEGORIES` | `dashboard/lib/constants.ts:16` | `['Research', 'Development', 'Support', 'General'] as const` | Usada por TemplatePicker para chips de filtro |
 | CLI `fap templates use` | `src/cli/commands/templates_use.py` | Crear agente desde template vía CLI | `--org-id`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--dry-run`. Dogfooding: valida mapeo template→agent |
 | CLI registro `templates use` | `src/cli/main.py:35,61` | `templates_app.command("use")(use_template)` | Sub-comando `templates use` |
@@ -122,54 +124,25 @@
 | CrewCanvas refactorizado para ExportDialog | `dashboard/components/builder/CrewCanvas.tsx:83,207-235,573-580` | Eliminados `confirmExport()`, `handleCopyJSON()`, Dialog inline. Usa `<ExportDialog>` con `useMemo` para exportPayload + fullGraphJson | `handleSaveCrew` preservado (línea 307) |
 | `fap bundle validate-payload` CLI | `src/cli/commands/bundle_validate_payload.py:1-149` | Valida payload JSON contra ExportBundleRequest sin llamar endpoint | `--file`, `--stdin`, `--json`. Output Rich: schema status, agentes, skills, warnings |
 | Registro CLI validate-payload | `src/cli/main.py:18,82` | `bundle_app.command("validate-payload")(validate_payload)` | Sub-comando `bundle validate-payload` |
+| `BuilderErrorBoundary` component | `dashboard/components/builder/BuilderErrorBoundary.tsx` | Class component para capturar errores de ReactFlow | Aísla fallos del canvas sin romper el layout |
+| `BuilderBreadcrumb` component | `dashboard/components/builder/BuilderBreadcrumb.tsx` | Breadcrumbs contextuales para el Builder | Muestra Dashboard > Builder > Agent Form/Crew Canvas |
+| Convención Next.js (loading/error) | `dashboard/app/(app)/builder/` | Archivos `loading.tsx` y `error.tsx` | Skeletons y manejo de errores a nivel de ruta |
+| `validate_builder_nav.py` script | `scripts/validate_builder_nav.py` | Valida integridad estructural de la navegación | 11 checks automáticos de archivos y dead code |
 
-### 📦 Archivado — Paso 1
+### ⚠️ Parcialmente implementado
 
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/01-Crear-endpoint-GET-api-tools-available/` |
+| Componente | Archivo | Problema | Notas |
+|---|---|---|---|
+| Sincronización Breadcrumb | `BuilderBreadcrumb.tsx` | Prop `activeTab` hardcoded en `page.tsx` | No refleja cambios de pestaña en `BuilderLayout` |
 
-### 📦 Archivado — Paso 2
+### ✅ Archivado — Paso 1..8
+(Ver `DEVS/IMPLEMENTED/guiAgentGenerator/` para histórico completo)
 
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/02-Crear-endpoint-POST-api-bundles-export/` |
-
-### 📦 Archivado — Paso 3
-
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-*-*.md` (6 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` |
-
-### 📦 Archivado — Paso 4
+### ✅ Archivado — Paso 9
 
 | Archivos | Destino |
 |---|---|
-| `analisis-FINAL.md`, `analisis-*-*.md` (8 análisis), `validacion.md` | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` |
-
-### 📦 Archivado — Paso 5
-
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-*-*.md` (14 análisis), `validacion.md` (16 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` |
-
-### 📦 Archivado — Paso 6
-
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-*-*.md` (7 análisis), `validacion.md` (9 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` |
-
-### 📦 Archivado — Paso 7
-
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-07-*.md` (2 archivos), `analisis-7-*.md` (6 archivos), `validacion.md` (10 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/07-Canvas-visual-ensamblaje-de-crews/` |
-
-### 📦 Archivado — Paso 8
-
-| Archivos | Destino |
-|---|---|
-| `analisis-FINAL.md`, `analisis-08-*.md` (3 archivos), `analisis-8-*.md` (7 archivos), `validacion.md`, `eval_models.html` (13 archivos total) | `DEVS/IMPLEMENTED/guiAgentGenerator/08-ExportDialog-flujo-completo-de-exportacion/` |
+| `analisis-FINAL.md`, `analisis-*.md` (4 análisis), `validacion.md`, `eval_models.html` | `DEVS/IMPLEMENTED/guiAgentGenerator/09-Navegacion-breadcrumbs-e-integracion/` |
 
 ### 📝 Correcciones al plan aplicadas
 
@@ -178,66 +151,16 @@
 | D1 | `ToolMetadata` sin `category` → derivar de `tags[0]`. NO modificar dataclass. | `tools.py:87` — `meta.tags[0] if meta.tags else "general"` |
 | D2 | MCP no tiene `list_all_tools()` → iterar `org_mcp_servers` + `asyncio.gather()` | `tools.py:109-146` |
 | D3 | Timeout <500ms irreal con MCP → local <500ms, MCP timeout 5s, degradado graceful | `tools.py:124` — `timeout=5`, catch exceptions |
-| D4 | Router en `main.py`, NO en `__init__.py` | `main.py:31,112` |
+| D4 | Router en `main.py`, NO en `__init__.py` | `main.py:31,114` |
 | D5 | `list_tools()` retorna solo nombres → `get_metadata()` por cada uno | `tools.py:75-78` |
-| D6 | Tools DB-loaded sin warmup en listado → documentado como limitación MVP | Sin implementar (correcto) |
 
-#### Paso 02 — POST /api/bundles/export
-
-| ID | Corrección | Código |
-|---|---|---|
-| D1 | `StreamingResponse` → `Response` (ZIP en memoria, no streaming real) | `bundles.py:241` — `Response(content=zip_bytes)` |
-| D2 | `skills [{name,code}]` → `Dict[str,str]` para `create_bundle()` | `export_service.py:52-60` — convierte + `.py` en key (necesario round-trip) |
-| D3 | `ExportService` como orquestador separado (patrón `ImportService`) | `export_service.py:21-66` |
-| D4 | `flows` excluido de MVP, pasar `flows=[]` | `export_service.py:65` — `flows=[]` |
-
-#### Paso 03 — Endpoints CRUD para templates de agentes
+#### Paso 09 — Navegación, breadcrumbs e integración
 
 | ID | Corrección | Código |
 |---|---|---|
-| D1 | Router en `main.py` (NO `__init__.py`) | `main.py:30,113` — import + `include_router` |
-| D2 | Tabla GLOBAL sin `org_id` (patrón `service_catalog`) | `030_agent_templates.sql:10-21` — sin columna `org_id` |
-| D3 | Seed vía CLI + script, NO en migración SQL | `templates_seed.py` + `cli/main.py:33,58` |
-| D4 | Endpoints sin `require_org_id` (catálogo público) | `templates.py:54-67,70-83` — sin `Depends(require_org_id)` |
-| D5 | Idempotencia seed → check-then-insert (no upsert) | `templates_seed.py:183-193` — `SELECT` + `INSERT` condicional por índice parcial `UNIQUE WHERE` |
-| D6 | Emojis reemplazados por Rich markup (cp1252 compat) | `templates_seed.py:191,208,211` — `OK`, `FAIL`, `-` |
-
-#### Paso 04 — Builder visual — UI con ReactFlow
-
-| ID | Corrección | Código |
-|---|---|---|
-| D1 | `reactflow` v11 instalado, no `@xyflow/react` v12 (rename drástico) | `package.json` + `BuilderCanvas.tsx` |
-| D3 | `Input type="number"` para max_iter, no Slider (componente no existe en shadcn/ui) | `AgentForm.tsx:275-284` |
-| D4 | **CRÍTICA: `POST /agents` con `TenantClient`** para RLS — el plan decía "guardar directo desde frontend sin nuevo endpoint" pero `app.org_id` solo lo setea middleware backend | `agents.py:51-92` — `require_org_id` + `get_tenant_client(org_id)` |
-| D5 | `ToolMultiSelect` custom con checkboxes + badges, sin deps externas (Command/Popover no instalados) | `ToolMultiSelect.tsx` — búsqueda/filtro + agrupación por source |
-| D7 | `soul_json` plano: `{goal, backstory, llm_provider, llm_model, verbose, reasoning, inject_date, memory}` | `agent_create.py:79-88` + `AgentForm.tsx:117-131` |
-| D8 | Upsert vía update-if-exists + insert si no existe (no `.upsert()` directo con Supabase) | `agents.py:62-92` |
-| D9 | Nav sidebar "Builder" añadido en Paso 04 (no paso 09) | `nav-main.tsx:50` |
-| D10 | `PROVIDER_MODELS` estático en `constants.ts` con 4 providers | `constants.ts:16-21` |
-| D11 | `model` no se migra; `llm_model` va en `soul_json.llm_model` | `AgentForm.tsx:117-131` — `soul_json` plano |
-
-#### Paso 05 — Template Picker — librería de templates
-
-| ID | Corrección | Código |
-|---|---|---|
-| D1 | `soul_json` del seed tiene `{role, goal, backstory}` pero AgentForm tiene `role` como campo separado y `soul_json` plano | `BuilderLayout.tsx:28-38` — `mapTemplateToFormValues()` extrae `soul_json.role` → `role` plano, con fallbacks |
-| D2 | `AgentForm.initialValues` solo afecta `defaultValues` al montar; TemplatePicker necesita aplicar post-montaje | `AgentForm.tsx:50,91-107` — prop `templateData` + `useEffect` con `form.reset(templateData)` |
-| D3 | `TemplateInfo` (lista) no incluye `soul_json` → requiere double fetch | `TemplatePicker.tsx:88-89` — `api.get('/api/templates/${template.id}')` al hacer "Use Template" |
-| D4 | `BuilderLayout` no manejaba estado de template | `BuilderLayout.tsx:43-50` — `useState<AgentFormData \| null>`, `handleSelectTemplate` |
-| D5 | Categorías hardcodeadas como constante | `constants.ts:16` — `TEMPLATE_CATEGORIES` |
-| D6 | Prop `templateData` elegida sobre `forwardRef` | `AgentForm.tsx:50` — prop simple, sin refactoring |
-
-#### Paso 06 — Agent Playground — prueba en tiempo real
-
-| ID | Corrección | Código |
-|---|---|---|
-| D1 | Tool calls solo conteo `Dict[str, int]`. Plan promete "nombre + argumentos" → NO realizable. MVP: sin tool calls en UI. | `AgentPlayground.tsx:20-24` — `ToolCallInfo` definido con comentario `// Post-MVP`. `MessageBubble` no renderiza tool calls. |
-| D2 | Tool calls NO persistidos en `tasks`. `agents.py:299-305` no guarda `crew.get_last_tool_calls()`. MVP sin columna `tool_calls`. | Sin migraciones nuevas. `agents.py` sin modificar. |
-| D3 | `result` como `str()` en backend. Frontend tratar como texto plano, no JSON. | `AgentPlayground.tsx:39-45` — `formatResult()`: string→directo, object→JSON.stringify, resto→String. Truncate >2000 con `Collapsible`. |
-| D4 | `types.ts` desactualizado sin `tokens_used`. `TaskResponse` backend tiene `tokens_used: int = 0`. | `types.ts:8-11` — `tokens_used: number` + `approval_required?`, `approval_status?`, `approval_payload?`. |
-| D5 | Sin validación previa de role en `POST /run`. Endpoint retorna 202 inmediato. Si role no existe, error en polling. | `AgentPlayground.tsx:135-146` — maneja `status: failed` mostrando `taskData.error`. Sin pre-validación. |
-| D6 | Auth mixta: `POST /agents/{role}/run` usa `verify_org_membership` (JWT+membership). `POST /agents` usa `require_org_id` (header). Compatibles. | Sin cambios de auth. `fapFetch` envía ambos headers. |
-| D7 | Background task async: `_execute()` es `async def` pasado a `background_tasks.add_task()`. Compatible FastAPI 0.115+. | `agents.py` sin modificar. Verificado compatible. |
+| D1 | Eliminar `navMain` dead code en `app-sidebar.tsx` | `app-sidebar.tsx` — array local eliminado. |
+| D2 | Breadcrumbs basados en tabs (sin sub-rutas físicas) | `BuilderBreadcrumb.tsx` — recibe `activeTab` prop. |
+| D3 | SSOT Navigation usando `defaultNavItems` | `nav-main.tsx` — centraliza la navegación. |
 
 ---
 
@@ -256,201 +179,40 @@
 - `agent_catalog(id UUID, org_id UUID, role TEXT, goal TEXT, backstory TEXT, ...)` — con RLS tenant_isolation
 - `org_mcp_servers(id UUID, org_id UUID, name TEXT, command TEXT, args JSONB, secret_name TEXT, is_active BOOLEAN)`
 - `skill_catalog(id UUID, org_id UUID, name TEXT, code_source TEXT, ...)`
-- `flow_presentations`, `tickets`, `agent_metadata`, `service_catalog`, `conversations`, `workflow_templates`, etc.
-- `agent_templates(id UUID, name TEXT NOT NULL, description TEXT, category TEXT NOT NULL, soul_json JSONB, suggested_tools TEXT[], max_iter INTEGER, is_system BOOLEAN, ...)` — tabla global sin `org_id`, RLS SELECT auth, ALL service_role
+- `agent_templates(id UUID, name TEXT NOT NULL, description TEXT, category TEXT NOT NULL, soul_json JSONB, suggested_tools TEXT[], max_iter INTEGER, is_system BOOLEAN, ...)`
 
 ### Endpoints / APIs (rutas reales)
 | Ruta | Archivo | Método | Auth |
 |---|---|---|---|
-| `/api/tools/available?source=&category=` | `src/api/routes/tools.py` | GET | `require_org_id` |
-| `/flows/available` | `src/api/routes/flows.py` | GET | `require_org_id` |
-| `/flows/hierarchy` | `src/api/routes/flows.py` | GET | `require_org_id` |
-| `/flows/{flow_type}/run` | `src/api/routes/flows.py` | POST | `require_org_id` |
-| `/webhooks/...` | `src/api/routes/webhooks.py` | POST | `require_org_id` |
-| `/tasks/...` | `src/api/routes/tasks.py` | * | `require_org_id` |
-| `/approvals/...` | `src/api/routes/approvals.py` | * | `require_org_id` |
-| `/chat/...` | `src/api/routes/chat.py` | * | `require_org_id` |
-| `/agents/...` | `src/api/routes/agents.py` | * | `require_org_id` |
-| `/agents` (POST create) | `src/api/routes/agents.py` | POST | `require_org_id` — crea/upsert agente con `soul_json` + `allowed_tools` + `max_iter` |
-| `/bundles/...` | `src/api/routes/bundles.py` | * | `require_org_id` |
-| `/mcp/...` | `src/api/routes/mcp.py` | * | `require_org_id` |
-| `/integrations/...` | `src/api/routes/integrations.py` | * | `require_org_id` |
-| `/api/templates` | `src/api/routes/templates.py` | GET | None (catálogo público) |
-| `/api/templates/{id}` | `src/api/routes/templates.py` | GET | None (catálogo público) |
-| `/workflows` | `src/api/routes/workflows.py` | POST | `require_org_id` — crea `workflow_template` desde definición canvas |
-| `/workflows/` | `src/api/routes/workflows.py` | GET | `require_org_id` — lista workflows activos, filtro `?status=` |
-| `/workflows/{flow_type}` | `src/api/routes/workflows.py` | GET | `require_org_id` — obtiene workflow por flow_type |
-| `/workflows/{flow_type}` | `src/api/routes/workflows.py` | DELETE | `require_org_id` — soft-delete (archiva) |
-| `/health` | `src/api/main.py` | GET | None |
+| `/api/tools/available` | `src/api/routes/tools.py` | GET | `require_org_id` |
+| `/api/templates` | `src/api/routes/templates.py` | GET | None |
+| `/api/bundles/export` | `src/api/routes/bundles.py` | POST | `require_org_id` |
+| `/agents` | `src/api/routes/agents.py` | POST | `require_org_id` |
+| `/workflows` | `src/api/routes/workflows.py` | POST | `require_org_id` |
 
 ### Patrones de código en uso
 
-**1. Patrón RLS — tenant_isolation**
-```sql
--- Migración 004_agent_catalog.sql:22-23
-CREATE POLICY "agent_catalog_tenant_isolation" ON agent_catalog
-    FOR ALL USING (org_id::text = current_setting('app.org_id', TRUE));
-```
-Variable `app.org_id` seteada por middleware JWT. Cast a text explícito.
-
-**2. Patrón registro de tools — decorator**
-```python
-# src/tools/registry.py:276-287
-@register_tool(name="fetch_url", description="...", tags=["web"])
-class FetchURLTool(OrgBaseTool): ...
-```
-`ToolRegistry.register()` → `ToolMetadata()` almacenado en `_metadata[name]`. Singleton global `tool_registry`.
-
-**3. Patrón auth en endpoints — FastAPI Depends**
-```python
-# src/api/middleware.py:66
-async def require_org_id(request: Request) -> str:
-    org_id = request.headers.get("x-org-id")
-    if not org_id:
-        raise HTTPException(400, "X-Org-ID header required")
-    return org_id
-```
-Uso: `org_id: str = Depends(require_org_id)` en cada endpoint.
-
-**4. Patrón scheduler — background tasks**
-```python
-# src/api/main.py:67-71
-from src.scheduler.health_check import run_health_checks
-asyncio.create_task(run_health_checks())
-```
-Jobs definidos en `src/scheduler/` (health_check.py, bartenders_jobs.py).
-
-**5. Patrón tabla global sin `org_id` — catálogo público**
-```sql
--- Migración 030_agent_templates.sql:10,25-29
-CREATE TABLE IF NOT EXISTS agent_templates (...);
--- Sin columna org_id
-CREATE POLICY "agent_templates_read" ON agent_templates
-    FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "agent_templates_write" ON agent_templates
-    FOR ALL USING (auth.role() = 'service_role');
-```
-Tablas globales sin tenant isolation. SELECT requiere autenticación, escritura solo `service_role`. Mismo patrón que `service_catalog` (mig 024).
-
-**6. Patrón seed vía CLI — check-then-insert idempotente**
-```python
-# src/cli/commands/templates_seed.py:183-193
-existing = db.table("agent_templates").select("id")\
-    .eq("name", template["name"]).eq("is_system", True).execute()
-if existing.data:
-    console.print(f"  [dim]-[/dim] {template['name']} (already exists, skipped)")
-    skipped += 1
-    continue
-db.table("agent_templates").insert({...}).execute()
-```
-Seed idempotente compatible con índices parciales `UNIQUE(...) WHERE`. Reemplaza `upsert()` que no soporta `WHERE` en PostgREST.
-
-**7. Patrón canvas DnD — HTML5 native, sin librerías externas**
+**1. Patrón Error Boundary (Frontend)**
 ```tsx
-// dashboard/components/builder/CrewCanvas.tsx:127-166
-const onDragStart = (event: React.DragEvent, agent: AgentListItem) => {
-  event.dataTransfer.setData('application/reactflow', JSON.stringify({
-    type: 'agentNode', label: agent.role, data: { role, goal, backstory, tools, maxIter, model }
-  }))
-  event.dataTransfer.effectAllowed = 'move'
-}
-const onDrop = (event: React.DragEvent) => {
-  const raw = event.dataTransfer.getData('application/reactflow')
-  const parsed = JSON.parse(raw)
-  const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY })
-  setNodes((nds) => nds.concat({ id, type, position, data: parsed.data }))
+// dashboard/components/builder/BuilderErrorBoundary.tsx
+export class BuilderErrorBoundary extends Component<Props, State> {
+  // Captura errores de renderizado en ReactFlow
 }
 ```
-Drag de sidebar al canvas sin `@dnd-kit` ni `react-beautiful-dnd`. Solo HTML5 `dataTransfer` + `screenToFlowPosition()`.
+Aísla el canvas de ReactFlow para que fallos en la librería no rompan toda la página del builder.
 
-**8. Patrón snapshot localStorage con autosave**
+**2. Patrón Convention Files (Next.js)**
+```
+dashboard/app/(app)/builder/
+├── loading.tsx  // Skeleton state
+└── error.tsx    // Route level error boundary
+```
+
+**3. Patrón SSOT Navigation**
 ```tsx
-// dashboard/components/builder/CrewCanvas.tsx:50-51,117-125
-const LOCALSTORAGE_KEY = 'fap_crew_canvas_snapshot'
-const AUTOSAVE_INTERVAL = 30000
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    const json = nodesToSnapshot(nodes, edges, savedName)
-    localStorage.setItem(LOCALSTORAGE_KEY, json)
-  }, AUTOSAVE_INTERVAL)
-  return () => clearInterval(interval)
-}, [nodes, edges])
+// dashboard/components/nav-main.tsx
+export const defaultNavItems: NavItem[] = [...]
 ```
-Persistencia local sin tabla DB. 30s autosave + restauración al montar.
-
-**9. Patrón crew graph validation — DFS ciclo detection**
-```python
-# src/cli/commands/crew.py:78-154
-def _validate_crew_graph(graph: dict) -> tuple[list[str], list[str]]:
-    # Checks: nodes/edges arrays, agentNode roles, taskNode descriptions
-    # Edge source/target existence, DFS cycle detection
-    # Returns (errors, warnings)
-```
-Validación reusable sin depender de CLI. Llamable desde tests unitarios directamente.
-
-**10. Patrón canvas serialization — CrewGraph**
-```typescript
-// dashboard/lib/types.ts:285-289
-interface CrewGraph {
-  nodes: CrewGraphNode[]
-  edges: CrewGraphEdge[]
-  metadata: { name: string; createdAt: string }
-}
-```
-Formato canónico de serialización. `nodesToSnapshot()` serializa, `snapshotToNodes()` deserializa con validación estructural.
-
-**11. Patrón código generado — crewai sequential**
-```typescript
-// dashboard/lib/crewCodeGen.ts:3-80
-// Output format:
-// from crewai import Agent, Task, Crew, Process
-// agent_0 = Agent(role="...", goal="...", backstory="...", tools=[...])
-// task_0 = Task(description="...", expected_output="...", agent=agent_0)
-// crew = Crew(agents=[...], tasks=[...], process=Process.sequential)
-// result = crew.kickoff()
-```
-Genera Python ejecutable directamente del grafo canvas. `Process.sequential` hardcoded.
-
-### Convenciones de naming (de proyecto-config.json)
-- Backend: `snake_case`
-- Archivos: `snake_case.py`
-- DB tables: `snake_case`
-- Imports: absolutos (`from src.x.y import Z`)
-- Modelos: Pydantic `BaseModel` + dataclasses
-- Rutas: FastAPI `APIRouter` con `@router` decorators
-- Tests: `test_*.py`
-
-### Estructura de carpetas
-```
-src/
-├── api/           # FastAPI routes + middleware
-│   ├── main.py    # App entry, CORS, lifespan
-│   ├── middleware.py  # JWT + org_id
-│   └── routes/    # Endpoints por dominio
-├── cli/           # FAP CLI (typer)
-│   ├── main.py    # Typer app + command registration
-│   └── commands/  # Cada comando como módulo
-├── db/            # Supabase session + vault
-├── tools/         # ToolRegistry + MCP pool
-├── flows/         # FlowRegistry + generic flow
-├── crews/         # CrewAI orchestration
-├── services/      # Business logic (warmup, security_guard)
-├── scheduler/     # Background jobs
-├── events/        # Real-time events
-├── state/         # State management
-├── connectors/    # External connectors
-├── guardrails/    # Security guardrails
-├── utils/         # Helpers
-├── mcp/           # MCP SDK integration
-├── scripts/       # Seed scripts
-├── config.py      # Settings (pydantic-settings)
-```
-
-### Dependencias instaladas (de pyproject.toml)
-**Directas:** fastapi, uvicorn, pydantic, pydantic-settings, supabase, anthropic, openai, openpyxl, PyJWT, python-dotenv, httpx, structlog, apscheduler, python-dateutil, mcp, sse-starlette, RestrictedPython, typer, packaging, watchdog, tenacity
-**Dev:** pytest, pytest-asyncio, pytest-mock, pytest-cov, pytest-timeout, ruff
-**Opcionales:** crewai, crewai-tools
 
 ---
 
@@ -458,75 +220,9 @@ src/
 
 | Decisión | Detalle | Verificación |
 |---|---|---|
-| Auth vía JWT + JWKS | PyJWT con ES256/HS256 negotiation. `require_org_id` extrae `X-Org-ID` header | `src/api/middleware.py:66` |
-| RLS con `app.org_id` | Variable de sesión seteada por middleware, cast a text | `004_agent_catalog.sql:23` |
-| ToolRegistry singleton | Patrón mirror de FlowRegistry. `tool_registry` global | `src/tools/registry.py:272` |
-| MCPPool singleton | Conexiones persistentes + circuit breaker (5 fails → 60s rest) | `src/tools/mcp_pool.py:42-56` |
-| `category` derivada de `tags[0]` | NO modificar `ToolMetadata` dataclass (evita breaking change) | `src/api/routes/tools.py:87` |
-| MCP listing sin gather timeout | Timeout por llamada individual (5s), no wrapper global | `src/api/routes/tools.py:124,146` |
-| Sin cache en MVP | Cache post-MVP con `functools.lru_cache` + TTL | Decisión 3 del análisis |
-| CLI `fap tools list` como DX | Reemplaza curl/Postman. Typer sub-app en `src/cli/main.py` | `src/cli/commands/tools_list.py` |
-| `get_service_client()` para queries DB | Bypass RLS con filtro manual `.eq("org_id", ...)`. Consistente con integrations/mcp_pool | `src/api/routes/tools.py:111` |
-| Response incluye `count` | Consistente con `flows.py` pattern | `src/api/routes/tools.py:63` |
-| Response vs StreamingResponse | `BundleManager.create_bundle()` genera ZIP en memoria → `Response(content=bytes)`. Sin beneficio de streaming. Post-MVP >50MB migrar a `StreamingResponse`. | `bundles.py:241` |
-| ExportService en archivo separado | Consistente con `ImportService`. Separa concerns: handler maneja HTTP, service maneja lógica negocio. Permite test unitario sin FastAPI. | `export_service.py:21-66` |
-| Skills key incluye `.py` | `create_bundle()` escribe `skills/{filename}` y `_parse_file_content()` requiere `.py` suffix. Usar `s.name` sin extensión rompería round-trip import. | `export_service.py:55-58` |
-| Validación goal/backstory en handler | Responsabilidad del endpoint (contrato HTTP), no del service. Incluye longitud mínima 10 chars (mitigación §258). | `bundles.py:215-238` |
-| Sin registro en `bundle_imports` | Export stateless. No persiste registro de exportación. | `export_service.py:28-70` |
-| Tabla global `agent_templates` sin `org_id` | Catálogo público de templates. Mismo patrón que `service_catalog` (mig 024). Post-MVP: custom templates por org → migración adicional con `org_id`. | `030_agent_templates.sql:10-21` |
-| Endpoints públicos sin `require_org_id` | Templates son catálogo de referencia. Consistente con `integrations.py`. Autenticación vía RLS (auth.role() = 'authenticated'). | `templates.py:54-67,70-83` |
-| RLS: SELECT auth, ALL service_role | Lectura requiere autenticación. Escritura solo service_role (seed vía CLI). | `030_agent_templates.sql:25-29` |
-| Seed vía CLI + script, NO en migración SQL | Consistente con `seed_system_bundles.py`. `--dry-run`, `--reset`. Check-then-insert idempotente. | `templates_seed.py:140-220` |
-| Índice parcial `UNIQUE(name) WHERE is_system = TRUE` | Solo system templates son únicos por nombre. Custom templates (futuro) usarán `UNIQUE(org_id, name)`. | `030_agent_templates.sql:32-33` |
-| `soul_json` sin validación Pydantic en API | DB almacena JSONB, endpoint retorna `Dict[str, Any]`. Validación de estructura en seed script. Post-MVP: validator. | `templates.py:37-41` |
-| Response incluye `count` | Consistente con `tools.py`. `TemplateListResponse.count`. | `templates.py:38,66` |
-| `POST /agents` con `TenantClient` obligatorio | RLS `agent_catalog_tenant_isolation` usa `current_setting('app.org_id')` — solo el backend puede setear esta variable vía RPC. Frontend browser client NO puede. Sin este endpoint el Save Agent falla con 42501. Corrección crítica D4 al plan. | `agents.py:51-92` |
-| Upsert update-or-insert | `UNIQUE(org_id, role)` hace que `.insert()` falle en duplicado. Flow: SELECT existente → UPDATE si existe, INSERT si no. Permite re-guardar/editar sin error 409. | `agents.py:62-92` |
-| `soul_json` plano sin anidación | Estructura: `{goal, backstory, llm_provider, llm_model, verbose, reasoning, inject_date, memory}`. Sin sub-objeto `config`. Consistente con cómo `agents/page.tsx:62` ya accede a `soul_json` como `Record<string, string>`. | `agent_create.py:79-88` |
-| `reactflow` v11, no `@xyflow/react` v12 | v12 cambió API drásticamente. v11 estable por consistencia con plan y mayoría de agentes. Migración a v12 post-MVP si necesario. | `BuilderCanvas.tsx` — `import('reactflow')` |
-| `Input type="number"` para max_iter, no Slider | Componente `Slider` no existe en shadcn/ui. Misma funcionalidad sin dep extra (`@radix-ui/react-slider`). Slider visual post-MVP. | `AgentForm.tsx:275-284` |
-| `ToolMultiSelect` custom sin deps externas | Checkboxes nativos + búsqueda/filtro + badges. Sin `cmdk`, `@radix-ui/react-popover`, ni `@radix-ui/react-checkbox` — no instalados. Post-MVP: Command combobox. | `ToolMultiSelect.tsx` |
-| `PROVIDER_MODELS` estático en frontend | Sin endpoint para listar modelos por provider en MVP. Mapa con ≥2 modelos/provider. Post-MVP: `GET /api/llm/models?provider=`. | `constants.ts:16-21` |
-| Nav sidebar "Builder" en Paso 04 | Ruta `/builder` accesible desde el momento en que existe la página. No pospuesto a Paso 09. | `nav-main.tsx:50` |
-| `useMutation` + `useQuery` polling (2s, stop en completed/failed) | TanStack Query mutations para POST run, polling para GET task. 120s timeout. Consistente con `AnalyticalAssistantChat.tsx`. | `AgentPlayground.tsx:66-101` |
-| `formatResult()` polimórfico | String→directo, object→JSON.stringify, resto→String. `result` de backend siempre es `str()` → tratamiento genérico para robustez. | `AgentPlayground.tsx:39-45` |
-| `encodeURIComponent` en URL del agente | Roles con espacios/ASCII necesitan encoding. `quote(role, safe='')` en CLI. | `agent_run.py:84`, `AgentPlayground.tsx:64` |
-| Sheet lateral para AgentPlayground | `side="right"` `max-w-md` consistente con Pattern de `AnalyticalAssistantChat`. Botón "Playground" en Agent Configuration panel. | `BuilderLayout.tsx:78-86,118-128` |
-| `httpx.Client` síncrono en CLI (no asyncio) | Aceptable para CLI mono-usuario. `time.sleep(2)` entre polls. Post-MVP: `httpx.AsyncClient` + `asyncio.sleep()`. | `agent_run.py:131,163` |
-
-#### Paso 07 — Canvas visual — ensamblaje de crews
-
-| ID | Corrección | Código |
-|---|---|---|
-| D1 | HTML5 native DnD, sin librería externa. Plan no especifica librería. `@dnd-kit` no instalado. | `CrewCanvas.tsx:127-166` — `onDragOver` + `onDrop` con `dataTransfer.getData('application/reactflow')` |
-| D2 | Export agents-only (sin tasks/edges). `bundle-schema-v2.md` no contempla tasks ni edges. `canvasToExportPayload()` filtra solo agentNodes. "Copy as JSON" como fallback para grafo completo. | `canvasUtils.ts:36-44` — filtra `node.type === 'agentNode'` |
-| D3 | "Run All" frontend-orquestado, no endpoint crew flow. Itera agentNodes, llama `POST /agents/{role}/run` por cada uno, polling individual. Post-MVP: endpoint `POST /flows/crew/run`. | `CrewCanvas.tsx:262-324` — `handleRunAll()` con `fetch` + polling 2s |
-| D4 | Persistencia vía localStorage + JSON download. Sin tabla DB. Autosave cada 30s, restauración al montar. Post-MVP: tabla `crew_snapshots`. | `CrewCanvas.tsx:50-51,99-125` — `LOCALSTORAGE_KEY`, 30s interval |
-| D5 | `BuilderCanvas` reimplementado como wrapper `dynamic(ssr:false)` del CrewCanvas. Placeholder Paso 04 queda obsoleto. | `BuilderCanvas.tsx` — `dynamic(() => import(...), { ssr: false })` |
-| D6 | `BuilderLayout` con tabs "Agent Form" / "Crew Canvas". `@radix-ui/react-tabs` ya instalado. | `BuilderLayout.tsx:72-83` |
-| D7 | `generateCrewPy()` genera código crewai con `Process.sequential`. Sin soporte hierarchical. | `crewCodeGen.ts:62` — `Process.sequential` hardcoded |
-| D8 | `_validate_crew_graph()` con detección de ciclos DFS. Reusable sin depender de CLI. | `crew.py:78-154` — `visited` + `cycle_stack` |
-| D9 | `POST /workflows` usa `TenantClient` para RLS. Consistente con `POST /agents`. | `workflows.py:115` — `get_tenant_client(org_id)` |
-| D10 | Sin nuevas migraciones. `workflow_templates` (mig 006) ya existía. Canvas lee `agent_catalog`, escribe `workflow_templates`. | Sin cambios en `supabase/migrations/` |
-| D11 | 4 templates preset: Research Pipeline, Code Review Crew, Content Creation, Data Analysis. | `crewTemplates.ts:12-167` |
-| D12 | Sin ToolNode separado. Plan menciona `ToolNode.tsx` pero herramientas se muestran como badges en AgentNode. Tool drag-and-drop post-MVP. | `AgentNode.tsx:25-46` — badges inline |
-| D13 | `fap crew export` usa `get_service_client()` (service_role), no API HTTP. Consistente con `templates_seed.py`. | `crew.py:271-341` — `supabase.table("agent_catalog")` |
-| D14 | `fap crew validate` con `_validate_crew_graph()` llama validación directa, sin HTTP. Testeable en unit sin mock de API. | `crew.py:78-154,344-377` |
-
-#### Paso 08 — ExportDialog + flujo completo de exportación
-
-| ID | Corrección | Código |
-|---|---|---|
-| D1 | ExportDialog extraído a archivo independiente. Plan asume crear desde cero, pero existía lógica inline en `CrewCanvas.tsx:604-627`. Refactorizar, no duplicar. | `ExportDialog.tsx:1-322` — componente creado. `CrewCanvas.tsx:573-580` — usa `<ExportDialog>`. `confirmExport`/`handleCopyJSON`/Dialog inline eliminados |
-| D2 | AgentForm sin botón Export. Plan requiere integración. | `AgentForm.tsx:385-393` — botón Export junto a Save Agent, disabled sin role/goal/backstory |
-| D3 | "Include skills" checkbox no existe en UI ni hay endpoint `GET /api/skills/available`. MVP: checkbox visible pero disabled con tooltip "Coming soon". | `ExportDialog.tsx:232-257` — Checkbox con `disabled={!enableSkills}` + TooltipProvider |
-| D4 | `api.post()` no soporta blob response — `fapFetch` siempre hace `.json()`. Plan asume usar `api.post()`. Se crea `fapDownload()` dedicado sin modificar `fapFetch`. | `api.ts:54-94` — `fapDownload(path, body): Promise<Response>`. `ExportDialog.tsx:120` — usa `fapDownload('/bundles/export', payload)` |
-| D5 | `Checkbox` shadcn/ui no existe — bug preexistente en `bundles/page.tsx:18`. Se crea con Radix primitives. | `checkbox.tsx:1-27` — `CheckboxPrimitive.Root` + `cva` + `cn` + `Check` icon |
-| D6 | LLM config (`llm_provider`/`llm_model`) se pierde en export desde canvas — AgentNode creado por drag-deploy no recibe estos campos. | `ExportDialog.tsx:79-80` — warning useMemo: "LLM configuration not included. Use Agent Form export for full config." |
-| D7 | `max_length=15` en `ExportBundleRequest.agents` no se valida en frontend — canvas con >15 agentes causa 422 silencioso. | `ExportDialog.tsx:72-74` — `exceedsLimit = agents.length > 15`. Botón Export deshabilitado + mensaje "+15 agents limit reached" |
-| D8 | Filename hardcoded `crew_export.zip` — no usa `bundle_name` personalizable. | `ExportDialog.tsx:48-52` — `generateDefaultBundleName()` con timestamp. `ExportDialog.tsx:221-229` — Input editable |
-| D9 | bundle-schema-v2 no soporta tasks/edges — solo agents se exportan. Warning informativo. | `ExportDialog.tsx:81` — "Tasks and connections not exported (bundle-schema-v2 limitation). Use Copy as JSON for full graph." |
-| D10 | Sin feedback de progreso/tamaño en export — `confirmExport()` solo tenía toast. | `ExportDialog.tsx:136-138` — toast "Exported as {filename} ({size})". `ExportDialog.tsx:286-288` — LoadingSpinner "Generating bundle..." |
+| Breadcrumbs Reactivos | Sincronizados con el estado de las pestañas (`Tabs`), no con rutas físicas. | `BuilderBreadcrumb.tsx` |
+| Error Boundary de Clase | Necesario ya que los componentes funcionales no soportan `componentDidCatch`. | `BuilderErrorBoundary.tsx` |
+| Dogfooding Tooling | El implementador debe usar `validate_builder_nav.py` para verificar integridad. | `scripts/validate_builder_nav.py` |
 
 ---
 
@@ -534,135 +230,16 @@ src/
 
 | Paso | Estado | Archivos Archivados En | Commit | Decisiones Tomadas | Notas |
 |---|---|---|---|---|---|
-| 01-Crear-endpoint-GET-api-tools-available | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/01-Crear-endpoint-GET-api-tools-available/` | `b26dbe9` | ToolInfo con Literal source; MCP con timeout 5s; category derivada de tags[0]; router en main.py | Validación aprobada. 1 🟡 (dogfooding no verificado). |
-| 02-Crear-endpoint-POST-api-bundles-export | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/02-Crear-endpoint-POST-api-bundles-export/` | `af35a0a` | ExportService orquestador; Response vs StreamingResponse; skills key con `.py` para round-trip; validación goal/backstory + min_length en handler | Validación aprobada. 0 issues. |
-| 03-Endpoints-CRUD-para-templates-de-agentes | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/03-Endpoints-CRUD-para-templates-de-agentes/` | `992a1d1` | Tabla global sin org_id; endpoints públicos sin auth; seed CLI idempotente; índice parcial UNIQUE WHERE; check-then-insert compatible con partial index | Validación rechazada (ID-001 upsert + partial index). Corregido a check-then-insert. Queda pendiente verificación live Supabase post-migración 030. |
-| 04-Builder-visual-UI-con-ReactFlow | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/04-Builder-visual-UI-con-ReactFlow/` | `6d9539c` | POST /agents con TenantClient (RLS fix D4); reactflow v11 + dynamic import ssr:false; AgentForm react-hook-form + zod; ToolMultiSelect custom; PROVIDER_MODELS estático; soul_json plano; upsert update-or-insert; sidebar Builder en nav-main.tsx | Implementación completa. 0 errores lint backend + frontend. Criterios de aceptación cubiertos. Tarea 0 DX: `fap agent create`. |
-| 05-Template-Picker-libreria-de-templates | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/05-Template-Picker-libreria-de-templates/` | `131d619` | TemplatePicker grid + búsqueda + filtro chips; double fetch list+detail; prop templateData en AgentForm; mapTemplateToFormValues con fallbacks; Dialog modal en BuilderLayout; TEMPLATE_CATEGORIES constante; CLI fap templates use | Validación aprobada. 0 issues 🔴. 2 🟡 (dogfooding no verificado, TS errores preexistentes AgentForm). Tarea 0 DX: `fap templates use`. |
-| 06-Agent-Playground-prueba-en-tiempo-real | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/06-Agent-Playground-prueba-en-tiempo-real/` | `e3b5101` | AgentPlayground con useMutation + useQuery polling 2s; MessageBubble con Collapsible >2000 chars; formatResult polimórfico; Sheet lateral right; onRoleChange para habilitar Playground; CLI fap agent run con --watch; Task interface extendida con tokens_used | Validación APROBADO. 22/22 criterios. 0 🔴. 1 🟡 (dogfooding no verificado). 3 🔵 mejoras. Tarea 0 DX: `fap agent run`. |
-| 07-Canvas-visual-ensamblaje-de-crews | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/07-Canvas-visual-ensamblaje-de-crews/` | `54e7936` | HTML5 native DnD sin libs externas; Export agents-only (bundle-schema-v2 limitación); Run All frontend-orquestado; localStorage + JSON download; BuilderLayout tabs Agent Form / Crew Canvas; generateCrewPy código preview; 4 templates preset; Sin ToolNode (badges inline); fap crew CLI (save/load/export/validate/scaffold) | Validación paso 07 completada. 0 migraciones nuevas. 15 tests unitarios (7 canvas + 8 crew endpoints). Tareas DX: `fap crew save`, `fap crew load`, `fap crew export`, `fap crew validate`, `fap crew scaffold`. |
-| 08-ExportDialog-flujo-completo-de-exportacion | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/08-ExportDialog-flujo-completo-de-exportacion/` | `300592f` | ExportDialog componente con 5 estados + validación max_length=15 + checkbox Include skills disabled MVP + warning LLM config + tasks not exported; fapDownload helper en api.ts; Checkbox shadcn/ui creado; CrewCanvas refactorizado (export inline eliminado); AgentForm botón Export; fap bundle validate-payload CLI; `proyecto-config.json` actualizado (phase_state_exists=true, current_step=08) | Validación APROBADO. 31/31 unit tests pasan. 19/19 criterios. 0 🔴. 3 🟡 (dogfooding no verificado, fapDownload hardcodea POST, magic number límite agentes). 5 🔵 mejoras. Tarea 0 DX: `fap bundle validate-payload` + `fapDownload()`. Commit adicional `300592f` actualiza config + phase-state. |
+| 01..08 | ✅ Completados | (Ver histórico) | (Ver histórico) | (Ver histórico) | — |
+| 09-Navegacion-breadcrumbs-integracion | ❌ **RECHAZADO** | `DEVS/IMPLEMENTED/guiAgentGenerator/09-Navegacion-breadcrumbs-e-integracion/` | `57a75de` | Breadcrumbs estáticos, dead code eliminado | Rechazado por fallo en sincronización de tabs con breadcrumb. |
 
 ---
 
 ## 6. Criterios Generales de Aceptación MVP
 
 - ✅ Happy path funciona end-to-end
-- ✅ Errores manejados sin crash (try/except con feedback)
-- ✅ Datos persistidos correctamente (tool_registry + org_mcp_servers)
-- ✅ Validaciones de input presentes (Query regex, require_org_id)
-- ✅ Código ejecuta sin errores ni warnings nuevos
-- ✅ Tooling DX: `fap tools list` — listado de tools desde CLI sin dashboard
-- ✅ Tooling DX: `fap bundle export` — exporta agentes DB a ZIP desde CLI
-- ✅ Tests automatizados implementados: 7 unit + 3 integración (round-trip)
-- ✅ ZIP exportado es re-importable vía `POST /api/bundles/import` (round-trip verificado)
-- ✅ Tests unitarios templates: 7/7 (list, filter, detail, 404, auth, soul_json)
-- ✅ Migración `030_agent_templates.sql` con tabla + RLS + índices
-- ✅ Seed idempotente: check-then-insert compatible con índice parcial `UNIQUE WHERE`
-- ✅ POST /agents con TenantClient: RLS respetada vía backend (corrección D4 al plan)
-- ✅ AgentForm 11 campos con react-hook-form + zodResolver: validación inline
-- ✅ BuilderLayout split 60/40 responsive con Tailwind: ReactFlow izquierda + formulario derecha
-- ✅ BuilderCanvas ReactFlow placeholder con dynamic import + ssr:false
-- ✅ ToolMultiSelect custom con búsqueda/filtro + agrupación por source (local/mcp)
-- ✅ Sidebar con entrada "Builder" navegable a `/builder`
-- ✅ PROVIDER_MODELS con 4 providers y ≥2 modelos cada uno
-- ✅ Zod rechaza submit sin role/goal/backstory con error inline
-- ✅ Zod rechaza max_iter <1 o >10
-- ✅ LLM Provider select cambia dinámicamente opciones de LLM Model
-- ✅ TemplatePicker grid con 4 estados: loading (skeletons), error (EmptyState+Retry), empty (EmptyState+seed hint), data (cards)
-- ✅ TemplatePicker búsqueda client-side case-insensitive + filtro por categoría con chips (4 + "All")
-- ✅ TemplatePicker integrado en BuilderLayout vía Dialog modal (`max-w-3xl max-h-[80vh] overflow-y-auto`)
-- ✅ "Use Template" → double fetch: `GET /api/templates` (cards) + `GET /api/templates/{id}` (detail con soul_json)
-- ✅ Mapeo defensivo template→AgentForm: `soul_json.role` → `role` plano, fallbacks con `??` para campos ausentes
-- ✅ `fap templates use` CLI funcional: `--dry-run`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, Rich table output
-- ✅ `fap templates use` maneja errores gracefully: try/except en `get_service_client()` + `.execute()`, mensajes limpios sin traceback
-- ✅ AgentPlayground chat funcional: input → Enter → POST `/agents/{role}/run` → polling 2s a `GET /tasks/{task_id}`
-- ✅ Respuesta del agente en burbuja debajo del mensaje del usuario (estilo chat)
-- ✅ Indicador de carga "Agent is thinking..." + `LoadingSpinner` durante ejecución
-- ✅ Tokens badge al finalizar: "Tokens: {N}" en burbuja assistant
-- ✅ Manejo de errores: agente no encontrado (status failed), timeout 120s, error de conexión/red
-- ✅ Historial local de mensajes durante la sesión (useState, sin persistencia en DB)
-- ✅ `formatResult()` polimórfico: string→directo, object→JSON.stringify, resto→String
-- ✅ Truncate >2000 chars con `Collapsible` + "Show more"/"Show less"
-- ✅ Sheet lateral derecho `max-w-md` con botón "Playground" en Agent Configuration
-- ✅ Botón Playground disabled hasta que AgentForm tenga role (vía `onRoleChange`)
-- ✅ Scroll automático al último mensaje (scrollRef + useEffect)
-- ✅ Polling se detiene automáticamente en `completed`/`failed` (refetchInterval→false)
-- ✅ `Task` interface extendida con `tokens_used: number` + campos approval opcionales
-- ✅ CLI `fap agent run` funcional: `--role`, `--message`, `--org-id`, `--watch`, `--timeout`
-- ✅ `fap agent run --watch` muestra polling en tiempo real: `[N/M] status=X tokens=Y`
-- ✅ `fap agent run` maneja errores gracefully: ConnectError, timeout, polling errors, 404
-- ✅ URI encoding correcto: `encodeURIComponent` (frontend) + `urllib.parse.quote(role, safe='')` (CLI)
-- ✅ Tests unitarios: 3/3 pasan (success, role_not_found, connection_error)
-- ✅ Canvas ReactFlow funcional con HTML5 native drag-and-drop: sidebar Agent Palette → drop → AgentNode en canvas
-- ✅ Conexiones entre nodos (edges): agent → task y task → task. Conexiones inválidas rechazadas con toast.
-- ✅ Nodo AgentNode muestra role (título), goal (truncado), tools badges (max 3 visibles + overflow +N), model label
-- ✅ Nodo TaskNode muestra description, expectedOutput, assignedAgent badge
-- ✅ Agentes sin tasks → borde amarillo de warning visual
-- ✅ Roles duplicados detectados → botón Export deshabilitado
-- ✅ "Export" genera ZIP vía `POST /bundles/export` → descarga directa en navegador
-- ✅ "Preview Code" genera código Python ejecutable (crewai Agent+Task+Crew+Process.sequential) en diálogo modal
-- ✅ "Run All" ejecuta agentes secuencialmente vía `POST /agents/{role}/run` + polling individual. Resultados por rol.
-- ✅ "Run All" maneja errores por agente (timeout, role not found) sin bloquear resto
-- ✅ Autosave snapshot a localStorage cada 30s. Restauración al montar componente.
-- ✅ "Save Crew" descarga JSON con `CrewGraph` (nodes+edges+metadata) para backup/share
-- ✅ "Load Template" carga 4 templates preset (Research Pipeline, Code Review Crew, Content Creation, Data Analysis)
-- ✅ "Copy as JSON" copia grafo completo al portapapeles (incluye tasks/edges, no solo agents como export)
-- ✅ BuilderLayout tabs: "Agent Form" (Wand2 icon) y "Crew Canvas" (Network icon). `@radix-ui/react-tabs`
-- ✅ BuilderCanvas wrapper `dynamic(ssr: false)` con Skeleton loading state
-- ✅ Endpoint `POST /workflows` crea workflow_template con TenantClient RLS. 409 si flow_type duplicado.
-- ✅ Endpoints `GET /workflows/`, `GET /workflows/{flow_type}`, `DELETE /workflows/{flow_type}` funcionales
-- ✅ CLI `fap crew save` — guarda agentes desde API como crew JSON
-- ✅ CLI `fap crew load` — carga y muestra crew JSON con Rich Table
-- ✅ CLI `fap crew export` — exporta agentes como bundle ZIP vía ExportService (service_role)
-- ✅ CLI `fap crew validate` — valida estructura JSON (roles requeridos, edges válidos, sin ciclos)
-- ✅ CLI `fap crew scaffold` — crea crew desde 1 de 4 presets
-- ✅ Tests unitarios canvas serialize: 7/7 pasan (export payload, code gen single/multi/empty)
-- ✅ Tests unitarios crew endpoints: 8/8 pasan (list agents, workflow create/duplicate, validate)
-
-### Herramientas DX detectadas/propuestas
-| Herramienta | Ubicación | Automatiza |
-|---|---|---|
-| `fap tools list` | `src/cli/commands/tools_list.py` | Listar tools locales + MCP desde terminal. `--org-id`, `--source`, `--json` |
-| `fap validate-tools` | `src/cli/commands/validate_tools.py` | Validar tools contra agent configs (existente pre-Paso 1) |
-| `fap bundle export` | `src/cli/commands/bundle_export.py` | Exportar agentes DB a ZIP bundle desde CLI. `--org-id`, `--output`, `--include-skills`, `--roles` |
-| `fap templates seed` | `src/cli/commands/templates_seed.py` | Insertar 8 system templates en Supabase desde CLI. `--dry-run`, `--reset`. Setup 15min → 1s. |
-| `fap agent create` | `src/cli/commands/agent_create.py` | Crear agente desde terminal vía POST /agents. `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--llm-provider`, `--llm-model`, `--verbose`, `--reasoning`, `--inject-date`, `--memory`, `--dry-run`. Dogfooding: validar backend antes de UI. |
-| `bundle_validator.py` | `scripts/bundle_validator.py` | Validar estructura de ZIP exportado sin consumir endpoint |
-| Builder UI (`/builder`) | `dashboard/app/(app)/builder/page.tsx` | Interfaz visual split 60/40: canvas ReactFlow + formulario de agente con 11 campos. Save vía POST /agents con RLS. |
-| `fap templates use` | `src/cli/commands/templates_use.py` | Crear agente desde template vía CLI. `--org-id`, `--role`, `--goal`, `--backstory`, `--tools`, `--max-iter`, `--dry-run`. Dogfooding: validar mapeo template→agent antes de UI. |
-| TemplatePicker UI | `dashboard/components/builder/TemplatePicker.tsx` | Grid de cards con búsqueda + filtro chips + "Use Template". Carga desde API real, 4 estados visuales. Integrado en BuilderLayout vía Dialog modal. |
-| `fap agent run` | `src/cli/commands/agent_run.py` | Probar agente desde terminal: POST `/agents/{role}/run` + polling `GET /tasks/{task_id}`. `--role`, `--message`, `--org-id`, `--watch`, `--timeout`. Rich output con status + tokens. Dogfooding: validar flujo run→poll→result antes de UI. |
-| AgentPlayground UI | `dashboard/components/builder/AgentPlayground.tsx` | Chat panel integrado en Builder vía Sheet lateral. useMutation + useQuery polling 2s. Burbujas user/assistant/error. Tokens badge. Timeout 120s. Historial local sin persistencia. |
-| `fap crew save` | `src/cli/commands/crew.py:157-216` | Guarda agentes desde API como crew JSON. `--name`, `--org-id`, `--output`. |
-| `fap crew load` | `src/cli/commands/crew.py:219-268` | Carga y muestra crew JSON con Rich Table. `--file`. |
-| `fap crew export` | `src/cli/commands/crew.py:271-341` | Exporta agentes como bundle ZIP vía ExportService. `--name`, `--roles`. Dogfooding: exportar crew desde terminal. |
-| `fap crew validate` | `src/cli/commands/crew.py:344-377` | Valida crew graph JSON (roles, edges, ciclos DFS). `--file`. |
-| `fap crew scaffold` | `src/cli/commands/crew.py:379-422` | Crea crew desde preset template. `--preset` (4 opciones). `--output`. |
-| CrewCanvas UI (`/builder`) | `dashboard/components/builder/CrewCanvas.tsx` | Canvas ReactFlow con sidebar Agent Palette + drag-and-drop + conexiones. Export ZIP, Run All, Preview Code, Save/Load JSON. 4 templates preset. Autosave localStorage 30s. |
-| `fap bundle validate-payload` | `src/cli/commands/bundle_validate_payload.py` | Validar payload JSON contra schema ExportBundleRequest sin llamar endpoint. `--file`, `--stdin`, `--json`. Output Rich con schema status, agentes, skills, warnings. Reduce ciclo "exportar → 422 → corregir → re-exportar". |
-| `fapDownload()` helper | `dashboard/lib/api.ts:54-94` | Descarga binaria autenticada (ZIP) desde endpoints backend con JWT + X-Org-ID headers automáticos. Evita duplicar fetch raw en cada componente. |
-| ExportDialog UI | `dashboard/components/builder/ExportDialog.tsx` | Diálogo modal unificado para exportar agentes como bundle ZIP. Accesible desde AgentForm (1 agente) y CrewCanvas (N agentes). 5 estados: summary/exporting/success/error/empty. Checkbox "Include skills" (disabled MVP). Warning LLM config + tasks not exported en canvas. Input editable bundle name. Copy as JSON. Loading spinner + toast con filename y tamaño. |
-| Checkbox UI | `dashboard/components/ui/checkbox.tsx` | Componente Checkbox shadcn/ui con Radix primitives. Requisito previo para "Include skills" en ExportDialog. |
-
-### Criterios de Aceptación MVP — Paso 08
-
-- ✅ ExportDialog componente reutilizable con props: open, onOpenChange, agents, source, bundleName, enableSkills, fullGraphJson
-- ✅ ExportDialog muestra resumen: agentes (role + tools count), input bundle name, checkbox Include skills (disabled con tooltip)
-- ✅ Botón "Export as ZIP" → `fapDownload('/bundles/export', payload)` → blob download → toast "Exported as {filename} ({size})"
-- ✅ LoadingSpinner "Generating bundle..." durante export + feedback al completar
-- ✅ "Copy as JSON" copia al portapapeles (agente individual en AgentForm, CrewGraph completo en CrewCanvas)
-- ✅ Warning "LLM config not included" visible cuando source='crew-canvas'
-- ✅ Warning "Tasks and connections not exported (bundle-schema-v2 limitation)" visible en crew-canvas
-- ✅ Validación frontend `agents.length > 15` → botón Export deshabilitado + mensaje "+15 agents limit reached"
-- ✅ Empty state: "No agents to export" + botón Close
-- ✅ Error handling: 422/500 → toast error + botón Retry
-- ✅ CrewCanvas refactorizado: `confirmExport`/`handleCopyJSON`/Dialog inline eliminados. `handleSaveCrew` preservado
-- ✅ AgentForm botón "Export" junto a Save Agent, disabled sin role/goal/backstory
-- ✅ `fapDownload()` helper en api.ts para descargas binarias con auth headers automáticos
-- ✅ `Checkbox` shadcn/ui creado con Radix primitives
-- ✅ Tipos `AgentExportItem`, `SkillExportItem`, `ExportBundleRequest` en types.ts
-- ✅ `fap bundle validate-payload` CLI funcional: valida payload contra schema, muestra warnings
-- ✅ Sin regresiones: 382 tests unitarios pasan, 3 tests integración round-trip pasan, ruff lint limpio
-- ✅ Sin nuevas migraciones — paso puramente UI + integración con endpoint existente
-- ✅ ZIP descargable es reimportable vía `POST /api/bundles/import` (round-trip verificado Paso 02)
+- ✅ Errores manejados sin crash
+- ✅ Datos persistidos correctamente
+- ✅ Código ejecuta sin errores de compilación
+- ✅ **Herramienta DX:** `scripts/validate_builder_nav.py` valida 11 puntos de integridad estructural.
+- ❌ **PENDIENTE:** Sincronización dinámica de Breadcrumbs con el estado de las tabs.

@@ -71,7 +71,6 @@ export default function IntegrationsPage() {
                     }
                   }
                 }} 
-                language="json"
               />
             </div>
             

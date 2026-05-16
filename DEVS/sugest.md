@@ -120,3 +120,17 @@
 - **ID-047:** `bundle_validate_payload.py:81-91` — validación goal/backstory ≥10 chars duplica lógica del handler `bundles.py:215-238`. Riesgo de desincronización si backend cambia. → Recomendación: Importar constantes desde `bundle_schemas.py` en lugar de hardcodear.
 
 - **ID-048:** `CrewCanvas.tsx:211-218` — `exportAgents` useMemo mapea `exportPayload.agents` sin transformación real (mismos campos). Redundante. → Recomendación: Usar `exportPayload.agents` directamente o eliminar el useMemo intermedio.
+
+---
+
+## 🔴 Críticos (Paso 09 — Navegación)
+
+- **ID-C03:** Desincronización de Breadcrumbs — El componente `BuilderBreadcrumb` en `page.tsx` tiene la prop `activeTab` hardcodeada, lo que impide que refleje los cambios de pestaña realizados en `BuilderLayout`. Criterio de aceptación MVP no cumplido.
+
+## 🟡 Importantes (Paso 09 — Navegación)
+
+- **ID-049:** Falso positivo en script de validación — `validate_builder_nav.py` reporta éxito aunque la integración lógica sea incorrecta (prop estática). Mejorar validación de conectividad de props.
+
+## 🔵 Mejoras (Paso 09 — Navegación)
+
+- **ID-050:** Sincronización vía Query Params — Usar `?tab=` para manejar el estado del Builder permitiría Deep Linking y simplificaría la sincronización de Breadcrumbs mediante hooks nativos de Next.js.

@@ -2,17 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Columns3,
-  ShieldCheck,
-  History,
-  Bot,
-  Workflow,
-  Activity,
-  MessageSquare,
-  Puzzle,
-} from 'lucide-react'
 import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
 import {
@@ -25,17 +14,6 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-const navMain = [
-  { title: 'Overview', url: '/', icon: LayoutDashboard },
-  { title: 'Kanban', url: '/kanban', icon: Columns3 },
-  { title: 'Aprobaciones', url: '/approvals', icon: ShieldCheck },
-  { title: 'Historial', url: '/tasks', icon: History },
-  { title: 'Agentes', url: '/agents', icon: Bot },
-  { title: 'Workflows', url: '/workflows', icon: Workflow },
-  { title: 'Eventos', url: '/events', icon: Activity },
-  { title: 'Integraciones', url: '/integrations', icon: Puzzle },
-  { title: 'Chat MDC', url: '/architect', icon: MessageSquare },
-]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { BuilderCanvas } from '@/components/builder/BuilderCanvas'
+import { BuilderErrorBoundary } from '@/components/builder/BuilderErrorBoundary'
 import { AgentForm, type AgentFormData } from '@/components/builder/AgentForm'
 import { TemplatePicker } from '@/components/builder/TemplatePicker'
 import { AgentPlayground } from '@/components/builder/AgentPlayground'
@@ -105,7 +106,9 @@ export function BuilderLayout() {
       <TabsContent value="agent-form" className="flex-1 mt-0 data-[state=inactive]:hidden">
         <div className="grid h-full gap-4 lg:grid-cols-[60%_40%]">
           <div className="min-h-0">
-            <BuilderCanvas />
+            <BuilderErrorBoundary>
+              <BuilderCanvas />
+            </BuilderErrorBoundary>
           </div>
           <div className="flex flex-col overflow-hidden rounded-lg border bg-card p-4">
             <div className="flex items-center justify-between mb-3">
@@ -123,7 +126,9 @@ export function BuilderLayout() {
       </TabsContent>
 
       <TabsContent value="crew-canvas" className="flex-1 mt-0 data-[state=inactive]:hidden">
-        <BuilderCanvas />
+        <BuilderErrorBoundary>
+          <BuilderCanvas />
+        </BuilderErrorBoundary>
       </TabsContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
