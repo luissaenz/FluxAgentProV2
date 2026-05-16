@@ -245,3 +245,115 @@ Tests end-to-end que validen el flujo completo del builder: crear agente → pro
 - Todos los tests pasan en `uv run pytest tests/e2e/ -k builder`
 - Cobertura de flujo completo: crear → probar → ensamblar → exportar → importar
 - Tests usan Supabase real (no mock) para validar integración
+
+---
+
+## 📥 Pasos incorporados desde sugerencias de validación (Unificados)
+> Incorporados el 2026-05-16 — Fase activa: guiAgentGenerator
+
+## Paso 11: Estabilización Crítica y Fixes de Arquitectura
+
+**Origen:** Sugerencias 🔴 de validación (ID-C02, ID-C03, ID-C04, ID-023, ID-051, ID-052)
+**Prioridad:** Crítica
+**Fase:** guiAgentGenerator
+
+### Objetivo
+Resolver bloqueos críticos identificados en la fase de validación, centrados en la estabilidad de la DB, la coherencia de la navegación y la integridad de la suite de tests.
+
+### Tareas
+- [ ] **Fix DB Seed:** Corregir idempotencia en `templates_seed.py` añadiendo cláusula `WHERE` en `ON CONFLICT` (ID-C02).
+- [ ] **Sync Breadcrumbs:** Conectar `BuilderBreadcrumb` al estado real de la pestaña activa en el layout (ID-C03).
+- [ ] **Fix Test Suite:** Corregir inyección de mocks y errores `AttributeError` en tests de escenarios (ID-C04).
+- [ ] **TypeScript Integrity:** Resolver mismatch de tipos en `zodResolver` dentro de `AgentForm.tsx` (ID-023).
+- [ ] **Mocking Refactor:** Corregir puntos de parcheo (`patch`) para asegurar que afectan a los módulos que ya importaron las dependencias (ID-051).
+- [ ] **Regression Audit:** Auditar `conftest.py` para asegurar que los cambios globales no afectan a suites pre-existentes (ID-052).
+
+### Criterios de Aceptación
+- `fap templates seed` ejecutable N veces sin error.
+- Breadcrumbs reflejan cambios de pestaña en tiempo real.
+- `fap test-builder run` pasa al 100% (32/32 escenarios).
+- `tsc --noEmit` sin errores en componentes del builder.
+
+---
+
+## Paso 12: Protocolo de Validación y Dogfooding E2E
+
+**Origen:** Sugerencias 🟡 de validación (ID-001, ID-007, ID-009, ID-013, ID-014, ID-022, ID-028, ID-041, ID-049)
+**Prioridad:** Alta
+**Fase:** guiAgentGenerator
+
+### Objetivo
+Ejecutar un protocolo de pruebas "dogfooding" utilizando las herramientas CLI del proyecto para validar los contratos de API antes de darlos por finalizados.
+
+### Tareas
+- [ ] **Tools Validation:** Validar `GET /api/tools/available` usando `fap tools list` (ID-001).
+- [ ] **Templates Validation:** Validar flujo completo de templates (seed -> list -> detail -> filter) (ID-007, ID-009).
+- [ ] **Agent CRUD Validation:** Validar creación de agentes vía CLI `fap agent create --dry-run` (ID-013).
+- [ ] **Fullstack Live:** Ejecutar ciclo real: CLI create -> UI save -> verificación directa en DB (ID-014).
+- [ ] **Mapping Validation:** Validar mapeo template -> agente con `fap templates use --dry-run` para los 8 templates (ID-022).
+- [ ] **Execution Validation:** Validar ciclo de vida de tarea con `fap agent run` (ID-028).
+- [ ] **Export Validation:** Validar contratos de payload con `fap bundle validate-payload` (ID-041).
+- [ ] **Scripting Robustness:** Eliminar falsos positivos en `validate_builder_nav.py` mejorando la detección de props (ID-049).
+
+### Criterios de Aceptación
+- Evidencia documentada de ejecución exitosa para cada herramienta CLI mencionada.
+- Los contratos de API coinciden exactamente con lo esperado por el CLI.
+
+---
+
+## Paso 13: Robustez y Refactorización del Backend (DX)
+
+**Origen:** Sugerencias 🟡/🔵 de validación (ID-015, ID-016, ID-003, ID-004, ID-010, ID-011, ID-012, ID-033, ID-039, ID-047)
+**Prioridad:** Media
+**Fase:** guiAgentGenerator
+
+### Objetivo
+Mejorar la calidad técnica, el rendimiento y el manejo de errores en los servicios de backend y herramientas CLI.
+
+### Tareas
+- [ ] **Strict Typing:** Cambiar `created_at` a obligatorio en `AgentResponse` (ID-015).
+- [ ] **Doc Alignment:** Sincronizar rutas reales con documentación en `analisis-FINAL.md` (ID-016).
+- [ ] **Performance:** Optimizar `_fetch_mcp_tools` reutilizando event loops y evitando `KeyError` (ID-003, ID-004).
+- [ ] **Error Handling:** Implementar `HTTPException(503)` explícito para fallos de DB en templates (ID-010).
+- [ ] **CLI Polish:** Refactorizar `typer.Option` y eliminar emojis problemáticos en terminales (ID-011, ID-012).
+- [ ] **Async Migration:** Migrar CLI (`agent_run.py`, `crew.py`) a `httpx.AsyncClient` para consistencia con el backend (ID-033, ID-039).
+- [ ] **Code Sync:** Centralizar constantes de validación importándolas desde esquemas de bundle (ID-047).
+
+---
+
+## Paso 14: Optimización de UX y Rendimiento Frontend
+
+**Origen:** Sugerencias 🔵 de validación (ID-017, ID-018, ID-019, ID-021, ID-026, ID-034, ID-035, ID-038, ID-044, ID-045, ID-046, ID-048, ID-050, ID-042, ID-043)
+**Prioridad:** Media
+**Fase:** guiAgentGenerator
+
+### Objetivo
+Pulir la experiencia de usuario (UX) en el Builder mediante optimizaciones de React, mejoras de accesibilidad y manejo robusto de UI.
+
+### Tareas
+- [ ] **Hook extraction:** Implementar `useClickOutside` para selectores y mejorar dependencias de `useEffect` en formularios (ID-017, ID-018).
+- [ ] **Performance:** Implementar carga diferida (dynamic) de CSS de ReactFlow y `useMemo` en cálculos de payload (ID-019, ID-046, ID-048).
+- [ ] **UX Components:** Evaluar migración a `cmdk` para herramientas y añadir debounce en cambios de campos de texto (ID-021, ID-034).
+- [ ] **Modularization:** Extraer lógica de mapeo a `lib/template-mapper.ts` (ID-026).
+- [ ] **UI Robustness:** Corregir refs de scroll, eliminar warnings persistentes y añadir fallbacks para portapapeles (ID-035, ID-038, ID-045).
+- [ ] **Navigation:** Sincronizar pestañas del Builder mediante Query Params (`?tab=`) para permitir deep linking (ID-050).
+- [ ] **Helper flexibility:** Añadir soporte para métodos HTTP y constantes centralizadas en descargas (ID-042, ID-043).
+
+---
+
+## Paso 15: Expansión de Cobertura y DX de Tests
+
+**Origen:** Sugerencias 🟡/🔵 de validación (ID-023b, ID-002, ID-020, ID-053, ID-054)
+**Prioridad:** Media
+**Fase:** guiAgentGenerator
+
+### Objetivo
+Asegurar la mantenibilidad a largo plazo mediante una suite de tests robusta y reportes de cobertura claros.
+
+### Tareas
+- [ ] **Infra Stability:** Estabilizar conectividad de Supabase en tests de latencia (ID-023b).
+- [ ] **Backend Coverage:** Crear tests unitarios para endpoint de herramientas y escenarios de error (ID-002).
+- [ ] **Frontend Coverage:** Implementar tests unitarios para `AgentForm` (casos TP-1 a TP-3) (ID-020).
+- [ ] **Mock Consolidation:** Migrar mocks locales a fixtures globales en `conftest.py` (ID-053).
+- [ ] **Reporting:** Integrar métricas de cobertura visual en el reporte de `fap test-builder` (ID-054).
+
