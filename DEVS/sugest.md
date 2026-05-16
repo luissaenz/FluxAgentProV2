@@ -134,3 +134,19 @@
 ## 🔵 Mejoras (Paso 09 — Navegación)
 
 - **ID-050:** Sincronización vía Query Params — Usar `?tab=` para manejar el estado del Builder permitiría Deep Linking y simplificaría la sincronización de Breadcrumbs mediante hooks nativos de Next.js.
+
+---
+
+## 🔴 Críticos (Paso 10 — Tests E2E del Builder)
+
+- **ID-C04:** Falla masiva en la ejecución de la suite de escenarios (21/32 fallos). Los tests de integración reportan `AttributeError: 'NoneType' object has no attribute 'data'` debido a una inyección de mocks incorrecta. Criterio de aceptación #4 no cumplido.
+
+## 🟡 Importantes (Paso 10 — Tests E2E del Builder)
+
+- **ID-051:** Patching inefectivo en `test_builder_scenarios.py`. El uso de `patch("src.db.session.get_tenant_client")` no afecta a los routers que ya han importado la función mediante `from ... import ...`. Se requiere parchear directamente en los módulos de destino (ej. `src.api.routes.agents.get_tenant_client`).
+- **ID-052:** Regresión en tests de integración pre-existentes (`test_full_latency_validation`). La modificación de patch points globales en `conftest.py` podría haber afectado la estabilidad de otras suites.
+
+## 🔵 Mejoras (Paso 10 — Tests E2E del Builder)
+
+- **ID-053:** Consolidación de Mocks. Reducir la complejidad de `fresh_db()` y `mock_select()` en `test_builder_scenarios.py` a favor de utilizar las fixtures estandarizadas de `conftest.py`.
+- **ID-054:** Reporte Visual Enriquecido. Incorporar métricas de cobertura de endpoints del builder en el reporte HTML generado por `fap test-builder run`.

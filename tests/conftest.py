@@ -197,6 +197,8 @@ def mock_tenant_client(mock_service_client):
         "src.api.routes.tasks.get_tenant_client",
         "src.api.routes.webhooks.get_tenant_client",
         "src.api.routes.workflows.get_tenant_client",
+        "src.api.routes.agents.get_tenant_client",
+        "src.api.routes.tools.get_tenant_client",
     ]
 
     stack = []

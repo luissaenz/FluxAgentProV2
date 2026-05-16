@@ -36,6 +36,7 @@ from src.cli.commands.sync_config import sync_config
 from src.cli.commands.sync_step_names import sync_step_names
 from src.cli.commands.templates_seed import templates_app
 from src.cli.commands.templates_use import use_template
+from src.cli.commands.test_builder import test_builder_app
 from src.cli.commands.test_scenarios import test_scenarios
 from src.cli.commands.test_step import test_step
 from src.cli.commands.tool_call_test import test_tool_call
@@ -83,6 +84,7 @@ bundle_app.command("validate-payload")(validate_payload)
 app.add_typer(crew_app, name="crew")
 app.add_typer(agent_app, name="agent")
 agent_app.command("run")(run_agent)
+app.add_typer(test_builder_app, name="test-builder")
 
 if __name__ == "__main__":
     app()

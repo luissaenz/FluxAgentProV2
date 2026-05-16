@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Builder Integrity Report — 20260516_170216</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { color: #1a1a2e; }
+        .summary { padding: 1rem; border-radius: 8px; margin: 1rem 0; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        pre { background: #f5f5f5; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+        th { background: #1a1a2e; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Builder Integrity Report</h1>
+    <p><strong>Org ID:</strong> test-org</p>
+    <p><strong>Timestamp:</strong> 20260516_170216</p>
+    <p><strong>Test file:</strong> /home/daniel/develop/Personal/FluxAgentProV2/tests/e2e/test_builder_scenarios.py</p>
+    <div class="summary fail">
+        <strong>Status: FAILED</strong>
+    </div>
+    <h2>Output</h2>
+    <pre>============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /home/daniel/develop/Personal/FluxAgentProV2/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/daniel/develop/Personal/FluxAgentProV2
+configfile: pyproject.toml
+plugins: timeout-2.4.0, anyio-4.13.0, asyncio-1.3.0, cov-7.1.0, mock-3.15.1
+timeout: 120.0s
+timeout method: signal
+timeout func_only: False
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 32 items
+
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_create_agent_returns_201 FAILED [  3%]
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_create_agent_persists_in_mock_db FAILED [  6%]
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_upsert_updates_existing FAILED [  9%]
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_short_goal_returns_422 PASSED [ 12%]
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_short_backstory_returns_422 PASSED [ 15%]
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_missing_goal_returns_422 PASSED [ 18%]
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_missing_backstory_returns_422 PASSED [ 21%]
+tests/e2e/test_builder_scenarios.py::TestBuilderToolsEndpoint::test_tools_available_returns_200 FAILED [ 25%]
+tests/e2e/test_builder_scenarios.py::TestBuilderToolsEndpoint::test_tools_count_matches_array_length PASSED [ 28%]
+tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_list_templates_returns_list 
+-------------------------------- live log call ---------------------------------
+ERROR    src.services.warmup:warmup.py:110 Global warmup failed: &#x27;org_id&#x27;
+FAILED                                                                   [ 31%]
+tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_template_detail_contains_soul_json 
+-------------------------------- live log call ---------------------------------
+ERROR    src.services.warmup:warmup.py:110 Global warmup failed: string indices must be integers, not &#x27;str&#x27;
+FAILED                                                                   [ 34%]
+tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_template_not_found_returns_404 FAILED [ 37%]
+tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_template_mapping_to_form_values 
+-------------------------------- live log call ---------------------------------
+ERROR    src.services.warmup:warmup.py:110 Global warmup failed: string indices must be integers, not &#x27;str&#x27;
+FAILED                                                                   [ 40%]
+tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_post_run_returns_task_id FAILED [ 43%]
+tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_polling_task_completed FAILED [ 46%]
+tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_polling_task_failed FAILED [ 50%]
+tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_polling_task_not_found_returns_404 FAILED [ 53%]
+tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_run_agent_inserts_task_in_db FAILED [ 56%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_create_workflow_returns_201 FAILED [ 59%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_create_workflow_insert_called FAILED [ 62%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_duplicate_workflow_returns_409 FAILED [ 65%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_empty_crew_no_server_error FAILED [ 68%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_list_workflows_returns_200 FAILED [ 71%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_crew_graph_structure PASSED [ 75%]
+tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_agent_fields_have_min_length PASSED [ 78%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_zip_has_manifest_and_3_agents PASSED [ 81%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_export_and_reimport_returns_201 
+-------------------------------- live log call ---------------------------------
+ERROR    src.services.import_service:import_service.py:170 Error in version guard check
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+ERROR    src.api.routes.bundles:bundles.py:109 Unexpected error importing bundle for org 00000000-0000-0000-0000-000000000001
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/api/routes/bundles.py&quot;, line 85, in import_bundle
+    result = service.process_bundle(zip_bytes, force=force)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 59, in process_bundle
+    self._check_version_guard(new_version_str, bundle_name, force=force)
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+FAILED                                                                   [ 84%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_manifest_hashes_match_content PASSED [ 87%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_roundtrip_preserves_agent_roles 
+-------------------------------- live log call ---------------------------------
+ERROR    src.services.import_service:import_service.py:170 Error in version guard check
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+ERROR    src.api.routes.bundles:bundles.py:109 Unexpected error importing bundle for org 00000000-0000-0000-0000-000000000001
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/api/routes/bundles.py&quot;, line 85, in import_bundle
+    result = service.process_bundle(zip_bytes, force=force)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 59, in process_bundle
+    self._check_version_guard(new_version_str, bundle_name, force=force)
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+FAILED                                                                   [ 90%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_export_no_skills_has_no_skill_files PASSED [ 93%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_zip_structure_complete PASSED [ 96%]
+tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_import_corrupt_zip_returns_client_error 
+-------------------------------- live log call ---------------------------------
+ERROR    src.services.import_service:import_service.py:170 Error in version guard check
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+ERROR    src.api.routes.bundles:bundles.py:109 Unexpected error importing bundle for org 00000000-0000-0000-0000-000000000001
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/api/routes/bundles.py&quot;, line 85, in import_bundle
+    result = service.process_bundle(zip_bytes, force=force)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 59, in process_bundle
+    self._check_version_guard(new_version_str, bundle_name, force=force)
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+FAILED                                                                   [100%]
+
+=================================== FAILURES ===================================
+______________ TestBuilderAgentCRUD.test_create_agent_returns_201 ______________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderAgentCRUD object at 0x7b57597e70b0&gt;
+
+    def test_create_agent_returns_201(self):
+        &quot;&quot;&quot;TP-1: POST /agents con datos validos retorna 201.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(db, data=[])
+        mock_insert(
+            db,
+            data=[
+                {
+                    &quot;id&quot;: uuid4().hex,
+                    &quot;org_id&quot;: TEST_ORG_ID,
+                    &quot;role&quot;: &quot;data_analyst&quot;,
+                    &quot;is_active&quot;: True,
+                    &quot;soul_json&quot;: AGENT_CREATE_PAYLOAD[&quot;soul_json&quot;],
+                    &quot;allowed_tools&quot;: AGENT_CREATE_PAYLOAD[&quot;allowed_tools&quot;],
+                    &quot;max_iter&quot;: AGENT_CREATE_PAYLOAD[&quot;max_iter&quot;],
+                }
+            ],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               resp = client.post(
+                    &quot;/agents&quot;,
+                    json=AGENT_CREATE_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = AgentCreate(role=&#x27;data_analyst&#x27;, soul_json={&#x27;role&#x27;: &#x27;Data Analyst&#x27;, &#x27;goal&#x27;: &#x27;Analyse complex datasets and generate act...negocios. Transformas datos crudos en recomendaciones de negocio claras.&#x27;}, allowed_tools=[&#x27;excel_reader&#x27;], max_iter=3)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, response_model=AgentResponse, status_code=201)
+    async def create_agent(
+        payload: AgentCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create or upsert an agent in agent_catalog via POST.
+    
+        Uses TenantClient for RLS compliance (D4 fix vs plan).
+        Upserts via on_conflict=&#x27;org_id,role&#x27; to allow re-saving.
+        Returns 409 on duplicate role within same org.
+        &quot;&quot;&quot;
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;agent_catalog&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;role&quot;, payload.role)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/agents.py:122: AttributeError
+__________ TestBuilderAgentCRUD.test_create_agent_persists_in_mock_db __________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderAgentCRUD object at 0x7b57594347a0&gt;
+
+    def test_create_agent_persists_in_mock_db(self):
+        &quot;&quot;&quot;POST /agents inserta en agent_catalog.&quot;&quot;&quot;
+        db = fresh_db()
+        sel = mock_select(db, data=[])
+        ins = mock_insert(
+            db,
+            data=[
+                {
+                    &quot;id&quot;: uuid4().hex,
+                    &quot;org_id&quot;: TEST_ORG_ID,
+                    &quot;role&quot;: &quot;data_analyst&quot;,
+                    &quot;is_active&quot;: True,
+                    &quot;soul_json&quot;: {
+                        &quot;role&quot;: &quot;DA&quot;,
+                        &quot;goal&quot;: &quot;do things&quot;,
+                        &quot;backstory&quot;: &quot;Things&quot;,
+                    },
+                    &quot;allowed_tools&quot;: [],
+                    &quot;max_iter&quot;: 3,
+                }
+            ],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=db_cm(db)):
+            with TestClient(app) as client:
+&gt;               client.post(
+                    &quot;/agents&quot;,
+                    json=AGENT_CREATE_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = AgentCreate(role=&#x27;data_analyst&#x27;, soul_json={&#x27;role&#x27;: &#x27;Data Analyst&#x27;, &#x27;goal&#x27;: &#x27;Analyse complex datasets and generate act...negocios. Transformas datos crudos en recomendaciones de negocio claras.&#x27;}, allowed_tools=[&#x27;excel_reader&#x27;], max_iter=3)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, response_model=AgentResponse, status_code=201)
+    async def create_agent(
+        payload: AgentCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create or upsert an agent in agent_catalog via POST.
+    
+        Uses TenantClient for RLS compliance (D4 fix vs plan).
+        Upserts via on_conflict=&#x27;org_id,role&#x27; to allow re-saving.
+        Returns 409 on duplicate role within same org.
+        &quot;&quot;&quot;
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;agent_catalog&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;role&quot;, payload.role)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/agents.py:122: AttributeError
+______________ TestBuilderAgentCRUD.test_upsert_updates_existing _______________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderAgentCRUD object at 0x7b5759434fb0&gt;
+
+    def test_upsert_updates_existing(self):
+        &quot;&quot;&quot;POST /agents con role duplicado ejecuta UPDATE.&quot;&quot;&quot;
+        db = fresh_db()
+        mock_select(db, data=[{&quot;id&quot;: &quot;eid&quot;, &quot;role&quot;: &quot;data_analyst&quot;}])  # existing found
+        mock_update(
+            db,
+            data=[
+                {
+                    &quot;id&quot;: &quot;eid&quot;,
+                    &quot;role&quot;: &quot;data_analyst&quot;,
+                    &quot;is_active&quot;: True,
+                    &quot;soul_json&quot;: AGENT_CREATE_PAYLOAD[&quot;soul_json&quot;],
+                    &quot;allowed_tools&quot;: [],
+                    &quot;max_iter&quot;: 3,
+                }
+            ],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=db_cm(db)):
+            with TestClient(app) as client:
+&gt;               resp = client.post(
+                    &quot;/agents&quot;,
+                    json=AGENT_CREATE_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:359: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = AgentCreate(role=&#x27;data_analyst&#x27;, soul_json={&#x27;role&#x27;: &#x27;Data Analyst&#x27;, &#x27;goal&#x27;: &#x27;Analyse complex datasets and generate act...negocios. Transformas datos crudos en recomendaciones de negocio claras.&#x27;}, allowed_tools=[&#x27;excel_reader&#x27;], max_iter=3)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, response_model=AgentResponse, status_code=201)
+    async def create_agent(
+        payload: AgentCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create or upsert an agent in agent_catalog via POST.
+    
+        Uses TenantClient for RLS compliance (D4 fix vs plan).
+        Upserts via on_conflict=&#x27;org_id,role&#x27; to allow re-saving.
+        Returns 409 on duplicate role within same org.
+        &quot;&quot;&quot;
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;agent_catalog&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;role&quot;, payload.role)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/agents.py:122: AttributeError
+__________ TestBuilderToolsEndpoint.test_tools_available_returns_200 ___________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderToolsEndpoint object at 0x7b5759435f40&gt;
+
+    def test_tools_available_returns_200(self):
+        &quot;&quot;&quot;GET /api/tools/available retorna 200 + ToolsListResponse.&quot;&quot;&quot;
+        db = fresh_db()
+        mock_select(db, data=[])
+    
+        with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+            with TestClient(app) as client:
+                resp = client.get(
+                    &quot;/api/tools/available&quot;, headers={&quot;X-Org-Id&quot;: TEST_ORG_ID}
+                )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert &quot;tools&quot; in body
+&gt;       assert body[&quot;count&quot;] == 0
+E       assert 6 == 0
+
+tests/e2e/test_builder_scenarios.py:468: AssertionError
+____________ TestBuilderTemplates.test_list_templates_returns_list _____________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderTemplates object at 0x7b5759436570&gt;
+
+    def test_list_templates_returns_list(self):
+        &quot;&quot;&quot;GET /api/templates retorna TemplateListResponse con 1 template.&quot;&quot;&quot;
+        db = fresh_db()
+        mock_select(db, data=[MOCK_TEMPLATE])
+    
+        with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+            with TestClient(app) as client:
+&gt;               resp = client.get(&quot;/api/templates&quot;)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/e2e/test_builder_scenarios.py:498: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:473: in get
+    return super().get(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1053: in get
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/api/routes/templates.py:63: in list_templates
+    data = query.execute()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;postgrest._sync.request_builder.SyncSelectRequestBuilder object at 0x7b5753fe9c40&gt;
+
+    def execute(self) -&gt; APIResponse:
+        &quot;&quot;&quot;Execute the query.
+    
+        .. tip::
+            This is the last method called, after the query is built.
+    
+        Returns:
+            :class:`APIResponse`
+    
+        Raises:
+            :class:`APIError` If the API raised an error.
+        &quot;&quot;&quot;
+        r = self.request.send()
+        try:
+            if r.is_success:
+                return APIResponse.from_http_request_response(r)
+            else:
+                json_obj = model_validate_json(APIErrorFromJSON, r.content)
+&gt;               raise APIError(dict(json_obj))
+E               postgrest.exceptions.APIError: {&#x27;message&#x27;: &quot;Could not find the table &#x27;public.agent_templates&#x27; in the schema cache&quot;, &#x27;code&#x27;: &#x27;PGRST205&#x27;, &#x27;hint&#x27;: &quot;Perhaps you meant the table &#x27;public.agent_metadata&#x27;&quot;, &#x27;details&#x27;: None}
+
+.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py:53: APIError
+------------------------------ Captured log call -------------------------------
+ERROR    src.services.warmup:warmup.py:110 Global warmup failed: &#x27;org_id&#x27;
+_________ TestBuilderTemplates.test_template_detail_contains_soul_json _________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderTemplates object at 0x7b5759436870&gt;
+
+    def test_template_detail_contains_soul_json(self):
+        &quot;&quot;&quot;GET /api/templates/{id} retorna detalle con soul_json.&quot;&quot;&quot;
+        db = fresh_db()
+        sel = MagicMock()
+        sel.eq = MagicMock(return_value=sel)
+        sel.maybe_single = MagicMock(return_value=sel)
+        sel.execute.return_value = chain_response(MOCK_TEMPLATE)
+        db.table.return_value.select.return_value = sel
+    
+        with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+            with TestClient(app) as client:
+&gt;               resp = client.get(&quot;/api/templates/template-001&quot;)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/e2e/test_builder_scenarios.py:514: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:473: in get
+    return super().get(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1053: in get
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/api/routes/templates.py:79: in get_template
+    .execute()
+     ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;postgrest._sync.request_builder.SyncMaybeSingleRequestBuilder object at 0x7b575897a8d0&gt;
+
+    def execute(self) -&gt; Optional[SingleAPIResponse]:
+        r = self.request.send()
+        try:
+            if r.is_success:
+                parsed = APIResponse.from_http_request_response(r)
+                if len(parsed.data) == 0:
+                    return None
+                if len(parsed.data) == 1:
+                    return SingleAPIResponse(data=parsed.data[0], count=parsed.count)
+                else:
+                    raise APIError(
+                        {
+                            &quot;message&quot;: &quot;Cannot coerce the result to a single JSON object&quot;,
+                            &quot;code&quot;: &quot;406&quot;,
+                            &quot;hint&quot;: &quot;Please check traceback of the code&quot;,
+                            &quot;details&quot;: &quot;The result contains more than one row.&quot;,
+                        }
+                    )
+            else:
+                json_obj = model_validate_json(APIErrorFromJSON, r.content)
+&gt;               raise APIError(dict(json_obj))
+E               postgrest.exceptions.APIError: {&#x27;message&#x27;: &quot;Could not find the table &#x27;public.agent_templates&#x27; in the schema cache&quot;, &#x27;code&#x27;: &#x27;PGRST205&#x27;, &#x27;hint&#x27;: &quot;Perhaps you meant the table &#x27;public.agent_metadata&#x27;&quot;, &#x27;details&#x27;: None}
+
+.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py:127: APIError
+------------------------------ Captured log call -------------------------------
+ERROR    src.services.warmup:warmup.py:110 Global warmup failed: string indices must be integers, not &#x27;str&#x27;
+___________ TestBuilderTemplates.test_template_not_found_returns_404 ___________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderTemplates object at 0x7b5759436b70&gt;
+
+    def test_template_not_found_returns_404(self):
+        &quot;&quot;&quot;GET /api/templates/{id} con ID invalido retorna 404.&quot;&quot;&quot;
+        db = fresh_db()
+        sel = MagicMock()
+        sel.eq = MagicMock(return_value=sel)
+        sel.maybe_single = MagicMock(return_value=sel)
+        sel.execute.return_value = chain_response(None)
+        db.table.return_value.select.return_value = sel
+    
+        with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+            with TestClient(app) as client:
+&gt;               resp = client.get(&quot;/api/templates/id-invalido-999&quot;)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/e2e/test_builder_scenarios.py:532: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:473: in get
+    return super().get(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1053: in get
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/api/routes/templates.py:79: in get_template
+    .execute()
+     ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;postgrest._sync.request_builder.SyncMaybeSingleRequestBuilder object at 0x7b5758947860&gt;
+
+    def execute(self) -&gt; Optional[SingleAPIResponse]:
+        r = self.request.send()
+        try:
+            if r.is_success:
+                parsed = APIResponse.from_http_request_response(r)
+                if len(parsed.data) == 0:
+                    return None
+                if len(parsed.data) == 1:
+                    return SingleAPIResponse(data=parsed.data[0], count=parsed.count)
+                else:
+                    raise APIError(
+                        {
+                            &quot;message&quot;: &quot;Cannot coerce the result to a single JSON object&quot;,
+                            &quot;code&quot;: &quot;406&quot;,
+                            &quot;hint&quot;: &quot;Please check traceback of the code&quot;,
+                            &quot;details&quot;: &quot;The result contains more than one row.&quot;,
+                        }
+                    )
+            else:
+                json_obj = model_validate_json(APIErrorFromJSON, r.content)
+&gt;               raise APIError(dict(json_obj))
+E               postgrest.exceptions.APIError: {&#x27;message&#x27;: &quot;Could not find the table &#x27;public.agent_templates&#x27; in the schema cache&quot;, &#x27;code&#x27;: &#x27;PGRST205&#x27;, &#x27;hint&#x27;: &quot;Perhaps you meant the table &#x27;public.agent_metadata&#x27;&quot;, &#x27;details&#x27;: None}
+
+.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py:127: APIError
+__________ TestBuilderTemplates.test_template_mapping_to_form_values ___________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderTemplates object at 0x7b5759436ea0&gt;
+
+    def test_template_mapping_to_form_values(self):
+        &quot;&quot;&quot;Mapeo template -&gt; form values: role/goal/backstory &gt;= 10 chars.&quot;&quot;&quot;
+        db = fresh_db()
+        sel = MagicMock()
+        sel.eq = MagicMock(return_value=sel)
+        sel.maybe_single = MagicMock(return_value=sel)
+        sel.execute.return_value = chain_response(MOCK_TEMPLATE)
+        db.table.return_value.select.return_value = sel
+    
+        with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+            with TestClient(app) as client:
+&gt;               resp = client.get(&quot;/api/templates/template-001&quot;)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/e2e/test_builder_scenarios.py:546: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:473: in get
+    return super().get(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1053: in get
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/api/routes/templates.py:79: in get_template
+    .execute()
+     ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;postgrest._sync.request_builder.SyncMaybeSingleRequestBuilder object at 0x7b575895f7a0&gt;
+
+    def execute(self) -&gt; Optional[SingleAPIResponse]:
+        r = self.request.send()
+        try:
+            if r.is_success:
+                parsed = APIResponse.from_http_request_response(r)
+                if len(parsed.data) == 0:
+                    return None
+                if len(parsed.data) == 1:
+                    return SingleAPIResponse(data=parsed.data[0], count=parsed.count)
+                else:
+                    raise APIError(
+                        {
+                            &quot;message&quot;: &quot;Cannot coerce the result to a single JSON object&quot;,
+                            &quot;code&quot;: &quot;406&quot;,
+                            &quot;hint&quot;: &quot;Please check traceback of the code&quot;,
+                            &quot;details&quot;: &quot;The result contains more than one row.&quot;,
+                        }
+                    )
+            else:
+                json_obj = model_validate_json(APIErrorFromJSON, r.content)
+&gt;               raise APIError(dict(json_obj))
+E               postgrest.exceptions.APIError: {&#x27;message&#x27;: &quot;Could not find the table &#x27;public.agent_templates&#x27; in the schema cache&quot;, &#x27;code&#x27;: &#x27;PGRST205&#x27;, &#x27;hint&#x27;: &quot;Perhaps you meant the table &#x27;public.agent_metadata&#x27;&quot;, &#x27;details&#x27;: None}
+
+.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py:127: APIError
+------------------------------ Captured log call -------------------------------
+ERROR    src.services.warmup:warmup.py:110 Global warmup failed: string indices must be integers, not &#x27;str&#x27;
+_____________ TestBuilderPlayground.test_post_run_returns_task_id ______________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderPlayground object at 0x7b5759437260&gt;
+
+    def test_post_run_returns_task_id(self):
+        &quot;&quot;&quot;POST /agents/{role}/run retorna task_id y status accepted.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_insert(
+            db,
+            data=[
+                {
+                    &quot;id&quot;: TASK_ID,
+                    &quot;org_id&quot;: TEST_ORG_ID,
+                    &quot;flow_type&quot;: &quot;agent:data_analyst&quot;,
+                    &quot;status&quot;: &quot;pending&quot;,
+                }
+            ],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               resp = client.post(
+                    &quot;/agents/data_analyst/run&quot;,
+                    json={&quot;input_data&quot;: {&quot;message&quot;: &quot;Hola&quot;}},
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:582: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/api/routes/agents.py:329: in run_agent
+    ).execute()
+      ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;postgrest._sync.request_builder.SyncQueryRequestBuilder object at 0x7b5758924e30&gt;
+
+    def execute(self) -&gt; APIResponse:
+        &quot;&quot;&quot;Execute the query.
+    
+        .. tip::
+            This is the last method called, after the query is built.
+    
+        Returns:
+            :class:`APIResponse`
+    
+        Raises:
+            :class:`APIError` If the API raised an error.
+        &quot;&quot;&quot;
+        r = self.request.send()
+        try:
+            if r.is_success:
+                return APIResponse.from_http_request_response(r)
+            else:
+                json_obj = model_validate_json(APIErrorFromJSON, r.content)
+&gt;               raise APIError(dict(json_obj))
+E               postgrest.exceptions.APIError: {&#x27;message&#x27;: &#x27;null value in column &quot;flow_id&quot; of relation &quot;tasks&quot; violates not-null constraint&#x27;, &#x27;code&#x27;: &#x27;23502&#x27;, &#x27;hint&#x27;: None, &#x27;details&#x27;: &#x27;Failing row contains (b94dc70f-2731-42aa-97be-4b8c93a24205, 00000000-0000-0000-0000-000000000001, agent:data_analyst, pending, {&quot;message&quot;: &quot;Hola&quot;}, null, null, manual-agent-data_analyst-00000000-071f9e, 2026-05-16 20:02:02.48248+00, 2026-05-16 20:02:02.48248+00, null, null, f, none, null, null, 0, 3, 0, f).&#x27;}
+
+.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py:53: APIError
+______________ TestBuilderPlayground.test_polling_task_completed _______________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderPlayground object at 0x7b5759437020&gt;
+
+    def test_polling_task_completed(self):
+        &quot;&quot;&quot;Polling GET /tasks/{id} retornacompleted con tokens_used.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        task = {
+            &quot;id&quot;: TASK_ID,
+            &quot;org_id&quot;: TEST_ORG_ID,
+            &quot;flow_type&quot;: &quot;agent:data_analyst&quot;,
+            &quot;status&quot;: &quot;completed&quot;,
+            &quot;result&quot;: {&quot;output&quot;: &quot;ok&quot;},
+            &quot;error&quot;: None,
+            &quot;tokens_used&quot;: 150,
+            &quot;created_at&quot;: &quot;2025-01-01T00:00:00&quot;,
+            &quot;updated_at&quot;: &quot;2025-01-01T00:01:00&quot;,
+        }
+        mock_select(db, data=[task])
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+                resp = client.get(
+                    &quot;/tasks/&quot; + TASK_ID, headers={&quot;X-Org-Id&quot;: TEST_ORG_ID}
+                )
+&gt;       assert resp.status_code == 200
+E       assert 400 == 200
+E        +  where 400 = &lt;Response [400 Bad Request]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:614: AssertionError
+________________ TestBuilderPlayground.test_polling_task_failed ________________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderPlayground object at 0x7b5759436a50&gt;
+
+    def test_polling_task_failed(self):
+        &quot;&quot;&quot;Polling detecta estado failed.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        task = {
+            &quot;id&quot;: &quot;fail-001&quot;,
+            &quot;org_id&quot;: TEST_ORG_ID,
+            &quot;flow_type&quot;: &quot;agent:da&quot;,
+            &quot;status&quot;: &quot;failed&quot;,
+            &quot;result&quot;: None,
+            &quot;error&quot;: &quot;timeout&quot;,
+            &quot;tokens_used&quot;: 0,
+            &quot;created_at&quot;: &quot;2025-01-01T00:00:00&quot;,
+            &quot;updated_at&quot;: &quot;2025-01-01T00:00:30&quot;,
+        }
+        mock_select(db, data=[task])
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+                resp = client.get(&quot;/tasks/fail-001&quot;, headers={&quot;X-Org-Id&quot;: TEST_ORG_ID})
+&gt;       assert resp.status_code == 200
+E       assert 400 == 200
+E        +  where 400 = &lt;Response [400 Bad Request]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:639: AssertionError
+________ TestBuilderPlayground.test_polling_task_not_found_returns_404 _________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderPlayground object at 0x7b5759436450&gt;
+
+    def test_polling_task_not_found_returns_404(self):
+        &quot;&quot;&quot;Polling con task_id inexistente retorna 404.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(db, data=[])
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+                resp = client.get(
+                    &quot;/tasks/task-inexistente-999&quot;, headers={&quot;X-Org-Id&quot;: TEST_ORG_ID}
+                )
+&gt;       assert resp.status_code == 404
+E       assert 400 == 404
+E        +  where 400 = &lt;Response [400 Bad Request]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:654: AssertionError
+___________ TestBuilderPlayground.test_run_agent_inserts_task_in_db ____________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderPlayground object at 0x7b5759435e20&gt;
+
+    def test_run_agent_inserts_task_in_db(self):
+        &quot;&quot;&quot;POST /agents/{role}/run inserta registro en tabla tasks.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_insert(db, data=[])
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               client.post(
+                    &quot;/agents/data_analyst/run&quot;,
+                    json={&quot;input_data&quot;: {&quot;message&quot;: &quot;test&quot;}},
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/api/routes/agents.py:329: in run_agent
+    ).execute()
+      ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;postgrest._sync.request_builder.SyncQueryRequestBuilder object at 0x7b5753f0e120&gt;
+
+    def execute(self) -&gt; APIResponse:
+        &quot;&quot;&quot;Execute the query.
+    
+        .. tip::
+            This is the last method called, after the query is built.
+    
+        Returns:
+            :class:`APIResponse`
+    
+        Raises:
+            :class:`APIError` If the API raised an error.
+        &quot;&quot;&quot;
+        r = self.request.send()
+        try:
+            if r.is_success:
+                return APIResponse.from_http_request_response(r)
+            else:
+                json_obj = model_validate_json(APIErrorFromJSON, r.content)
+&gt;               raise APIError(dict(json_obj))
+E               postgrest.exceptions.APIError: {&#x27;message&#x27;: &#x27;null value in column &quot;flow_id&quot; of relation &quot;tasks&quot; violates not-null constraint&#x27;, &#x27;code&#x27;: &#x27;23502&#x27;, &#x27;hint&#x27;: None, &#x27;details&#x27;: &#x27;Failing row contains (146a2f90-7be0-4253-8db6-2e974b4eb943, 00000000-0000-0000-0000-000000000001, agent:data_analyst, pending, {&quot;message&quot;: &quot;test&quot;}, null, null, manual-agent-data_analyst-00000000-844606, 2026-05-16 20:02:07.2318+00, 2026-05-16 20:02:07.2318+00, null, null, f, none, null, null, 0, 3, 0, f).&#x27;}
+
+.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py:53: APIError
+___________ TestBuilderCrewAssembly.test_create_workflow_returns_201 ___________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderCrewAssembly object at 0x7b5759435700&gt;
+
+    def test_create_workflow_returns_201(self):
+        &quot;&quot;&quot;POST /workflows con grafo valido retorna 201.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(db, data=[])  # no existing
+        mock_insert(
+            db,
+            data=[
+                {
+                    &quot;id&quot;: uuid4().hex,
+                    &quot;flow_type&quot;: &quot;data_analysis_crew&quot;,
+                    &quot;status&quot;: &quot;draft&quot;,
+                }
+            ],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               resp = client.post(
+                    &quot;/workflows&quot;,
+                    json=CREW_GRAPH_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:699: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = WorkflowCreate(name=&#x27;data-analysis-crew&#x27;, flow_type=&#x27;data_analysis_crew&#x27;, definition={&#x27;description&#x27;: &#x27;Crew de analisis..._role&#x27;: &#x27;report_writer&#x27;, &#x27;depends_on&#x27;: [&#x27;step_2&#x27;], &#x27;requires_approval&#x27;: False}], &#x27;approval_rules&#x27;: []}, status=&#x27;draft&#x27;)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, status_code=201, response_model=WorkflowResponse)
+    async def create_workflow(
+        payload: WorkflowCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create a new workflow_template from canvas definition.
+    
+        Persists the workflow definition JSON in workflow_templates table.
+        Returns 201 Created or 409 Conflict if flow_type already exists for this org.
+        &quot;&quot;&quot;
+        workflow_id = str(uuid4())
+    
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;workflow_templates&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;flow_type&quot;, payload.flow_type)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/workflows.py:130: AttributeError
+__________ TestBuilderCrewAssembly.test_create_workflow_insert_called __________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderCrewAssembly object at 0x7b5759435100&gt;
+
+    def test_create_workflow_insert_called(self):
+        &quot;&quot;&quot;POST /workflows con grafo valido llama insert en workflow_templates.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(db, data=[])
+        mock_insert(
+            db, data=[{&quot;id&quot;: uuid4().hex, &quot;flow_type&quot;: &quot;test_flow&quot;, &quot;status&quot;: &quot;draft&quot;}]
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               client.post(
+                    &quot;/workflows&quot;,
+                    json=CREW_GRAPH_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:720: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = WorkflowCreate(name=&#x27;data-analysis-crew&#x27;, flow_type=&#x27;data_analysis_crew&#x27;, definition={&#x27;description&#x27;: &#x27;Crew de analisis..._role&#x27;: &#x27;report_writer&#x27;, &#x27;depends_on&#x27;: [&#x27;step_2&#x27;], &#x27;requires_approval&#x27;: False}], &#x27;approval_rules&#x27;: []}, status=&#x27;draft&#x27;)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, status_code=201, response_model=WorkflowResponse)
+    async def create_workflow(
+        payload: WorkflowCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create a new workflow_template from canvas definition.
+    
+        Persists the workflow definition JSON in workflow_templates table.
+        Returns 201 Created or 409 Conflict if flow_type already exists for this org.
+        &quot;&quot;&quot;
+        workflow_id = str(uuid4())
+    
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;workflow_templates&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;flow_type&quot;, payload.flow_type)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/workflows.py:130: AttributeError
+_________ TestBuilderCrewAssembly.test_duplicate_workflow_returns_409 __________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderCrewAssembly object at 0x7b57594373e0&gt;
+
+    def test_duplicate_workflow_returns_409(self):
+        &quot;&quot;&quot;POST /workflows con flow_type duplicado retorna 409.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(db, data=[{&quot;id&quot;: &quot;existing-wf&quot;}])  # existing found
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               resp = client.post(
+                    &quot;/workflows&quot;,
+                    json=CREW_GRAPH_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = WorkflowCreate(name=&#x27;data-analysis-crew&#x27;, flow_type=&#x27;data_analysis_crew&#x27;, definition={&#x27;description&#x27;: &#x27;Crew de analisis..._role&#x27;: &#x27;report_writer&#x27;, &#x27;depends_on&#x27;: [&#x27;step_2&#x27;], &#x27;requires_approval&#x27;: False}], &#x27;approval_rules&#x27;: []}, status=&#x27;draft&#x27;)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, status_code=201, response_model=WorkflowResponse)
+    async def create_workflow(
+        payload: WorkflowCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create a new workflow_template from canvas definition.
+    
+        Persists the workflow definition JSON in workflow_templates table.
+        Returns 201 Created or 409 Conflict if flow_type already exists for this org.
+        &quot;&quot;&quot;
+        workflow_id = str(uuid4())
+    
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;workflow_templates&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;flow_type&quot;, payload.flow_type)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/workflows.py:130: AttributeError
+___________ TestBuilderCrewAssembly.test_empty_crew_no_server_error ____________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderCrewAssembly object at 0x7b5759437740&gt;
+
+    def test_empty_crew_no_server_error(self):
+        &quot;&quot;&quot;Grafo vacio no produce 5xx.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(db, data=[])
+        mock_insert(
+            db,
+            data=[{&quot;id&quot;: uuid4().hex, &quot;flow_type&quot;: &quot;empty_crew_v1&quot;, &quot;status&quot;: &quot;draft&quot;}],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+&gt;               resp = client.post(
+                    &quot;/workflows&quot;,
+                    json=CREW_EMPTY_PAYLOAD,
+                    headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                )
+
+tests/e2e/test_builder_scenarios.py:756: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = WorkflowCreate(name=&#x27;empty-crew&#x27;, flow_type=&#x27;empty_crew_v1&#x27;, definition={&#x27;description&#x27;: &#x27;Crew vacia&#x27;, &#x27;agents&#x27;: [], &#x27;steps&#x27;: [], &#x27;approval_rules&#x27;: []}, status=&#x27;draft&#x27;)
+org_id = &#x27;00000000-0000-0000-0000-000000000001&#x27;
+
+    @router.post(&quot;&quot;, status_code=201, response_model=WorkflowResponse)
+    async def create_workflow(
+        payload: WorkflowCreate,
+        org_id: str = Depends(require_org_id),
+    ):
+        &quot;&quot;&quot;Create a new workflow_template from canvas definition.
+    
+        Persists the workflow definition JSON in workflow_templates table.
+        Returns 201 Created or 409 Conflict if flow_type already exists for this org.
+        &quot;&quot;&quot;
+        workflow_id = str(uuid4())
+    
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table(&quot;workflow_templates&quot;)
+                .select(&quot;id&quot;)
+                .eq(&quot;org_id&quot;, org_id)
+                .eq(&quot;flow_type&quot;, payload.flow_type)
+                .maybe_single()
+                .execute()
+            )
+    
+&gt;           if existing.data:
+               ^^^^^^^^^^^^^
+E           AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;data&#x27;
+
+src/api/routes/workflows.py:130: AttributeError
+___________ TestBuilderCrewAssembly.test_list_workflows_returns_200 ____________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderCrewAssembly object at 0x7b5759437aa0&gt;
+
+    def test_list_workflows_returns_200(self):
+        &quot;&quot;&quot;GET /workflows/ retorna 200 + lista de workflows.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_select(
+            db,
+            data=[
+                {
+                    &quot;id&quot;: &quot;w1&quot;,
+                    &quot;name&quot;: &quot;Test&quot;,
+                    &quot;flow_type&quot;: &quot;tf&quot;,
+                    &quot;status&quot;: &quot;active&quot;,
+                    &quot;is_active&quot;: True,
+                    &quot;execution_count&quot;: 0,
+                }
+            ],
+        )
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with TestClient(app) as client:
+                resp = client.get(&quot;/workflows&quot;, headers={&quot;X-Org-Id&quot;: TEST_ORG_ID})
+&gt;       assert resp.status_code == 200
+E       assert 405 == 200
+E        +  where 405 = &lt;Response [405 Method Not Allowed]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:784: AssertionError
+__________ TestBuilderRoundTrip.test_export_and_reimport_returns_201 ___________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderRoundTrip object at 0x7b575944c8f0&gt;
+
+    def test_export_and_reimport_returns_201(self):
+        &quot;&quot;&quot;Exportar -&gt; Importar -&gt; 201 con status success.&quot;&quot;&quot;
+        payload = _export_request()
+        service = ExportService(org_id=TEST_ORG_ID)
+        zip_bytes, filename = service.export(payload)
+        assert filename.endswith(&quot;.zip&quot;)
+    
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_insert(db, data=[{&quot;id&quot;: uuid4().hex, &quot;org_id&quot;: TEST_ORG_ID}])
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+                with TestClient(app) as client:
+                    resp = client.post(
+                        &quot;/api/bundles/import&quot;,
+                        files={&quot;file&quot;: (&quot;rt.zip&quot;, zip_bytes, &quot;application/zip&quot;)},
+                        headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                    )
+&gt;       assert resp.status_code == 201, f&quot;Got {resp.status_code}: {resp.text}&quot;
+E       AssertionError: Got 500: {&quot;detail&quot;:&quot;Internal server error during import: expected string or bytes-like object, got &#x27;MagicMock&#x27;&quot;}
+E       assert 500 == 201
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:861: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    src.services.import_service:import_service.py:170 Error in version guard check
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+ERROR    src.api.routes.bundles:bundles.py:109 Unexpected error importing bundle for org 00000000-0000-0000-0000-000000000001
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/api/routes/bundles.py&quot;, line 85, in import_bundle
+    result = service.process_bundle(zip_bytes, force=force)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 59, in process_bundle
+    self._check_version_guard(new_version_str, bundle_name, force=force)
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+__________ TestBuilderRoundTrip.test_roundtrip_preserves_agent_roles ___________
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderRoundTrip object at 0x7b575944cfb0&gt;
+
+    def test_roundtrip_preserves_agent_roles(self):
+        &quot;&quot;&quot;Round-trip completa: agent roles intactos.&quot;&quot;&quot;
+        payload = _export_request()
+        service = ExportService(org_id=TEST_ORG_ID)
+        zip_bytes, _ = service.export(payload)
+    
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_insert(db, data=[{&quot;id&quot;: uuid4().hex, &quot;org_id&quot;: TEST_ORG_ID}])
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+                with TestClient(app) as client:
+                    resp = client.post(
+                        &quot;/api/bundles/import&quot;,
+                        files={&quot;file&quot;: (&quot;survival.zip&quot;, zip_bytes, &quot;application/zip&quot;)},
+                        headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                    )
+&gt;       assert resp.status_code == 201
+E       assert 500 == 201
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:895: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    src.services.import_service:import_service.py:170 Error in version guard check
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+ERROR    src.api.routes.bundles:bundles.py:109 Unexpected error importing bundle for org 00000000-0000-0000-0000-000000000001
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/api/routes/bundles.py&quot;, line 85, in import_bundle
+    result = service.process_bundle(zip_bytes, force=force)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 59, in process_bundle
+    self._check_version_guard(new_version_str, bundle_name, force=force)
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+______ TestBuilderRoundTrip.test_import_corrupt_zip_returns_client_error _______
+
+self = &lt;tests.e2e.test_builder_scenarios.TestBuilderRoundTrip object at 0x7b5759437a70&gt;
+
+    def test_import_corrupt_zip_returns_client_error(self):
+        &quot;&quot;&quot;Importar ZIP corrupto retorna 400-499.&quot;&quot;&quot;
+        db = fresh_db()
+        cm = db_cm(db)
+        mock_insert(db, data=[{&quot;id&quot;: uuid4().hex, &quot;org_id&quot;: TEST_ORG_ID}])
+    
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, &quot;w&quot;) as z:
+            z.writestr(&quot;manifest.json&quot;, &#x27;{&quot;version&quot;: &quot;99.9.9-invalid&quot;}&#x27;)
+        bad_zip = buf.getvalue()
+    
+        with patch(&quot;src.db.session.get_tenant_client&quot;, return_value=cm):
+            with patch(&quot;src.db.session.get_service_client&quot;, return_value=db):
+                with TestClient(app) as client:
+                    resp = client.post(
+                        &quot;/api/bundles/import&quot;,
+                        files={&quot;file&quot;: (&quot;bad.zip&quot;, bad_zip, &quot;application/zip&quot;)},
+                        headers={&quot;X-Org-Id&quot;: TEST_ORG_ID},
+                    )
+&gt;       assert 400 &lt;= resp.status_code &lt; 500
+E       assert 500 &lt; 500
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/e2e/test_builder_scenarios.py:937: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    src.services.import_service:import_service.py:170 Error in version guard check
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+ERROR    src.api.routes.bundles:bundles.py:109 Unexpected error importing bundle for org 00000000-0000-0000-0000-000000000001
+Traceback (most recent call last):
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/api/routes/bundles.py&quot;, line 85, in import_bundle
+    result = service.process_bundle(zip_bytes, force=force)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 59, in process_bundle
+    self._check_version_guard(new_version_str, bundle_name, force=force)
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/src/services/import_service.py&quot;, line 153, in _check_version_guard
+    curr_v = Version(current_version_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &quot;/home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/packaging/version.py&quot;, line 359, in __init__
+    match = self._regex.fullmatch(version)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: expected string or bytes-like object, got &#x27;MagicMock&#x27;
+=============================== warnings summary ===============================
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_short_goal_returns_422
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_short_backstory_returns_422
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_missing_goal_returns_422
+tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_missing_backstory_returns_422
+  /home/daniel/develop/Personal/FluxAgentProV2/.venv/lib/python3.12/site-packages/fastapi/routing.py:328: DeprecationWarning: &#x27;HTTP_422_UNPROCESSABLE_ENTITY&#x27; is deprecated. Use &#x27;HTTP_422_UNPROCESSABLE_CONTENT&#x27; instead.
+    return await dependant.call(**values)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_create_agent_returns_201
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_create_agent_persists_in_mock_db
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderAgentCRUD::test_upsert_updates_existing
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderToolsEndpoint::test_tools_available_returns_200
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_list_templates_returns_list
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_template_detail_contains_soul_json
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_template_not_found_returns_404
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderTemplates::test_template_mapping_to_form_values
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_post_run_returns_task_id
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_polling_task_completed
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_polling_task_failed
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_polling_task_not_found_returns_404
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderPlayground::test_run_agent_inserts_task_in_db
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_create_workflow_returns_201
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_create_workflow_insert_called
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_duplicate_workflow_returns_409
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_empty_crew_no_server_error
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderCrewAssembly::test_list_workflows_returns_200
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_export_and_reimport_returns_201
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_roundtrip_preserves_agent_roles
+FAILED tests/e2e/test_builder_scenarios.py::TestBuilderRoundTrip::test_import_corrupt_zip_returns_client_error
+================== 21 failed, 11 passed, 4 warnings in 29.97s ==================
+</pre>
+</body>
+</html>
