@@ -43,7 +43,7 @@ class WorkflowResponse(BaseModel):
     status: str
 
 
-@router.get("/", response_model=WorkflowListResponse)
+@router.get("", response_model=WorkflowListResponse)
 async def list_workflows(
     org_id: str = Depends(require_org_id),
     status: Optional[str] = None,

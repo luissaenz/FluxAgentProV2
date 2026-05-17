@@ -32,9 +32,9 @@ import { ExportDialog } from '@/components/builder/ExportDialog'
 
 const agentFormSchema = z.object({
   role: z.string().min(1, 'Role is required'),
-  goal: z.string().min(1, 'Goal is required'),
-  backstory: z.string().min(1, 'Backstory is required'),
-  llmProvider: z.enum(['groq', 'openai', 'anthropic', 'openrouter']),
+  goal: z.string().min(10, 'Goal must be at least 10 characters'),
+  backstory: z.string().min(10, 'Backstory must be at least 10 characters'),
+  llmProvider: z.string(),
   llmModel: z.string(),
   allowedTools: z.array(z.string()),
   maxIter: z.number().int().min(1).max(10),
@@ -267,7 +267,7 @@ export function AgentForm({
           <Label>LLM Provider</Label>
           <Select
             value={llmProvider}
-            onValueChange={(v) => setValue('llmProvider', v as AgentFormData['llmProvider'])}
+            onValueChange={(v) => setValue('llmProvider', v)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select provider" />

@@ -149,6 +149,15 @@ def seed_templates(
     """Seed the agent_templates table with 8 pre-defined system templates."""
     db = get_service_client()
 
+    # ID-002: Preventative check to ensure the table exists
+    if not dry_run:
+        try:
+            db.table("agent_templates").select("id").limit(1).execute()
+        except Exception:
+            console.print("[bold red]Error: La tabla 'agent_templates' no existe o la base de datos no está disponible.[/bold red]")
+            console.print("[yellow]Por favor, ejecute la migración 030 en Supabase Studio antes de sembrar.[/yellow]")
+            raise typer.Exit(code=1)
+
     if reset:
         console.print("[yellow]Resetting system templates...[/yellow]")
         try:
@@ -179,35 +188,32 @@ def seed_templates(
     errors = 0
 
     for template in TEMPLATES:
+        row = {
+            "id": str(uuid.uuid5(uuid.NAMESPACE_DNS, f"fap.system.template.{template['name']}")),
+            "name": template["name"],
+            "description": template["description"],
+            "category": template["category"],
+            "soul_json": template["soul_json"],
+            "suggested_tools": template["suggested_tools"],
+            "max_iter": template["max_iter"],
+            "is_system": template["is_system"],
+        }
         try:
-            existing = (
+            # Analysis-FINAL §4 D1: Atomic idempotency via ON CONFLICT DO NOTHING.
+            # Resolves 42P10 constraint error by targeting Primary Key 'id' (derived deterministically).
+            result = (
                 db.table("agent_templates")
-                .select("id")
-                .eq("name", template["name"])
-                .eq("is_system", True)
+                .upsert(row, on_conflict="id", ignore_duplicates=True)
                 .execute()
             )
-            if existing.data:
-                console.print(f"  [dim]-[/dim] {template['name']} (already exists, skipped)")
+            if result.data:
+                inserted += 1
+                console.print(f"  [green]OK[/green] {template['name']}")
+            else:
                 skipped += 1
-                continue
-
-            db.table("agent_templates").insert(
-                {
-                    "id": str(uuid.uuid5(uuid.NAMESPACE_DNS, f"fap.system.template.{template['name']}")),
-                    "name": template["name"],
-                    "description": template["description"],
-                    "category": template["category"],
-                    "soul_json": template["soul_json"],
-                    "suggested_tools": template["suggested_tools"],
-                    "max_iter": template["max_iter"],
-                    "is_system": template["is_system"],
-                },
-            ).execute()
-            inserted += 1
-            console.print(f"  [green]OK[/green] {template['name']}")
+                console.print(f"  [dim]-[/dim] {template['name']} (already exists, skipped)")
         except Exception as exc:
-            logger.exception("Failed to insert template '%s'", template["name"])
+            logger.exception("Failed to upsert template '%s'", template["name"])
             console.print(f"  [red]FAIL[/red] {template['name']}: {exc}")
             errors += 1
 
@@ -216,5 +222,4 @@ def seed_templates(
         console.print(f"[dim]Skipped:[/dim] {skipped} (already exist)")
     if errors:
         console.print(f"[bold red]Errors:[/bold red] {errors}")
-    if reset:
-        console.print("[yellow]Run migration 030 first if table does not exist.[/yellow]")
+

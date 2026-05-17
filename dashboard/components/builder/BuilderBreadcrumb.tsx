@@ -1,6 +1,8 @@
+'use client'
+
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { ChevronRight, Home } from 'lucide-react'
+import { useBuilderTab } from '@/components/builder/BuilderTabContext'
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -15,8 +17,8 @@ const TAB_LABELS: Record<string, string> = {
   'crew-canvas': 'Crew Canvas',
 }
 
-export function BuilderBreadcrumb({ activeTab }: { activeTab: string }) {
-  const pathname = usePathname()
+export function BuilderBreadcrumb() {
+  const { activeTab } = useBuilderTab()
 
   return (
     <Breadcrumb>

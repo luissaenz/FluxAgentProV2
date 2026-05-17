@@ -120,6 +120,11 @@ async def create_agent(
         )
 
         if existing.data:
+            existing_id = (
+                existing.data[0]["id"]
+                if isinstance(existing.data, list)
+                else existing.data.get("id")
+            )
             result = (
                 db.table("agent_catalog")
                 .update({
@@ -128,11 +133,14 @@ async def create_agent(
                     "max_iter": payload.max_iter,
                     "is_active": True,
                 })
-                .eq("id", existing.data["id"])
+                .eq("id", existing_id)
                 .execute()
             )
             logger.info("Agent '%s' updated in org '%s'", payload.role, org_id)
-            return AgentResponse(**result.data[0])
+            agent_data = dict(result.data[0])
+            if "org_id" not in agent_data:
+                agent_data["org_id"] = org_id
+            return AgentResponse(**agent_data)
 
         result = (
             db.table("agent_catalog")
@@ -148,7 +156,10 @@ async def create_agent(
         )
 
         logger.info("Agent '%s' created in org '%s'", payload.role, org_id)
-        return AgentResponse(**result.data[0])
+        agent_data = dict(result.data[0])
+        if "org_id" not in agent_data:
+            agent_data["org_id"] = org_id
+        return AgentResponse(**agent_data)
 
 
 @router.get("/by-role/{role}")

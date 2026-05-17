@@ -56,11 +56,15 @@ async def list_templates(
     category: Optional[str] = Query(None),
 ) -> TemplateListResponse:
     """Listar templates. ?category= opcional. Sin auth."""
-    db = get_service_client()
-    query = db.table("agent_templates").select("*")
-    if category:
-        query = query.eq("category", category)
-    data = query.execute()
+    try:
+        db = get_service_client()
+        query = db.table("agent_templates").select("*")
+        if category:
+            query = query.eq("category", category)
+        data = query.execute()
+    except Exception as exc:
+        logger.error("DB error listing templates: %s", exc)
+        raise HTTPException(503, "Database unavailable") from exc
     return TemplateListResponse(
         templates=[TemplateInfo(**t) for t in data.data],
         count=len(data.data),
@@ -70,14 +74,19 @@ async def list_templates(
 @router.get("/{template_id}", response_model=TemplateDetailResponse)
 async def get_template(template_id: str) -> TemplateDetailResponse:
     """Obtener template por ID. 404 si no existe."""
-    db = get_service_client()
-    result = (
-        db.table("agent_templates")
-        .select("*")
-        .eq("id", template_id)
-        .maybe_single()
-        .execute()
-    )
+    try:
+        db = get_service_client()
+        result = (
+            db.table("agent_templates")
+            .select("*")
+            .eq("id", template_id)
+            .maybe_single()
+            .execute()
+        )
+    except Exception as exc:
+        logger.error("DB error getting template %s: %s", template_id, exc)
+        raise HTTPException(503, "Database unavailable") from exc
     if not result.data:
         raise HTTPException(404, "Template not found")
     return TemplateDetailResponse(**result.data)
+

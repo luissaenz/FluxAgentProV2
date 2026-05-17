@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-16T20:10:46.446475+00:00",
-  "task_id": "lat-test-6c0dabb8c8d6",
-  "clock_offset_ms": 1.89,
+  "timestamp": "2026-05-17T00:11:11.927020+00:00",
+  "task_id": "lat-test-d3fba12ad181",
+  "clock_offset_ms": -7.72,
   "metrics": {
-    "events_received": 10,
-    "events_in_db": 10,
+    "events_received": 1,
+    "events_in_db": 1,
     "integrity_pct": 100.0,
-    "latency_avg_ms": 766.69,
-    "latency_p95_ms": 1597.47,
-    "latency_min_ms": 380.35,
-    "latency_max_ms": 1597.47
+    "latency_avg_ms": 474.82,
+    "latency_p95_ms": 474.82,
+    "latency_min_ms": 474.82,
+    "latency_max_ms": 474.82
   },
   "thresholds": {
     "p95_target_ms": 5000,
@@ -20,84 +20,12 @@
   },
   "events": [
     {
-      "id": "89735ebd-d259-4cb4-81a7-9d98cb4eb621",
-      "event_type": "agent_thought",
+      "id": "8f2337dc-ff75-4cdc-bcb2-3be95fb1e178",
+      "event_type": "warmup",
       "sequence": 1,
-      "db_ts_ms": 1778962231895.614,
-      "recv_wall_ms": 1778962232291.2188,
-      "latency_ms": 393.716796875
-    },
-    {
-      "id": "4209fd71-92ba-4b02-88aa-63a271d70b68",
-      "event_type": "agent_thought",
-      "sequence": 2,
-      "db_ts_ms": 1778962232968.898,
-      "recv_wall_ms": 1778962233361.8718,
-      "latency_ms": 391.0859375
-    },
-    {
-      "id": "9b1e60d2-86a0-41a9-a038-6f7891c6bcd3",
-      "event_type": "agent_thought",
-      "sequence": 3,
-      "db_ts_ms": 1778962234335.988,
-      "recv_wall_ms": 1778962235775.7563,
-      "latency_ms": 1437.88037109375
-    },
-    {
-      "id": "4867b64b-e67d-4071-adde-da239f974fdb",
-      "event_type": "agent_thought",
-      "sequence": 4,
-      "db_ts_ms": 1778962235393.788,
-      "recv_wall_ms": 1778962235776.0251,
-      "latency_ms": 380.34912109375
-    },
-    {
-      "id": "0acb703d-6a0f-4bfb-be15-e072b7067115",
-      "event_type": "agent_thought",
-      "sequence": 5,
-      "db_ts_ms": 1778962236471.88,
-      "recv_wall_ms": 1778962237092.9443,
-      "latency_ms": 619.176513671875
-    },
-    {
-      "id": "5e460d9e-f9b8-44d6-a5d4-b464d9898440",
-      "event_type": "agent_thought",
-      "sequence": 6,
-      "db_ts_ms": 1778962237896.5,
-      "recv_wall_ms": 1778962239495.8572,
-      "latency_ms": 1597.46923828125
-    },
-    {
-      "id": "e2a2872a-36dd-45f2-99c6-174c7e530a5a",
-      "event_type": "agent_thought",
-      "sequence": 7,
-      "db_ts_ms": 1778962239097.961,
-      "recv_wall_ms": 1778962239526.384,
-      "latency_ms": 426.53515625
-    },
-    {
-      "id": "98c0bbfc-df0a-41cd-9eac-4099e8154b3c",
-      "event_type": "agent_thought",
-      "sequence": 8,
-      "db_ts_ms": 1778962240256.574,
-      "recv_wall_ms": 1778962241811.2427,
-      "latency_ms": 1552.78076171875
-    },
-    {
-      "id": "5c55c5de-81e7-466f-b538-1e1965f3e99f",
-      "event_type": "agent_thought",
-      "sequence": 9,
-      "db_ts_ms": 1778962241377.477,
-      "recv_wall_ms": 1778962241811.5964,
-      "latency_ms": 432.2314453125
-    },
-    {
-      "id": "5bf957b9-cdc5-4326-8a32-5a7a5ee796ed",
-      "event_type": "agent_thought",
-      "sequence": 10,
-      "db_ts_ms": 1778962242506.399,
-      "recv_wall_ms": 1778962242943.9167,
-      "latency_ms": 435.6298828125
+      "db_ts_ms": 1778976665224.916,
+      "recv_wall_ms": 1778976665692.0183,
+      "latency_ms": 474.822021484375
     }
   ],
   "passed": true

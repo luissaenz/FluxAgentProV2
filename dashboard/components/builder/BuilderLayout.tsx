@@ -7,6 +7,7 @@ import { BuilderErrorBoundary } from '@/components/builder/BuilderErrorBoundary'
 import { AgentForm, type AgentFormData } from '@/components/builder/AgentForm'
 import { TemplatePicker } from '@/components/builder/TemplatePicker'
 import { AgentPlayground } from '@/components/builder/AgentPlayground'
+import { useBuilderTab } from '@/components/builder/BuilderTabContext'
 import type { TemplateDetail } from '@/components/builder/TemplatePicker'
 import {
   Dialog,
@@ -30,7 +31,7 @@ function mapTemplateToFormValues(template: TemplateDetail): AgentFormData {
   type Provider = AgentFormData['llmProvider']
 
   function mapProvider(provider?: string): Provider {
-    return valid.includes(provider as Provider) ? (provider as Provider) : 'groq'
+    return (valid as readonly string[]).includes(provider ?? '') ? (provider as Provider) : 'groq'
   }
 
   return {
@@ -53,7 +54,7 @@ export function BuilderLayout() {
   const [playgroundOpen, setPlaygroundOpen] = useState(false)
   const [templateData, setTemplateData] = useState<AgentFormData | null>(null)
   const [currentRole, setCurrentRole] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState('agent-form')
+  const { activeTab, setActiveTab } = useBuilderTab()
 
   function handleSelectTemplate(template: TemplateDetail) {
     const mapped = mapTemplateToFormValues(template)

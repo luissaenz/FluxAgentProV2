@@ -7,7 +7,7 @@ without external dependencies.
 from __future__ import annotations
 
 import sys
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -108,7 +108,7 @@ def make_mock_client():
 # ── service client fixture ─────────────────────────────────────
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_service_client():
     """Mock for get_service_client() — patches multiple potential import points."""
     client = make_mock_client()
@@ -123,6 +123,11 @@ def mock_service_client():
         "src.tools.service_connector.get_service_client",
         "src.crews.base_crew.get_service_client",
         "src.services.warmup.get_service_client",
+        "src.services.import_service.get_service_client",
+        "src.services.export_service.get_service_client",
+        "src.api.routes.templates.get_service_client",
+        "src.api.routes.bundles.get_service_client",
+        "src.api.routes.tools.get_service_client",
     ]
 
     stack = []
@@ -143,7 +148,7 @@ def mock_service_client():
 # ── anon client fixture ────────────────────────────────────────
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_anon_client():
     """Mock for get_anon_client() — patches multiple potential import points."""
     client = make_mock_client()
@@ -171,7 +176,7 @@ def mock_anon_client():
 # ── TenantClient fixture ────────────────────────────────────────
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_tenant_client(mock_service_client):
     """
     Mock for get_tenant_client() context manager — patches multiple points.
@@ -199,6 +204,9 @@ def mock_tenant_client(mock_service_client):
         "src.api.routes.workflows.get_tenant_client",
         "src.api.routes.agents.get_tenant_client",
         "src.api.routes.tools.get_tenant_client",
+        "src.api.routes.bundles.get_tenant_client",
+        "src.services.import_service.get_tenant_client",
+        "src.services.export_service.get_tenant_client",
     ]
 
     stack = []
@@ -273,36 +281,8 @@ for mod_name in [
         sys.modules[mod_name] = MagicMock()
 
 
-@pytest.fixture(autouse=True)
-def global_llm_mock():
-    """Automatically mock all major LLM provider entry points."""
-    with (
-        patch("langchain_openai.ChatOpenAI") as mock_openai,
-        patch("langchain_community.chat_models.ChatOllama") as mock_ollama,
-        patch("crewai.Agent") as mock_agent,
-        patch("crewai.Task") as mock_task,
-        patch("crewai.Crew") as mock_crew,
-    ):
-        # Setup default mock responses
-        mock_instance = MagicMock()
-        mock_instance.invoke.return_value = MagicMock(content="Mocked LLM Result")
-        mock_openai.return_value = mock_instance
-        mock_ollama.return_value = mock_instance
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff.return_value = MagicMock(raw="Mocked Crew Result")
-        mock_crew_instance.kickoff_async = AsyncMock(
-            return_value=MagicMock(raw="Mocked Crew Result")
-        )
-        mock_crew.return_value = mock_crew_instance
-
-        yield {
-            "openai": mock_openai,
-            "ollama": mock_ollama,
-            "crew": mock_crew,
-            "agent": mock_agent,
-            "task": mock_task,
-        }
+# NOTE: global_llm_mock moved to tests/e2e/conftest.py (Analysis-FINAL §ID-052)
+# to avoid autouse interference with non-builder test suites.
 
 
 @pytest.fixture
