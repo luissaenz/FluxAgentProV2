@@ -8,7 +8,6 @@ import { Send, Play } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Collapsible,
   CollapsibleContent,
@@ -144,6 +143,10 @@ export function AgentPlayground({ role }: AgentPlaygroundProps) {
       setCurrentTaskId(null)
       setStartTime(null)
     }
+    // `startTime` solo cambia via `setStartTime(null)` cuando `currentTaskId` se limpia,
+    // que ocurre dentro de este mismo efecto. Agregarlo como dep crearia loop infinito.
+    // El valor es estable durante la vida util del polling. Seguro omitir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskData])
 
   function handleSend() {
@@ -178,8 +181,7 @@ export function AgentPlayground({ role }: AgentPlaygroundProps) {
         </span>
       </div>
 
-      <ScrollArea className="flex-1 px-1">
-        <div ref={scrollRef} className="space-y-3 py-3 min-h-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-1 space-y-3 py-3 min-h-0">
           {messages.length === 0 && !isRunning && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <Play className="h-8 w-8 mb-2 opacity-40" />
@@ -200,8 +202,7 @@ export function AgentPlayground({ role }: AgentPlaygroundProps) {
               </span>
             </div>
           )}
-        </div>
-      </ScrollArea>
+      </div>
 
       <div className="flex gap-2 pt-3 border-t">
         <Input

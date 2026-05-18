@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluación de Modelos — Paso 14: Optimización UX/Rendimiento Frontend</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d2991d;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--blue) }
+  h2 { font-size: 1.2rem; margin: 2rem 0 1rem; color: var(--purple); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem }
+  .meta { color: var(--muted); margin-bottom: 2rem; font-size: 0.9rem }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .summary-card .agent { font-weight: 700; font-size: 1.1rem }
+  .summary-card .score {
+    font-size: 2rem; font-weight: 800; text-align: right;
+    line-height: 1; margin-top: -1.5rem;
+  }
+  .score-high { color: var(--green) }
+  .score-mid { color: var(--yellow) }
+  .score-low { color: var(--red) }
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .model-card h3 { font-size: 1.3rem; display: flex; justify-content: space-between; align-items: center }
+  .model-card h3 .badge {
+    font-size: 0.8rem; padding: 0.2rem 0.7rem; border-radius: 20px;
+    font-weight: 600; text-transform: uppercase;
+  }
+  .badge-star { background: rgba(63,185,80,0.15); color: var(--green) }
+  .badge-good { background: rgba(88,166,255,0.15); color: var(--blue) }
+  .badge-ok { background: rgba(210,153,29,0.15); color: var(--yellow) }
+  .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0; font-size: 0.9rem }
+  .stats span { display: flex; align-items: center; gap: 0.3rem }
+  .virtues, .defects { margin-top: 1rem }
+  .virtues h4 { color: var(--green); margin-bottom: 0.4rem; font-size: 0.95rem }
+  .defects h4 { color: var(--red); margin-bottom: 0.4rem; font-size: 0.95rem }
+  .virtues ul, .defects ul { padding-left: 1.2rem }
+  .virtues li, .defects li { margin-bottom: 0.3rem; font-size: 0.9rem; line-height: 1.4 }
+  .dsp-highlight { border-left: 3px solid var(--green) }
+  .verdict { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.95rem }
+  .verdict-best { background: rgba(63,185,80,0.08); color: var(--green) }
+  .verdict-good { background: rgba(88,166,255,0.08); color: var(--blue) }
+  .verdict-mid { background: rgba(210,153,29,0.08); color: var(--yellow) }
+  .ranking { margin-top: 2rem }
+  .ranking ol { padding-left: 1.2rem }
+  .ranking li { margin-bottom: 0.4rem; font-size: 1rem }
+  .ranking .rnk { font-weight: 700 }
+  hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0 }
+  .comparison-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem }
+  .comparison-table th, .comparison-table td {
+    border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left;
+  }
+  .comparison-table th { background: var(--surface); font-weight: 600; white-space: nowrap }
+  .comparison-table .yes { color: var(--green) }
+  .comparison-table .no { color: var(--red) }
+  .comparison-table .warn { color: var(--yellow) }
+</style>
+</head>
+<body>
+
+<h1>Evaluación de Modelos</h1>
+<p class="meta">
+  <strong>Paso:</strong> 14 — Optimización de UX y Rendimiento Frontend<br>
+  <strong>Fase:</strong> guiAgentGenerator &nbsp;|&nbsp;
+  <strong>Fecha:</strong> 2026-05-18 &nbsp;|&nbsp;
+  <strong>Agentes evaluados:</strong> 7
+</p>
+
+<h2>Resumen de Puntuaciones</h2>
+<div class="summary-grid">
+  <div class="summary-card">
+    <span class="agent">dsp</span>
+    <span class="score score-high">4.5</span>
+    <span style="color:var(--muted); font-size:0.8rem">30 verificaciones · 12 discrepancias · 467 líneas</span>
+  </div>
+  <div class="summary-card">
+    <span class="agent">dsf</span>
+    <span class="score score-high">4.0</span>
+    <span style="color:var(--muted); font-size:0.8rem">18 verificaciones · 12 discrepancias · 485 líneas</span>
+  </div>
+  <div class="summary-card">
+    <span class="agent">step</span>
+    <span class="score score-high">4.0</span>
+    <span style="color:var(--muted); font-size:0.8rem">13 verificaciones · 8 discrepancias · 413 líneas</span>
+  </div>
+  <div class="summary-card">
+    <span class="agent">lgn</span>
+    <span class="score score-mid">3.0</span>
+    <span style="color:var(--muted); font-size:0.8rem">12 verificaciones · 7 discrepancias · 201 líneas</span>
+  </div>
+  <div class="summary-card">
+    <span class="agent">qwen</span>
+    <span class="score score-mid">3.0</span>
+    <span style="color:var(--muted); font-size:0.8rem">24 verificaciones · 8 discrepancias · 264 líneas</span>
+  </div>
+  <div class="summary-card">
+    <span class="agent">g3h</span>
+    <span class="score score-low">2.5</span>
+    <span style="color:var(--muted); font-size:0.8rem">29 verificaciones · 5 discrepancias · 261 líneas</span>
+  </div>
+  <div class="summary-card">
+    <span class="agent">mm</span>
+    <span class="score score-low">2.5</span>
+    <span style="color:var(--muted); font-size:0.8rem">12 verificaciones · 6 discrepancias · 213 líneas</span>
+  </div>
+</div>
+
+<h2>Tabla Comparativa</h2>
+<table class="comparison-table">
+  <thead>
+    <tr>
+      <th>Dimensión</th>
+      <th>dsp</th>
+      <th>dsf</th>
+      <th>step</th>
+      <th>lgn</th>
+      <th>qwen</th>
+      <th>g3h</th>
+      <th>mm</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Verificó contra código</td>
+      <td class="yes">✅ 30</td>
+      <td class="yes">✅ 18</td>
+      <td class="yes">✅ 13</td>
+      <td class="yes">✅ 12</td>
+      <td class="yes">✅ 24</td>
+      <td class="yes">✅ 29</td>
+      <td class="yes">✅ 12</td>
+    </tr>
+    <tr>
+      <td>Discrepancias detectadas</td>
+      <td class="yes">12</td>
+      <td class="yes">12</td>
+      <td class="yes">8</td>
+      <td class="warn">7</td>
+      <td class="warn">8</td>
+      <td class="no">5</td>
+      <td class="no">6</td>
+    </tr>
+    <tr>
+      <td>Propuesta DX concreta</td>
+      <td class="yes">✅ hooks+mapper</td>
+      <td class="yes">✅ CLI doctor</td>
+      <td class="yes">✅ hooks+HTTP+cmdk</td>
+      <td class="yes">✅ hooks</td>
+      <td class="yes">✅ CLI+script</td>
+      <td class="yes">✅ CLI doctor</td>
+      <td class="yes">✅ hooks</td>
+    </tr>
+    <tr>
+      <td>Evidencia con líneas</td>
+      <td class="yes">✅ exacta</td>
+      <td class="yes">✅ buena</td>
+      <td class="yes">✅ exacta</td>
+      <td class="warn">⚠️ parcial</td>
+      <td class="yes">✅ buena</td>
+      <td class="warn">⚠️ mixta</td>
+      <td class="warn">⚠️ mínima</td>
+    </tr>
+    <tr>
+      <td>Tareas atómicas</td>
+      <td class="yes">✅ 15</td>
+      <td class="yes">✅ 14</td>
+      <td class="yes">✅ 9</td>
+      <td class="warn">⚠️ 6</td>
+      <td class="no">❌ 14 (inflado)</td>
+      <td class="yes">✅ 12</td>
+      <td class="warn">⚠️ 7</td>
+    </tr>
+    <tr>
+      <td>Tiempo estimado realista</td>
+      <td class="yes">✅ 6.75h</td>
+      <td class="yes">✅ 4.3-5.8h</td>
+      <td class="yes">✅ 3.75h</td>
+      <td class="warn">⚠️ 3.75h</td>
+      <td class="no">❌ 13h (inflado)</td>
+      <td class="yes">✅ 6.8h</td>
+      <td class="warn">⚠️ 4h</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Evaluación Detallada por Modelo</h2>
+
+<!-- dsp -->
+<div class="model-card dsp-highlight">
+  <h3>
+    dsp
+    <span class="badge badge-star">★ TOP SCORE 4.5/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>467 líneas</strong></span>
+    <span>🔍 <strong>30 verificaciones</strong></span>
+    <span>⚠️ <strong>12 discrepancias</strong></span>
+    <span>⏱️ <strong>6.75h estimado</strong></span>
+  </div>
+
+  <div class="virtues">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>Mayor cobertura de verificación:</strong> 30 elementos auditados con líneas exactas. Nadie más alcanzó este nivel de granularidad.</li>
+      <li><strong>Análisis de performance quirúrgico:</strong> Detectó derivados NO memoizados en <em>CrewCanvas</em> (duplicatedRoles, nodesWithWarnings, sidebarAgents, hasAgentNodes, exportDisabled) y en <em>AgentForm</em> (toolOptions, availableModels, buildSingleAgentPayload). Ningún otro agente identificó <em>todos</em> estos puntos ciegos.</li>
+      <li><strong>DX dual concreta:</strong> Propuso hooks bundle (<code>useClickOutside</code> + <code>useDebounce</code>) como Tarea 0 <em>más</em> módulo <code>lib/template-mapper.ts</code> como segunda herramienta DX. Fue el único que trató el mapper como herramienta DX en sí misma.</li>
+      <li><strong>Decisión explícita sobre cmdk:</strong> POSPONER con justificación cuantificada (~15KB extra, selector actual 60 líneas funcional). No dejó ambigüedad.</li>
+      <li><strong>Criterio de memoización selectiva:</strong> "Solo memoizar los que iteran arrays. hasAgentNodes y exportDisabled son O(1) — no justifican useMemo." Insight que ningún otro agente articuló.</li>
+      <li><strong>Plan de implementación más completo:</strong> 15 tareas atómicas con artefacto, interfaz exacta, patrón de referencia, etapa, complejidad, tiempo y verificación inline por cada una.</li>
+      <li><strong>Flujo end-to-end mapeado visualmente:</strong> Diagrama ASCII de arquitectura con puntos de fricción numerados.</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>No propuso herramienta CLI de diagnóstico:</strong> Fue el único agente top-tier que no sugirió extender <code>fap doctor</code> ni crear script de auditoría. Su DX se limitó a hooks/módulos internos del frontend.</li>
+      <li><strong>Sobre-memoización advertida pero no corregida en plan:</strong> Detectó que <code>duplicatedRoles</code>, <code>nodesWithWarnings</code>, <code>hasAgentNodes</code> y <code>exportDisabled</code> no están memoizados, pero en su propio plan incluyó todos. Contradicción interna resuelta en el FINAL unificado.</li>
+      <li><strong>Métrica de calidad auto-impuesta ausente:</strong> No incluyó sección de auto-evaluación ni checklist de completitud del propio análisis.</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-best">🏆 Mejor análisis global. Rigor técnico, granularidad de verificación y precisión quirúrgica en optimizaciones de performance. Solo le faltó una herramienta CLI de diagnóstico para ser perfecto.</div>
+</div>
+
+<!-- dsf -->
+<div class="model-card">
+  <h3>
+    dsf
+    <span class="badge badge-good">BUENO 4.0/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>485 líneas</strong></span>
+    <span>🔍 <strong>18 verificaciones</strong></span>
+    <span>⚠️ <strong>12 discrepancias</strong></span>
+    <span>⏱️ <strong>4.3-5.8h estimado</strong></span>
+  </div>
+
+  <div class="virtues">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>Análisis más extenso (485 líneas):</strong> Cobertura completa de las 4 etapas. Segundo en cantidad de discrepancias detectadas (12, empate con dsp).</li>
+      <li><strong>Plan de implementación tabular excelente:</strong> Cada tarea con tabla detallada (aspecto, artefacto, interfaz, patrón, etapa, complejidad, tiempo, dependencias, verificación). El formato más legible de todos.</li>
+      <li><strong>Herramienta DX CLI:</strong> Propuso <code>fap doctor frontend</code> extendiendo el patrón <code>fap doctor backend</code> existente. Buena reutilización de infraestructura.</li>
+      <li><strong>Decisión pragmática sobre cmdk:</strong> "Tarea opcional — si el riesgo de regresión es alto, documentar evaluación y posponer". Flexible y realista.</li>
+      <li><strong>Detección de ID-023 resuelto:</strong> Notó que el <code>zodResolver</code> mismatch ya fue corregido en fase previa — evitó trabajo redundante.</li>
+      <li><strong>Estimación dual:</strong> "5.8h con cmdk / 4.3h sin cmdk". Único agente que dio estimación condicional.</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>Verificación de código menos granular:</strong> 18 items vs 30 de dsp. Faltó detectar que <code>toolOptions</code> y <code>availableModels</code> en AgentForm no están memoizados.</li>
+      <li><strong>Firma de useClickOutside inconsistente:</strong> Propuso <code>RefObject&lt;HTMLElement&gt;</code> sin aceptar <code>null</code>. En React 19, refs pueden ser <code>null</code> inicialmente.</li>
+      <li><strong>Tarea DX (Tarea 0) ubicada como CLI en backend:</strong> Propuso <code>src/cli/commands/doctor_frontend.py</code> como Tarea 0, pero el resto del paso es 100% frontend TypeScript. Inconsistencia de stack.</li>
+      <li><strong>cmdk evaluado sin profundidad:</strong> Dijo "migrar a cmdk" sin analizar el costo real (tamaño de bundle, breaking changes en API de selección múltiple).</li>
+      <li><strong>useCallback vs useMemo confusión:</strong> Propuso <code>useCallback</code> para <code>buildSingleAgentPayload</code>, pero es una función que retorna un valor de render — <code>useMemo</code> es más apropiado (no es event handler).</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-good">✅ Análisis muy completo y bien estructurado. Plan tabular excelente. Pierde puntos por menor granularidad en verificación de código y confusión useCallback/useMemo.</div>
+</div>
+
+<!-- step -->
+<div class="model-card">
+  <h3>
+    step
+    <span class="badge badge-good">BUENO 4.0/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>413 líneas</strong></span>
+    <span>🔍 <strong>13 verificaciones</strong></span>
+    <span>⚠️ <strong>8 discrepancias</strong></span>
+    <span>⏱️ <strong>3.75h estimado</strong></span>
+  </div>
+
+  <div class="virtues">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>Mejor análisis de eslint-disable:</strong> Fue el único que analizó en profundidad si los <code>eslint-disable</code> en <em>AgentForm.tsx:228</em> y <em>CrewCanvas.tsx:113</em> estaban justificados o no. Concluyó correctamente que el de AgentForm SÍ está justificado (setValue estable, availableModels solo cambia con llmProvider).</li>
+      <li><strong>Evaluación de cmdk con 3 herramientas DX:</strong> Propuso hooks bundle (Tarea 0), <code>HTTP_METHODS</code> (Tarea 0b), Y una evaluación detallada de cmdk con análisis de accesibilidad WAI-ARIA.</li>
+      <li><strong>Excelente justificación técnica D7-D8:</strong> Explicó por qué el <code>eslint-disable</code> en AgentForm es correcto ("<em>watch('llmModel')</em> en estado estable no necesita re-evaluar este efecto"). Insight que ningún otro agente tuvo.</li>
+      <li><strong>Gaps numerados con criticidad:</strong> G1-G5 con nivel de criticidad (Media/Baja). Buena priorización para el implementador.</li>
+      <li><strong>Firma de useClickOutside más robusta:</strong> Acepta <code>RefObject&lt;HTMLElement | null&gt;</code> (compatible con React 19) y eventos <code>MouseEvent | TouchEvent</code>.</li>
+      <li><strong>Criterios de aceptación binarios y verificables:</strong> Usa tags <code>[AX]</code>, <code>[CODE]</code>, <code>[FULLSTACK]</code>, <code>[STRUCTURE]</code>, <code>[INTERFACE]</code> — categorización excelente.</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>No detectó fallback de clipboard pobre:</strong> A diferencia de dsp y dsf, no notó que el fallback de <code>ExportDialog.tsx</code> solo muestra 500 chars en toast — inservible para JSON de 10KB+.</li>
+      <li><strong>No analizó derivados no memoizados en AgentForm:</strong> Omisión de <code>toolOptions</code> y <code>availableModels</code> sin memoizar. Tampoco detectó <code>duplicatedRoles</code> sin memoizar en CrewCanvas.</li>
+      <li><strong>Sin propuesta de herramienta CLI de diagnóstico:</strong> A diferencia de dsf, g3h y qwen, no propuso extender <code>fap doctor</code>.</li>
+      <li><strong>Estimación de tiempo subestimada (3.75h):</strong> Para 9 tareas incluyendo sincronización de query params y dynamic CSS, el tiempo real probablemente sea 5-6h.</li>
+      <li><strong>Sin sección de riesgos detallada:</strong> Solo 5 riesgos enumerados, sin métrica de severidad unificada con el resto de agentes.</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-good">✅ Análisis de deuda técnica (eslint-disable) sobresaliente. Justificaciones técnicas impecables. Flaquea en detección de problemas de performance y herramientas CLI.</div>
+</div>
+
+<!-- lgn -->
+<div class="model-card">
+  <h3>
+    lgn
+    <span class="badge badge-ok">ACEPTABLE 3.0/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>201 líneas</strong></span>
+    <span>🔍 <strong>12 verificaciones</strong></span>
+    <span>⚠️ <strong>7 discrepancias</strong></span>
+    <span>⏱️ <strong>3.75h estimado</strong></span>
+  </div>
+
+  <div class="virtues">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>Conciso y directo:</strong> 201 líneas — el más corto pero cubrió lo esencial sin relleno.</li>
+      <li><strong>Reglas de Oro auto-verificadas:</strong> Incluyó checklist de 11 reglas confirmando cumplimiento. Buen mecanismo de auto-evaluación.</li>
+      <li><strong>Detección de D1-D7 correcta:</strong> Identificó las 7 discrepancias principales que todos los agentes coincidieron.</li>
+      <li><strong>Roadmap pragmático:</strong> 4 items futuros razonables (cmdk, diagnóstico CLI, React.memo en nodos, Zustand).</li>
+      <li><strong>Firma de useClickOutside genérica:</strong> Usó <code>&lt;T extends HTMLElement&gt;</code> para tipado genérico del ref.</li>
+      <li><strong>Estimación de tiempo realista:</strong> 3.75h para las tareas esenciales sin sobre-ingeniería.</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>Verificación superficial:</strong> Solo 12 items auditados (mínimo del grupo). No analizó derivados sin memoizar, no verificó estado real de useEffect dependencies, no inspeccionó scrollRef.</li>
+      <li><strong>Cero análisis de performance granular:</strong> No detectó <code>toolOptions</code>, <code>availableModels</code>, <code>duplicatedRoles</code>, <code>buildSingleAgentPayload</code> sin memoizar. El paso es de OPTIMIZACIÓN y esto es una omisión grave.</li>
+      <li><strong>Sin análisis de eslint-disable:</strong> No revisó si los <code>eslint-disable</code> en AgentForm y CrewCanvas están justificados.</li>
+      <li><strong>DX mínima:</strong> Solo propuso hooks. Sin herramienta CLI, sin script de auditoría, sin constantes HTTP.</li>
+      <li><strong>Plan de implementación escueto:</strong> 6 tareas sin suficiente detalle de verificación. Tareas con múltiples artefactos (rompe atomicidad).</li>
+      <li><strong>Interfaces sin suficiente detalle:</strong> Firmas de funciones correctas pero sin explicación de comportamiento interno ni defaults.</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-mid">⚠️ Correcto en lo básico pero insuficiente para un paso de optimización de performance. Demasiado genérico, poca profundidad técnica.</div>
+</div>
+
+<!-- qwen -->
+<div class="model-card">
+  <h3>
+    qwen
+    <span class="badge badge-ok">ACEPTABLE 3.0/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>264 líneas</strong></span>
+    <span>🔍 <strong>24 verificaciones</strong></span>
+    <span>⚠️ <strong>8 discrepancias</strong></span>
+    <span>⏱️ <strong>13h estimado</strong></span>
+  </div>
+
+  <div class="virtues">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>Propuesta DX más innovadora:</strong> <code>fap perf builder</code> CLI + <code>perf-audit.ts</code> script. Fue el único que pensó en herramienta de diagnóstico <em>preventivo</em> para regresiones de performance, no solo correctivo. Esta idea fue adoptada como Tarea 0b en el FINAL unificado.</li>
+      <li><strong>24 verificaciones:</strong> Segundo en cantidad después de dsp (30) y g3h (29). Buena cobertura.</li>
+      <li><strong>Análisis de localStorage:</strong> Único que notó el autosave <code>fap_crew_canvas_snapshot</code> cada 30s en CrewCanvas y su interacción con query params.</li>
+      <li><strong>Detección de estado de memoización detallado:</strong> 5 derivados en CrewCanvas + 2 en AgentForm identificados como no memoizados.</li>
+      <li><strong>Roadmap ambicioso y visionario:</strong> WebSocket para AgentPlayground, Service Worker para cache, Undo/Redo en CrewCanvas, colaboración en tiempo real con Yjs.</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>ERROR CRÍTICO — Forzó instalación de cmdk:</strong> Incluyó "Instalar cmdk" como tarea 11 y lo puso como criterio de aceptación. 6/7 agentes coincidieron en POSPONER. Decisión unilateral sin evaluar costo/beneficio.</li>
+      <li><strong>Tiempo estimado absurdamente inflado (13h):</strong> El doble del promedio (5.7h). Incluyó 3h para migrar ToolMultiSelect a cmdk (tarea 12) cuando todos los demás agentes consideraron que era innecesario.</li>
+      <li><strong>Debounce propuesto en AgentForm es incorrecto:</strong> Propuso <code>useDebounce(watch('role'), 300)</code> para campos de formulario. Esto es erróneo — <code>watch()</code> en RHF ya es reactivo y envolverlo en debounce causaría desincronización con <code>register()</code>. dsp y step corrigieron esto explícitamente.</li>
+      <li><strong>14 tareas no atómicas:</strong> Varias tareas tocan múltiples artefactos (ej: tarea 10 toca page.tsx + BuilderTabContext.tsx). Rompe la regla de atomicidad.</li>
+      <li><strong>Criterio DX incoherente:</strong> Pide script <code>perf-audit.ts</code> como DX pero también exige que detecte "al menos 1 issue en código pre-optimización" — métrica circular que depende de que el código esté mal.</li>
+      <li><strong>No analizó eslint-disable:</strong> Omisión del análisis de deuda técnica en useEffect dependencies.</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-mid">⚠️ Ideas innovadoras (CLI de diagnóstico preventivo) pero decisiones técnicas erróneas (forzar cmdk, debounce mal aplicado). Necesita mejor criterio de priorización.</div>
+</div>
+
+<!-- g3h -->
+<div class="model-card">
+  <h3>
+    g3h
+    <span class="badge badge-ok">REGULAR 2.5/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>261 líneas</strong></span>
+    <span>🔍 <strong>29 verificaciones</strong></span>
+    <span>⚠️ <strong>5 discrepancias</strong></span>
+    <span>⏱️ <strong>6.8h estimado</strong></span>
+  </div>
+
+  <div class="virtudes">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>29 verificaciones (2º lugar):</strong> Auditoría exhaustiva. Verificó archivos que otros no (migración <code>030_agent_templates.sql</code>, breadcrumb, ScrollArea import).</li>
+      <li><strong>Detección única del problema de ScrollArea:</strong> Identificó que Radix ScrollArea encapsula viewport virtual haciendo que <code>scrollRef.current.scrollTop</code> falle. Propuso solución (reemplazar por div nativo).</li>
+      <li><strong>Herramienta DX CLI bien integrada:</strong> <code>fap doctor frontend</code> como extensión natural de <code>fap doctor backend</code> existente. Con 4 checks específicos (useEffect, CSS lazy, dependencias, deep linking).</li>
+      <li><strong>Diagrama de flujo de datos ASCII:</strong> Visualización del flujo optimizado con Tabs Sync + Deep Linking.</li>
+      <li><strong>Decisión correcta sobre cmdk:</strong> Lo relegó al roadmap (NO implementar ahora).</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>Solo 5 discrepancias detectadas:</strong> El menor conteo del grupo a pesar de tener 29 verificaciones. Verificó mucho pero encontró poco. Señal de que verificó elementos irrelevantes (migración SQL, breadcrumb) en lugar de enfocarse en problemas reales.</li>
+      <li><strong>Verificaciones irrelevantes para el paso:</strong> 3 verificaciones sobre migración SQL y políticas RLS en un paso que es 100% frontend. Desperdició esfuerzo de auditoría.</li>
+      <li><strong>Propuesta de useCallback en lugar de useMemo:</strong> Mismo error que dsf — confundió <code>useCallback</code> (para event handlers) con <code>useMemo</code> (para valores calculados en render).</li>
+      <li><strong>Sobresimplificación del fix de ScrollArea:</strong> "Reemplazar por div" sin considerar implicaciones de estilo, accesibilidad o consistencia visual con el resto del dashboard.</li>
+      <li><strong>useDebounce con delay 150ms:</strong> Propuso 150ms como default. El consenso del grupo fue 300ms. 150ms es demasiado agresivo — apenas filtra dobles clics.</li>
+      <li><strong>Sin análisis de eslint-disable:</strong> Omisión total de la deuda técnica en useEffect dependencies.</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-mid">⚠️ Mucha verificación, poca sustancia. 29 items auditados pero solo 5 discrepancias reales. Buen ojo para el problema de ScrollArea, pero enfoque disperso en elementos no relevantes.</div>
+</div>
+
+<!-- mm -->
+<div class="model-card">
+  <h3>
+    mm
+    <span class="badge badge-ok">REGULAR 2.5/5</span>
+  </h3>
+  <div class="stats">
+    <span>📄 <strong>213 líneas</strong></span>
+    <span>🔍 <strong>12 verificaciones</strong></span>
+    <span>⚠️ <strong>6 discrepancias</strong></span>
+    <span>⏱️ <strong>4h estimado</strong></span>
+  </div>
+
+  <div class="virtudes">
+    <h4>✅ Virtudes</h4>
+    <ul>
+      <li><strong>Estructura limpia y consistente:</strong> Sigue exactamente el template de análisis. Fácil de leer y navegar.</li>
+      <li><strong>Detecciones correctas (D1-D6):</strong> Identificó las 6 discrepancias principales sin errores. Sin falsos positivos.</li>
+      <li><strong>Reglas de Oro bien aplicadas:</strong> Checklist de 13 reglas auto-verificadas al final del documento. Muestra comprensión del protocolo.</li>
+      <li><strong>Roadmap sensato:</strong> 4 items futuros alineados con el consenso del grupo.</li>
+    </ul>
+  </div>
+
+  <div class="defects">
+    <h4>❌ Defectos</h4>
+    <ul>
+      <li><strong>Análisis más superficial del grupo:</strong> 12 verificaciones, 6 discrepancias. No detectó problemas de memoización, ni eslint-disable, ni scrollRef, ni clipboard fallback. Para un paso de OPTIMIZACIÓN DE PERFORMANCE, esto es una carencia crítica.</li>
+      <li><strong>Cero análisis de performance:</strong> No identificó ningún derivado sin memoizar. El core del paso 14 es rendimiento frontend y este análisis no aborda el tema central.</li>
+      <li><strong>Plan de implementación mínimo:</strong> 7 tareas, varias con múltiples artefactos (rompe atomicidad). Sin verificación inline detallada.</li>
+      <li><strong>DX limitada a hooks:</strong> Sin propuesta de CLI, script de auditoría, ni constantes. La propuesta DX más pobre del grupo.</li>
+      <li><strong>Sin análisis de useEffect dependencies:</strong> No detectó los <code>eslint-disable</code> ni evaluó su justificación.</li>
+      <li><strong>Firmas de interfaz sin tipos precisos:</strong> <code>useClickOutside(ref, handler)</code> sin tipos explícitos en el plan, dejando ambigüedad al implementador.</li>
+    </ul>
+  </div>
+
+  <div class="verdict verdict-mid">⚠️ Análisis mínimo viable. Cumple el protocolo formalmente pero no aporta profundidad técnica. Para un paso de optimización de rendimiento, su aporte es insuficiente.</div>
+</div>
+
+<hr>
+
+<h2>🏆 Ranking Final</h2>
+<div class="ranking">
+  <ol>
+    <li><span class="rnk" style="color:var(--green)">1º — dsp (4.5/5):</span> Excelencia técnica. Máxima granularidad de verificación, mejor análisis de performance, DX dual concreta. Referencia indiscutible para el FINAL unificado.</li>
+    <li><span class="rnk" style="color:var(--blue)">2º — dsf (4.0/5):</span> Muy completo y bien estructurado. Plan tabular impecable. Pierde puntos por menor profundidad en verificación de código.</li>
+    <li><span class="rnk" style="color:var(--blue)">3º — step (4.0/5):</span> Análisis de deuda técnica (eslint-disable) sobresaliente. Justificaciones impecables. No detectó problemas de performance granular.</li>
+    <li><span class="rnk" style="color:var(--yellow)">4º — qwen (3.0/5):</span> Ideas innovadoras (CLI diagnóstico preventivo). Lastrado por decisiones técnicas erróneas (forzar cmdk, debounce mal aplicado).</li>
+    <li><span class="rnk" style="color:var(--yellow)">5º — lgn (3.0/5):</span> Correcto en lo básico. Demasiado genérico para un paso de optimización de performance.</li>
+    <li><span class="rnk" style="color:var(--red)">6º — g3h (2.5/5):</span> Mucha verificación irrelevante (DB en paso frontend). Solo 5 discrepancias reales pese a 29 items auditados.</li>
+    <li><span class="rnk" style="color:var(--red)">7º — mm (2.5/5):</span> Mínimo viable. Cumple el protocolo pero sin profundidad. Carencia crítica en análisis de performance.</li>
+  </ol>
+</div>
+
+<h2>📊 Estadísticas de Consenso</h2>
+<table class="comparison-table">
+  <thead>
+    <tr><th>Discrepancia</th><th>Consenso</th><th>Agentes que la detectaron</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>useClickOutside no existe como hook</td><td class="yes">7/7 (100%)</td><td>TODOS</td></tr>
+    <tr><td>mapTemplateToFormValues inline en BuilderLayout</td><td class="yes">7/7 (100%)</td><td>TODOS</td></tr>
+    <tr><td>Sin debounce en búsquedas</td><td class="yes">7/7 (100%)</td><td>TODOS</td></tr>
+    <tr><td>Query params no sincronizados (?tab=)</td><td class="yes">7/7 (100%)</td><td>TODOS</td></tr>
+    <tr><td>cmdk no instalado</td><td class="yes">7/7 (100%)</td><td>TODOS</td></tr>
+    <tr><td>ReactFlow CSS import estático</td><td class="yes">7/7 (100%)</td><td>TODOS</td></tr>
+    <tr><td>HTTP_METHODS sin constantes</td><td class="yes">6/7 (86%)</td><td>dsp, lgn, step, g3h, dsf, mm</td></tr>
+    <tr><td>fapDownload hardcodea POST</td><td class="warn">4/7 (57%)</td><td>dsp, qwen, g3h, dsf</td></tr>
+    <tr><td>useEffect eslint-disable en AgentForm</td><td class="warn">4/7 (57%)</td><td>dsp, lgn, step, dsf</td></tr>
+    <tr><td>Derivados no memoizados en CrewCanvas</td><td class="no">2/7 (29%)</td><td>dsp, qwen</td></tr>
+    <tr><td>scrollRef conflictivo en AgentPlayground</td><td class="no">3/7 (43%)</td><td>dsp, g3h, dsf</td></tr>
+    <tr><td>MAX_EXPORT_AGENTS duplicado sin constante</td><td class="no">1/7 (14%)</td><td>dsp</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:2rem; color:var(--muted); font-size:0.85rem; text-align:center">
+  Documento generado por el Unificador siguiendo el protocolo DEVS/2_UNIFICACION.md v3.1 — 2026-05-18
+</p>
+
+</body>
+</html>

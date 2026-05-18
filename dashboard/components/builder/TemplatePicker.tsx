@@ -12,6 +12,7 @@ import {
 
 import { api } from '@/lib/api'
 import { TEMPLATE_CATEGORIES, TEMPLATE_CACHE_MS } from '@/lib/constants'
+import { useDebounce } from '@/hooks/useDebounce'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,6 +59,8 @@ export function TemplatePicker({ onSelect }: TemplatePickerProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
+  const debouncedSearch = useDebounce(search, 300)
+
   const {
     data,
     isLoading,
@@ -76,12 +79,12 @@ export function TemplatePicker({ onSelect }: TemplatePickerProps) {
     if (selectedCategory) {
       result = result.filter((t) => t.category === selectedCategory)
     }
-    if (search.trim()) {
-      const q = search.toLowerCase()
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
       result = result.filter((t) => t.name.toLowerCase().includes(q))
     }
     return result
-  }, [templates, selectedCategory, search])
+  }, [templates, selectedCategory, debouncedSearch])
 
   async function handleUseTemplate(template: TemplateInfo) {
     setLoadingId(template.id)

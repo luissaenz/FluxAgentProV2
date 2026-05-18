@@ -24,6 +24,16 @@ export const PROVIDER_MODELS: Record<string, string[]> = {
   openrouter: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet"],
 }
 
+export const HTTP_METHODS = {
+  GET: 'GET',
+  POST: 'POST',
+  PUT: 'PUT',
+  PATCH: 'PATCH',
+  DELETE: 'DELETE',
+} as const
+
+export const MAX_EXPORT_AGENTS = 15
+
 export const STATUS_BADGES: Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'info' | 'secondary' | 'default' }> = {
   pending: { label: 'Pendiente', variant: 'secondary' },
   running: { label: 'Ejecutando', variant: 'info' },

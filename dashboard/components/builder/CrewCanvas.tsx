@@ -45,7 +45,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
-import 'reactflow/dist/style.css'
 
 const LOCALSTORAGE_KEY = 'fap_crew_canvas_snapshot'
 const AUTOSAVE_INTERVAL = 30000
@@ -84,6 +83,11 @@ function FlowCanvas() {
   const saveRef = useRef(false)
   const snapshotRestored = useRef(false)
 
+  useEffect(() => {
+    // @ts-ignore — CSS module handled by webpack/turbopack, not tsc
+    import('reactflow/dist/style.css')
+  }, [])
+
   const orgId = useMemo(() => {
     if (typeof window === 'undefined') return ''
     return localStorage.getItem('organization_id') || localStorage.getItem('selected_org_id') || ''
@@ -110,7 +114,9 @@ function FlowCanvas() {
     } catch {
       // Snapshot corrupt, start fresh
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- snapshot restore only on mount
+    // `snapshotRestored.current = true` en linea 99 garantiza ejecucion unica al montar.
+    // La dependencia `snapshotRestored` no cambia (es ref estable). Seguro omitir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -334,9 +340,12 @@ function FlowCanvas() {
     toast.success(`Loaded template: ${template.name}`)
   }
 
-  const sidebarAgents = agentsData?.agents ?? []
+  const sidebarAgents = useMemo(
+    () => agentsData?.agents ?? [],
+    [agentsData]
+  )
 
-  const duplicatedRoles = (() => {
+  const duplicatedRoles = useMemo(() => {
     const agentNodes = nodes.filter((n) => n.type === 'agentNode')
     const roles = agentNodes.map((n) => (n.data as Record<string, unknown>).role as string).filter(Boolean)
     const seen = new Set<string>()
@@ -346,15 +355,18 @@ function FlowCanvas() {
       seen.add(r)
     })
     return dups
-  })()
+  }, [nodes])
 
   const hasAgentNodes = nodes.some((n) => n.type === 'agentNode')
   const exportDisabled = !hasAgentNodes || duplicatedRoles.size > 0
 
-  const nodesWithWarnings = nodes
-    .filter((n) => n.type === 'agentNode')
-    .filter((n) => !edges.some((e) => e.source === n.id))
-    .map((n) => n.id)
+  const nodesWithWarnings = useMemo(
+    () => nodes
+      .filter((n) => n.type === 'agentNode')
+      .filter((n) => !edges.some((e) => e.source === n.id))
+      .map((n) => n.id),
+    [nodes, edges]
+  )
 
   return (
     <div className="flex h-full w-full">

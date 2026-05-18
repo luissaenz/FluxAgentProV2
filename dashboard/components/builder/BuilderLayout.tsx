@@ -9,6 +9,7 @@ import { TemplatePicker } from '@/components/builder/TemplatePicker'
 import { AgentPlayground } from '@/components/builder/AgentPlayground'
 import { useBuilderTab } from '@/components/builder/BuilderTabContext'
 import type { TemplateDetail } from '@/components/builder/TemplatePicker'
+import { mapTemplateToFormValues } from '@/lib/template-mapper'
 import {
   Dialog,
   DialogContent,
@@ -24,30 +25,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Layers, Play, Wand2, Network } from 'lucide-react'
-
-function mapTemplateToFormValues(template: TemplateDetail): AgentFormData {
-  const soul = template.soul_json ?? {}
-  const valid = ['groq', 'openai', 'anthropic', 'openrouter'] as const
-  type Provider = AgentFormData['llmProvider']
-
-  function mapProvider(provider?: string): Provider {
-    return (valid as readonly string[]).includes(provider ?? '') ? (provider as Provider) : 'groq'
-  }
-
-  return {
-    role: (soul.role as string) ?? template.name ?? '',
-    goal: (soul.goal as string) ?? '',
-    backstory: (soul.backstory as string) ?? template.description ?? '',
-    llmProvider: mapProvider(soul.llm_provider as string),
-    llmModel: (soul.llm_model as string) ?? 'llama-3.1-70b-versatile',
-    allowedTools: template.suggested_tools ?? [],
-    maxIter: template.max_iter ?? 3,
-    verbose: (soul.verbose as boolean) ?? false,
-    reasoning: (soul.reasoning as boolean) ?? false,
-    injectDate: (soul.inject_date as boolean) ?? false,
-    memory: (soul.memory as boolean) ?? false,
-  }
-}
 
 export function BuilderLayout() {
   const [dialogOpen, setDialogOpen] = useState(false)

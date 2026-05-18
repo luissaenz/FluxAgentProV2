@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Search, X, ChevronDown } from 'lucide-react'
+import { useClickOutside } from '@/hooks/useClickOutside'
+import { useDebounce } from '@/hooks/useDebounce'
 
 interface ToolOption {
   value: string
@@ -29,25 +31,19 @@ export function ToolMultiSelect({
   const [search, setSearch] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  useClickOutside(containerRef, () => setOpen(false))
+
+  const debouncedSearch = useDebounce(search, 300)
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return options
-    const q = search.toLowerCase()
+    if (!debouncedSearch.trim()) return options
+    const q = debouncedSearch.toLowerCase()
     return options.filter(
       (o) =>
         o.label.toLowerCase().includes(q) ||
         o.value.toLowerCase().includes(q)
     )
-  }, [options, search])
+  }, [options, debouncedSearch])
 
   const grouped = useMemo(() => {
     const map: Record<string, ToolOption[]> = {}

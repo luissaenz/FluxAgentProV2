@@ -12,10 +12,12 @@ import {
 } from 'lucide-react'
 
 import { fapDownload } from '@/lib/api'
+import { MAX_EXPORT_AGENTS } from '@/lib/constants'
 import type { AgentExportItem, ExportBundleRequest } from '@/lib/types'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -69,7 +71,7 @@ export function ExportDialog({
   const [exportedFilename, setExportedFilename] = useState<string | null>(null)
 
   const isCrewCanvas = source === 'crew-canvas'
-  const exceedsLimit = agents.length > 15
+  const exceedsLimit = agents.length > MAX_EXPORT_AGENTS
   const isEmpty = agents.length === 0
 
   const exportDisabled = isExporting || exceedsLimit || isEmpty
@@ -83,6 +85,8 @@ export function ExportDialog({
     return w
   }, [isCrewCanvas])
 
+  const [showTextarea, setShowTextarea] = useState(false)
+
   function handleCopyJSON() {
     if (!fullGraphJson) {
       toast.error('No JSON data to copy')
@@ -92,10 +96,17 @@ export function ExportDialog({
       navigator.clipboard.writeText(fullGraphJson)
       toast.success('JSON copied to clipboard')
     } catch {
-      toast.error('Clipboard unavailable. Copy manually:', {
-        description: fullGraphJson.slice(0, 500) + (fullGraphJson.length > 500 ? '...' : ''),
-        duration: 10000,
-      })
+      setShowTextarea(true)
+    }
+  }
+
+  function handleManualCopy() {
+    if (!fullGraphJson) return
+    try {
+      navigator.clipboard.writeText(fullGraphJson)
+      toast.success('JSON copied to clipboard')
+    } catch {
+      toast.error('Clipboard still unavailable. Select all and copy manually.')
     }
   }
 
@@ -109,7 +120,7 @@ export function ExportDialog({
 
     const payload: ExportBundleRequest = {
       bundle_name: bundleNameInput || generateDefaultBundleName(),
-      agents: agents.slice(0, 15),
+      agents: agents.slice(0, MAX_EXPORT_AGENTS),
     }
 
     if (includeSkills && enableSkills) {
@@ -189,7 +200,7 @@ export function ExportDialog({
         ) : (
           <>
             <div className="space-y-3">
-              {agents.slice(0, 15).map((agent, i) => {
+              {agents.slice(0, MAX_EXPORT_AGENTS).map((agent, i) => {
                 const goalStr = typeof agent.soul_json?.goal === 'string'
                   ? agent.soul_json.goal
                   : ''
@@ -209,10 +220,10 @@ export function ExportDialog({
                   </div>
                 )
               })}
-              {agents.length > 15 && (
+              {agents.length > MAX_EXPORT_AGENTS && (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  +{agents.length - 15} agents not shown (15 agents limit)
+                  +{agents.length - MAX_EXPORT_AGENTS} agents not shown ({MAX_EXPORT_AGENTS} agents limit)
                 </p>
               )}
             </div>
@@ -260,7 +271,7 @@ export function ExportDialog({
               {exceedsLimit && (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  +15 agents limit reached
+                  +{MAX_EXPORT_AGENTS} agents limit reached
                 </p>
               )}
 
@@ -280,6 +291,21 @@ export function ExportDialog({
                 </div>
               )}
             </div>
+
+            {showTextarea && fullGraphJson && (
+              <div className="space-y-2">
+                <Label className="text-xs">Full JSON (clipboard unavailable)</Label>
+                <Textarea
+                  readOnly
+                  value={fullGraphJson}
+                  className="h-40 font-mono text-xs"
+                />
+                <Button variant="outline" size="sm" onClick={handleManualCopy}>
+                  <Share2 className="mr-1.5 h-3 w-3" />
+                  Copy
+                </Button>
+              </div>
+            )}
 
             <DialogFooter className="gap-2">
               {isExporting ? (
@@ -302,15 +328,17 @@ export function ExportDialog({
                     <Download className="mr-1.5 h-4 w-4" />
                     Export as ZIP
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyJSON}
-                    disabled={isExporting}
-                  >
-                    <Share2 className="mr-1.5 h-4 w-4" />
-                    Copy as JSON
-                  </Button>
+                  {!showTextarea && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyJSON}
+                      disabled={isExporting}
+                    >
+                      <Share2 className="mr-1.5 h-4 w-4" />
+                      Copy as JSON
+                    </Button>
+                  )}
                 </>
               )}
             </DialogFooter>

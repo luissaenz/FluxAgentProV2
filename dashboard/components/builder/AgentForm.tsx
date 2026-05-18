@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -132,13 +132,19 @@ export function AgentForm({
     enabled: !!orgId,
   })
 
-  const toolOptions = (toolsResponse?.tools ?? []).map((t) => ({
-    value: t.name,
-    label: t.label || t.name,
-    source: t.source || 'local',
-  }))
+  const toolOptions = useMemo(
+    () => (toolsResponse?.tools ?? []).map((t) => ({
+      value: t.name,
+      label: t.label || t.name,
+      source: t.source || 'local',
+    })),
+    [toolsResponse]
+  )
 
-  const availableModels = PROVIDER_MODELS[llmProvider] ?? []
+  const availableModels = useMemo(
+    () => PROVIDER_MODELS[llmProvider] ?? [],
+    [llmProvider]
+  )
 
   async function onSubmit(data: AgentFormData) {
     if (!orgId) {
@@ -200,31 +206,36 @@ export function AgentForm({
     onClear?.()
   }
 
-  function buildSingleAgentPayload(): { agents: AgentExportItem[] } {
-    const values = getValues()
-    return {
-      agents: [{
-        role: values.role,
-        soul_json: {
-          goal: values.goal,
-          backstory: values.backstory,
-          llm_provider: values.llmProvider,
-          llm_model: values.llmModel,
-          verbose: values.verbose,
-          reasoning: values.reasoning,
-          inject_date: values.injectDate,
-          memory: values.memory,
-        },
-        allowed_tools: values.allowedTools,
-        max_iter: values.maxIter,
-      }],
+  const buildSingleAgentPayload = useMemo(() => {
+    return function build(): { agents: AgentExportItem[] } {
+      const values = getValues()
+      return {
+        agents: [{
+          role: values.role,
+          soul_json: {
+            goal: values.goal,
+            backstory: values.backstory,
+            llm_provider: values.llmProvider,
+            llm_model: values.llmModel,
+            verbose: values.verbose,
+            reasoning: values.reasoning,
+            inject_date: values.injectDate,
+            memory: values.memory,
+          },
+          allowed_tools: values.allowedTools,
+          max_iter: values.maxIter,
+        }],
+      }
     }
-  }
+  }, [getValues])
 
   useEffect(() => {
     if (availableModels.length > 0 && !availableModels.includes(watch('llmModel'))) {
       setValue('llmModel', availableModels[0])
     }
+    // `setValue` es estable por contracto de RHF. `availableModels` solo cambia con `llmProvider`.
+    // `watch('llmModel')` en estado estable no necesita re-evaluar — el efecto solo sincroniza modelo
+    // cuando el provider cambia. Seguro omitir estas deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [llmProvider])
 
