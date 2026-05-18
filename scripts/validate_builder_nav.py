@@ -12,13 +12,13 @@ Uso:
     o desde cualquier ubicación en el proyecto.
 """
 
-import sys
-import re
 import pathlib
+import re
+import sys
 
+from rich import print as rprint
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 
 console = Console()
 
@@ -37,6 +37,9 @@ BUILDER_BOUNDARY_FILE = (
 BUILDER_LAYOUT_FILE = DASHBOARD_DIR / "components" / "builder" / "BuilderLayout.tsx"
 BUILDER_BREADCRUMB_FILE = (
     DASHBOARD_DIR / "components" / "builder" / "BuilderBreadcrumb.tsx"
+)
+BUILDER_CANVAS_FILE = (
+    DASHBOARD_DIR / "components" / "builder" / "BuilderCanvas.tsx"
 )
 BUILDER_PAGE_FILE = BUILDER_DIR / "page.tsx"
 
@@ -61,19 +64,19 @@ def check_sidebar_ssot() -> None:
         not has_navmain,
     )
 
-    # B) NavMain debe estar importado y usado (no hayado PASS)
-    uses_navmain = "<NavMain" in content or "items={\\s*defaultNavItems}" in content
-    # Pasamos si no hay navMain local — el NavMain sin props ya usa defaultNavItems
-    if not has_navmain:
-        check(
-            "NavMain en app-sidebar.tsx recibe items={defaultNavItems} o usa defaultNavItems por defecto",
-            True,
-        )
-    else:
-        check(
-            "NavMain en app-sidebar.tsx recibe items={defaultNavItems} o usa defaultNavItems por defecto",
-            False,
-        )
+    # B) NavMain debe usarse correctamente: items={defaultNavItems} explicito
+    # o sin props confiando en el fallback items ?? defaultNavItems de nav-main.tsx
+    uses_navmain_explicit = bool(re.search(r'items\s*=\s*\{\s*defaultNavItems\s*\}', content))
+    uses_navmain_bare = bool(re.search(r'<NavMain\b', content))
+    nav_has_fallback = False
+    if NAV_MAIN_FILE.exists():
+        nav_content = NAV_MAIN_FILE.read_text(encoding="utf-8")
+        nav_has_fallback = "items ?? defaultNavItems" in nav_content or "items || defaultNavItems" in nav_content
+    navmain_ok = uses_navmain_explicit or (uses_navmain_bare and nav_has_fallback)
+    check(
+        "NavMain en app-sidebar.tsx recibe items={defaultNavItems} o usa fallback interno defaultNavItems",
+        navmain_ok,
+    )
 
     # C) defaultNavItems debe existir en nav-main.tsx
     if NAV_MAIN_FILE.exists():
@@ -157,11 +160,14 @@ def check_breadcrumb() -> None:
     )
 
 
-# ── 5. SSR ssr:false en BuilderCanvas ─────────────────────────────────────────
+# ── 5. SSR ssr:false en Canvas ReactFlow ──────────────────────────────────────
+# NOTA: analisis-FINAL D3 decia buscar CrewCanvas en BuilderLayout.tsx pero
+# el codigo real tiene BuilderCanvas.tsx como wrapper con dynamic import
+# interno de CrewCanvas con ssr:false. Ajustado al patron real.
 def check_ssr_false() -> None:
     if not BUILDER_LAYOUT_FILE.exists():
         check(
-            "BuilderCanvas envuelve CrewCanvas con ssr:false — SKIP BuilderLayout no encontrado",
+            "Canvas ReactFlow cargado dinamicamente con ssr: false — SKIP BuilderLayout no encontrado",
             False,
         )
         return
@@ -169,10 +175,29 @@ def check_ssr_false() -> None:
     layout_content = BUILDER_LAYOUT_FILE.read_text(encoding="utf-8")
     uses_builder_canvas = "BuilderCanvas" in layout_content
 
-    if uses_builder_canvas:
-        check("BuilderLayout usa BuilderCanvas (wrapper de CrewCanvas)", True)
-    else:
-        check("BuilderLayout usa BuilderCanvas (wrapper de CrewCanvas)", False)
+    if not uses_builder_canvas:
+        check(
+            "Canvas ReactFlow cargado dinamicamente con ssr: false — BuilderCanvas no usado en layout",
+            False,
+        )
+        return
+
+    if not BUILDER_CANVAS_FILE.exists():
+        check(
+            "Canvas ReactFlow cargado dinamicamente con ssr: false — BuilderCanvas.tsx no encontrado",
+            False,
+        )
+        return
+
+    canvas_content = BUILDER_CANVAS_FILE.read_text(encoding="utf-8")
+    has_ssr_false = "ssr: false" in canvas_content
+    has_dynamic_import = "dynamic(" in canvas_content
+
+    ssr_ok = has_ssr_false and has_dynamic_import
+    check(
+        "Canvas ReactFlow cargado dinamicamente con ssr: false (BuilderCanvas.tsx -> CrewCanvas)",
+        ssr_ok,
+    )
 
 
 # ── Ejecución ──────────────────────────────────────────────────────────────────

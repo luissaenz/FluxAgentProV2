@@ -21,6 +21,7 @@ from src.cli.commands.check_env import check_env
 from src.cli.commands.crew import crew_app
 from src.cli.commands.dev import dev_command
 from src.cli.commands.doctor_builder import doctor_builder_app
+from src.cli.commands.dogfood_check import dogfood_app
 from src.cli.commands.export import export_agents
 from src.cli.commands.init import init_bundle
 from src.cli.commands.lint_fix import lint_fix
@@ -87,6 +88,7 @@ app.add_typer(agent_app, name="agent")
 agent_app.command("run")(run_agent)
 app.add_typer(test_builder_app, name="test-builder")
 app.add_typer(doctor_builder_app, name="doctor")
+app.add_typer(dogfood_app, name="dogfood")
 
 if __name__ == "__main__":
     app()
