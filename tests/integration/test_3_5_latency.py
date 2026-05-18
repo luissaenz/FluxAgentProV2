@@ -69,7 +69,13 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 from src.flows.multi_crew_flow import MultiCrewFlow  # noqa: E402
-from supabase import AsyncClient, AsyncClientOptions, acreate_client  # noqa: E402
+
+try:
+    from supabase import AsyncClient, AsyncClientOptions, acreate_client  # noqa: E402
+except ImportError:
+    AsyncClient = None  # type: ignore
+    AsyncClientOptions = None  # type: ignore
+    acreate_client = None  # type: ignore
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -484,11 +490,18 @@ class LatencyValidator:
 @pytest.fixture(scope="function")
 async def supabase_client() -> AsyncClient:
     """Cliente de Supabase fresco por cada test para evitar problemas de loop."""
-    options = AsyncClientOptions(
-        postgrest_client_timeout=20,
-        storage_client_timeout=20,
-    )
-    client = await acreate_client(SUPABASE_URL, SUPABASE_SERVICE_KEY, options=options)
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY or acreate_client is None:
+        pytest.skip("SUPABASE_URL or SUPABASE_SERVICE_KEY not configured or supabase not installed")
+    try:
+        options = AsyncClientOptions(
+            postgrest_client_timeout=20,
+            storage_client_timeout=20,
+        )
+        client = await acreate_client(SUPABASE_URL, SUPABASE_SERVICE_KEY, options=options)
+    except Exception as exc:
+        pytest.skip(f"Supabase connection failed: {exc}")
+        return  # type: ignore[unreachable]
+
     yield client
     try:
         await client.aclose()

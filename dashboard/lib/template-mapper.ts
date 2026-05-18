@@ -1,4 +1,4 @@
-import type { AgentFormData } from '@/components/builder/AgentForm'
+import type { AgentFormData } from '@/lib/agent-schema'
 import type { TemplateDetail } from '@/components/builder/TemplatePicker'
 
 const VALID_PROVIDERS = ['groq', 'openai', 'anthropic', 'openrouter'] as const

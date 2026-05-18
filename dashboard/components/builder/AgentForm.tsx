@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
 import { toast } from 'sonner'
 import { Download } from 'lucide-react'
 
@@ -29,22 +28,8 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ToolMultiSelect } from '@/components/builder/ToolMultiSelect'
 import { ExportDialog } from '@/components/builder/ExportDialog'
-
-const agentFormSchema = z.object({
-  role: z.string().min(1, 'Role is required'),
-  goal: z.string().min(10, 'Goal must be at least 10 characters'),
-  backstory: z.string().min(10, 'Backstory must be at least 10 characters'),
-  llmProvider: z.string(),
-  llmModel: z.string(),
-  allowedTools: z.array(z.string()),
-  maxIter: z.number().int().min(1).max(10),
-  verbose: z.boolean(),
-  reasoning: z.boolean(),
-  injectDate: z.boolean(),
-  memory: z.boolean(),
-})
-
-export type AgentFormData = z.infer<typeof agentFormSchema>
+import { agentFormSchema } from '@/lib/agent-schema'
+import type { AgentFormData } from '@/lib/agent-schema'
 
 interface AgentFormProps {
   onSave?: (data: AgentFormData) => Promise<void>

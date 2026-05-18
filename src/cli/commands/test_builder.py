@@ -5,10 +5,12 @@ y genera un reporte de integridad opcional en HTML.
 
 Uso:
     fap test builder --org-id test-org --report
+    fap test builder --org-id test-org --cov
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import subprocess
 import sys
@@ -17,6 +19,7 @@ from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.table import Table
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -45,6 +48,11 @@ def run_builder_tests(
         "--scenario",
         "-s",
         help="Scenario to run: agent, playground, crew, roundtrip, or 'all'",
+    ),
+    cov: bool = typer.Option(
+        False,
+        "--cov",
+        help="Include coverage report after tests",
     ),
 ) -> None:
     """Ejecutar tests de integración del Builder Visual.
@@ -79,6 +87,9 @@ def run_builder_tests(
         "log_cli=true",
     ]
 
+    if cov:
+        cmd.extend(["--cov=src", "--cov-report=json"])
+
     if scenario != "all":
         cmd.extend(["-k", scenario])
 
@@ -108,6 +119,9 @@ def run_builder_tests(
 
         console.print("\n[bold green]All builder tests passed.[/bold green]")
 
+        if cov:
+            _show_coverage_summary()
+
         if report:
             _generate_html_report(org_id, result.stdout, test_file, passed=True)
 
@@ -117,6 +131,51 @@ def run_builder_tests(
     except Exception as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1)
+
+
+def _show_coverage_summary() -> None:
+    """Parse coverage.json and display a summary table."""
+    cov_path = Path(__file__).resolve().parent.parent.parent.parent / "coverage.json"
+    if not cov_path.exists():
+        console.print("[yellow]Coverage data not found (coverage.json missing).[/yellow]")
+        return
+
+    try:
+        raw = json.loads(cov_path.read_text(encoding="utf-8"))
+        files = raw.get("files", {})
+
+        module_totals: dict[str, dict[str, float | int]] = {}
+        for filepath, fdata in files.items():
+            if not filepath.startswith("src/"):
+                continue
+            parts = filepath.split("/")
+            mod_key = "/".join(parts[:3]) if len(parts) > 3 else "/".join(parts[:2])
+            if mod_key not in module_totals:
+                module_totals[mod_key] = {"statements": 0, "covered": 0}
+            summary = fdata.get("summary", {})
+            module_totals[mod_key]["statements"] += summary.get("num_statements", 0)
+            module_totals[mod_key]["covered"] += summary.get("covered_lines", 0)
+
+        table = Table(title="Coverage Summary (builder)")
+        table.add_column("Module", style="cyan")
+        table.add_column("Statements", justify="right")
+        table.add_column("Covered", justify="right")
+        table.add_column("Percent", justify="right")
+
+        for mod_key, mtotals in sorted(module_totals.items()):
+            stmts = mtotals["statements"]
+            covered = mtotals["covered"]
+            pct = (covered / stmts * 100) if stmts > 0 else 0.0
+            style = "green" if pct >= 75 else "red"
+            table.add_row(mod_key, str(stmts), str(covered), f"[{style}]{pct:.1f}%[/]")
+
+        console.print()
+        console.print(table)
+
+        cov_path.unlink(missing_ok=True)
+
+    except (json.JSONDecodeError, KeyError) as exc:
+        console.print(f"[yellow]Could not parse coverage.json: {exc}[/yellow]")
 
 
 def _generate_html_report(

@@ -271,6 +271,33 @@ def mock_llm_manager():
     return MockLLMManager()
 
 
+# ── Shared DB mock helpers ──────────────────────────────────────────
+# Centralizados desde test_templates.py (Paso 15, ID-053)
+
+
+def mock_db(data):
+    """Create a mock DB client that returns data on select().execute()."""
+    mock = MagicMock()
+    mock.table.return_value.select.return_value.execute.return_value.data = data
+    return mock
+
+
+def mock_db_filter(data):
+    """Create a mock DB client with .eq() filter that returns data."""
+    mock = MagicMock()
+    chain = mock.table.return_value.select.return_value
+    chain.eq.return_value.execute.return_value.data = data
+    return mock
+
+
+def mock_db_single(data):
+    """Create a mock DB client with .eq().maybe_single() that returns data."""
+    mock = MagicMock()
+    chain = mock.table.return_value.select.return_value
+    chain.eq.return_value.maybe_single.return_value.execute.return_value.data = data
+    return mock
+
+
 # Ensure missing LLM modules don't break test discovery/execution
 for mod_name in [
     "langchain_openai",

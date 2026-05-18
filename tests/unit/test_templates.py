@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app
+from tests.conftest import mock_db, mock_db_filter, mock_db_single
 
 TEMPLATE_DATA = [
     {
@@ -55,29 +56,9 @@ def client():
     return TestClient(app)
 
 
-def _mock_db(data):
-    mock = MagicMock()
-    mock.table.return_value.select.return_value.execute.return_value.data = data
-    return mock
-
-
-def _mock_db_filter(data):
-    mock = MagicMock()
-    chain = mock.table.return_value.select.return_value
-    chain.eq.return_value.execute.return_value.data = data
-    return mock
-
-
-def _mock_db_single(data):
-    mock = MagicMock()
-    chain = mock.table.return_value.select.return_value
-    chain.eq.return_value.maybe_single.return_value.execute.return_value.data = data
-    return mock
-
-
 class TestListTemplates:
     def test_list_empty(self, client):
-        mock = _mock_db([])
+        mock = mock_db([])
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get("/api/templates")
         assert resp.status_code == 200
@@ -86,7 +67,7 @@ class TestListTemplates:
         assert body["count"] == 0
 
     def test_list_all(self, client):
-        mock = _mock_db(TEMPLATE_DATA)
+        mock = mock_db(TEMPLATE_DATA)
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get("/api/templates")
         assert resp.status_code == 200
@@ -98,7 +79,7 @@ class TestListTemplates:
 
     def test_list_filter_by_category(self, client):
         filtered = [t for t in TEMPLATE_DATA if t["category"] == "Research"]
-        mock = _mock_db_filter(filtered)
+        mock = mock_db_filter(filtered)
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get("/api/templates?category=Research")
         assert resp.status_code == 200
@@ -109,7 +90,7 @@ class TestListTemplates:
         assert body["templates"][0]["category"] == "Research"
 
     def test_list_no_auth_required(self, client):
-        mock = _mock_db([])
+        mock = mock_db([])
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get("/api/templates", headers={})
         assert resp.status_code == 200
@@ -117,7 +98,7 @@ class TestListTemplates:
 
 class TestGetTemplate:
     def test_get_by_id_found(self, client):
-        mock = _mock_db_single(TEMPLATE_DETAIL)
+        mock = mock_db_single(TEMPLATE_DETAIL)
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get(f"/api/templates/{TEMPLATE_DETAIL['id']}")
         assert resp.status_code == 200
@@ -130,7 +111,7 @@ class TestGetTemplate:
         assert body["soul_json"]["backstory"] is not None
 
     def test_get_by_id_not_found(self, client):
-        mock = _mock_db_single(None)
+        mock = mock_db_single(None)
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get("/api/templates/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 404
@@ -138,7 +119,7 @@ class TestGetTemplate:
         assert body["detail"] == "Template not found"
 
     def test_get_by_id_includes_soul_json(self, client):
-        mock = _mock_db_single(TEMPLATE_DETAIL)
+        mock = mock_db_single(TEMPLATE_DETAIL)
         with patch("src.api.routes.templates.get_service_client", return_value=mock):
             resp = client.get(f"/api/templates/{TEMPLATE_DETAIL['id']}")
         assert resp.status_code == 200

@@ -18,6 +18,7 @@ from src.cli.commands.bundle_export import bundle_app
 from src.cli.commands.bundle_validate_payload import validate_payload
 from src.cli.commands.check_deadlock import check_deadlock
 from src.cli.commands.check_env import check_env
+from src.cli.commands.coverage_report import coverage_app
 from src.cli.commands.crew import crew_app
 from src.cli.commands.dev import dev_command
 from src.cli.commands.doctor_backend import doctor_backend_app
@@ -91,6 +92,7 @@ app.add_typer(test_builder_app, name="test-builder")
 app.add_typer(doctor_builder_app, name="doctor")
 doctor_builder_app.add_typer(doctor_backend_app, name="backend")
 app.add_typer(dogfood_app, name="dogfood")
+app.add_typer(coverage_app, name="coverage")
 
 if __name__ == "__main__":
     app()
