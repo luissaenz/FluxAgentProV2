@@ -5,6 +5,7 @@ Subcomandos: save, load, export, validate, scaffold.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -154,6 +155,52 @@ def _validate_crew_graph(data: dict) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+async def _save_crew_async(
+    name: str,
+    org_id: str,
+    base_url: str,
+    headers: dict[str, str],
+    output: Path,
+) -> None:
+    url = f"{base_url.rstrip('/')}/agents?active_only=true"
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(url, headers=headers)
+
+    if response.status_code != 200:
+        console.print(f"[red]Error {response.status_code}:[/red] {response.text}")
+        raise typer.Exit(code=1)
+
+    data = response.json()
+    agents_list = data.get("agents", [])
+
+    nodes = []
+    for i, agent in enumerate(agents_list):
+        role = agent.get("role", f"agent_{i}")
+        goal = (agent.get("soul_json") or {}).get("goal", "")
+        tools = agent.get("allowed_tools", [])
+        node_id = f"agent_{i}"
+        nodes.append({
+            "id": node_id,
+            "type": "agentNode",
+            "data": {"role": role, "goal": goal, "tools": tools},
+            "position": {"x": 100, "y": 100 + i * 120},
+        })
+
+    snapshot = {
+        "name": name,
+        "org_id": org_id,
+        "nodes": nodes,
+        "edges": [],
+        "metadata": {"name": name, "createdAt": ""},
+    }
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(snapshot, indent=2))
+
+    console.print(f"[bold green]OK[/bold green] Saved crew '{name}' with {len(nodes)} agent(s) to [bold]{output}[/bold]")
+
+
 @crew_app.command("save")
 def save_crew(
     name: str = typer.Option(..., "--name", "-n", help="Crew snapshot name"),
@@ -169,50 +216,19 @@ def save_crew(
         raise typer.Exit(code=1)
 
     base_url = config.api_url or "http://localhost:8000"
-    url = f"{base_url.rstrip('/')}/agents?active_only=true"
     headers: dict[str, str] = {"X-Org-ID": org_id, "Content-Type": "application/json"}
     if config.access_token:
         headers["Authorization"] = f"Bearer {config.access_token}"
 
     try:
-        with httpx.Client(timeout=15) as client:
-            response = client.get(url, headers=headers)
-
-        if response.status_code != 200:
-            console.print(f"[red]Error {response.status_code}:[/red] {response.text}")
-            raise typer.Exit(code=1)
-
-        data = response.json()
-        agents_list = data.get("agents", [])
-
-        nodes = []
-        for i, agent in enumerate(agents_list):
-            role = agent.get("role", f"agent_{i}")
-            goal = (agent.get("soul_json") or {}).get("goal", "")
-            tools = agent.get("allowed_tools", [])
-            node_id = f"agent_{i}"
-            nodes.append({
-                "id": node_id,
-                "type": "agentNode",
-                "data": {"role": role, "goal": goal, "tools": tools},
-                "position": {"x": 100, "y": 100 + i * 120},
-            })
-
-        snapshot = {
-            "name": name,
-            "org_id": org_id,
-            "nodes": nodes,
-            "edges": [],
-            "metadata": {"name": name, "createdAt": ""},
-        }
-
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(snapshot, indent=2))
-
-        console.print(f"[bold green]OK[/bold green] Saved crew '{name}' with {len(nodes)} agent(s) to [bold]{output}[/bold]")
-
+        asyncio.run(_save_crew_async(name, org_id, base_url, headers, output))
     except httpx.ConnectError:
         console.print("[red]Error:[/red] Cannot connect to API. Is the backend running?")
+        raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1)
 
 

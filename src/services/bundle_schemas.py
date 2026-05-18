@@ -9,6 +9,11 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+MIN_GOAL_LENGTH: int = 10
+MIN_BACKSTORY_LENGTH: int = 10
+MAX_FLOWS_PER_BUNDLE: int = 20
+MAX_SKILLS_PER_BUNDLE: int = 30
+
 
 class BundleInfo(BaseModel):
     """Basic metadata about the bundle."""

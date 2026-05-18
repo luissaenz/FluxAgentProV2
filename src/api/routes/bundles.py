@@ -15,6 +15,8 @@ from src.services.bundle_manager import (
     VersionDowngradeError,
 )
 from src.services.bundle_schemas import (
+    MIN_BACKSTORY_LENGTH,
+    MIN_GOAL_LENGTH,
     BundleRPCResult,
     BundleValidationResult,
     ExportBundleRequest,
@@ -226,15 +228,15 @@ async def export_bundle(
             )
         # Mitigación §258: goal/backstory muy cortos producen agentes de baja calidad.
         # Validación de longitud mínima 10 chars para prevenir datos insuficientes.
-        if len(str(soul.get("goal", ""))) < 10:
+        if len(str(soul.get("goal", ""))) < MIN_GOAL_LENGTH:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"agent '{agent.role}': soul_json.goal must be at least 10 characters",
+                detail=f"agent '{agent.role}': soul_json.goal must be at least {MIN_GOAL_LENGTH} characters",
             )
-        if len(str(soul.get("backstory", ""))) < 10:
+        if len(str(soul.get("backstory", ""))) < MIN_BACKSTORY_LENGTH:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"agent '{agent.role}': soul_json.backstory must be at least 10 characters",
+                detail=f"agent '{agent.role}': soul_json.backstory must be at least {MIN_BACKSTORY_LENGTH} characters",
             )
 
     try:

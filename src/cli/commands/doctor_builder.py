@@ -167,7 +167,7 @@ def _check_conftest_tenant_patches() -> tuple[bool, str]:
 @doctor_builder_app.command("builder")
 def doctor_builder() -> None:
     """Run all 6 diagnostic checks for Builder stability."""
-    console.print("\n[bold cyan]🩺 FAP Doctor Builder — Diagnostics[/bold cyan]\n")
+    console.print("\n[bold cyan]FAP Doctor Builder — Diagnostics[/bold cyan]\n")
 
     checks = [
         ("ID-C02: Seed Idempotency", _check_seed_idempotency),
@@ -194,9 +194,9 @@ def doctor_builder() -> None:
     console.print(table)
 
     if all_passed:
-        console.print("\n[bold green]✅ All checks passed.[/bold green]\n")
+        console.print("\n[bold green]All checks passed.[/bold green]\n")
     else:
         console.print(
-            "\n[bold red]❌ Some checks failed. Fix issues before proceeding.[/bold red]\n"
+            "\n[bold red]Some checks failed. Fix issues before proceeding.[/bold red]\n"
         )
         raise typer.Exit(code=1)

@@ -14,7 +14,12 @@ from typing import Dict, List, Optional
 
 from src.config import get_settings
 
-from .bundle_schemas import BundleContent, BundleManifest
+from .bundle_schemas import (
+    MAX_FLOWS_PER_BUNDLE,
+    MAX_SKILLS_PER_BUNDLE,
+    BundleContent,
+    BundleManifest,
+)
 from .integrity import verify_integrity
 from .security_guard import SecurityError, SecurityGuard
 
@@ -189,10 +194,10 @@ class BundleManager:
             )
         # Note: flows/skills limits can be added to config if needed,
         # using current defaults for now to keep it lean.
-        if len(content.flows) > 20:
-            raise BundleError(f"Exceeded max flows: {len(content.flows)} > 20")
-        if len(content.skills) > 30:
-            raise BundleError(f"Exceeded max skills: {len(content.skills)} > 30")
+        if len(content.flows) > MAX_FLOWS_PER_BUNDLE:
+            raise BundleError(f"Exceeded max flows: {len(content.flows)} > {MAX_FLOWS_PER_BUNDLE}")
+        if len(content.skills) > MAX_SKILLS_PER_BUNDLE:
+            raise BundleError(f"Exceeded max skills: {len(content.skills)} > {MAX_SKILLS_PER_BUNDLE}")
 
     def create_bundle(
         self,

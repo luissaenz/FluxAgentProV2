@@ -32,7 +32,7 @@ class AgentResponse(BaseModel):
     soul_json: Dict[str, Any]
     allowed_tools: List[str] = []
     max_iter: int
-    created_at: str | None = None
+    created_at: str
 
 
 class RunAgentRequest(BaseModel):
@@ -71,15 +71,19 @@ async def list_agents(
     Uses TenantClient for RLS compliance.
     Optional ?active_only=true filters to is_active=True.
     """
-    with get_tenant_client(org_id) as db:
-        query = (
-            db.table("agent_catalog")
-            .select("id, role, soul_json, allowed_tools, max_iter")
-            .eq("org_id", org_id)
-        )
-        if active_only:
-            query = query.eq("is_active", True)
-        result = query.execute()
+    try:
+        with get_tenant_client(org_id) as db:
+            query = (
+                db.table("agent_catalog")
+                .select("id, role, soul_json, allowed_tools, max_iter, created_at")
+                .eq("org_id", org_id)
+            )
+            if active_only:
+                query = query.eq("is_active", True)
+            result = query.execute()
+    except Exception as exc:
+        logger.error("DB error listing agents: %s", exc)
+        raise HTTPException(503, "Database unavailable") from exc
 
     agents = []
     for row in (result.data or []):
@@ -109,57 +113,62 @@ async def create_agent(
     Upserts via on_conflict='org_id,role' to allow re-saving.
     Returns 409 on duplicate role within same org.
     """
-    with get_tenant_client(org_id) as db:
-        existing = (
-            db.table("agent_catalog")
-            .select("id")
-            .eq("org_id", org_id)
-            .eq("role", payload.role)
-            .maybe_single()
-            .execute()
-        )
-
-        if existing.data:
-            existing_id = (
-                existing.data[0]["id"]
-                if isinstance(existing.data, list)
-                else existing.data.get("id")
+    try:
+        with get_tenant_client(org_id) as db:
+            existing = (
+                db.table("agent_catalog")
+                .select("id")
+                .eq("org_id", org_id)
+                .eq("role", payload.role)
+                .maybe_single()
+                .execute()
             )
+
+            if existing.data:
+                existing_id = (
+                    existing.data[0]["id"]
+                    if isinstance(existing.data, list)
+                    else existing.data.get("id")
+                )
+                result = (
+                    db.table("agent_catalog")
+                    .update({
+                        "soul_json": payload.soul_json,
+                        "allowed_tools": payload.allowed_tools,
+                        "max_iter": payload.max_iter,
+                        "is_active": True,
+                    })
+                    .eq("id", existing_id)
+                    .select("*")
+                    .execute()
+                )
+                logger.info("Agent '%s' updated in org '%s'", payload.role, org_id)
+                agent_data = dict(result.data[0])
+                if "org_id" not in agent_data:
+                    agent_data["org_id"] = org_id
+                return AgentResponse(**agent_data)
+
             result = (
                 db.table("agent_catalog")
-                .update({
+                .insert({
+                    "org_id": org_id,
+                    "role": payload.role,
                     "soul_json": payload.soul_json,
                     "allowed_tools": payload.allowed_tools,
                     "max_iter": payload.max_iter,
                     "is_active": True,
                 })
-                .eq("id", existing_id)
                 .execute()
             )
-            logger.info("Agent '%s' updated in org '%s'", payload.role, org_id)
+
+            logger.info("Agent '%s' created in org '%s'", payload.role, org_id)
             agent_data = dict(result.data[0])
             if "org_id" not in agent_data:
                 agent_data["org_id"] = org_id
             return AgentResponse(**agent_data)
-
-        result = (
-            db.table("agent_catalog")
-            .insert({
-                "org_id": org_id,
-                "role": payload.role,
-                "soul_json": payload.soul_json,
-                "allowed_tools": payload.allowed_tools,
-                "max_iter": payload.max_iter,
-                "is_active": True,
-            })
-            .execute()
-        )
-
-        logger.info("Agent '%s' created in org '%s'", payload.role, org_id)
-        agent_data = dict(result.data[0])
-        if "org_id" not in agent_data:
-            agent_data["org_id"] = org_id
-        return AgentResponse(**agent_data)
+    except Exception as exc:
+        logger.error("DB error creating agent: %s", exc)
+        raise HTTPException(503, "Database unavailable") from exc
 
 
 @router.get("/by-role/{role}")
@@ -197,19 +206,23 @@ async def get_agent_detail(
     y referencias a credenciales en Vault (solo nombres, nunca valores).
     """
 
-    with get_tenant_client(org_id) as db:
-        # 1. Registro base del catálogo
-        agent_result = (
-            db.table("agent_catalog")
-            .select("*")
-            .eq("id", agent_id)
-            .eq("org_id", org_id)
-            .maybe_single()
-            .execute()
-        )
+    try:
+        with get_tenant_client(org_id) as db:
+            # 1. Registro base del catálogo
+            agent_result = (
+                db.table("agent_catalog")
+                .select("*")
+                .eq("id", agent_id)
+                .eq("org_id", org_id)
+                .maybe_single()
+                .execute()
+            )
+    except Exception as exc:
+        logger.error("DB error getting agent detail: %s", exc)
+        raise HTTPException(503, "Database unavailable") from exc
 
-        if not agent_result.data:
-            raise HTTPException(status_code=404, detail="Agent not found")
+    if not agent_result.data:
+        raise HTTPException(status_code=404, detail="Agent not found")
 
         agent = agent_result.data
         agent_role = agent.get("role", "")

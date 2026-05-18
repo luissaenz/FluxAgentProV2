@@ -52,10 +52,6 @@ class ExportService:
         skills: dict[str, str] = {}
         if payload.skills:
             for s in payload.skills:
-                # NOTA: analisis-FINAL §124 dice {s.name: s.code} sin extensión.
-                # BundleManager create_bundle() escribe skills/{filename} en ZIP y
-                # _parse_file_content() requiere path.endswith(".py") para reconocer skills.
-                # Por compatibilidad roundtrip con import, la key debe incluir extensión .py.
                 filename = f"{s.name}.py"
                 skills[filename] = s.code
 

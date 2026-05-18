@@ -101,7 +101,7 @@ def _collect_tools(org_id: str, source: Optional[str] = None) -> list[dict]:
 
 
 def _fetch_mcp_tools(org_id: str) -> list[dict]:
-    """Fetch MCP server tools."""
+    """Fetch MCP server tools using async pool."""
     db = get_service_client()
     result = (
         db.table("org_mcp_servers")
@@ -138,17 +138,20 @@ def _fetch_mcp_tools(org_id: str) -> list[dict]:
             logger.exception("MCP server '%s' error — skipping", server_name)
             return []
 
-    loop = asyncio.new_event_loop()
-    try:
-        results = loop.run_until_complete(
-            asyncio.gather(*[_fetch(s["name"]) for s in servers])
+    async def _fetch_all():
+        return await asyncio.gather(
+            *[_fetch(s["name"]) for s in servers],
+            return_exceptions=True,
         )
-    finally:
-        loop.close()
+
+    results = asyncio.run(_fetch_all())
 
     tools: list[dict] = []
-    for result in results:
-        tools.extend(result)
+    for r in results:
+        if isinstance(r, Exception):
+            logger.warning("MCP fetch exception: %s", r)
+        else:
+            tools.extend(r)
     return tools
 
 

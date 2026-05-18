@@ -140,10 +140,10 @@ TEMPLATES = [
 @templates_app.command("seed")
 def seed_templates(
     dry_run: bool = typer.Option(
-        False, help="Preview without inserting"
+        False, "--dry-run", help="Preview without inserting"
     ),
     reset: bool = typer.Option(
-        False, help="Delete all existing system templates and re-insert"
+        False, "--reset", help="Delete all existing system templates and re-insert"
     ),
 ) -> None:
     """Seed the agent_templates table with 8 pre-defined system templates."""

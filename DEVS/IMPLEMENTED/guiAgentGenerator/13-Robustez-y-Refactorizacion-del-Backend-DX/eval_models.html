@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluacion de Analisis — Paso 13</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+  h1 { color: #58a6ff; border-bottom: 2px solid #30363d; padding-bottom: 10px; }
+  h2 { color: #79c0ff; margin-top: 30px; }
+  table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+  th, td { border: 1px solid #30363d; padding: 12px; text-align: left; }
+  th { background: #161b22; color: #58a6ff; font-weight: 600; }
+  td { background: #0d1117; vertical-align: top; }
+  tr:hover td { background: #161b22; }
+  .podium { display: flex; justify-content: center; gap: 20px; margin: 30px 0; flex-wrap: wrap; }
+  .podium-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; text-align: center; width: 220px; }
+  .podium-card.gold { border-color: #f0c040; }
+  .podium-card.silver { border-color: #c0c0c0; }
+  .podium-card.bronze { border-color: #cd7f32; }
+  .rank { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+  .gold .rank { color: #f0c040; }
+  .silver .rank { color: #c0c0c0; }
+  .bronze .rank { color: #cd7f32; }
+  .model-name { font-size: 1.3em; font-weight: bold; margin: 5px 0; }
+  .score { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
+  .gold .score { color: #f0c040; }
+  .silver .score { color: #c0c0c0; }
+  .bronze .score { color: #cd7f32; }
+  .virtues { text-align: left; margin: 10px 0; padding: 0 10px; }
+  .virtues li { margin: 5px 0; font-size: 0.9em; }
+  .defects { text-align: left; margin: 10px 0; padding: 0 10px; }
+  .defects li { margin: 5px 0; font-size: 0.9em; color: #f87171; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; margin: 2px; }
+  .tag.critical { background: #da3633; color: #fff; }
+  .tag.deep { background: #1f6feb; color: #fff; }
+  .tag.shallow { background: #484f58; color: #8b949e; }
+  .tag.missed { background: #8b5cf6; color: #fff; }
+  .legend { display: flex; gap: 15px; flex-wrap: wrap; margin: 15px 0; }
+  .legend-item { font-size: 0.85em; }
+  .bar-container { width: 100%; background: #30363d; border-radius: 6px; height: 20px; margin: 5px 0; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s; }
+  .bar-fill.excellent { background: linear-gradient(90deg, #238636, #2ea043); }
+  .bar-fill.good { background: linear-gradient(90deg, #1f6feb, #58a6ff); }
+  .bar-fill.fair { background: linear-gradient(90deg, #d29922, #e3b341); }
+  .bar-fill.poor { background: linear-gradient(90deg, #da3633, #f85149); }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin: 20px 0; }
+  .stat-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; }
+  .stat-box h3 { margin: 0 0 10px; color: #58a6ff; font-size: 1em; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 2em; font-weight: bold; }
+  .stat-label { font-size: 0.85em; color: #8b949e; }
+  .comparison-table th:first-child { min-width: 120px; }
+  .check-green { color: #3fb950; font-weight: bold; }
+  .check-red { color: #f85149; font-weight: bold; }
+  .check-yellow { color: #d29922; font-weight: bold; }
+  .verdict { padding: 15px; border-radius: 8px; margin: 20px 0; }
+  .verdict.good { background: #0d2818; border: 1px solid #238636; }
+  .verdict.warning { background: #2d1b00; border: 1px solid #d29922; }
+</style>
+</head>
+<body>
+
+<h1>Evaluacion de Analisis — Paso 13: Robustez y Refactorizacion Backend</h1>
+<p>6 modelos analizaron el mismo codebase. Ranking por calidad de aportes, verificacion contra codigo real, deteccion de discrepancias, y propuesta DX.</p>
+
+<div class="legend">
+  <span class="legend-item"><span class="tag critical">critical</span> Hallazgo unico y critico</span>
+  <span class="legend-item"><span class="tag deep">deep</span> Analisis profundo</span>
+  <span class="legend-item"><span class="tag shallow">shallow</span> Analisis superficial</span>
+  <span class="legend-item"><span class="tag missed">missed</span> Discrepancia clave no detectada</span>
+</div>
+
+<div class="podium">
+  <div class="podium-card gold">
+    <div class="rank">#1</div>
+    <div class="model-name">DeepSeek-Pro (dsp)</div>
+    <div class="score">4.7</div>
+    <div style="color: #8b949e; font-size: 0.85em;">Ganador: Mejor cobertura global</div>
+    <ul class="virtues" style="list-style: none; padding: 0;">
+      <li style="color: #3fb950;">+ 18 verificaciones con evidencia</li>
+      <li style="color: #3fb950;">+ 10 discrepancias detectadas (record)</li>
+      <li style="color: #3fb950;">+ DX mas completa: 7 checks</li>
+      <li style="color: #3fb950;">+ Analisis de 10 instancias httpx.Client</li>
+      <li style="color: #3fb950;">+ Detecto export_service.py comment huerfano</li>
+    </ul>
+    <ul class="defects" style="list-style: none; padding: 0;">
+      <li>- No detecto D2 (SELECT sin created_at)</li>
+      <li>- No detecto D8 (503 ausente en agents)</li>
+    </ul>
+  </div>
+
+  <div class="podium-card silver">
+    <div class="rank">#2</div>
+    <div class="model-name">Step (step)</div>
+    <div class="score">4.5</div>
+    <div style="color: #8b949e; font-size: 0.85em;">Mejor calidad critica</div>
+    <ul class="virtues" style="list-style: none; padding: 0;">
+      <li style="color: #3fb950;">+ <span class="tag critical">critical</span> Unico en detectar D2 (SELECT sin created_at)</li>
+      <li style="color: #3fb950;">+ <span class="tag critical">critical</span> Unico en detectar D8 (503 ausente en agents)</li>
+      <li style="color: #3fb950;">+ 22 verificaciones con lineas exactas</li>
+      <li style="color: #3fb950;">+ 7 discrepancias, 2 criticas exclusivas</li>
+      <li style="color: #3fb950;">+ Plan con 13 tareas detalladas</li>
+    </ul>
+    <ul class="defects" style="list-style: none; padding: 0;">
+      <li>- No detecto typer.Option old-style</li>
+      <li>- No detecto export_service.py comment</li>
+      <li>- Propuesta DX (db-sync) menos completa que dsp</li>
+    </ul>
+  </div>
+
+  <div class="podium-card bronze">
+    <div class="rank">#3</div>
+    <div class="model-name">Qwen (qwen)</div>
+    <div class="score">3.8</div>
+    <div style="color: #8b949e; font-size: 0.85em;">Mayor volumen de verificaciones</div>
+    <ul class="virtues" style="list-style: none; padding: 0;">
+      <li style="color: #3fb950;">+ 30 verificaciones (record en cantidad)</li>
+      <li style="color: #3fb950;">+ 5 discrepancias detectadas</li>
+      <li style="color: #3fb950;">+ Mejor cobertura de imports y patrones</li>
+      <li style="color: #3fb950;">+ Riesgo R5 documentado (migracion AsyncClient)</li>
+    </ul>
+    <ul class="defects" style="list-style: none; padding: 0;">
+      <li>- No detecto D2 (SELECT sin created_at)</li>
+      <li>- No detecto D8 (503 ausente en agents)</li>
+      <li>- Propuso crear modulo bundle_constants.py separado (overengineering)</li>
+      <li>- 6/10 criterios aceptacion, menos que step/dsp</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Tabla Comparativa Detallada</h2>
+
+<table class="comparison-table">
+  <tr>
+    <th>Metrica</th>
+    <th>dsp (DeepSeek)</th>
+    <th>step (Step)</th>
+    <th>qwen (Qwen)</th>
+    <th>g3f</th>
+    <th>lgn (Llama)</th>
+    <th>mm (Mistral)</th>
+  </tr>
+  <tr>
+    <td><strong>Verificaciones</strong></td>
+    <td>18</td>
+    <td>22</td>
+    <td>30</td>
+    <td>20</td>
+    <td>10</td>
+    <td>8</td>
+  </tr>
+  <tr>
+    <td><strong>Discrepancias</strong></td>
+    <td><span class="check-green">10</span></td>
+    <td><span class="check-green">7</span></td>
+    <td>5</td>
+    <td>3</td>
+    <td>4</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td><strong>Evidencia con lineas</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td>Parcial</td>
+    <td>Parcial</td>
+  </tr>
+  <tr>
+    <td><strong>Propuesta DX</strong></td>
+    <td><span class="check-green">fap doctor backend (7 checks)</span></td>
+    <td><span class="check-green">fap db-sync check</span></td>
+    <td><span class="check-green">fap backend-health</span></td>
+    <td>fap doctor api</td>
+    <td>fap backend diagnose</td>
+    <td>fap lint-emojis</td>
+  </tr>
+  <tr>
+    <td><strong>D1: created_at opcional</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+  </tr>
+  <tr>
+    <td><strong>D2: SELECT sin created_at</strong></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>D3: Doc phase-state.md</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>D4: new_event_loop</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>D5: Emojis CLI</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+  </tr>
+  <tr>
+    <td><strong>D6: httpx.Client sync</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+  </tr>
+  <tr>
+    <td><strong>D7: Constantes hardcode</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-green">SI</span></td>
+  </tr>
+  <tr>
+    <td><strong>D8: 503 ausente en agents</strong></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>D9: typer.Option old-style</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>D10: export_service comment</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>D11: bundle_manager limites</strong></td>
+    <td><span class="check-green">SI</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+    <td><span class="check-red">NO</span></td>
+  </tr>
+  <tr>
+    <td><strong>Etapas cubiertas</strong></td>
+    <td>4/4</td>
+    <td>4/4</td>
+    <td>4/4</td>
+    <td>4/4</td>
+    <td>4/4</td>
+    <td>4/4</td>
+  </tr>
+  <tr>
+    <td><strong>Score (1-5)</strong></td>
+    <td><strong>4.7</strong></td>
+    <td><strong>4.5</strong></td>
+    <td><strong>3.8</strong></td>
+    <td><strong>3.2</strong></td>
+    <td><strong>3.0</strong></td>
+    <td><strong>2.5</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Barra visual</strong></td>
+    <td><div class="bar-container"><div class="bar-fill excellent" style="width:94%"></div></div></td>
+    <td><div class="bar-container"><div class="bar-fill excellent" style="width:90%"></div></div></td>
+    <td><div class="bar-container"><div class="bar-fill good" style="width:76%"></div></div></td>
+    <td><div class="bar-container"><div class="bar-fill fair" style="width:64%"></div></div></td>
+    <td><div class="bar-container"><div class="bar-fill fair" style="width:60%"></div></div></td>
+    <td><div class="bar-container"><div class="bar-fill poor" style="width:50%"></div></div></td>
+  </tr>
+  <tr>
+    <td><strong>Tiempo estimado</strong></td>
+    <td>11.5h</td>
+    <td>5.25h</td>
+    <td>6h</td>
+    <td>7.5h</td>
+    <td>5.5h</td>
+    <td>9.5h</td>
+  </tr>
+  <tr>
+    <td><strong>Calidad de estimacion</strong></td>
+    <td><span class="check-yellow">Sobreestimado</span></td>
+    <td><span class="check-green">Realista</span></td>
+    <td><span class="check-green">Realista</span></td>
+    <td><span class="check-yellow">Sobreestimado</span></td>
+    <td><span class="check-green">Ajustado</span></td>
+    <td><span class="check-yellow">Sobreestimado</span></td>
+  </tr>
+</table>
+
+<h2>Estadisticas Clave</h2>
+
+<div class="stats-grid">
+  <div class="stat-box">
+    <h3>Discrepancias exclusivas detectadas</h3>
+    <div class="stat-value">2</div>
+    <div class="stat-label">Solo step encontro D2 (SELECT) y D8 (503 agents)</div>
+  </div>
+  <div class="stat-box">
+    <h3>Mejor cobertura individual</h3>
+    <div class="stat-value">10/11</div>
+    <div class="stat-label">dsp detecto 10 de 11 discrepancias totales</div>
+  </div>
+  <div class="stat-box">
+    <h3>Discrepancias universales</h3>
+    <div class="stat-value">2</div>
+    <div class="stat-label">D1 (created_at) y D6 (httpx.Client) detectados por todos</div>
+  </div>
+  <div class="stat-box">
+    <h3>Peor rendimiento</h3>
+    <div class="stat-value">2.5</div>
+    <div class="stat-label">mm: solo 8 verificaciones, propuesta DX limitada a emojis</div>
+  </div>
+</div>
+
+<h2>Virtudes y Defectos por Modelo</h2>
+
+<table>
+  <tr>
+    <th>Modelo</th>
+    <th>Virtudes</th>
+    <th>Defectos</th>
+    <th>Veredicto</th>
+  </tr>
+  <tr>
+    <td><strong>dsp (DeepSeek-Pro)</strong><br><span class="tag deep">deep</span></td>
+    <td>
+      - 18 verificaciones con evidencia linea exacta<br>
+      - 10 discrepancias (record)<br>
+      - DX mas completa: 7 checks especificos<br>
+      - Detecto 3 exclusivas (D9-D11)<br>
+      - Cubrio agent_run.py polling loop inefficiency
+    </td>
+    <td>
+      - No detecto D2 (SELECT sin created_at) - critico<br>
+      - No detecto D8 (503 en agents)<br>
+      - Estimacion 11.5h (sobreestimada vs 5.25h de step)
+    </td>
+    <td class="verdict good">Mejor cobertura global. Si corrige el sesgo de sobreestimacion, es el mas completo para implementacion.</td>
+  </tr>
+  <tr>
+    <td><strong>step</strong><br><span class="tag critical">critical</span></td>
+    <td>
+      - <span class="tag critical">critical</span> Unico en D2 y D8<br>
+      - Analisis mas preciso de riesgo de serializacion<br>
+      - Plan de 13 tareas atomicas bien segmentadas<br>
+      - Mejor relacion profundidad/tiempo (5.25h)<br>
+      - Verifico `return_exceptions=False` en tools_list.py
+    </td>
+    <td>
+      - No detecto D3 (doc phase-state)<br>
+      - No detecto D9-D11 (typer, export, bundle_manager)<br>
+      - Propuesta DX (db-sync) menos completa que fusion final<br>
+      - Roadmap menos desarrollado que dsp
+    </td>
+    <td class="verdict good">Mejor calidad critica. Sus 2 hallazgos exclusivos son los mas peligrosos de todo el paso. Indispensable.</td>
+  </tr>
+  <tr>
+    <td><strong>qwen</strong></td>
+    <td>
+      - 30 verificaciones (record cuantitativo)<br>
+      - Mejor cobertura de imports y patrones<br>
+      - Documento bien estructurado<br>
+      - Riesgo R5 documentado (migracion incompleta)
+    </td>
+    <td>
+      - No detecto D2 ni D8<br>
+      - Propuso bundle_constants.py separado (overengineering)<br>
+      - 6/10 criterios de aceptacion (menos que dsp/step)<br>
+      - Algunas verificaciones son redundantes
+    </td>
+    <td class="verdict warning">Cobertura amplia pero superficial. Buen complemento, no reemplaza a dsp o step.</td>
+  </tr>
+  <tr>
+    <td><strong>g3f</strong></td>
+    <td>
+      - 20 verificaciones<br>
+      - Detecto D1, D3, D4, D6, D7<br>
+      - Identifico prefijo de ruta /agents vs /api/agents
+    </td>
+    <td>
+      - Solo 3 discrepancias (poco profundo)<br>
+      - No detecto D2, D5, D8, D9-D11<br>
+      - Falsa alarma en prefijo de ruta (no es bug)<br>
+      - Propuesta DX generica
+    </td>
+    <td class="verdict warning">Rendimiento mediocre. Falsa alarma en prefijo de ruta resta credibilidad.</td>
+  </tr>
+  <tr>
+    <td><strong>lgn (Llama)</strong></td>
+    <td>
+      - 10 verificaciones directas<br>
+      - Detecto D1, D4, D5, D6<br>
+      - Tiempo estimado realista (5.5h)
+    </td>
+    <td>
+      - Solo 10 verificaciones (poco)<br>
+      - No detecto D2, D3, D7, D8-D11<br>
+      - Evidencia parcial sin lineas exactas siempre<br>
+      - Analisis superficial en etapas 3 y 4
+    </td>
+    <td class="verdict warning">Analisis basico. Cumple minimo pero no aporta valor diferencial.</td>
+  </tr>
+  <tr>
+    <td><strong>mm (Mistral)</strong></td>
+    <td>
+      - Detecto D1, D5, D6, D7<br>
+      - Verifico que templates.py ya tiene 503
+    </td>
+    <td>
+      - Solo 8 verificaciones (el menor)<br>
+      - No detecto D2, D3, D4, D8-D11<br>
+      - Propuesta DX limitada: solo emojis<br>
+      - 9.5h estimado (sobreestimado)<br>
+      - Analisis mas superficial de todos
+    </td>
+    <td class="verdict warning">Peor rendimiento. No deberia usarse como fuente unica para implementacion.</td>
+  </tr>
+</table>
+
+<h2>Conclusiones</h2>
+
+<div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin: 20px 0;">
+  <h3 style="color: #58a6ff; margin-top: 0;">Ranking Final</h3>
+  <ol style="font-size: 1.1em; line-height: 1.8;">
+    <li><strong>DeepSeek-Pro (dsp) — 4.7/5</strong> — Ganador por cobertura, profundidad y propuesta DX. Unico en detectar 3 discrepancias menores pero relevantes.</li>
+    <li><strong>Step — 4.5/5</strong> — Ganador en calidad critica. Sus 2 hallazgos exclusivos son los de mayor severidad. Indispensable en cualquier pipeline.</li>
+    <li><strong>Qwen — 3.8/5</strong> — Mayor cantidad de verificaciones pero menor profundidad. Buen complemento.</li>
+    <li><strong>g3f — 3.2/5</strong> — Cumple pero con falsa alarma que resta credibilidad.</li>
+    <li><strong>lgn (Llama) — 3.0/5</strong> — Analisis basico sin valor diferencial.</li>
+    <li><strong>mm (Mistral) — 2.5/5</strong> — Menor rendimiento. No recomendado como fuente principal.</li>
+  </ol>
+
+  <h3 style="color: #58a6ff; margin-top: 20px;">Lecciones Aprendidas</h3>
+  <ul style="line-height: 1.8;">
+    <li><strong>Ningun modelo solo es suficiente.</strong> dsp encontro 10 discrepancias pero perdio las 2 mas criticas (D2, D8). Step encontro esas 2 pero perdio 5 que dsp si vio.</li>
+    <li><strong>Los modelos tienden a sobreestimar tiempo.</strong> dsp: 11.5h, step: 5.25h para tareas similares. Step fue mas realista.</li>
+    <li><strong>Cantidad de verificaciones != calidad.</strong> qwen tuvo 30 verificaciones pero score 3.8. step 22 verificaciones con score 4.5.</li>
+    <li><strong>El riesgo real no esta en lo obvio.</strong> D1 (created_at optional) fue detectado por todos. D2 (SELECT sin created_at) solo por step. El peligro estaba en el detalle, no en lo evidente.</li>
+    <li><strong>Propuesta DX revela personalidad del modelo.</strong> dsp propuso algo integral (7 checks), algo demasiado especifico (emojis), step algo de validacion de contratos. La fusion gana.</li>
+  </ul>
+</div>
+
+<p style="color: #8b949e; text-align: center; margin-top: 30px;">Generado: 2026-05-18 | Fusion de 6 analisis de agentes para Paso 13</p>
+
+</body>
+</html>

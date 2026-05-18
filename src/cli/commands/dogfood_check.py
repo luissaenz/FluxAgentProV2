@@ -13,6 +13,7 @@ Uso:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import subprocess
@@ -37,6 +38,7 @@ from src.cli.commands.templates_seed import TEMPLATES
 from src.cli.commands.tools_list import _collect_tools
 from src.cli.config import CLIConfig
 from src.db.session import get_service_client
+from src.services.bundle_schemas import MIN_BACKSTORY_LENGTH, MIN_GOAL_LENGTH
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -108,7 +110,7 @@ def _run_templates_seed() -> dict[str, Any]:
     return {"ok": errors == 0, "inserted": inserted, "skipped": skipped, "errors": errors, "detail": ""}
 
 
-def _compare_tools_cli_vs_http(org_id: str, base_url: str, config: CLIConfig) -> dict[str, Any]:
+async def _compare_tools_cli_vs_http_async(org_id: str, base_url: str, config: CLIConfig) -> dict[str, Any]:
     local_tools = _collect_tools(org_id)
     local_names = sorted([t["name"] for t in local_tools])
 
@@ -119,8 +121,8 @@ def _compare_tools_cli_vs_http(org_id: str, base_url: str, config: CLIConfig) ->
     http_names: list[str] = []
     http_error: Optional[str] = None
     try:
-        with httpx.Client(timeout=15) as client:
-            response = client.get(
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(
                 f"{base_url.rstrip('/')}/api/tools/available",
                 headers=headers,
             )
@@ -150,6 +152,10 @@ def _compare_tools_cli_vs_http(org_id: str, base_url: str, config: CLIConfig) ->
     }
 
 
+def _compare_tools_cli_vs_http(org_id: str, base_url: str, config: CLIConfig) -> dict[str, Any]:
+    return asyncio.run(_compare_tools_cli_vs_http_async(org_id, base_url, config))
+
+
 def _dry_run_all_templates() -> dict[str, Any]:
     results: list[dict[str, Any]] = []
     for template in TEMPLATES:
@@ -161,8 +167,8 @@ def _dry_run_all_templates() -> dict[str, Any]:
         suggested_tools = list(template.get("suggested_tools") or [])
         final_max_iter = template.get("max_iter") or 3
 
-        goal_ok = isinstance(final_goal, str) and len(final_goal) >= 10
-        backstory_ok = isinstance(final_backstory, str) and len(final_backstory) >= 10
+        goal_ok = isinstance(final_goal, str) and len(final_goal) >= MIN_GOAL_LENGTH
+        backstory_ok = isinstance(final_backstory, str) and len(final_backstory) >= MIN_BACKSTORY_LENGTH
 
         results.append({
             "name": tpl_name,
@@ -183,7 +189,7 @@ def _dry_run_all_templates() -> dict[str, Any]:
     }
 
 
-def _create_dogfood_agent(org_id: str, base_url: str, config: CLIConfig) -> dict[str, Any]:
+async def _create_dogfood_agent_async(org_id: str, base_url: str, config: CLIConfig) -> dict[str, Any]:
     payload = {
         "role": "Dogfood Validator",
         "soul_json": {
@@ -206,8 +212,8 @@ def _create_dogfood_agent(org_id: str, base_url: str, config: CLIConfig) -> dict
 
     url = f"{base_url.rstrip('/')}/agents"
     try:
-        with httpx.Client(timeout=15) as client:
-            response = client.post(url, json=payload, headers=headers)
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.post(url, json=payload, headers=headers)
         if response.status_code in (200, 201):
             data = response.json()
             return {"ok": True, "agent_id": data.get("id", ""), "role": data.get("role", ""), "status": "created"}
@@ -220,6 +226,10 @@ def _create_dogfood_agent(org_id: str, base_url: str, config: CLIConfig) -> dict
         return {"ok": False, "agent_id": "", "role": payload["role"], "status": "connection_error"}
     except Exception as exc:
         return {"ok": False, "agent_id": "", "role": payload["role"], "status": "exception", "detail": str(exc)}
+
+
+def _create_dogfood_agent(org_id: str, base_url: str, config: CLIConfig) -> dict[str, Any]:
+    return asyncio.run(_create_dogfood_agent_async(org_id, base_url, config))
 
 
 def _validate_bundle_min_goal() -> dict[str, Any]:
@@ -250,14 +260,14 @@ def _validate_bundle_min_goal() -> dict[str, Any]:
     for agent in payload.agents:
         goal = agent.soul_json.get("goal", "")
         backstory = agent.soul_json.get("backstory", "")
-        if isinstance(goal, str) and len(goal) >= 10:
+        if isinstance(goal, str) and len(goal) >= MIN_GOAL_LENGTH:
             goal_ok_count += 1
         else:
-            warnings.append(f"Agent {agent.role}: goal < 10 chars")
-        if isinstance(backstory, str) and len(backstory) >= 10:
+            warnings.append(f"Agent {agent.role}: goal < {MIN_GOAL_LENGTH} chars")
+        if isinstance(backstory, str) and len(backstory) >= MIN_BACKSTORY_LENGTH:
             backstory_ok_count += 1
         else:
-            warnings.append(f"Agent {agent.role}: backstory < 10 chars")
+            warnings.append(f"Agent {agent.role}: backstory < {MIN_BACKSTORY_LENGTH} chars")
 
     schema_ok = goal_ok_count == 0
     return {
@@ -310,7 +320,7 @@ def dogfood_check(
     base_url = config.api_url or "http://localhost:8000"
 
     if dry_run:
-        console.print("\n[bold cyan]🐶 fap dogfood check --dry-run[/bold cyan]")
+        console.print("\n[bold cyan]fap dogfood check --dry-run[/bold cyan]")
         console.print("[dim]Steps to execute:[/dim]")
         steps = [
             "1. fap doctor builder (6 diagnostic checks)",
@@ -326,7 +336,7 @@ def dogfood_check(
         console.print(f"\n[dim]org_id={org_id}  base_url={base_url}[/dim]")
         return
 
-    console.print("\n[bold cyan]🐶 fap dogfood check[/bold cyan]")
+    console.print("\n[bold cyan]fap dogfood check[/bold cyan]")
     console.print(f"[dim]org_id={org_id}  base_url={base_url}[/dim]\n")
 
     step_results: list[dict[str, Any]] = []

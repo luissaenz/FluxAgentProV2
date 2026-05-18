@@ -117,7 +117,7 @@
   },
   "phase": {
     "phase_name": "guiAgentGenerator",
-    "current_step": "08-ExportDialog-flujo-completo-de-exportacion",
+    "current_step": "13-Robustez-y-Refactorizacion-del-Backend-DX",
     "phase_status": "completed"
   },
   "pipeline": {

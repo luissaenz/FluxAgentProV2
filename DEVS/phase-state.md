@@ -6,7 +6,7 @@
 
 ## 1. Resumen de Fase
 
-**Fase activa:** `guiAgentGenerator` — ⏳ **EN PROGRESO** (12/15 pasos completados)
+**Fase activa:** `guiAgentGenerator` — ⏳ **EN PROGRESO** (13/15 pasos completados)
 **Objetivo:** Replicar experiencia de creación visual de agentes (Crew Studio) dentro del dashboard FAP, sobre stack propio (Next.js + ReactFlow + FastAPI + Supabase).
 
 ### Pasos en orden
@@ -25,7 +25,7 @@
 | 10 | Tests E2E del builder | ✅ Completado |
 | 11 | Estabilización Crítica y Fixes de Arquitectura | ✅ Completado |
 | 12 | Protocolo de Validación y Dogfooding E2E | ✅ Completado |
-| 13 | Robustez y Refactorización del Backend (DX) | ⏳ En Progreso |
+| 13 | Robustez y Refactorización del Backend (DX) | ✅ Completado |
 | 14 | Optimización de UX y Rendimiento Frontend | ⏳ En Progreso |
 | 15 | Expansión de Cobertura y DX de Tests | ⏳ En Progreso |
 
@@ -39,6 +39,7 @@
 - Paso 10 requiere Pasos 4, 6, 7 y 8 (escenarios de integración para todas las piezas del builder)
 - Paso 11 requiere los Pasos 9 y 10 para corregir bugs de inyección de mocks, tipado en frontend, e idempotencia del seed de templates.
 - Paso 12 requiere Pasos 1-11 (usa endpoints, CLI commands, y scripts existentes para validación E2E cruzada).
+- Paso 13 requiere Pasos 1-12 (refactoriza código existente de backend y CLI; no crea funcionalidad nueva).
 
 ---
 
@@ -52,6 +53,7 @@
 |---|---|---|---|
 | CLI `fap templates seed` | `src/cli/commands/templates_seed.py` | `seed_templates` | Semilla idempotente por UUID v5 y con check preventivo de tabla |
 | CLI `fap doctor builder` | `src/cli/commands/doctor_builder.py` | `doctor_builder` | Suite de 6 diagnósticos críticos automatizados con formato visual *Rich* |
+| CLI `fap doctor backend` | `src/cli/commands/doctor_backend.py` | `doctor_backend` | Suite de 8 checks de salud del backend (tipado, sync doc-código, event loop, constantes, AsyncClient, emojis, typer.Option, DB sync). Comando: `uv run fap doctor backend --org-id <uuid>` |
 | CLI `fap test builder` | `src/cli/commands/test_builder.py:31` | `test_builder_app` registrado en `main.py` | Ejecuta suite E2E + reporte HTML |
 | Suite Escenarios E2E | `tests/e2e/test_builder_scenarios.py` | 32 tests (TP-1 a TP-6) | 938 líneas, usa `TestClient` para validar integridad |
 | `BuilderTabContext` / Provider | `dashboard/components/builder/BuilderTabContext.tsx` | Context API | Mantiene el estado global de la pestaña seleccionada en el Builder |
@@ -59,8 +61,15 @@
 | `BuilderErrorBoundary` component | `dashboard/components/builder/BuilderErrorBoundary.tsx` | Class component para ReactFlow | Captura fallos SSR y de ReactFlow |
 | Mocks Globales Estabilizados | `tests/e2e/conftest.py` | Fixture `global_llm_mock` | Aislado a la suite E2E para evitar regresiones de tests unitarios |
 | Validación de Mocks en Tests | `scripts/validate_builder_mocks.py` | Checks de patching | Asegura que los parches de base de datos apunten a los namespaces correctos |
-| CLI `fap dogfood check` | `src/cli/commands/dogfood_check.py` | `dogfood_check` registrado en `main.py` | Orquestador unificado de 7 validaciones E2E con reporte Rich + JSON para CI/CD. Flags: `--org-id`, `--json`, `--dry-run`. |
+| CLI `fap dogfood check` | `src/cli/commands/dogfood_check.py` | `dogfood_check` registrado en `main.py` | Orquestador unificado de 7 validaciones E2E con reporte Rich + JSON para CI/CD. Flags: `--org-id`, `--json`, `--dry-run`. Migrado a `httpx.AsyncClient` para consistencia async. |
 | Script `validate_builder_nav.py` (corregido) | `scripts/validate_builder_nav.py` | 11 checks críticos de UI | Correcciones aplicadas: regex reparado (D2), variable `uses_navmain` usada en decision (D1), check SSR mejorado para verificar `BuilderCanvas.tsx` con `dynamic()` + `ssr: false` (D3 mejorada). Exit code 0. |
+| `AgentResponse.created_at` obligatorio | `src/api/routes/agents.py:35` | `created_at: str` | Alineado con DB (NOT NULL DEFAULT now()). Backward-compatible. |
+| SELECT con `created_at` en `list_agents` | `src/api/routes/agents.py:78` | `.select("id, role, soul_json, allowed_tools, max_iter, created_at")` | D2 crítico: sin esto AgentResponse fallaba |
+| `.select("*")` tras UPDATE en agents | `src/api/routes/agents.py:142` | `.update({...}).eq("id", ...).select("*")` | Garantiza que `created_at` se retorna post-update |
+| 503 handling en agents endpoints | `src/api/routes/agents.py:84-86,169-171,220-222` | 3 bloques try/except → HTTPException(503) | `GET /agents`, `POST /agents`, `GET /agents/{id}/detail` |
+| CLI `fap agent run` async | `src/cli/commands/agent_run.py` | `_run_agent_async` + `asyncio.run()` wrapper | Migrado de `httpx.Client` sync a `httpx.AsyncClient` |
+| CLI `fap crew save` async | `src/cli/commands/crew.py` | `_save_crew_async` + `asyncio.run()` wrapper | Migrado de `httpx.Client` sync a `httpx.AsyncClient` |
+| Constantes centralizadas | `src/services/bundle_schemas.py:12-15` | `MIN_GOAL_LENGTH`, `MIN_BACKSTORY_LENGTH`, `MAX_FLOWS_PER_BUNDLE`, `MAX_SKILLS_PER_BUNDLE` | Importadas por `bundle_validate_payload.py`, `bundles.py`, `bundle_manager.py` |
 
 *(Para componentes previos 1..8, ver histórico en DEVS/IMPLEMENTED)*
 
@@ -79,14 +88,16 @@
 - `agent_templates(id UUID, name TEXT, description TEXT, category TEXT, soul_json JSONB, suggested_tools TEXT[], max_iter INTEGER, is_system BOOLEAN, created_at TIMESTAMP WITH TIME ZONE)`
 
 ### Endpoints / APIs (rutas reales)
-| Ruta | Método | Archivo | Auth |
-|---|---|---|---|
-| `/api/tools/available` | GET | `src/api/routes/tools.py` | `require_org_id` |
-| `/api/bundles/export` | POST | `src/api/routes/bundles.py` | `require_org_id` |
-| `/api/templates` | GET | `src/api/routes/templates.py` | `require_org_id` (maneja 503 ante fallos de DB) |
-| `/api/templates/{id}` | GET | `src/api/routes/templates.py` | `require_org_id` (maneja 503 ante fallos de DB) |
-| `/agents` | POST | `src/api/routes/agents.py` | `require_org_id` |
-| `/agents/{role}/run` | POST | `src/api/routes/agents.py` | `require_org_id` |
+| Ruta | Método | Archivo | Auth | 503 handling |
+|---|---|---|---|---|
+| `/api/tools/available` | GET | `src/api/routes/tools.py` | `require_org_id` | No |
+| `/api/bundles/export` | POST | `src/api/routes/bundles.py` | `require_org_id` | No |
+| `/api/templates` | GET | `src/api/routes/templates.py` | ninguno (publico) | Sí |
+| `/api/templates/{id}` | GET | `src/api/routes/templates.py` | ninguno (publico) | Sí |
+| `/agents` | GET | `src/api/routes/agents.py` | `require_org_id` | Sí |
+| `/agents` | POST | `src/api/routes/agents.py` | `require_org_id` | Sí |
+| `/agents/{agent_id}/detail` | GET | `src/api/routes/agents.py` | `require_org_id` | Sí |
+| `/agents/{role}/run` | POST | `src/api/routes/agents.py` | `require_org_id` | No |
 
 ### Patrones de código en uso
 
@@ -113,6 +124,29 @@ row = {
 result = db.table("agent_templates").upsert(row, on_conflict="id", ignore_duplicates=True).execute()
 ```
 
+**4. Patrón AsyncClient en CLI (Paso 13):**
+```python
+# src/cli/commands/agent_run.py — funciones async internas + wrapper sync
+async def _run_agent_async(...) -> None:
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.post(url, json=payload, headers=headers)
+
+def run_agent(...) -> None:
+    ...
+    asyncio.run(_run_agent_async(...))
+```
+
+**5. Patrón 503 en endpoints (Paso 13):**
+```python
+# src/api/routes/templates.py:59-67, agents.py:84-86,169-171,220-222
+try:
+    db = get_service_client()
+    result = db.table(...).select(...).execute()
+except Exception as exc:
+    logger.error("DB error: %s", exc)
+    raise HTTPException(503, "Database unavailable") from exc
+```
+
 ---
 
 ## 4. Decisiones de Arquitectura Tomadas
@@ -128,6 +162,10 @@ result = db.table("agent_templates").upsert(row, on_conflict="id", ignore_duplic
 | **Validación Orquestada Unificada** | Un solo comando `fap dogfood check` centraliza 7 flujos de validación (doctor, seed, HTTP-vs-CLI, dry-run, agent create, bundle validate, UI integrity). Descarta scripts dispersos como `dogfood_validator.py`. | `dogfood_check.py` |
 | **Validación Cruzada HTTP vs CLI** | `fap dogfood check` consume endpoints REST reales (`GET /api/tools/available`, `POST /agents`) vía `httpx` y compara estructuralmente contra respuestas locales para detectar desincronización de contratos. | `dogfood_check.py:111-150` |
 | **SSR Check mejorado sobre FINAL (D3)** | La corrección D3 del análisis recomendaba buscar `CrewCanvas` en `BuilderLayout.tsx`, pero el componente real es `BuilderCanvas`. El implementador corrigió la premisa: verifica `BuilderCanvas.tsx` para confirmar `dynamic(CrewCanvas, { ssr: false })`. | `validate_builder_nav.py:163-200` |
+| **`AgentResponse.created_at` obligatorio (Paso 13, D1+D2)** | Se cambió de `Optional[str]` a `str` obligatorio, alineando Pydantic con DB (NOT NULL). Se agregó `created_at` a todos los SELECT y `.select("*")` tras UPDATE para evitar errores de serialización. | `agents.py:35,78,142` |
+| **`httpx.AsyncClient` como estándar en CLI (Paso 13, D6)** | Todos los comandos CLI que consumen API HTTP migrados de `httpx.Client` sync a `httpx.AsyncClient` con `asyncio.run()` wrapper. Consistencia con backend async. Afecta: `agent_run.py`, `crew.py`, `dogfood_check.py`. | `agent_run.py`, `crew.py`, `dogfood_check.py` |
+| **Constantes centralizadas en `bundle_schemas.py` (Paso 13, D7+D10+D11)** | `MIN_GOAL_LENGTH`, `MIN_BACKSTORY_LENGTH`, `MAX_FLOWS_PER_BUNDLE`, `MAX_SKILLS_PER_BUNDLE` definidas en un solo lugar. Importadas por `bundle_validate_payload.py`, `bundles.py`, `bundle_manager.py`. Elimina hardcodeo en 3 archivos. | `bundle_schemas.py:12-15` |
+| **Herramienta DX: `fap doctor backend` (Paso 13, T0)** | 8 checks de salud del backend: tipado estricto, sync doc-código, salud de event loop, procedencia de constantes, cobertura AsyncClient, CLI sin emojis, estilo typer.Option, sync DB-modelos. Uso: `uv run fap doctor backend --org-id <uuid>`. | `doctor_backend.py` |
 
 ---
 
@@ -140,6 +178,7 @@ result = db.table("agent_templates").upsert(row, on_conflict="id", ignore_duplic
 | 10-Tests-E2E-del-builder | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/10-Tests-E2E-del-builder/` | `037deb9` | Suite de 32 escenarios pasando al 100% de éxito. |
 | 11-Estabilizacion-Critica-y-Fixes-de-Arquitectura | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/11-Estabilizacion-Critica-y-Fixes-de-Arquitectura/` | `f56d9d7` | Resolución definitiva de error 42P10, sync dinámico de tabs y checks de mocks robustos. |
 | 12-Protocolo-de-Validacion-y-Dogfooding-E2E | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/12-Protocolo-de-Validacion-y-Dogfooding-E2E/` | `e414bf1` | Comando `fap dogfood check` unificado. Script `validate_builder_nav.py` corregido (D1-D2-D3). Validación cruzada HTTP vs CLI. 9/9 criterios MVP. Validación APROBADA. |
+| 13-Robustez-y-Refactorizacion-del-Backend-DX | ✅ Completado | `DEVS/IMPLEMENTED/guiAgentGenerator/13-Robustez-y-Refactorizacion-del-Backend-DX/` | `08daa11` | 11 correcciones del FINAL aplicadas. Herramienta DX `fap doctor backend` creada (8 checks). Migración a `httpx.AsyncClient` en CLI. Centralización de constantes. 503 handling en agents. 14/14 criterios MVP. Validación APROBADA. |
 
 ---
 
@@ -153,3 +192,8 @@ result = db.table("agent_templates").upsert(row, on_conflict="id", ignore_duplic
 - ✅ **DX Diagnóstico visual:** `fap doctor builder` provee visualización premium de 6 puntos de salud críticos.
 - ✅ **Suite de tests verde:** 382 tests unitarios y 32 tests de integración/E2E ejecutándose con total éxito en entornos locales y pipelines.
 - ✅ **Dogfooding Automatizado:** `fap dogfood check` ejecuta 7 validaciones E2E en ~10 segundos con reporte Rich + salida JSON para CI/CD. Reduce verificación manual de 15 min a comando único.
+- ✅ **Backend tipado consistente:** `AgentResponse.created_at` es `str` obligatorio, alineado con DB NOT NULL.
+- ✅ **CLI asíncrono unificado:** Todos los comandos CLI que consumen API HTTP usan `httpx.AsyncClient` con `asyncio.run()` wrapper. Sin llamadas a `new_event_loop()`.
+- ✅ **Constantes centralizadas:** Límites de validación en `bundle_schemas.py` — sin hardcodeo en `bundle_validate_payload.py`, `bundles.py` ni `bundle_manager.py`.
+- ✅ **503 handling en agents:** Los 3 endpoints críticos (`GET /agents`, `POST /agents`, `GET /agents/{id}/detail`) retornan 503 si DB falla.
+- ✅ **DX Tooling extendida:** `fap doctor backend` ejecuta 8 checks de salud del backend en ~5 segundos. Reduce verificación manual de 11 puntos a un comando.

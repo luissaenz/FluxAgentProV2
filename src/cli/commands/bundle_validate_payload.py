@@ -16,7 +16,12 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 
-from src.services.bundle_schemas import ExportBundleRequest
+from src.services.bundle_schemas import (
+    MAX_SKILLS_PER_BUNDLE,
+    MIN_BACKSTORY_LENGTH,
+    MIN_GOAL_LENGTH,
+    ExportBundleRequest,
+)
 
 console = Console()
 
@@ -81,14 +86,14 @@ def validate_payload(
     for agent in payload.agents:
         goal = agent.soul_json.get("goal", "")
         backstory = agent.soul_json.get("backstory", "")
-        if isinstance(goal, str) and len(goal) >= 10:
+        if isinstance(goal, str) and len(goal) >= MIN_GOAL_LENGTH:
             agent_goals_ok += 1
         else:
-            warnings.append(f"Agent [bold]{agent.role}[/bold]: goal < 10 chars or missing")
-        if isinstance(backstory, str) and len(backstory) >= 10:
+            warnings.append(f"Agent [bold]{agent.role}[/bold]: goal < {MIN_GOAL_LENGTH} chars or missing")
+        if isinstance(backstory, str) and len(backstory) >= MIN_BACKSTORY_LENGTH:
             agent_backstories_ok += 1
         else:
-            warnings.append(f"Agent [bold]{agent.role}[/bold]: backstory < 10 chars or missing")
+            warnings.append(f"Agent [bold]{agent.role}[/bold]: backstory < {MIN_BACKSTORY_LENGTH} chars or missing")
 
     est_size = (
         len(raw)
@@ -96,8 +101,8 @@ def validate_payload(
         + (skill_count * 1000)
     )
 
-    if agent_count > 10:
-        warnings.append(f"Agent count {agent_count} is close to max limit (15)")
+    if agent_count > MAX_SKILLS_PER_BUNDLE:
+        warnings.append(f"Agent count {agent_count} exceeds max limit")
 
     if json_output:
         result = {
@@ -132,8 +137,8 @@ def validate_payload(
 
             table.add_row(
                 agent.role,
-                "[green]✓[/green]" if (isinstance(goal, str) and len(goal) >= 10) else "[red]✗[/red]",
-                "[green]✓[/green]" if (isinstance(backstory, str) and len(backstory) >= 10) else "[red]✗[/red]",
+                "[green]PASS[/green]" if (isinstance(goal, str) and len(goal) >= MIN_GOAL_LENGTH) else "[red]FAIL[/red]",
+                "[green]PASS[/green]" if (isinstance(backstory, str) and len(backstory) >= MIN_BACKSTORY_LENGTH) else "[red]FAIL[/red]",
                 str(len(agent.allowed_tools)),
                 str(agent.max_iter),
             )
